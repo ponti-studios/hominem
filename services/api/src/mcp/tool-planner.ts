@@ -106,7 +106,12 @@ export function buildToolCatalog(definitions: readonly CapabilityDefinition[]): 
     .join('\n');
 }
 
-export function describeCapability(definition: CapabilityDefinition): string {
+export function describeCapability(
+  definition: Pick<
+    CapabilityDefinition,
+    'description' | 'readOnly' | 'requiresConfirmation' | 'guidance'
+  >,
+): string {
   const guidance = definition.guidance;
   const dependencies = guidance?.dependencies?.length
     ? ` Prerequisites: ${guidance.dependencies

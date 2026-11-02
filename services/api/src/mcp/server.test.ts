@@ -333,15 +333,68 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('lists registered career tools', async () => {
+  it('lists only lightweight tool discovery operations', async () => {
     const client = await createClient(createApp(mcpAuthContext));
     try {
       const tools = await client.listTools();
       const toolNames = tools.tools.map((t) => t.name);
-      expect(toolNames).toContain('career_profile');
-      expect(toolNames).toContain('career_engagements');
-      expect(toolNames).toContain('finance_net_worth');
-      expect(toolNames).not.toContain('career_wishlist_add');
+      expect(toolNames).toEqual([
+        'call_read_tool',
+        'call_write_tool',
+        'get_tool_details',
+        'search_tools',
+      ]);
+      expect(JSON.stringify(tools)).not.toContain('finance_net_worth');
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('searches, inspects and executes one authorized tool', async () => {
+    const client = await createClient(createApp(mcpAuthContext));
+    try {
+      const search = await client.callTool({
+        name: 'search_tools',
+        arguments: { query: 'finance categories', limit: 5 },
+      });
+      const matches = z
+        .object({
+          tools: z.array(z.object({ name: z.string(), readOnly: z.boolean() })),
+          count: z.number(),
+          hasMore: z.boolean(),
+        })
+        .parse(search.structuredContent);
+      expect(matches.tools).toContainEqual({ name: 'finance_categories', readOnly: true });
+
+      const detailsResult = await client.callTool({
+        name: 'get_tool_details',
+        arguments: { name: 'finance_categories' },
+      });
+      const details = z
+        .object({
+          inputSchema: z.object({
+            type: z.literal('object'),
+            properties: z.record(z.string(), z.unknown()),
+          }),
+          outputSchema: z.record(z.string(), z.unknown()),
+        })
+        .parse(detailsResult.structuredContent);
+      expect(details.inputSchema).toMatchObject({ type: 'object', properties: {} });
+      expect(details.outputSchema).toMatchObject({ type: 'object' });
+
+      const execution = await client.callTool({
+        name: 'call_read_tool',
+        arguments: { name: 'finance_categories', arguments: {} },
+      });
+      expect(execution.isError).not.toBe(true);
+      expect(execution.structuredContent).toMatchObject({ categories: expect.any(Array) });
+
+      const wrongMode = await client.callTool({
+        name: 'call_write_tool',
+        arguments: { name: 'finance_categories', arguments: {} },
+      });
+      expect(wrongMode.isError).toBe(true);
+      expect(wrongMode.structuredContent).toMatchObject({ code: 'unknown_tool' });
     } finally {
       await client.close();
     }
@@ -368,8 +421,33 @@ describe('mcp server transport', () => {
   it('lists the five career worklog tools with house-style mode annotations', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
-      const tools = await client.listTools();
-      const byName = new Map(tools.tools.map((tool) => [tool.name, tool]));
+      const names = [
+        'career_worklog_entries',
+        'career_worklog_entry',
+        'career_worklog_create',
+        'career_worklog_update',
+        'career_worklog_delete',
+      ];
+      const detailsSchema = z.object({
+        description: z.string(),
+        inputSchema: z.object({ properties: z.record(z.string(), z.unknown()) }),
+        annotations: z.object({
+          readOnlyHint: z.boolean(),
+          destructiveHint: z.boolean(),
+          idempotentHint: z.boolean(),
+        }),
+      });
+      const byName = new Map(
+        await Promise.all(
+          names.map(async (name) => {
+            const result = await client.callTool({
+              name: 'get_tool_details',
+              arguments: { name },
+            });
+            return [name, detailsSchema.parse(result.structuredContent)] as const;
+          }),
+        ),
+      );
 
       const expectedModes: Record<string, string> = {
         career_worklog_entries: 'Mode: read-only.',
@@ -385,13 +463,9 @@ describe('mcp server transport', () => {
         expect(tool?.description, name).toContain(mode);
       }
 
-      // Parameter names are read off the live inputSchema, not the source schema.
+      // Parameter names are read from the single schema fetched on demand.
       const properties = (name: string) =>
-        Object.keys(
-          z
-            .object({ properties: z.record(z.string(), z.unknown()) })
-            .parse(byName.get(name)?.inputSchema).properties,
-        ).sort();
+        Object.keys(byName.get(name)!.inputSchema.properties).sort();
 
       expect(properties('career_worklog_entries')).toEqual([
         'engagementId',
@@ -457,24 +531,32 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('advertises ChatGPT safety annotations and invocation status', async () => {
+  it('returns safety annotations in requested tool details', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
-      const tools = await client.listTools();
-      const deleteTool = tools.tools.find((tool) => tool.name === 'career_wishlist_remove');
-      const readTool = tools.tools.find((tool) => tool.name === 'career_engagements');
+      const getDetails = async (name: string) => {
+        const result = await client.callTool({ name: 'get_tool_details', arguments: { name } });
+        return z
+          .object({
+            annotations: z.object({
+              readOnlyHint: z.boolean(),
+              destructiveHint: z.boolean(),
+              idempotentHint: z.boolean(),
+              openWorldHint: z.boolean(),
+            }),
+          })
+          .parse(result.structuredContent).annotations;
+      };
+      const deleteTool = await getDetails('career_wishlist_remove');
+      const readTool = await getDetails('career_engagements');
 
-      expect(deleteTool?.annotations).toMatchObject({
+      expect(deleteTool).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       });
-      expect(deleteTool?._meta).toMatchObject({
-        'openai/toolInvocation/invoking': expect.any(String),
-        'openai/toolInvocation/invoked': expect.any(String),
-      });
-      expect(readTool?.annotations).toMatchObject({
+      expect(readTool).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
         idempotentHint: false,
@@ -485,17 +567,28 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('declares task_complete idempotent, not just non-destructive', async () => {
+  it('returns idempotency annotations when tool details are requested', async () => {
     // Regression: the old name-regex fallback (delete|remove|update|save)
     // never matched "complete", so this tool used to be mislabeled
     // idempotentHint: false even though completing/reopening a task twice
     // with the same value is a no-op. Now declared explicitly in tasks.ts.
     const client = await createClient(createApp(mcpAuthContext), 'task:read task:write');
     try {
-      const tools = await client.listTools();
-      const completeTool = tools.tools.find((tool) => tool.name === 'task_complete');
+      const result = await client.callTool({
+        name: 'get_tool_details',
+        arguments: { name: 'task_complete' },
+      });
+      const completeTool = z
+        .object({
+          annotations: z.object({
+            readOnlyHint: z.boolean(),
+            destructiveHint: z.boolean(),
+            idempotentHint: z.boolean(),
+          }),
+        })
+        .parse(result.structuredContent);
 
-      expect(completeTool?.annotations).toMatchObject({
+      expect(completeTool.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
@@ -1405,12 +1498,20 @@ describe('delete confirmation from a client without elicitation', () => {
   it('only advertises the confirmation argument on tools that require it', async () => {
     const client = await createClient(createApp(mcpAuthContext), notesScopes);
     try {
-      const byName = new Map((await client.listTools()).tools.map((tool) => [tool.name, tool]));
+      const details = new Map(
+        await Promise.all(
+          ['note_delete', 'note_get'].map(async (name) => {
+            const result = await client.callTool({ name: 'get_tool_details', arguments: { name } });
+            return [name, result.structuredContent] as const;
+          }),
+        ),
+      );
       const properties = (name: string) =>
         Object.keys(
           z
             .object({ properties: z.record(z.string(), z.unknown()) })
-            .parse(byName.get(name)?.inputSchema).properties,
+            .parse(z.object({ inputSchema: z.unknown() }).parse(details.get(name)).inputSchema)
+            .properties,
         ).sort();
 
       expect(properties('note_delete')).toEqual(['confirmToken', 'id']);

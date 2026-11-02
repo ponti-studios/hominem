@@ -2,6 +2,7 @@ import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { resolveMcpToken } from '../application/mcp-tokens.service';
 import type { AuthContext } from '../auth/types';
@@ -116,6 +117,21 @@ async function createClient(token: string) {
   return client;
 }
 
+async function discoverNames(client: Client, query: string) {
+  const names: string[] = [];
+  for (let offset = 0; ; offset += 20) {
+    const result = await client.callTool({
+      name: 'search_tools',
+      arguments: { query, limit: 20, offset },
+    });
+    const page = z
+      .object({ tools: z.array(z.object({ name: z.string() })), hasMore: z.boolean() })
+      .parse(result.structuredContent);
+    names.push(...page.tools.map(({ name }) => name));
+    if (!page.hasMore) return names;
+  }
+}
+
 beforeEach(() => {
   vi.mocked(resolveMcpToken).mockReset();
   captured.claims = null;
@@ -143,9 +159,8 @@ describe('mcp bearer token auth', () => {
     const client = await createClient('hmt_travel_reader_token');
 
     try {
-      const names = (await client.listTools()).tools.map((tool) => tool.name);
-      expect(names).toContain('trip_history');
-      expect(names).not.toContain('travel_import');
+      expect(await discoverNames(client, 'trip_history')).toContain('trip_history');
+      expect(await discoverNames(client, 'travel_import')).not.toContain('travel_import');
       await expect(
         client.callTool({
           name: 'travel_import',
@@ -231,10 +246,13 @@ describe('mcp bearer token auth', () => {
 
     try {
       const tools = await client.listTools();
-      const names = tools.tools.map((tool) => tool.name);
-
-      expect(names).toContain('career_profile');
-      expect(names).not.toContain('finance_net_worth');
+      expect(tools.tools.map((tool) => tool.name)).toEqual([
+        'call_read_tool',
+        'call_write_tool',
+        'get_tool_details',
+        'search_tools',
+      ]);
+      expect(await discoverNames(client, 'finance_net_worth')).not.toContain('finance_net_worth');
       await expect(client.callTool({ name: 'finance_net_worth', arguments: {} })).rejects.toThrow(
         'Insufficient scope',
       );
@@ -297,30 +315,30 @@ describe('mcp bearer token auth', () => {
     const fullyScopedFinanceWriter = await createClient('hmt_finance_full_write_token');
 
     try {
-      const readerTools = (await financeReader.listTools()).tools.map((tool) => tool.name);
-      expect(readerTools.filter((name) => name.startsWith('finance_'))).toEqual(readToolNames);
+      const readerTools = await discoverNames(financeReader, 'finance');
+      for (const toolName of readToolNames) expect(readerTools).toContain(toolName);
+      for (const toolName of writeToolNames) expect(readerTools).not.toContain(toolName);
       for (const toolName of writeToolNames) {
         await expect(financeReader.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
           'Insufficient scope',
         );
       }
 
-      const writerTools = (await financeWriter.listTools()).tools.map((tool) => tool.name);
+      const writerTools = await discoverNames(financeWriter, 'finance');
       const financeWriteNamesGrantedByFinanceWrite = financeTools
         .filter((tool) => !tool.readOnly && tool.scopes.every((scope) => scope === 'finance:write'))
         .map((tool) => tool.name);
       expect(writerTools.filter((name) => name.startsWith('finance_'))).toEqual(
         financeWriteNamesGrantedByFinanceWrite,
       );
+      for (const toolName of readToolNames) expect(writerTools).not.toContain(toolName);
       for (const toolName of readToolNames) {
         await expect(financeWriter.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
           'Insufficient scope',
         );
       }
 
-      const fullyScopedWriterTools = (await fullyScopedFinanceWriter.listTools()).tools.map(
-        (tool) => tool.name,
-      );
+      const fullyScopedWriterTools = await discoverNames(fullyScopedFinanceWriter, 'finance');
       expect(fullyScopedWriterTools.filter((name) => name.startsWith('finance_'))).toEqual(
         writeToolNames,
       );
@@ -347,8 +365,9 @@ describe('mcp bearer token auth', () => {
     const writer = await createClient('hmt_travel_write_token');
 
     try {
-      const discoveredRead = (await reader.listTools()).tools.map((tool) => tool.name);
-      expect(discoveredRead.filter((name) => name.startsWith('travel_'))).toEqual(readNames);
+      const discoveredRead = await discoverNames(reader, 'travel');
+      for (const name of readNames) expect(discoveredRead).toContain(name);
+      for (const name of writeNames) expect(discoveredRead).not.toContain(name);
       expect(readNames).toContain('travel_validate');
       expect(readNames).toContain('travel_timeline');
       await reader.callTool({ name: 'travel_validate', arguments: {} });
@@ -358,8 +377,9 @@ describe('mcp bearer token auth', () => {
         );
       }
 
-      const discoveredWrite = (await writer.listTools()).tools.map((tool) => tool.name);
-      expect(discoveredWrite.filter((name) => name.startsWith('travel_'))).toEqual(writeNames);
+      const discoveredWrite = await discoverNames(writer, 'travel');
+      for (const name of writeNames) expect(discoveredWrite).toContain(name);
+      for (const name of readNames) expect(discoveredWrite).not.toContain(name);
       for (const name of readNames) {
         await expect(writer.callTool({ name, arguments: {} })).rejects.toThrow(
           'Insufficient scope',

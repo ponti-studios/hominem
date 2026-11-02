@@ -240,12 +240,20 @@ codex mcp logout hominem
 codex mcp login hominem
 ```
 
-Request only the domains the client needs. `/api/mcp` lists tools that match
-the granted scopes, so a finance-only grant avoids transferring schemas for
-other domains. Keep the MCP transport/session open and reuse it for multiple
-tool calls; initializing a new session for each call repeats protocol setup
-and tool discovery. The per-user production request limit is 30 requests per
-second; a 429 includes a stable `rate_limited` code and `Retry-After` guidance.
+Request only the domains the client needs. `/api/mcp` lists four lightweight
+discovery operations instead of every tool schema. Use `search_tools` to find
+operations available to the granted scopes, `get_tool_details` to fetch one
+operation's input/output schemas, and `call_read_tool` or `call_write_tool` to
+execute it. Search and details never return operations outside the token's
+scopes; execution retains the same scope, validation, billing, and confirmation
+checks as direct calls. Existing clients that already know direct tool names
+can continue calling them, but new clients should use this progressive flow.
+Hominem Chat uses the same catalog-then-select pattern internally.
+
+Keep the MCP transport/session open and reuse it for multiple tool calls;
+initializing a new session for each call repeats protocol setup and tool
+discovery. The per-user production request limit is 30 requests per second; a
+429 includes a stable `rate_limited` code and `Retry-After` guidance.
 When the shared limiter is unavailable, the API returns a typed 503 with a
 five-second retry delay.
 
