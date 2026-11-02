@@ -1,6 +1,6 @@
 import type { AppType } from '@hominem/api/types';
 import { hc } from 'hono/client';
-import { Agent } from 'undici';
+import { Agent, fetch as undiciFetch } from 'undici';
 
 import { createCustomFetch, type ApiFetch, type ClientConfig, type HonoClient } from './api-client';
 
@@ -16,11 +16,14 @@ export const internalDispatcher = new Agent({
   keepAliveMaxTimeout: KEEP_ALIVE_TIMEOUT_MS * 2,
 });
 
-// Node's global fetch is undici, so the agent plugs in through the standard
-// `dispatcher` init option. Resolving `fetch` per call (rather than importing
-// undici's fetch) keeps test interceptors like MSW in the loop.
+// Use fetch and Agent from the same Undici version so the dispatcher contract
+// matches across Node versions.
 export const customFetch = (config: ClientConfig): ApiFetch =>
-  createCustomFetch({ timeoutMs: REQUEST_TIMEOUT_MS, ...config }, fetch, internalDispatcher);
+  createCustomFetch(
+    { timeoutMs: REQUEST_TIMEOUT_MS, ...config },
+    undiciFetch as unknown as typeof fetch,
+    internalDispatcher,
+  );
 
 export function createApiClient(config: ClientConfig): HonoClient {
   return hc<AppType>(config.baseUrl, { fetch: customFetch(config) });
