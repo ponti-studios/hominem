@@ -104,6 +104,9 @@ function mergeResponse(result: MergeFinanceCategoriesResult, dryRun: boolean) {
     })),
     totalsUnchanged: result.totalsUnchanged,
     budgetMerge: budgetMergeResponse(result.budgetMerge),
+    warnings: [
+      'External rule sources are not discoverable by this API; name-based references have not been verified.',
+    ],
     dryRun,
   };
 }
@@ -505,7 +508,7 @@ registerTool(
       const result = await mergeFinanceCategories(
         ownerUserId,
         { from: parsed.data.from, into: parsed.data.into },
-        { dryRun: true },
+        { dryRun: true, stage: parsed.data.stage },
       );
       return result.reason
         ? null
@@ -536,6 +539,9 @@ registerTool(
               currencyCode: budget.currencyCode,
               amount: budget.amountCents / 100,
             })),
+            warnings: [
+              'External rule sources are not discoverable by this API; name-based references have not been verified.',
+            ],
             totalsUnchanged: result.totalsUnchanged,
           };
     },
@@ -546,7 +552,10 @@ registerTool(
       { from: input.from, into: input.into },
       { dryRun: input.dryRun, stage: input.stage },
     );
-    if (result.reason === 'untagged_sources') {
+    if (result.reason === 'unknown_category') {
+      throw new NotFoundError('Finance category', { reason: 'unknown_category' });
+    }
+    if (!input.dryRun && result.reason === 'untagged_sources') {
       // The preserve stage has not run, so the merge would lose which transactions came from
       // which source category.
       throw new ValidationError(
@@ -554,7 +563,7 @@ registerTool(
         { reason: result.reason, untaggedSources: result.untaggedSources },
       );
     }
-    if (result.reason === 'unrepointed_rules') {
+    if (!input.dryRun && result.reason === 'unrepointed_rules') {
       // A merge may not complete while an automation still names a source: it would recreate the
       // category on the next import. Name the rules so they can be repointed.
       throw new ValidationError(

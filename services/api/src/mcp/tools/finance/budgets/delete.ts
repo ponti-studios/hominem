@@ -1,3 +1,5 @@
+import { NotFoundError } from '@hominem/db/errors';
+
 import { deleteBudget, getBudgetPreview } from '../../../../application/finance-budgets.service';
 import {
   financeBudgetDeleteInputSchema,
@@ -10,7 +12,7 @@ export const financeBudgetDeleteTool = defineMcpTool(
     name: 'finance_budget_delete',
     title: 'Finance Budget Delete',
     description:
-      'Delete a budget — a category budget or one of its tag budgets. Deleting a category budget also deletes the tag budgets nested inside it. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion.',
+      'Delete a budget — a category budget or one of its tag budgets. Deleting a category budget also deletes the tag budgets nested inside it. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion. Set dryRun to list every affected budget without writing or requesting confirmation.',
     inputSchema: financeBudgetDeleteInputSchema,
     outputSchema: financeBudgetDeleteOutputSchema,
     readOnly: false,
@@ -40,5 +42,10 @@ export const financeBudgetDeleteTool = defineMcpTool(
         : null;
     },
   },
-  async (ownerUserId, input) => deleteBudget(ownerUserId, input.budgetId),
+  async (ownerUserId, input) => {
+    const result = await deleteBudget(ownerUserId, input.budgetId, { dryRun: input.dryRun });
+    if (input.dryRun) return result;
+    if (!result.removed) throw new NotFoundError('Budget', { reason: 'not_found' });
+    return result;
+  },
 );

@@ -6,8 +6,9 @@ import {
   type FinanceBudgetRecord,
   type UncountedForeignTransaction,
 } from '@hominem/db/finance';
+import { resolvePreviewFinanceCategoryId } from '@hominem/finance-services';
 
-import { validateNestedBudgets } from './finance-budget-nesting';
+import { previewNestedBudgets, validateNestedBudgets } from './finance-budget-nesting';
 import {
   evaluateCategoryBudgetPacing,
   type BudgetBreach,
@@ -65,6 +66,7 @@ export type BudgetWriteInput = {
   cadence: FinanceBudgetCadence;
   /** Set to create or replace the budget for that tag inside the category. */
   tagId?: string | null;
+  dryRun?: boolean;
 };
 
 export type TagBudgetWriteInput = {
@@ -100,6 +102,7 @@ async function requirePrimaryCurrency(ownerUserId: string): Promise<string> {
   if (!currency) {
     throw new ValidationError(
       'Set your primary currency with finance_primary_currency_set before using budgets.',
+      { reason: 'primary_currency_unset' },
     );
   }
   return currency;
@@ -276,9 +279,48 @@ async function assertNestedBudgets(
 }
 
 export async function listBudgets(ownerUserId: string) {
-  const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
+  const primaryCurrency = await FinanceBudgetRepository.getPrimaryCurrency(db, ownerUserId);
+  const categoryBudgets = await FinanceBudgetRepository.list(db, ownerUserId, 500);
+  const budgets = primaryCurrency
+    ? categoryBudgets
+    : (
+        await Promise.all(
+          categoryBudgets.map((budget) =>
+            FinanceBudgetRepository.listByCategory(db, ownerUserId, budget.categoryId),
+          ),
+        )
+      ).flat();
+  if (!primaryCurrency) {
+    return {
+      primaryCurrency: null,
+      budgets: budgets.map(
+        ({ id, categoryId, categoryName, tagId, tagName, amountCents, cadence }) => ({
+          id,
+          categoryId,
+          categoryName,
+          tagId,
+          tagName,
+          amountCents,
+          cadence,
+        }),
+      ),
+      breaches: [],
+      count: budgets.length,
+      warning: 'Primary currency is unset; budget amounts are shown without spend calculations.',
+      storedBudgets: budgets.map(
+        ({ id, categoryId, categoryName, tagId, tagName, amountCents, cadence }) => ({
+          id,
+          categoryId,
+          categoryName,
+          tagId,
+          tagName,
+          amountCents,
+          cadence,
+        }),
+      ),
+    };
+  }
   const now = new Date();
-  const budgets = await FinanceBudgetRepository.list(db, ownerUserId);
   const statuses = await Promise.all(
     budgets.map((budget) => toStatus(budget, primaryCurrency, now)),
   );
@@ -287,16 +329,101 @@ export async function listBudgets(ownerUserId: string) {
     budgets: statuses,
     breaches: statuses.flatMap((status) => (status.breach ? [status.breach] : [])),
     count: statuses.length,
+    warning: null,
+    storedBudgets: [],
   };
 }
 
 export async function getBudget(ownerUserId: string, budgetId: string, now: Date = new Date()) {
-  const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
   const budget = await FinanceBudgetRepository.get(db, ownerUserId, budgetId);
-  return { budget: budget ? await toStatus(budget, primaryCurrency, now) : null };
+  const primaryCurrency = await FinanceBudgetRepository.getPrimaryCurrency(db, ownerUserId);
+  if (!primaryCurrency) {
+    return {
+      budget: budget
+        ? {
+            id: budget.id,
+            categoryId: budget.categoryId,
+            categoryName: budget.categoryName,
+            tagId: budget.tagId,
+            tagName: budget.tagName,
+            amountCents: budget.amountCents,
+            cadence: budget.cadence,
+          }
+        : null,
+      warning: 'Primary currency is unset; budget amounts are shown without spend calculations.',
+      storedBudget: budget
+        ? {
+            id: budget.id,
+            categoryId: budget.categoryId,
+            categoryName: budget.categoryName,
+            tagId: budget.tagId,
+            tagName: budget.tagName,
+            amountCents: budget.amountCents,
+            cadence: budget.cadence,
+          }
+        : null,
+    };
+  }
+  return {
+    budget: budget ? await toStatus(budget, primaryCurrency, now) : null,
+    warning: null,
+    storedBudget: null,
+  };
 }
 
 export async function createBudget(ownerUserId: string, input: BudgetWriteInput) {
+  const category =
+    input.dryRun && input.categoryId.startsWith('preview-category:')
+      ? resolvePreviewFinanceCategoryId(ownerUserId, input.categoryId)
+      : await FinanceBudgetRepository.findCategory(db, ownerUserId, input.categoryId);
+  if (!category) {
+    return {
+      budget: null,
+      created: false,
+      reason: 'unknown_category' as const,
+      dryRun: input.dryRun ?? false,
+      preview: null,
+    };
+  }
+  if (input.dryRun) {
+    const rows = input.categoryId.startsWith('preview-category:')
+      ? []
+      : await FinanceBudgetRepository.listByCategory(db, ownerUserId, input.categoryId);
+    const tagId = input.tagId ?? null;
+    const existing = rows.find((row) => row.tagId === tagId);
+    const projected = [
+      ...rows
+        .filter((row) => row.tagId !== tagId)
+        .map((row) => ({
+          id: row.id,
+          tagId: row.tagId,
+          amountCents: row.amountCents,
+          cadence: row.cadence,
+        })),
+      { id: existing?.id ?? null, tagId, amountCents: input.amountCents, cadence: input.cadence },
+    ];
+    const categoryBudget = projected.find((row) => row.tagId === null);
+    const validation = previewNestedBudgets({
+      categoryName: category.name,
+      categoryBudgetCents: categoryBudget?.amountCents ?? null,
+      categoryCadence: categoryBudget?.cadence ?? input.cadence,
+      tagBudgets: projected.flatMap((row) =>
+        row.tagId === null ? [] : [{ amountCents: row.amountCents, cadence: row.cadence }],
+      ),
+    });
+    return {
+      budget: null,
+      created: !existing,
+      reason: null,
+      dryRun: true,
+      preview: {
+        categoryId: category.id,
+        categoryName: category.name,
+        budgets: projected,
+        validation: { ...validation, categoryBudgetCents: categoryBudget?.amountCents ?? null },
+      },
+    };
+  }
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
   const saved = await runInTransaction(async (trx) => {
     const category = await FinanceBudgetRepository.lockCategory(trx, ownerUserId, input.categoryId);
@@ -305,11 +432,20 @@ export async function createBudget(ownerUserId: string, input: BudgetWriteInput)
     await assertNestedBudgets(trx, ownerUserId, input.categoryId, category.name);
     return result;
   });
-  if (!saved) return { budget: null, created: false, reason: 'unknown_category' as const };
+  if (!saved)
+    return {
+      budget: null,
+      created: false,
+      reason: 'unknown_category' as const,
+      dryRun: false,
+      preview: null,
+    };
   return {
     budget: await toStatus(saved.budget, primaryCurrency, new Date()),
     created: saved.created,
     reason: null,
+    dryRun: false,
+    preview: null,
   };
 }
 
@@ -317,11 +453,40 @@ export async function updateBudget(
   ownerUserId: string,
   budgetId: string,
   patch: { amountCents?: number; cadence?: FinanceBudgetCadence },
+  options?: { dryRun?: boolean },
 ) {
+  const existing = await FinanceBudgetRepository.get(db, ownerUserId, budgetId);
+  if (!existing) return { budget: null, dryRun: options?.dryRun ?? false, preview: null };
+  if (options?.dryRun) {
+    const rows = await FinanceBudgetRepository.listByCategory(db, ownerUserId, existing.categoryId);
+    const projected = rows.map((row) => ({
+      id: row.id,
+      tagId: row.tagId,
+      amountCents: row.id === budgetId ? (patch.amountCents ?? row.amountCents) : row.amountCents,
+      cadence: row.id === budgetId ? (patch.cadence ?? row.cadence) : row.cadence,
+    }));
+    const categoryBudget = projected.find((row) => row.tagId === null);
+    const validation = previewNestedBudgets({
+      categoryName: existing.categoryName,
+      categoryBudgetCents: categoryBudget?.amountCents ?? null,
+      categoryCadence: categoryBudget?.cadence ?? existing.cadence,
+      tagBudgets: projected.flatMap((row) =>
+        row.tagId === null ? [] : [{ amountCents: row.amountCents, cadence: row.cadence }],
+      ),
+    });
+    return {
+      budget: null,
+      dryRun: true,
+      preview: {
+        categoryId: existing.categoryId,
+        categoryName: existing.categoryName,
+        budgets: projected,
+        validation: { ...validation, categoryBudgetCents: categoryBudget?.amountCents ?? null },
+      },
+    };
+  }
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
   const saved = await runInTransaction(async (trx) => {
-    const existing = await FinanceBudgetRepository.get(trx, ownerUserId, budgetId);
-    if (!existing) return null;
     const category = await FinanceBudgetRepository.lockCategory(
       trx,
       ownerUserId,
@@ -333,7 +498,11 @@ export async function updateBudget(
     await assertNestedBudgets(trx, ownerUserId, existing.categoryId, category.name);
     return updated;
   });
-  return { budget: saved ? await toStatus(saved, primaryCurrency, new Date()) : null };
+  return {
+    budget: saved ? await toStatus(saved, primaryCurrency, new Date()) : null,
+    dryRun: false,
+    preview: null,
+  };
 }
 
 /**
@@ -348,8 +517,55 @@ export async function setCategoryBudgets(
     amountCents: number;
     cadence: FinanceBudgetCadence;
     tagBudgets: TagBudgetWriteInput[];
+    dryRun?: boolean;
   },
 ) {
+  const category =
+    input.dryRun && input.categoryId.startsWith('preview-category:')
+      ? resolvePreviewFinanceCategoryId(ownerUserId, input.categoryId)
+      : await FinanceBudgetRepository.findCategory(db, ownerUserId, input.categoryId);
+  if (!category) {
+    return {
+      budget: null,
+      reason: 'unknown_category' as const,
+      dryRun: input.dryRun ?? false,
+      preview: null,
+    };
+  }
+  if (input.dryRun) {
+    const rows = input.categoryId.startsWith('preview-category:')
+      ? []
+      : await FinanceBudgetRepository.listByCategory(db, ownerUserId, input.categoryId);
+    const projected = [
+      {
+        id: rows.find((row) => row.tagId === null)?.id ?? null,
+        tagId: null,
+        amountCents: input.amountCents,
+        cadence: input.cadence,
+      },
+      ...input.tagBudgets.map((budget) => ({
+        id: rows.find((row) => row.tagId === budget.tagId)?.id ?? null,
+        ...budget,
+      })),
+    ];
+    const validation = previewNestedBudgets({
+      categoryName: category.name,
+      categoryBudgetCents: input.amountCents,
+      categoryCadence: input.cadence,
+      tagBudgets: input.tagBudgets,
+    });
+    return {
+      budget: null,
+      reason: null,
+      dryRun: true,
+      preview: {
+        categoryId: category.id,
+        categoryName: category.name,
+        budgets: projected,
+        validation: { ...validation, categoryBudgetCents: input.amountCents },
+      },
+    };
+  }
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
   const saved = await runInTransaction(async (trx) => {
     const category = await FinanceBudgetRepository.lockCategory(trx, ownerUserId, input.categoryId);
@@ -371,10 +587,36 @@ export async function setCategoryBudgets(
   return {
     budget: saved ? await toStatus(saved, primaryCurrency, new Date()) : null,
     reason: saved ? null : ('unknown_category' as const),
+    dryRun: false,
+    preview: null,
   };
 }
 
-export async function deleteBudget(ownerUserId: string, budgetId: string) {
+export async function deleteBudget(
+  ownerUserId: string,
+  budgetId: string,
+  options?: { dryRun?: boolean },
+) {
+  if (options?.dryRun) {
+    const budget = await FinanceBudgetRepository.get(db, ownerUserId, budgetId);
+    if (!budget) return { removed: false, dryRun: true, preview: [] };
+    const affected =
+      budget.tagId === null
+        ? await FinanceBudgetRepository.listByCategory(db, ownerUserId, budget.categoryId)
+        : [budget];
+    return {
+      removed: false,
+      dryRun: true,
+      preview: affected.map(({ id, categoryId, categoryName, tagId, amountCents, cadence }) => ({
+        id,
+        categoryId,
+        categoryName,
+        tagId,
+        amountCents,
+        cadence,
+      })),
+    };
+  }
   const removed = await runInTransaction(async (trx) => {
     const budget = await FinanceBudgetRepository.get(trx, ownerUserId, budgetId);
     if (!budget) return false;
@@ -383,7 +625,7 @@ export async function deleteBudget(ownerUserId: string, budgetId: string) {
     }
     return FinanceBudgetRepository.remove(trx, ownerUserId, budgetId);
   });
-  return { removed };
+  return { removed, dryRun: false, preview: [] };
 }
 
 /** Preview data for the delete confirmation: no currency or spend needed to show what goes. */
@@ -399,13 +641,51 @@ export async function getBudgetPreview(ownerUserId: string, budgetId: string) {
     : null;
 }
 
-export async function setPrimaryCurrency(ownerUserId: string, currencyCode: string) {
+export async function setPrimaryCurrency(
+  ownerUserId: string,
+  currencyCode: string,
+  options?: { dryRun?: boolean },
+) {
+  if (options?.dryRun) {
+    const previousCurrency = await FinanceBudgetRepository.getPrimaryCurrency(db, ownerUserId);
+    const categoryBudgets = await FinanceBudgetRepository.list(db, ownerUserId, 500);
+    const affectedBudgets = (
+      await Promise.all(
+        categoryBudgets.map((budget) =>
+          FinanceBudgetRepository.listByCategory(db, ownerUserId, budget.categoryId),
+        ),
+      )
+    ).flat();
+    return {
+      primaryCurrency: currencyCode.toUpperCase(),
+      dryRun: true,
+      preview: {
+        previousCurrency,
+        affectedBudgets: affectedBudgets.map(
+          ({ id, categoryId, categoryName, tagId, tagName, amountCents, cadence }) => ({
+            id,
+            categoryId,
+            categoryName,
+            tagId,
+            tagName,
+            amountCents,
+            cadence,
+          }),
+        ),
+      },
+    };
+  }
+  const previousCurrency = await FinanceBudgetRepository.getPrimaryCurrency(db, ownerUserId);
   const primaryCurrency = await FinanceBudgetRepository.setPrimaryCurrency(
     db,
     ownerUserId,
     currencyCode.toUpperCase(),
   );
-  return { primaryCurrency };
+  return {
+    primaryCurrency,
+    dryRun: false,
+    preview: { previousCurrency, affectedBudgets: [] },
+  };
 }
 
 /** Seeds Groceries £250/month and Dining Out £300/month as the first budget rows. */

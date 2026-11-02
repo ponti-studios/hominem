@@ -168,21 +168,28 @@ export const FinanceBudgetRepository = {
       return { budget: null, tagBudgets: [], sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
     }
 
-    for (const categoryId of [...sourceCategoryIds, targetCategoryId].sort()) {
-      if (!(await FinanceBudgetRepository.lockCategory(handle, ownerUserId, categoryId))) {
-        throw new ValidationError('A category disappeared while its budgets were being merged.', {
-          ownerUserId,
-          categoryId,
-        });
+    if (!options?.dryRun) {
+      for (const categoryId of [...sourceCategoryIds, targetCategoryId].sort()) {
+        if (!(await FinanceBudgetRepository.lockCategory(handle, ownerUserId, categoryId))) {
+          throw new ValidationError('A category disappeared while its budgets were being merged.', {
+            ownerUserId,
+            categoryId,
+          });
+        }
       }
     }
 
-    const budgets = await handle
-      .selectFrom('app.financeBudgets')
-      .select(['id', 'categoryId', 'tagId', 'amountCents', 'cadence'])
-      .where('userId', '=', ownerUserId)
-      .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
-      .execute();
+    const isUuid = (value: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    const realCategoryIds = [...sourceCategoryIds, targetCategoryId].filter(isUuid);
+    const budgets = realCategoryIds.length
+      ? await handle
+          .selectFrom('app.financeBudgets')
+          .select(['id', 'categoryId', 'tagId', 'amountCents', 'cadence'])
+          .where('userId', '=', ownerUserId)
+          .where('categoryId', 'in', realCategoryIds)
+          .execute()
+      : [];
     const categoryBudgets = budgets.filter((budget) => budget.tagId === null);
     const nestedBudgets = budgets.filter((budget) => budget.tagId !== null);
     const target = categoryBudgets.find((budget) => budget.categoryId === targetCategoryId);
@@ -328,15 +335,17 @@ export const FinanceBudgetRepository = {
       }
     }
 
-    const monthlyBudgets = await handle
-      .selectFrom('app.financeMonthlyBudgets')
-      .select('currencyCode')
-      .select((eb) => eb.fn.sum<string>('monthlyAmount').as('monthlyAmount'))
-      .where('userId', '=', ownerUserId)
-      .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
-      .groupBy('currencyCode')
-      .orderBy('currencyCode', 'asc')
-      .execute();
+    const monthlyBudgets = realCategoryIds.length
+      ? await handle
+          .selectFrom('app.financeMonthlyBudgets')
+          .select('currencyCode')
+          .select((eb) => eb.fn.sum<string>('monthlyAmount').as('monthlyAmount'))
+          .where('userId', '=', ownerUserId)
+          .where('categoryId', 'in', realCategoryIds)
+          .groupBy('currencyCode')
+          .orderBy('currencyCode', 'asc')
+          .execute()
+      : [];
     const monthlyRunwayBudgets = monthlyBudgets.map((budget) => ({
       currencyCode: budget.currencyCode,
       amountCents: Math.round(Number(budget.monthlyAmount) * 100),

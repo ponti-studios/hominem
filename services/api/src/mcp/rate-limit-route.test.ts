@@ -21,7 +21,10 @@ const mocks = vi.hoisted(() => {
   return { checkRateLimit: vi.fn(), auth };
 });
 
-vi.mock('./rate-limiter', () => ({ checkRateLimit: mocks.checkRateLimit }));
+vi.mock('./rate-limiter', () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  MCP_RATE_LIMIT: { limit: 30, windowSec: 1 },
+}));
 vi.mock('../env', async () => {
   const actual = await vi.importActual<typeof import('../env')>('../env');
   return { ...actual, env: { ...actual.env, NODE_ENV: 'production' } };
@@ -72,6 +75,7 @@ describe('MCP rate-limit route behavior', () => {
     expect(response.headers.get('retry-after')).toBe('5');
     await expect(response.json()).resolves.toMatchObject({
       error: 'rate_limit_unavailable',
+      code: 'rate_limit_unavailable',
     });
   });
 
@@ -81,6 +85,20 @@ describe('MCP rate-limit route behavior', () => {
     const response = await app.request('/api/mcp');
 
     expect(response.status).toBe(429);
-    await expect(response.json()).resolves.toMatchObject({ error: 'rate_limited' });
+    expect(response.headers.get('retry-after')).toBe('1');
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'rate_limited',
+      code: 'rate_limited',
+      retryAfterSeconds: 1,
+    });
+  });
+
+  it('lets five overlapping authenticated requests reach the handler', async () => {
+    mocks.checkRateLimit.mockResolvedValue('allowed');
+    const app = createApp();
+    const responses = await Promise.all(Array.from({ length: 5 }, () => app.request('/api/mcp')));
+
+    expect(responses.map((response) => response.status)).toEqual([200, 200, 200, 200, 200]);
+    expect(mocks.checkRateLimit).toHaveBeenCalledTimes(5);
   });
 });

@@ -6,7 +6,7 @@ import { betterAuthServer } from '../auth/better-auth';
 import { env } from '../env';
 import { setMcpAuthContext } from '../middleware/auth';
 import { MCP_SCOPES } from '../scopes';
-import { checkRateLimit } from './rate-limiter';
+import { checkRateLimit, MCP_RATE_LIMIT } from './rate-limiter';
 import { ensureMcpToolsRegistered } from './register-tools';
 import { handleMcpRequest, type McpHonoEnv } from './server';
 import { listTools } from './tool-registry';
@@ -77,16 +77,29 @@ function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
     if (inputEnv.NODE_ENV === 'production') {
       const rateLimitResult = await checkRateLimit(auth.userId);
       if (rateLimitResult === 'unavailable') {
-        return new Response(JSON.stringify({ error: 'rate_limit_unavailable' }), {
-          status: 503,
-          headers: { 'content-type': 'application/json', 'retry-after': '5' },
-        });
+        return new Response(
+          JSON.stringify({ error: 'rate_limit_unavailable', code: 'rate_limit_unavailable' }),
+          {
+            status: 503,
+            headers: { 'content-type': 'application/json', 'retry-after': '5' },
+          },
+        );
       }
       if (rateLimitResult === 'limited') {
-        return new Response(JSON.stringify({ error: 'rate_limited' }), {
-          status: 429,
-          headers: { 'content-type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            error: 'rate_limited',
+            code: 'rate_limited',
+            retryAfterSeconds: MCP_RATE_LIMIT.windowSec,
+          }),
+          {
+            status: 429,
+            headers: {
+              'content-type': 'application/json',
+              'retry-after': String(MCP_RATE_LIMIT.windowSec),
+            },
+          },
+        );
       }
     }
 

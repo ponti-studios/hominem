@@ -240,6 +240,25 @@ codex mcp logout hominem
 codex mcp login hominem
 ```
 
+Request only the domains the client needs. `/api/mcp` lists tools that match
+the granted scopes, so a finance-only grant avoids transferring schemas for
+other domains. Keep the MCP transport/session open and reuse it for multiple
+tool calls; initializing a new session for each call repeats protocol setup
+and tool discovery. The per-user production request limit is 30 requests per
+second; a 429 includes a stable `rate_limited` code and `Retry-After` guidance.
+When the shared limiter is unavailable, the API returns a typed 503 with a
+five-second retry delay.
+
+Measure a local finance-only tool list and latency with the API perf harness:
+
+```bash
+MCP_PERF_SCOPES=finance:read,finance:write MCP_PERF_ITERATIONS=20 pnpm --filter @hominem/api mcp:perf
+```
+
+The harness runs in-process and excludes auth middleware, Redis rate limiting,
+and the network proxy. Treat its numbers as server-construction measurements,
+not production request latency.
+
 ## MCP personal tokens
 
 AI clients that cannot run the MCP OAuth browser flow (for example Muse's
@@ -271,7 +290,8 @@ data. It is `cj+mcp-test@ponti.io` (empty data, already verified). `services/api
 MCP_TOKEN="$HOMINEM_MCP_TEST_TOKEN" pnpm --filter @hominem/api mcp:smoke
 ```
 
-The smoke test makes many calls at once, so the per-user rate limit may answer 429 near the end.
+Keep production smoke calls serialized. The per-user rate limit is 30 requests
+per second and returns retry guidance if a client exceeds it.
 
 ## Production incident investigation
 

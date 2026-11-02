@@ -1,5 +1,6 @@
 import { db, pool, sql } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
+import { FinanceBudgetRepository } from '@hominem/db/finance';
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -71,6 +72,30 @@ type Content = {
   removed?: boolean;
   primaryCurrency?: string;
   count?: number;
+  warning?: string | null;
+  storedBudgets?: Array<Record<string, unknown>>;
+  storedBudget?: Record<string, unknown> | null;
+  dryRun?: boolean;
+  preview?: {
+    budgets?: Array<{
+      id: string | null;
+      tagId: string | null;
+      amountCents: number;
+      cadence: string;
+    }>;
+    validation?: {
+      valid: boolean;
+      tagBudgetSumCents: number;
+      categoryBudgetCents: number | null;
+      overageCents: number;
+    };
+    categoryId?: string;
+    categoryName?: string;
+    previousCurrency?: string | null;
+    affectedBudgets?: Array<Record<string, unknown>>;
+    id?: string;
+    removed?: boolean;
+  };
 };
 
 function content(result: McpToolResult<Content>): Content {
@@ -244,6 +269,58 @@ beforeEach(async () => {
 });
 
 describe('finance_budget_create', () => {
+  it('reports a missing category before the unset-currency gate', async () => {
+    await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
+    await expect(
+      callTool(userId, 'finance_budget_create', {
+        categoryId: otherDiningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'unknown_category' } });
+  });
+
+  it('previews creates without writing and projects cadence-aware nested validation', async () => {
+    const coffeeTagId = await insertTag('Preview Coffee');
+    const result = content(
+      await callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [{ tagId: coffeeTagId, amountCents: 40_000, cadence: 'monthly' }],
+        dryRun: true,
+      }),
+    );
+    expect(result).toMatchObject({
+      dryRun: true,
+      preview: {
+        validation: {
+          valid: false,
+          tagBudgetSumCents: 40_000,
+          categoryBudgetCents: 30_000,
+          overageCents: 10_000,
+          message: expect.stringContaining('Budget Cadence Dining'),
+        },
+      },
+    });
+    await expect(
+      db.selectFrom('app.financeBudgets').select('id').where('userId', '=', userId).execute(),
+    ).resolves.toEqual([]);
+
+    const create = content(
+      await callTool(userId, 'finance_budget_create', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        dryRun: true,
+      }),
+    );
+    expect(create.preview?.budgets).toEqual([
+      { id: null, tagId: null, amountCents: 30_000, cadence: 'monthly' },
+    ]);
+    expect(create.dryRun).toBe(true);
+  });
+
   it('requires the profile primary currency before a budget can exist', async () => {
     await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
 
@@ -313,19 +390,41 @@ describe('finance_budget_create', () => {
   });
 
   it('reports an unknown category instead of creating a budget', async () => {
-    const result = content(
-      await callTool(userId, 'finance_budget_create', {
+    await expect(
+      callTool(userId, 'finance_budget_create', {
         categoryId: otherDiningId,
         amountCents: 30_000,
         cadence: 'monthly',
       }),
-    );
-    expect(result.budget).toBeNull();
-    expect(result.reason).toBe('unknown_category');
+    ).rejects.toMatchObject({ details: { reason: 'unknown_category' } });
   });
 });
 
 describe('finance_budget status', () => {
+  it('lists and gets stored budgets when primary currency is unset', async () => {
+    const budget = await insertBudgetAt({
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      createdAt: new Date().toISOString(),
+    });
+    await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
+
+    const listed = content(await callTool(userId, 'finance_budget_list', {}));
+    expect(listed.primaryCurrency).toBeNull();
+    expect(listed.warning).toMatch(/primary currency is unset/i);
+    expect(listed.storedBudgets).toContainEqual(
+      expect.objectContaining({ id: budget, amountCents: 30_000, cadence: 'monthly' }),
+    );
+    expect(listed.budgets).toContainEqual(
+      expect.objectContaining({ id: budget, amountCents: 30_000, cadence: 'monthly' }),
+    );
+    const read = content(await callTool(userId, 'finance_budget_get', { budgetId: budget }));
+    expect(read.warning).toMatch(/primary currency is unset/i);
+    expect(read.storedBudget).toMatchObject({ id: budget, amountCents: 30_000 });
+    expect(read.budget).toMatchObject({ id: budget, amountCents: 30_000 });
+  });
+
   it('reports each budget against its own cadence’s calendar period', async () => {
     await callTool(userId, 'finance_budget_create', {
       categoryId: diningId,
@@ -544,6 +643,50 @@ describe('finance_budget status', () => {
 });
 
 describe('finance_budget_update / get / delete', () => {
+  it('returns a typed not-found error when deleting a missing budget', async () => {
+    await expect(
+      callTool(userId, 'finance_budget_delete', {
+        budgetId: 'f20000e4-0000-4000-8000-000000000099',
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'not_found' } });
+  });
+
+  it('previews update and delete without changing stored budgets', async () => {
+    const created = content(
+      await callTool(userId, 'finance_budget_create', {
+        categoryId: travelId,
+        amountCents: 400_000,
+        cadence: 'annual',
+      }),
+    ).budget;
+    expect(created).toBeTruthy();
+    const budgetId = created?.id ?? '';
+    const update = content(
+      await callTool(userId, 'finance_budget_update', {
+        budgetId,
+        amountCents: 500_000,
+        cadence: 'quarterly',
+        dryRun: true,
+      }),
+    );
+    expect(update.preview?.budgets?.[0]).toMatchObject({
+      id: budgetId,
+      amountCents: 500_000,
+      cadence: 'quarterly',
+    });
+    const remove = content(
+      await callTool(userId, 'finance_budget_delete', { budgetId, dryRun: true }),
+    );
+    expect(JSON.stringify(remove.preview)).toContain(budgetId);
+    expect(remove.removed).toBe(false);
+    expect(
+      content(await callTool(userId, 'finance_budget_get', { budgetId })).budget,
+    ).toMatchObject({
+      amountCents: 400_000,
+      cadence: 'annual',
+    });
+  });
+
   it('updates the amount and cadence in place, reads it back, and deletes it', async () => {
     const created = content(
       await callTool(userId, 'finance_budget_create', {
@@ -602,17 +745,15 @@ describe('finance_budget_update / get / delete', () => {
     const budgetId = created?.id ?? '';
 
     expect(content(await callTool(userId, 'finance_budget_get', { budgetId })).budget).toBeNull();
-    expect(
-      content(
-        await callTool(userId, 'finance_budget_update', {
-          budgetId,
-          amountCents: 1_000,
-        }),
-      ).budget,
-    ).toBeNull();
-    expect(content(await callTool(userId, 'finance_budget_delete', { budgetId })).removed).toBe(
-      false,
-    );
+    await expect(
+      callTool(userId, 'finance_budget_update', {
+        budgetId,
+        amountCents: 1_000,
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'not_found' } });
+    await expect(callTool(userId, 'finance_budget_delete', { budgetId })).rejects.toMatchObject({
+      details: { reason: 'not_found' },
+    });
   });
 });
 
@@ -756,6 +897,26 @@ describe('rollover at read time', () => {
 });
 
 describe('budgets of record', () => {
+  it('previews currency changes with every category and tag budget and writes nothing', async () => {
+    const coffeeTagId = await insertTag('Currency Preview Coffee');
+    await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      tagBudgets: [{ tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' }],
+    });
+    const result = content(
+      await callTool(userId, 'finance_primary_currency_set', {
+        currencyCode: 'USD',
+        dryRun: true,
+      }),
+    );
+    expect(result.preview).toMatchObject({ previousCurrency: 'GBP' });
+    expect(result.preview?.affectedBudgets).toHaveLength(2);
+    expect(result.primaryCurrency).toBe('USD');
+    expect(await FinanceBudgetRepository.getPrimaryCurrency(db, userId)).toBe('GBP');
+  });
+
   it('seeds Groceries 25000 monthly and Dining Out 30000 monthly', async () => {
     await db.deleteFrom('app.financeBudgets').where('userId', '=', userId).execute();
     await seedBudgetsOfRecord(userId, 'GBP');

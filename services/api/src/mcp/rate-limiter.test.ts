@@ -8,31 +8,23 @@ vi.mock('@hominem/services/redis', () => ({
   redis: mocks,
 }));
 
-import { checkRateLimit } from './rate-limiter';
+import { checkRateLimit, MCP_RATE_LIMIT } from './rate-limiter';
 
 describe('rate limiter', () => {
   beforeEach(() => {
     mocks.eval.mockReset();
   });
 
-  it('allows the first five requests', async () => {
-    mocks.eval
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(3)
-      .mockResolvedValueOnce(4)
-      .mockResolvedValueOnce(5);
-
-    await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
-    await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
-    await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
-    await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
-    await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
-    expect(mocks.eval).toHaveBeenCalledTimes(5);
+  it('allows requests through the configured limit', async () => {
+    for (let count = 1; count <= MCP_RATE_LIMIT.limit; count += 1) {
+      mocks.eval.mockResolvedValueOnce(count);
+      await expect(checkRateLimit('user-1')).resolves.toBe('allowed');
+    }
+    expect(mocks.eval).toHaveBeenCalledTimes(MCP_RATE_LIMIT.limit);
   });
 
-  it('blocks the sixth request in the window', async () => {
-    mocks.eval.mockResolvedValue(6);
+  it('blocks the request after the configured limit', async () => {
+    mocks.eval.mockResolvedValue(MCP_RATE_LIMIT.limit + 1);
 
     await expect(checkRateLimit('user-1')).resolves.toBe('limited');
   });

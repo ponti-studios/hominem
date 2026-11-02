@@ -49,6 +49,7 @@ type CategoryResult = {
     };
   } | null;
   reason?: string | null;
+  warnings?: string[];
 };
 
 type SearchResult = {
@@ -128,6 +129,29 @@ beforeAll(async () => {
 });
 
 describe('finance_category_create', () => {
+  it('returns repeatable results for sequential and concurrent category reads', async () => {
+    await callTool(userId, 'finance_category_create', { name: 'Repeatable Category' });
+
+    const sequential: McpToolResult[] = [];
+    for (let index = 0; index < 3; index += 1) {
+      sequential.push(await callTool(userId, 'finance_categories', {}));
+    }
+    expect(sequential.every((result) => !result.isError)).toBe(true);
+    expect(sequential.map((result) => JSON.stringify(result))).toEqual([
+      JSON.stringify(sequential[0]),
+      JSON.stringify(sequential[0]),
+      JSON.stringify(sequential[0]),
+    ]);
+
+    const concurrent = await Promise.all(
+      Array.from({ length: 5 }, () => callTool(userId, 'finance_categories', {})),
+    );
+    expect(concurrent.every((result) => !result.isError)).toBe(true);
+    expect(concurrent.map((result) => JSON.stringify(result))).toEqual(
+      Array.from({ length: 5 }, () => JSON.stringify(sequential[0])),
+    );
+  });
+
   it('creates a category, then returns it on a case-insensitive re-create', async () => {
     const first = content(await callTool(userId, 'finance_category_create', { name: 'Groceries' }));
     expect(first.created).toBe(true);
@@ -152,8 +176,63 @@ describe('finance_category_create', () => {
     const wouldCreate = content(
       await callTool(userId, 'finance_category_create', { name: 'Dry Run Cat', dryRun: true }),
     );
-    expect(wouldCreate).toMatchObject({ created: true, id: null, dryRun: true });
+    expect(wouldCreate).toMatchObject({
+      created: true,
+      id: expect.stringContaining('preview-category:'),
+      dryRun: true,
+    });
     expect(await categoryByName(userId, 'Dry Run Cat')).toBeUndefined();
+  });
+
+  it('composes create, merge and budget previews with a stable placeholder id', async () => {
+    const source = content(
+      await callTool(userId, 'finance_category_create', {
+        name: 'Sequence Source',
+        dryRun: true,
+      }),
+    );
+    const created = content(
+      await callTool(userId, 'finance_category_create', {
+        name: 'Sequence Target',
+        dryRun: true,
+      }),
+    );
+    const repeated = content(
+      await callTool(userId, 'finance_category_create', {
+        name: 'Sequence Target',
+        dryRun: true,
+      }),
+    );
+    expect(created.id).toBe(repeated.id);
+
+    const merged = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: source.id!,
+        into: created.id!,
+        dryRun: true,
+      }),
+    );
+    expect(merged.category).toEqual({ id: created.id, name: 'Sequence Target' });
+    expect(merged.steps?.preserveTags.tags).toMatchObject([
+      { category: { id: source.id, name: 'Sequence Source' }, transactionsTagged: 0 },
+    ]);
+
+    const budget = await callTool(userId, 'finance_budget_set', {
+      categoryId: created.id!,
+      amountCents: 25_000,
+      cadence: 'monthly',
+      tagBudgets: [],
+      dryRun: true,
+    });
+    expect(budget.structuredContent).toMatchObject({
+      dryRun: true,
+      preview: { categoryId: created.id, categoryName: 'Sequence Target' },
+    });
+    expect(await categoryByName(userId, 'Sequence Source')).toBeUndefined();
+    expect(await categoryByName(userId, 'Sequence Target')).toBeUndefined();
+    await expect(
+      db.selectFrom('app.financeBudgets').select('id').where('userId', '=', userId).execute(),
+    ).resolves.toEqual([]);
   });
 });
 
@@ -193,6 +272,9 @@ describe('finance_category_merge', () => {
       sourceBudgetCount: 1,
       monthlyRunwayBudgets: [{ currencyCode: 'USD', amount: 60 }],
     });
+    expect(preview.warnings).toEqual([
+      expect.stringContaining('External rule sources are not discoverable'),
+    ]);
 
     const result = content(
       await callTool(userId, 'finance_category_merge', {
@@ -419,10 +501,51 @@ describe('finance_category_merge', () => {
   });
 
   it('reports an unknown category', async () => {
-    const result = content(
-      await callTool(userId, 'finance_category_merge', { from: 'nope', into: 'Uncategorized' }),
+    await expect(
+      callTool(userId, 'finance_category_merge', {
+        from: 'nope',
+        into: 'Uncategorized',
+        dryRun: true,
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'unknown_category' } });
+  });
+
+  it('honours the selected stage in dry-run output', async () => {
+    await callTool(userId, 'finance_category_create', { name: 'Stage Preview Source' });
+    await callTool(userId, 'finance_category_create', { name: 'Stage Preview Target' });
+
+    const preserve = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Stage Preview Source',
+        into: 'Stage Preview Target',
+        stage: 'preserve',
+        dryRun: true,
+      }),
     );
-    expect(result.reason).toBe('unknown_category');
+    const repoint = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Stage Preview Source',
+        into: 'Stage Preview Target',
+        stage: 'repoint',
+        dryRun: true,
+      }),
+    );
+    const merge = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Stage Preview Source',
+        into: 'Stage Preview Target',
+        stage: 'merge',
+        dryRun: true,
+      }),
+    );
+
+    expect(preserve.steps?.preserveTags.tags).toHaveLength(1);
+    expect(preserve.steps?.repointRules.repointed).toEqual([]);
+    expect(preserve.steps?.merge.transactionsReassigned).toBe(0);
+    expect(repoint.steps?.preserveTags.tags).toEqual([]);
+    expect(repoint.steps?.merge.transactionsReassigned).toBe(0);
+    expect(merge.steps?.preserveTags.tags).toEqual([]);
+    expect(merge.reason).toBe('untagged_sources');
   });
 });
 
@@ -452,6 +575,42 @@ describe('finance_category_merge — taxonomy guarantees', () => {
       )
       .execute();
   }
+
+  it('merges a 3,500 transaction category and preserves currency totals', async () => {
+    const source = content(
+      await callTool(userId, 'finance_category_create', { name: 'Long Merge Source' }),
+    );
+    const target = content(
+      await callTool(userId, 'finance_category_create', { name: 'Long Merge Target' }),
+    );
+    const rows = Array.from({ length: 3500 }, (_, index) => ({
+      id: `f20000e3-3500-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      description: `Long merge row ${index + 1}`,
+      amount: -1,
+    }));
+    for (let offset = 0; offset < rows.length; offset += 500) {
+      await insertRows(source.id!, rows.slice(offset, offset + 500));
+    }
+
+    const startedAt = performance.now();
+    const result = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Long Merge Source',
+        into: 'Long Merge Target',
+      }),
+    );
+    const durationMs = performance.now() - startedAt;
+    expect(durationMs).toBeLessThan(15_000);
+    expect(result.transactionsReassigned).toBe(3500);
+    expect(result.currencyTotals).toEqual([{ currencyCode: 'USD', before: -3500, after: -3500 }]);
+    const reassigned = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('categoryId', '=', target.id!)
+      .executeTakeFirstOrThrow();
+    expect(Number(reassigned.count)).toBe(3500);
+  }, 30_000);
 
   it('gives every source transaction a tag that reproduces the source set when filtered', async () => {
     const alpha = content(await callTool(userId, 'finance_category_create', { name: 'Alpha' }));

@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
@@ -345,6 +347,24 @@ describe('mcp server transport', () => {
     }
   });
 
+  it('serves five concurrent finance category reads over streamable HTTP', async () => {
+    const client = await createClient(createApp(mcpAuthContext));
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          client.callTool({ name: 'finance_categories', arguments: {} }),
+        ),
+      );
+
+      expect(results.every((result) => !result.isError)).toBe(true);
+      expect(results.map((result) => JSON.stringify(result))).toEqual(
+        Array.from({ length: 5 }, () => JSON.stringify(results[0])),
+      );
+    } finally {
+      await client.close();
+    }
+  });
+
   it('lists the five career worklog tools with house-style mode annotations', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
@@ -590,6 +610,10 @@ describe('mcp server transport', () => {
       expect(result.content).toEqual([
         { type: 'text', text: 'Unable to complete the MCP tool request.' },
       ]);
+      expect(result.structuredContent).toEqual({
+        code: 'internal_error',
+        message: 'Unable to complete the MCP tool request.',
+      });
       expect(JSON.stringify(result)).not.toContain('secret database detail');
       expect(warningSpy).toHaveBeenCalledWith(
         expect.stringContaining('mcp_tool_invocation_failed'),
@@ -863,7 +887,10 @@ describe('mcp server transport', () => {
         // A plain client can't answer the embedded elicitation at all, so the
         // call must fail rather than execute immediately.
         expect(result.isError).toBe(true);
-        expect(result.structuredContent).toBeUndefined();
+        expect(result.structuredContent).toMatchObject({
+          code: 'confirmation_required',
+          tool: 'create_collection',
+        });
       } finally {
         await client.close();
       }
@@ -1307,6 +1334,12 @@ describe('delete confirmation from a client without elicitation', () => {
         arguments: { id: noteId },
       });
       expect(unconfirmed.isError).toBe(true);
+      expect(unconfirmed.structuredContent).toMatchObject({
+        code: 'confirmation_required',
+        tool: 'note_delete',
+        preview: expect.any(Object),
+        confirmToken: expect.any(String),
+      });
       // The preview shows exactly what the confirmation would delete.
       expect(resultText(unconfirmed)).toContain('Doomed note');
       expect(resultText(unconfirmed)).toContain('was not run');
@@ -1455,6 +1488,109 @@ describe('delete confirmation from a client without elicitation', () => {
       expect(removed.isError ?? false).toBe(false);
       expect(toolOutput(removed, noteDeleteToolOutputSchema)).toEqual({ removed: true });
       expect(await noteExists(client, noteId)).toBe(false);
+    } finally {
+      await client.close();
+    }
+  });
+});
+
+describe('finance budget delete confirmation contract', () => {
+  const categoryId = randomUUID();
+  const budgetId = randomUUID();
+  const categoryName = 'MCP budget confirmation fixture';
+
+  beforeAll(async () => {
+    await db
+      .insertInto('app.financeCategories')
+      .values({ id: categoryId, userId: testUser.id, name: categoryName })
+      .execute();
+    await db
+      .insertInto('app.financeBudgets')
+      .values({
+        id: budgetId,
+        userId: testUser.id,
+        categoryId,
+        amountCents: 2500,
+        cadence: 'monthly',
+      })
+      .execute();
+  });
+
+  afterAll(async () => {
+    await db.deleteFrom('app.financeBudgets').where('id', '=', budgetId).execute();
+    await db.deleteFrom('app.financeCategories').where('id', '=', categoryId).execute();
+  });
+
+  it('types missing ids and previews existing deletions without writing', async () => {
+    const client = await createClient(createApp(mcpAuthContext), 'finance:read finance:write');
+    try {
+      const missing = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId: randomUUID() },
+      });
+      expect(missing.isError).toBe(true);
+      expect(missing.structuredContent).toMatchObject({ code: 'not_found' });
+
+      const preview = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId },
+      });
+      expect(preview.isError).toBe(true);
+      expect(preview.structuredContent).toMatchObject({
+        code: 'confirmation_required',
+        tool: 'finance_budget_delete',
+        preview: expect.objectContaining({ categoryName }),
+      });
+      await expect(
+        db.selectFrom('app.financeBudgets').select('id').where('id', '=', budgetId).execute(),
+      ).resolves.toHaveLength(1);
+
+      const dryRun = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId, dryRun: true },
+      });
+      expect(dryRun.isError ?? false).toBe(false);
+      expect(dryRun.structuredContent).toMatchObject({
+        dryRun: true,
+        removed: false,
+        preview: [expect.objectContaining({ id: budgetId, categoryName })],
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('keeps budget reads available and returns distinct typed write errors', async () => {
+    const client = await createClient(createApp(mcpAuthContext), 'finance:read finance:write');
+    try {
+      const listed = await client.callTool({ name: 'finance_budget_list', arguments: {} });
+      expect(listed.isError ?? false).toBe(false);
+      expect(listed.structuredContent).toMatchObject({
+        primaryCurrency: null,
+        warning: expect.stringMatching(/primary currency is unset/i),
+      });
+
+      const currencyRequired = await client.callTool({
+        name: 'finance_budget_create',
+        arguments: { categoryId, amountCents: 3000, cadence: 'monthly' },
+      });
+      expect(currencyRequired.isError).toBe(true);
+      expect(currencyRequired.structuredContent).toMatchObject({ code: 'primary_currency_unset' });
+
+      const unknownMergeCategory = await client.callTool({
+        name: 'finance_category_merge',
+        arguments: { from: categoryName, into: 'Missing Merge Target', dryRun: true },
+      });
+      expect(unknownMergeCategory.isError).toBe(true);
+      expect(unknownMergeCategory.structuredContent).toMatchObject({ code: 'unknown_category' });
+
+      await expect(
+        db
+          .selectFrom('app.financeBudgets')
+          .select('id')
+          .where('categoryId', '=', categoryId)
+          .execute(),
+      ).resolves.toHaveLength(1);
     } finally {
       await client.close();
     }

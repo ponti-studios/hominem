@@ -10,7 +10,7 @@ export const financeBudgetGetTool = defineMcpTool(
     name: 'finance_budget_get',
     title: 'Finance Budget Get',
     description:
-      'Get one category budget with its current period status, computed at read time from transactions in that category. Null when the id is not the caller’s budget.',
+      'Get one category or tag budget with its current period status, computed at read time from transactions in that category. When primary currency is unset, returns the stored definition with a warning and no spend calculations. Null when the id is not the caller’s budget.',
     inputSchema: financeBudgetGetInputSchema,
     outputSchema: financeBudgetGetOutputSchema,
     readOnly: true,

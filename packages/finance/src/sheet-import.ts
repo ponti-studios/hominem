@@ -12,6 +12,30 @@ export type SheetSource = (typeof SHEET_SOURCE_VALUES)[number];
 
 export const UNCATEGORIZED_NAME = 'Uncategorized';
 
+export function previewFinanceCategoryId(userId: string, name: string): string {
+  const encodedName = Buffer.from(name.trim(), 'utf8').toString('base64url');
+  const signature = createHash('sha256')
+    .update(`${userId}\0${name.trim().toLowerCase()}`)
+    .digest('hex')
+    .slice(0, 16);
+  return `preview-category:${encodedName}:${signature}`;
+}
+
+export function resolvePreviewFinanceCategoryId(
+  userId: string,
+  id: string,
+): { id: string; name: string } | null {
+  const match = /^preview-category:([A-Za-z0-9_-]+):([a-f0-9]{16})$/.exec(id);
+  if (!match?.[1] || !match[2]) return null;
+  try {
+    const name = Buffer.from(match[1], 'base64url').toString('utf8').trim();
+    if (!name || previewFinanceCategoryId(userId, name) !== id) return null;
+    return { id, name };
+  } catch {
+    return null;
+  }
+}
+
 export interface SheetTransactionInput {
   postedOn: string;
   /** Sheet Bank label or a Hominem account id (uuid). */
@@ -412,7 +436,8 @@ export async function createOrGetFinanceCategory(
     .limit(1)
     .executeTakeFirst();
   if (existing) return { id: existing.id, name: existing.name, created: false };
-  if (options?.dryRun) return { id: null, name: trimmed, created: true };
+  if (options?.dryRun)
+    return { id: previewFinanceCategoryId(userId, trimmed), name: trimmed, created: true };
 
   const id = randomUUID();
   await db.insertInto('app.financeCategories').values({ id, userId, name: trimmed }).execute();

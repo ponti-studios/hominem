@@ -4,8 +4,20 @@ import { ValidationError } from '@hominem/db/errors';
 import { FinanceBudgetRepository, type FinanceCategoryBudgetMerge } from '@hominem/db/finance';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
-import { UNCATEGORIZED_NAME, ensureTagIds, resolveFinanceCategory } from './sheet-import';
+import {
+  UNCATEGORIZED_NAME,
+  ensureTagIds,
+  resolveFinanceCategory,
+  resolvePreviewFinanceCategoryId,
+} from './sheet-import';
 import { toCents, toNumber } from './utils';
+
+const FINANCE_CATEGORY_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function persistedCategoryIds(categoryIds: string[]): string[] {
+  return categoryIds.filter((id) => FINANCE_CATEGORY_UUID.test(id));
+}
 
 /**
  * Taxonomy under a category: tags are the drill-down layer. A category says *what bucket* a
@@ -121,12 +133,15 @@ type ResolveMergeResult =
 async function resolveMerge(
   userId: string,
   input: MergeCategoryInput,
+  allowPreviewIds = false,
 ): Promise<ResolveMergeResult> {
   const requested = Array.isArray(input.from) ? input.from : [input.from];
 
   const sources: CategoryRef[] = [];
   for (const nameOrId of requested) {
-    const source = await resolveFinanceCategory(userId, nameOrId);
+    const source =
+      (await resolveFinanceCategory(userId, nameOrId)) ??
+      (allowPreviewIds ? resolvePreviewFinanceCategoryId(userId, nameOrId) : null);
     if (!source) return { merge: null, reason: 'unknown_category' };
     // Uncategorized is where unclassified rows collect; folding it away would rewrite the
     // whole fallback bucket, so it may only ever be a target. Checked before the target so a
@@ -137,7 +152,9 @@ async function resolveMerge(
     sources.push(source);
   }
 
-  const target = await resolveFinanceCategory(userId, input.into);
+  const target =
+    (await resolveFinanceCategory(userId, input.into)) ??
+    (allowPreviewIds ? resolvePreviewFinanceCategoryId(userId, input.into) : null);
   if (!target) return { merge: null, reason: 'unknown_category' };
 
   return {
@@ -203,6 +220,7 @@ async function countTransactionsMarked(
   categoryId: string,
   tagId: string,
 ): Promise<number> {
+  if (!FINANCE_CATEGORY_UUID.test(categoryId)) return 0;
   const row = await executor
     .selectFrom('app.financeTransactions as t')
     .select((eb) => eb.fn.countAll<number>().as('count'))
@@ -283,6 +301,7 @@ async function countCategoryTransactions(
   userId: string,
   categoryId: string,
 ): Promise<number> {
+  if (!FINANCE_CATEGORY_UUID.test(categoryId)) return 0;
   const row = await executor
     .selectFrom('app.financeTransactions')
     .select((eb) => eb.fn.countAll<number>().as('count'))
@@ -297,13 +316,14 @@ async function findRulesReferencing(
   userId: string,
   categoryIds: string[],
 ): Promise<CategoryRuleRef[]> {
-  if (categoryIds.length === 0) return [];
+  const databaseCategoryIds = persistedCategoryIds(categoryIds);
+  if (databaseCategoryIds.length === 0) return [];
   const rows = await executor
     .selectFrom('app.financeRules as r')
     .innerJoin('app.financeCategories as c', 'c.id', 'r.actionCategoryId')
     .select(['r.id as id', 'r.name as name', 'c.id as categoryId', 'c.name as categoryName'])
     .where('r.userId', '=', userId)
-    .where('r.actionCategoryId', 'in', categoryIds)
+    .where('r.actionCategoryId', 'in', databaseCategoryIds)
     .orderBy('r.name', 'asc')
     .execute();
   return rows.map((row) => ({
@@ -348,13 +368,14 @@ async function categoryCurrencyTotals(
   categoryIds: string[],
 ): Promise<Map<string, number>> {
   const totals = new Map<string, number>();
-  if (categoryIds.length === 0) return totals;
+  const databaseCategoryIds = persistedCategoryIds(categoryIds);
+  if (databaseCategoryIds.length === 0) return totals;
   const rows = await executor
     .selectFrom('app.financeTransactions')
     .select(['currencyCode'])
     .select((eb) => eb.fn.sum<number>('amount').as('total'))
     .where('userId', '=', userId)
-    .where('categoryId', 'in', categoryIds)
+    .where('categoryId', 'in', databaseCategoryIds)
     .groupBy('currencyCode')
     .orderBy('currencyCode', 'asc')
     .execute();
@@ -532,7 +553,7 @@ export async function mergeFinanceCategories(
   input: MergeCategoryInput,
   options?: { dryRun?: boolean; stage?: CategoryMergeStage },
 ): Promise<MergeFinanceCategoriesResult> {
-  const resolved = await resolveMerge(userId, input);
+  const resolved = await resolveMerge(userId, input, options?.dryRun === true);
   if (!resolved.merge) {
     return {
       transactionsReassigned: 0,
@@ -569,38 +590,65 @@ export async function mergeFinanceCategories(
   const stage = options?.stage ?? 'all';
 
   if (options?.dryRun) {
-    const preserveTags = await preserveWith(db, userId, sources, { dryRun: true });
-    const repointRules = await repointWith(db, userId, sources, target, { dryRun: true });
     const wouldMove = await countCategoryTransactionsFor(db, userId, sources);
-    const budgetMerge = await FinanceBudgetRepository.mergeCategories(
-      db,
-      userId,
-      target.id,
-      sources.map((source) => source.id),
-      { dryRun: true },
-    );
-    // The affected set is unchanged by the merge — only the rows' category_id moves — so the
-    // projected totals are the current totals for that set.
-    const before = await categoryCurrencyTotals(db, userId, [
-      ...sources.map((source) => source.id),
-      target.id,
-    ]);
+    const preserveTags =
+      stage === 'all' || stage === 'preserve'
+        ? await preserveWith(db, userId, sources, { dryRun: true })
+        : emptyPreserve();
+    const repointRules =
+      stage === 'all' || stage === 'repoint'
+        ? await repointWith(db, userId, sources, target, { dryRun: true })
+        : { repointed: [] };
+    const mergeIncluded = stage === 'all' || stage === 'merge';
+    const untaggedSources =
+      mergeIncluded && stage === 'merge' ? await findUntaggedSources(db, userId, sources) : [];
+    const blockedRules =
+      mergeIncluded && stage === 'merge'
+        ? await findRulesReferencing(
+            db,
+            userId,
+            sources.map((source) => source.id),
+          )
+        : [];
+    const reason: FinanceCategoryMergeReason | null =
+      untaggedSources.length > 0
+        ? 'untagged_sources'
+        : blockedRules.length > 0
+          ? 'unrepointed_rules'
+          : null;
+    const budgetMerge = mergeIncluded
+      ? await FinanceBudgetRepository.mergeCategories(
+          db,
+          userId,
+          target.id,
+          sources.map((source) => source.id),
+          { dryRun: true },
+        )
+      : emptyBudgetMerge();
+    const before =
+      mergeIncluded && reason === null
+        ? await categoryCurrencyTotals(db, userId, [
+            ...sources.map((source) => source.id),
+            target.id,
+          ])
+        : new Map<string, number>();
+    const stageMoveCount = mergeIncluded && reason === null ? wouldMove : 0;
     return {
-      transactionsReassigned: wouldMove,
+      transactionsReassigned: stageMoveCount,
       category: target,
       removedCategory: null,
       removedCategories: [],
-      reason: null,
-      untaggedSources: [],
-      blockedRules: [],
+      reason,
+      untaggedSources,
+      blockedRules,
       steps: {
         preserveTags,
         repointRules: { repointed: repointRules.repointed },
         merge: {
-          transactionsReassigned: wouldMove,
+          transactionsReassigned: stageMoveCount,
           removedCategories: [],
-          untaggedSources: [],
-          blockedRules: [],
+          untaggedSources,
+          blockedRules,
           budgetMerge,
         },
       },
