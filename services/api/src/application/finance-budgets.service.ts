@@ -115,6 +115,7 @@ async function readTagComposition(
   now: Date,
 ): Promise<
   Array<{
+    budgetId: string;
     tagId: string;
     tagName: string;
     amountCents: number;
@@ -143,6 +144,7 @@ async function readTagComposition(
           tagId: tag.tagId,
         });
         return {
+          budgetId: tag.id,
           tagId: tag.tagId,
           tagName: tag.tagName,
           amountCents: tag.amountCents,
@@ -182,14 +184,15 @@ async function toStatus(
         to: currentPeriod.startsOn,
       });
 
-  const { openingBalanceCents: openingBalance, sweptToSavingsCents: sweptToSavings } =
-    computeRollover({
-      cadence: budget.cadence,
-      amountCents: budget.amountCents,
-      trackingStartsOn: trackingStart.startsOn,
-      currentPeriod,
-      spentByPeriodStartsOn: spendByClosedPeriod,
-    });
+  const { openingBalanceCents: openingBalance, sweptToSavingsCents: sweptToSavings } = isTagBudget
+    ? { openingBalanceCents: 0, sweptToSavingsCents: 0 }
+    : computeRollover({
+        cadence: budget.cadence,
+        amountCents: budget.amountCents,
+        trackingStartsOn: trackingStart.startsOn,
+        currentPeriod,
+        spentByPeriodStartsOn: spendByClosedPeriod,
+      });
   const availableCents = budget.amountCents + openingBalance;
   const uncountedForeignTransactions =
     currentSpend.uncountedForeignTransactionCount > 0

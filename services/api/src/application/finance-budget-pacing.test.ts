@@ -16,6 +16,7 @@ describe('evaluateCategoryBudgetPacing', () => {
       spentCents: 12_000,
       tagBudgets: [
         {
+          budgetId: 'budget-coffee',
           tagId: 'tag-coffee',
           tagName: 'Coffee',
           amountCents: 2_000,
@@ -23,6 +24,7 @@ describe('evaluateCategoryBudgetPacing', () => {
           spentCents: 2_500,
         },
         {
+          budgetId: 'budget-grocery',
           tagId: 'tag-grocery',
           tagName: 'Grocery',
           amountCents: 10_000,
@@ -35,12 +37,14 @@ describe('evaluateCategoryBudgetPacing', () => {
     expect(pacing.breach).toBeNull();
     expect(pacing.composition).toEqual([
       expect.objectContaining({
+        budgetId: 'budget-coffee',
         tagId: 'tag-coffee',
         spentCents: 2_500,
         remainingCents: -500,
         overTagBudget: true,
       }),
       expect.objectContaining({
+        budgetId: 'budget-grocery',
         tagId: 'tag-grocery',
         spentCents: 9_500,
         remainingCents: 500,
@@ -56,6 +60,7 @@ describe('evaluateCategoryBudgetPacing', () => {
       tagBudgets: [
         // Every tag is comfortably within its own amount.
         {
+          budgetId: 'budget-coffee',
           tagId: 'tag-coffee',
           tagName: 'Coffee',
           amountCents: 2_000,
@@ -63,6 +68,7 @@ describe('evaluateCategoryBudgetPacing', () => {
           spentCents: 0,
         },
         {
+          budgetId: 'budget-grocery',
           tagId: 'tag-grocery',
           tagName: 'Grocery',
           amountCents: 28_000,
@@ -86,6 +92,7 @@ describe('evaluateCategoryBudgetPacing', () => {
       spentCents: 35_000,
       tagBudgets: [
         {
+          budgetId: 'budget-coffee',
           tagId: 'tag-coffee',
           tagName: 'Coffee',
           amountCents: 2_000,
@@ -105,6 +112,7 @@ describe('evaluateCategoryBudgetPacing', () => {
       spentCents: 0,
       tagBudgets: [
         {
+          budgetId: 'budget-coffee',
           tagId: 'tag-coffee',
           tagName: 'Coffee',
           amountCents: 1_000,

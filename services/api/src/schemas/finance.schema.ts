@@ -729,6 +729,7 @@ export const financeBudgetStatusSchema = z.object({
   tagBudgets: z
     .array(
       z.object({
+        budgetId: z.string().describe('Budget row id for finance_budget_get, update, or delete.'),
         tagId: z.string(),
         tagName: z.string(),
         amountCents: z.number().int(),

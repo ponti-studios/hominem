@@ -35,6 +35,7 @@ type BudgetStatus = {
   sweptToSavingsCents: number;
   breach: { categoryId: string; categoryName: string; overByCents: number } | null;
   tagBudgets: Array<{
+    budgetId: string;
     tagId: string;
     tagName: string;
     amountCents: number;
@@ -152,6 +153,7 @@ async function tagTransaction(transactionId: string, tagId: string): Promise<voi
 
 async function insertBudgetAt(input: {
   categoryId: string;
+  tagId?: string;
   amountCents: number;
   cadence: 'weekly' | 'monthly' | 'quarterly' | 'annual';
   createdAt: string;
@@ -161,6 +163,7 @@ async function insertBudgetAt(input: {
     .values({
       userId,
       categoryId: input.categoryId,
+      tagId: input.tagId ?? null,
       amountCents: input.amountCents,
       cadence: input.cadence,
       createdAt: input.createdAt,
@@ -697,6 +700,59 @@ describe('rollover at read time', () => {
       availableCents: 350_000,
     });
   });
+
+  it('does not roll a tag budget amount into a later annual period', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    await insertBudgetAt({
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    });
+    const tagBudgetId = await insertBudgetAt({
+      categoryId: diningId,
+      tagId: coffeeTagId,
+      amountCents: 5_000,
+      cadence: 'annual',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    });
+
+    const secondYear = (await getBudget(userId, tagBudgetId, new Date('2026-06-15T00:00:00.000Z')))
+      .budget;
+
+    expect(secondYear).toMatchObject({
+      period: { startsOn: '2026-01-01', endsOn: '2026-12-31' },
+      openingBalanceCents: 0,
+      availableCents: 5_000,
+      sweptToSavingsCents: 0,
+    });
+  });
+
+  it('does not report underspend swept to savings for a tag budget', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    await insertBudgetAt({
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    const tagBudgetId = await insertBudgetAt({
+      categoryId: diningId,
+      tagId: coffeeTagId,
+      amountCents: 5_000,
+      cadence: 'monthly',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    const april = (await getBudget(userId, tagBudgetId, new Date('2026-04-15T00:00:00.000Z')))
+      .budget;
+
+    expect(april).toMatchObject({
+      openingBalanceCents: 0,
+      availableCents: 5_000,
+      sweptToSavingsCents: 0,
+    });
+  });
 });
 
 describe('budgets of record', () => {
@@ -974,6 +1030,12 @@ describe('nested tag budgets', () => {
     const listed = content(await callTool(userId, 'finance_budget_list', {}));
     const budget = listed.budgets?.find((item) => item.categoryId === diningId);
     const coffee = budget?.tagBudgets.find((tag) => tag.tagId === coffeeTagId);
+    expect(coffee?.budgetId).toBeTruthy();
+
+    const tagBudget = content(
+      await callTool(userId, 'finance_budget_get', { budgetId: coffee?.budgetId ?? '' }),
+    ).budget;
+    expect(tagBudget).toMatchObject({ id: coffee?.budgetId, tagId: coffeeTagId });
 
     expect(budget?.spentCents).toBe(2_500);
     expect(budget?.remainingCents).toBe(27_500);

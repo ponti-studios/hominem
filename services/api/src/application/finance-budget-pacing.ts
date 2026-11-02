@@ -7,6 +7,7 @@ import { budgetAmountInCadence, type FinanceBudgetCadence } from '@hominem/db/fi
  * exception without inventing one.
  */
 export type TagBudgetComposition = {
+  budgetId: string;
   tagId: string;
   tagName: string;
   amountCents: number;
@@ -49,6 +50,7 @@ export function evaluateCategoryBudgetPacing(input: {
   availableCents: number;
   spentCents: number;
   tagBudgets: ReadonlyArray<{
+    budgetId: string;
     tagId: string;
     tagName: string;
     amountCents: number;
@@ -67,6 +69,7 @@ export function evaluateCategoryBudgetPacing(input: {
         ? { categoryId: input.categoryId, categoryName: input.categoryName, overByCents }
         : null,
     composition: input.tagBudgets.map((tag) => ({
+      budgetId: tag.budgetId,
       tagId: tag.tagId,
       tagName: tag.tagName,
       amountCents: tag.amountCents,
