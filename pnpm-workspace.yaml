@@ -25,7 +25,7 @@ catalog:
   react: 19.2.8
   react-dom: 19.2.8
   react-router: 8.5.0
-  resend: 6.34.1
+  resend: 6.35.0
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
   '@ponti-studios/ui': 1.8.0
