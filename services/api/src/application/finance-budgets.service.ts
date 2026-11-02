@@ -372,7 +372,15 @@ export async function setCategoryBudgets(
 }
 
 export async function deleteBudget(ownerUserId: string, budgetId: string) {
-  return { removed: await FinanceBudgetRepository.remove(db, ownerUserId, budgetId) };
+  const removed = await runInTransaction(async (trx) => {
+    const budget = await FinanceBudgetRepository.get(trx, ownerUserId, budgetId);
+    if (!budget) return false;
+    if (!(await FinanceBudgetRepository.lockCategory(trx, ownerUserId, budget.categoryId))) {
+      return false;
+    }
+    return FinanceBudgetRepository.remove(trx, ownerUserId, budgetId);
+  });
+  return { removed };
 }
 
 /** Preview data for the delete confirmation: no currency or spend needed to show what goes. */

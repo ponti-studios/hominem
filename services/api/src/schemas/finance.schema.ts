@@ -1140,6 +1140,13 @@ const categoryBudgetMergeSchema = z.object({
     .object({ amount: z.number(), cadence: z.enum(['weekly', 'monthly', 'quarterly', 'annual']) })
     .nullable(),
   sourceBudgetCount: z.number().int().min(0),
+  tagBudgets: z.array(
+    z.object({
+      tagId: z.string().uuid(),
+      amount: z.number(),
+      cadence: z.enum(['weekly', 'monthly', 'quarterly', 'annual']),
+    }),
+  ),
   monthlyRunwayBudgets: z.array(z.object({ currencyCode: z.string(), amount: z.number() })),
 });
 

@@ -11,6 +11,7 @@ const checkingId = 'f20000e1-0000-4000-8000-000000000001';
 type CategoryRef = { id: string; name: string };
 type CategoryBudgetMerge = {
   budget: { amount: number; cadence: string } | null;
+  tagBudgets: Array<{ tagId: string; amount: number; cadence: string }>;
   sourceBudgetCount: number;
   monthlyRunwayBudgets: Array<{ currencyCode: string; amount: number }>;
 };
@@ -188,6 +189,7 @@ describe('finance_category_merge', () => {
     );
     expect(preview.budgetMerge).toEqual({
       budget: { amount: 172, cadence: 'monthly' },
+      tagBudgets: [],
       sourceBudgetCount: 1,
       monthlyRunwayBudgets: [{ currencyCode: 'USD', amount: 60 }],
     });

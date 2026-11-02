@@ -79,6 +79,11 @@ export type FinanceBudgetSpendRange = {
 
 export type FinanceCategoryBudgetMerge = {
   budget: { amountCents: number; cadence: FinanceBudgetCadence } | null;
+  tagBudgets: Array<{
+    tagId: string;
+    amountCents: number;
+    cadence: FinanceBudgetCadence;
+  }>;
   sourceBudgetCount: number;
   monthlyRunwayBudgets: Array<{ currencyCode: string; amountCents: number }>;
 };
@@ -160,26 +165,36 @@ export const FinanceBudgetRepository = {
     options?: { dryRun?: boolean },
   ): Promise<FinanceCategoryBudgetMerge> {
     if (sourceCategoryIds.length === 0) {
-      return { budget: null, sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
+      return { budget: null, tagBudgets: [], sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
+    }
+
+    for (const categoryId of [...sourceCategoryIds, targetCategoryId].sort()) {
+      if (!(await FinanceBudgetRepository.lockCategory(handle, ownerUserId, categoryId))) {
+        throw new ValidationError('A category disappeared while its budgets were being merged.', {
+          ownerUserId,
+          categoryId,
+        });
+      }
     }
 
     const budgets = await handle
       .selectFrom('app.financeBudgets')
-      .select(['id', 'categoryId', 'amountCents', 'cadence'])
+      .select(['id', 'categoryId', 'tagId', 'amountCents', 'cadence'])
       .where('userId', '=', ownerUserId)
       .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
-      // Only category budgets merge; a source's tag budgets go with its category.
-      .where('tagId', 'is', null)
       .execute();
-    const target = budgets.find((budget) => budget.categoryId === targetCategoryId);
+    const categoryBudgets = budgets.filter((budget) => budget.tagId === null);
+    const nestedBudgets = budgets.filter((budget) => budget.tagId !== null);
+    const target = categoryBudgets.find((budget) => budget.categoryId === targetCategoryId);
     const sourceBudgets = sourceCategoryIds.flatMap((categoryId) => {
-      const budget = budgets.find((candidate) => candidate.categoryId === categoryId);
+      const budget = categoryBudgets.find((candidate) => candidate.categoryId === categoryId);
       return budget ? [budget] : [];
     });
 
     let mergedBudget: FinanceCategoryBudgetMerge['budget'] = target
       ? { amountCents: target.amountCents, cadence: toCadence(target.cadence) }
       : null;
+    const mergedTagBudgets: FinanceCategoryBudgetMerge['tagBudgets'] = [];
     if (sourceBudgets.length > 0) {
       const cadence = mergedBudget?.cadence ?? toCadence(sourceBudgets[0]!.cadence);
       const sourceAmountCents = sourceBudgets.reduce(
@@ -208,6 +223,7 @@ export const FinanceBudgetRepository = {
           .deleteFrom('app.financeBudgets')
           .where('userId', '=', ownerUserId)
           .where('categoryId', 'in', sourceCategoryIds)
+          .where('tagId', 'is', null)
           .execute();
       } else if (!options?.dryRun) {
         const first = sourceBudgets[0]!;
@@ -225,7 +241,90 @@ export const FinanceBudgetRepository = {
             'in',
             sourceCategoryIds.filter((id) => id !== first.categoryId),
           )
+          .where('tagId', 'is', null)
           .execute();
+      }
+    }
+
+    const tagIds = [
+      ...new Set(nestedBudgets.flatMap((budget) => (budget.tagId ? [budget.tagId] : []))),
+    ].sort();
+    for (const tagId of tagIds) {
+      const targetTagBudget = nestedBudgets.find(
+        (budget) => budget.categoryId === targetCategoryId && budget.tagId === tagId,
+      );
+      const sourceTagBudgets = sourceCategoryIds.flatMap((categoryId) => {
+        const budget = nestedBudgets.find(
+          (candidate) => candidate.categoryId === categoryId && candidate.tagId === tagId,
+        );
+        return budget ? [budget] : [];
+      });
+      const cadence = toCadence((targetTagBudget ?? sourceTagBudgets[0]!).cadence);
+      const amountCents =
+        (targetTagBudget?.amountCents ?? 0) +
+        sourceTagBudgets.reduce(
+          (total, budget) =>
+            total + budgetAmountInCadence(budget.amountCents, toCadence(budget.cadence), cadence),
+          0,
+        );
+      if (!Number.isSafeInteger(amountCents) || amountCents > MAX_BUDGET_CENTS) {
+        throw new ValidationError('Merged tag budget exceeds the maximum supported amount.', {
+          ownerUserId,
+          targetCategoryId,
+          tagId,
+        });
+      }
+      mergedTagBudgets.push({ tagId, amountCents, cadence });
+
+      if (targetTagBudget) {
+        if (!options?.dryRun && sourceTagBudgets.length > 0) {
+          await handle
+            .updateTable('app.financeBudgets')
+            .set({ amountCents, updatedAt: new Date().toISOString() })
+            .where('userId', '=', ownerUserId)
+            .where('id', '=', targetTagBudget.id)
+            .execute();
+          await handle
+            .deleteFrom('app.financeBudgets')
+            .where('userId', '=', ownerUserId)
+            .where('categoryId', 'in', sourceCategoryIds)
+            .where('tagId', '=', tagId)
+            .execute();
+        }
+      } else if (!options?.dryRun && sourceTagBudgets.length > 0) {
+        const first = sourceTagBudgets[0]!;
+        await handle
+          .updateTable('app.financeBudgets')
+          .set({ categoryId: targetCategoryId, amountCents, updatedAt: new Date().toISOString() })
+          .where('userId', '=', ownerUserId)
+          .where('id', '=', first.id)
+          .execute();
+        await handle
+          .deleteFrom('app.financeBudgets')
+          .where('userId', '=', ownerUserId)
+          .where('categoryId', 'in', sourceCategoryIds)
+          .where('tagId', '=', tagId)
+          .where('id', '!=', first.id)
+          .execute();
+      }
+    }
+
+    if (mergedTagBudgets.length > 0 && !mergedBudget) {
+      throw new ValidationError('Nested tag budgets require a merged category budget.', {
+        targetCategoryId,
+      });
+    }
+    if (mergedBudget) {
+      const tagBudgetSumCents = mergedTagBudgets.reduce(
+        (sum, budget) =>
+          sum + budgetAmountInCadence(budget.amountCents, budget.cadence, mergedBudget!.cadence),
+        0,
+      );
+      if (tagBudgetSumCents > mergedBudget.amountCents) {
+        throw new ValidationError(
+          `Merged tag budgets total ${tagBudgetSumCents} cents (${mergedBudget.cadence}), which exceeds the merged category budget of ${mergedBudget.amountCents} cents. Nothing was merged.`,
+          { targetCategoryId, tagBudgetSumCents, categoryBudgetCents: mergedBudget.amountCents },
+        );
       }
     }
 
@@ -246,6 +345,7 @@ export const FinanceBudgetRepository = {
     if (options?.dryRun) {
       return {
         budget: mergedBudget,
+        tagBudgets: mergedTagBudgets,
         sourceBudgetCount: sourceBudgets.length,
         monthlyRunwayBudgets,
       };
@@ -273,7 +373,12 @@ export const FinanceBudgetRepository = {
       .where('categoryId', 'in', sourceCategoryIds)
       .execute();
 
-    return { budget: mergedBudget, sourceBudgetCount: sourceBudgets.length, monthlyRunwayBudgets };
+    return {
+      budget: mergedBudget,
+      tagBudgets: mergedTagBudgets,
+      sourceBudgetCount: sourceBudgets.length,
+      monthlyRunwayBudgets,
+    };
   },
 
   /** Category budgets only: tag budgets are read with their category. */
@@ -671,6 +776,15 @@ export const FinanceBudgetRepository = {
     range: FinanceBudgetSpendRange,
     limit = 25,
   ): Promise<UncountedForeignTransaction[]> {
+    const tagFilter = range.tagId
+      ? sql<boolean>`exists (
+          select 1 from app.tag_assignments ta
+          where ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TABLE}::regclass
+            and ta.entity_id = t.id
+            and ta.tag_id = ${range.tagId}
+            and ta.removed_at is null
+        )`
+      : sql<boolean>`true`;
     const rows = await handle
       .selectFrom('app.financeTransactions as t')
       .select([
@@ -693,6 +807,7 @@ export const FinanceBudgetRepository = {
       .where(
         sql<boolean>`(t.settled_currency_code IS NULL OR t.settled_currency_code <> ${range.primaryCurrency})`,
       )
+      .where(tagFilter)
       .orderBy('t.postedOn', 'asc')
       .limit(limit)
       .execute();

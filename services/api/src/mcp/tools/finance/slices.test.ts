@@ -8,7 +8,7 @@ describe('finance tool slices', () => {
     const registry = createToolRegistry(financeSlices);
     const names = registry.listTools().map((tool) => tool.name);
 
-    expect(names).toHaveLength(17);
+    expect(names).toHaveLength(18);
     expect(new Set(names).size).toBe(names.length);
     expect(names).toContain('finance_accounts');
     expect(names).toContain('finance_account_delete');

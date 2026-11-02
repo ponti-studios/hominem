@@ -714,6 +714,75 @@ describe('budgets of record', () => {
 });
 
 describe('nested tag budgets', () => {
+  it('lists only uncounted foreign transactions carrying that tag', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    const restaurantTagId = await insertTag('Restaurant');
+    await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      tagBudgets: [{ tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' }],
+    });
+    const tagBudgetId = (
+      await db
+        .selectFrom('app.financeBudgets')
+        .select('id')
+        .where('userId', '=', userId)
+        .where('categoryId', '=', diningId)
+        .where('tagId', '=', coffeeTagId)
+        .executeTakeFirstOrThrow()
+    ).id;
+    const coffeeSpendId = await insertTransaction({
+      accountId,
+      categoryId: diningId,
+      postedOn: currentMonthStart,
+      amount: -20,
+      currencyCode: 'USD',
+    });
+    const restaurantSpendId = await insertTransaction({
+      accountId,
+      categoryId: diningId,
+      postedOn: currentMonthStart,
+      amount: -30,
+      currencyCode: 'USD',
+    });
+    await tagTransaction(coffeeSpendId, coffeeTagId);
+    await tagTransaction(restaurantSpendId, restaurantTagId);
+
+    const tagBudget = content(
+      await callTool(userId, 'finance_budget_get', { budgetId: tagBudgetId }),
+    ).budget;
+    expect(tagBudget?.uncountedForeignTransactionCount).toBe(1);
+    expect(tagBudget?.uncountedForeignTransactions.map((transaction) => transaction.id)).toEqual([
+      coffeeSpendId,
+    ]);
+  });
+
+  it('deletes nested tag budgets together with their category budget', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    const saved = content(
+      await callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [{ tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' }],
+      }),
+    ).budget;
+
+    expect(saved?.tagBudgets).toHaveLength(1);
+    expect(
+      content(await callTool(userId, 'finance_budget_delete', { budgetId: saved!.id })).removed,
+    ).toBe(true);
+    expect(
+      await db
+        .selectFrom('app.financeBudgets')
+        .select('id')
+        .where('userId', '=', userId)
+        .where('categoryId', '=', diningId)
+        .execute(),
+    ).toEqual([]);
+  });
+
   it('saves a category budget with tag budgets beneath it and reads them back intact', async () => {
     const coffeeTagId = await insertTag('Coffee');
     const restaurantTagId = await insertTag('Restaurant');

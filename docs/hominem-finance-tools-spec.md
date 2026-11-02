@@ -219,9 +219,12 @@ guarantee:
    be identical; a mismatch rolls the whole merge back. Category budgets move
    with them: source budgets are converted from their own cadence and added to
    the target's cadence (or the first budgeted source's cadence when the target
-   has no budget). The legacy runway-planner amounts are added per currency.
-   The confirmation preview reports the resulting budgets, and all budget
-   changes share the category merge transaction.
+   has no budget). Tag budgets merge by tag, retaining the target tag budget's
+   cadence or using the first source budget for that tag when none exists in
+   the target. The merged tag budgets must still fit inside the merged category
+   budget. The legacy runway-planner amounts are added per currency. The
+   confirmation preview reports the resulting budgets, and all budget changes
+   share the category merge transaction.
 
 `stage` runs one stage at a time for a caller that wants to drive and inspect
 the ordering; the merge stage re-checks both earlier stages, so a skipped one

@@ -67,10 +67,13 @@ If the target already has a budget, its cadence and tracking start remain in pla
 amount is converted from its own cadence and added to the target amount. If the target has no
 budget, the first budgeted source in the merge input supplies the cadence and tracking start.
 Cadence conversion uses 52 weekly, 12 monthly, 4 quarterly, or 1 annual period per year, with
-the converted amount rounded to the nearest cent. Only category budgets merge: a source
-category's tag budgets are removed with the category they belonged to. The legacy runway-planner
-monthly amounts are added separately by currency. Both budget types are included in the merge
-preview and update in the same transaction as the category merge.
+the converted amount rounded to the nearest cent. Tag budgets are merged by tag: an existing
+target tag budget keeps its cadence and tracking start, while the first source budget for that tag
+supplies the cadence when the target has none. Source amounts are converted from their own
+cadences and added. The merged tag budgets must still fit within the merged category budget or
+the category merge is rejected. The legacy runway-planner monthly amounts are added separately
+by currency. Category, tag, and runway budgets are included in the merge preview and update in
+the same transaction as the category merge.
 
 ## Cadence and calendar periods
 
