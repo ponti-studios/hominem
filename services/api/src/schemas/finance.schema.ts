@@ -655,14 +655,10 @@ export const financeBudgetBreakdownOutputSchema = z.object({
 // -- finance_budget_* (stored budgets, one per category, each with its own cadence) --
 
 export const financeBudgetCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual']);
-const budgetCategoryIdSchema = z
-  .string()
-  .refine(
-    (value) =>
-      z.string().uuid().safeParse(value).success ||
-      /^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$/.test(value),
-    'Expected a category UUID or a dry-run category placeholder.',
-  );
+const budgetCategoryIdSchema = z.union([
+  z.string().uuid(),
+  z.string().regex(/^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$/),
+]);
 
 const primaryCurrencySchema = accountCurrencySchema
   .refine((code) => code.toUpperCase() !== 'XXX', 'invalid_currency')

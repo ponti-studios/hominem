@@ -3310,7 +3310,17 @@
         "type": "object",
         "properties": {
           "categoryId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "string",
+                "pattern": "^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$"
+              }
+            ],
             "description": "Category id from finance_categories. Every budget belongs to a category."
           },
           "tagId": {
@@ -3410,7 +3420,17 @@
         "type": "object",
         "properties": {
           "categoryId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "string",
+                "pattern": "^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$"
+              }
+            ],
             "description": "Category id from finance_categories or a dry-run placeholder."
           },
           "amountCents": {
