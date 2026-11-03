@@ -1,10 +1,9 @@
 # Fly.io deploy
 
-Merges to `main` deploy automatically: each `deploy-*` workflow runs after its
-`validate-*` workflow passes and calls `.github/workflows/fly-deploy-service.yml`
-(remote build, waits on health checks). `deploy-finance` is manual-only.
-`deploy-career` is also manual-only; Career deployments require an explicit
-workflow dispatch from `main`.
+Merges to `main` deploy automatically where a `deploy-*` workflow is configured:
+it runs after its `validate-*` workflow passes and calls
+`.github/workflows/fly-deploy-service.yml` (remote build, waits on health checks).
+Career and Finance remain in validation CI but have no production deployment workflow.
 Repo config the workflows need:
 
 - secrets: `FLY_API_TOKEN` (`fly tokens create org`), `FLY_POSTGRES_PASSWORD` (migrations, via `fly proxy`)
@@ -17,7 +16,7 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
 
 ## 1. Create apps + volumes
 
-    fly apps create hominem-db hominem-redis hominem-api hominem-worker hominem-web hominem-career hominem-finance
+    fly apps create hominem-db hominem-redis hominem-api hominem-worker hominem-web
     fly volumes create pgdata   -a hominem-db    -r sjc -s 10 -y
     fly volumes create redisdata -a hominem-redis -r sjc -s 1  -y
 
@@ -30,7 +29,7 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
     # api + worker: DATABASE_URL REDIS_URL BETTER_AUTH_SECRET AUTH_COOKIE_DOMAIN OPENROUTER_API_KEY
     #   R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME R2_ENDPOINT R2_PUBLIC_URL RESEND_API_KEY
     #   (+ the *_MODEL vars and anything else in services/api/src/env.schema.ts)
-    # web/career/finance: HOMINEM_INTERNAL_API_URL=http://hominem-api.internal:4040  PUBLIC_APP_URL
+    # web: HOMINEM_INTERNAL_API_URL=http://hominem-api.internal:4040  PUBLIC_APP_URL
     #   (VITE_PUBLIC_API_URL is a BUILD arg, see step 4)
 
 ## 3. DB first, then restore
@@ -46,8 +45,6 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
     fly deploy -c infra/fly/api.toml    --dockerfile services/api/Dockerfile        --ha=false
     fly deploy -c infra/fly/worker.toml --dockerfile services/api/worker/Dockerfile --ha=false
     fly deploy -c infra/fly/web.toml     --dockerfile apps/web/Dockerfile     --build-arg VITE_PUBLIC_API_URL=https://<public-api-host> --build-arg VITE_POSTHOG_PROJECT_TOKEN=<phc_token> --ha=false
-    fly deploy -c infra/fly/career.toml  --dockerfile apps/career/Dockerfile  --build-arg VITE_PUBLIC_API_URL=https://<public-api-host> --ha=false
-    fly deploy -c infra/fly/finance.toml --dockerfile apps/finance/Dockerfile --build-arg VITE_PUBLIC_API_URL=https://<public-api-host> --ha=false
 
 ## 5. Cutover
 
