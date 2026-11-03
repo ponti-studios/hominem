@@ -1,11 +1,7 @@
 name: deploy-career
 
 on:
-  workflow_run:
-    workflows: [validate-career]
-    types: [completed]
-    branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-career
