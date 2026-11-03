@@ -14,11 +14,13 @@ Run everything from the repo root. Needs `fly auth login` first.
 Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk over `*.internal` (Fly private network).
 
 ## 1. Create apps + volumes
+
     fly apps create hominem-db hominem-redis hominem-api hominem-worker hominem-web hominem-career hominem-finance
     fly volumes create pgdata   -a hominem-db    -r sjc -s 10 -y
     fly volumes create redisdata -a hominem-redis -r sjc -s 1  -y
 
 ## 2. Secrets
+
     fly secrets set -a hominem-db POSTGRES_PASSWORD=<new>
     fly secrets set -a hominem-redis REDIS_PASSWORD=<new>
     # DATABASE_URL=postgresql://postgres:<pw>@hominem-db.internal:5432/hominem
@@ -30,6 +32,7 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
     #   (VITE_PUBLIC_API_URL is a BUILD arg, see step 4)
 
 ## 3. DB first, then restore
+
     fly deploy -c infra/fly/postgres.toml --ha=false
     fly deploy -c infra/fly/redis.toml --ha=false
     fly proxy 15432:5432 -a hominem-db &
@@ -37,6 +40,7 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
       ~/Backups/hominem/"hominem.2026-10-21–19-08.dump"
 
 ## 4. Services (remote builder; pass the PUBLIC api url as a build arg for web apps)
+
     fly deploy -c infra/fly/api.toml    --dockerfile services/api/Dockerfile        --ha=false
     fly deploy -c infra/fly/worker.toml --dockerfile services/api/worker/Dockerfile --ha=false
     fly deploy -c infra/fly/web.toml     --dockerfile apps/web/Dockerfile     --build-arg VITE_PUBLIC_API_URL=https://<public-api-host> --build-arg VITE_POSTHOG_PROJECT_TOKEN=<phc_token> --ha=false
@@ -44,8 +48,24 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
     fly deploy -c infra/fly/finance.toml --dockerfile apps/finance/Dockerfile --build-arg VITE_PUBLIC_API_URL=https://<public-api-host> --ha=false
 
 ## 5. Cutover
+
 Add certs (`fly certs add <host> -a <app>`), then repoint DNS. Lower TTLs first.
 
 ## 6. Storage
+
 The R2 bucket is private and uploads/reads go through presigned URLs. Bucket CORS, lifecycle and
 the backfill are in [docs/file-uploads.md](../../docs/file-uploads.md).
+
+## EU migration preparation
+
+The Amsterdam copies use separate Fly apps so the current SJC deployment remains
+available for rollback. EU API and frontend configuration lives in the `*-eu.toml`
+files; `deploy-eu-apps` is a manual-only workflow guarded by final-sync and
+maintenance-window confirmations. `deploy-eu-worker` is separate and requires
+confirmation that the EU Redis queue is synchronized and the SJC worker is stopped.
+
+Do not dispatch either workflow until the final PostgreSQL, Redis, and R2 sync is
+verified. Production DNS still targets the SJC apps; attach and validate EU
+certificates, switch the production domains, then monitor before retiring SJC.
+The execution record and acceptance criteria are in
+[the EU production migration task](../../docs/tasks/eu-production-migration.md).

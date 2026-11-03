@@ -1,0 +1,28 @@
+name: deploy-eu-worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      queue_snapshot_verified:
+        description: Confirm the EU Redis queue is synchronized and the SJC worker is stopped
+        required: true
+        type: boolean
+
+concurrency:
+  group: deploy-eu-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-worker:
+    if: github.ref == 'refs/heads/main' && inputs.queue_snapshot_verified
+    uses: ./.github/workflows/fly-deploy-service.yml
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    with:
+      app: hominem-worker-eu
+      config_path: infra/fly/worker-eu.toml
+      dockerfile: services/api/worker/Dockerfile
+      checkout_ref: ${{ github.sha }}
