@@ -60,5 +60,4 @@ enforcement point for this contract.
 
 - **Public transport contract ownership** — Clients no longer depend on the deployable API package for runtime or type ownership.
 - **Career data model** — One documented server/DB or API-backed model; database imports stay in its permitted layer.
-- **Finance release tier** — README, CI, deployment configuration, and command scopes agree.
 - **Better Auth bearer sessions** — Keep or remove the plugin with a tested external compatibility contract.
