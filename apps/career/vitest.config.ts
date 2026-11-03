@@ -20,6 +20,8 @@ export default defineConfig({
   test: {
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
+      HOMINEM_INTERNAL_API_URL: 'http://localhost:4040',
+      PUBLIC_APP_URL: 'http://localhost:3000',
       VITE_PUBLIC_API_URL: 'http://localhost:3000',
       NODE_ENV: 'test',
     },

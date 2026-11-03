@@ -1,0 +1,72 @@
+name: deploy-eu-apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      final_data_sync_verified:
+        description: Confirm the final DB, Redis, and R2 copies are synchronized
+        required: true
+        type: boolean
+      maintenance_window_confirmed:
+        description: Confirm the production write pause is active
+        required: true
+        type: boolean
+
+concurrency:
+  group: deploy-eu-apps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-api:
+    if: github.ref == 'refs/heads/main' && inputs.final_data_sync_verified && inputs.maintenance_window_confirmed
+    uses: ./.github/workflows/fly-deploy-service.yml
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    with:
+      app: hominem-api-eu
+      config_path: infra/fly/api-eu.toml
+      dockerfile: services/api/Dockerfile
+      checkout_ref: ${{ github.sha }}
+
+  deploy-web:
+    if: github.ref == 'refs/heads/main' && inputs.final_data_sync_verified && inputs.maintenance_window_confirmed
+    uses: ./.github/workflows/fly-deploy-service.yml
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    with:
+      app: hominem-web-eu
+      config_path: infra/fly/web-eu.toml
+      dockerfile: apps/web/Dockerfile
+      build_args: |
+        VITE_PUBLIC_API_URL=https://api.ponti.io
+        VITE_POSTHOG_PROJECT_TOKEN=${{ vars.VITE_POSTHOG_PROJECT_TOKEN }}
+      checkout_ref: ${{ github.sha }}
+
+  deploy-career:
+    if: github.ref == 'refs/heads/main' && inputs.final_data_sync_verified && inputs.maintenance_window_confirmed
+    uses: ./.github/workflows/fly-deploy-service.yml
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    with:
+      app: hominem-career-eu
+      config_path: infra/fly/career-eu.toml
+      dockerfile: apps/career/Dockerfile
+      build_args: |
+        VITE_PUBLIC_API_URL=https://api.ponti.io
+      checkout_ref: ${{ github.sha }}
+
+  deploy-finance:
+    if: github.ref == 'refs/heads/main' && inputs.final_data_sync_verified && inputs.maintenance_window_confirmed
+    uses: ./.github/workflows/fly-deploy-service.yml
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    with:
+      app: hominem-finance-eu
+      config_path: infra/fly/finance-eu.toml
+      dockerfile: apps/finance/Dockerfile
+      build_args: |
+        VITE_PUBLIC_API_URL=https://api.ponti.io
+      checkout_ref: ${{ github.sha }}
