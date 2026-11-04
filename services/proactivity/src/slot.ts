@@ -89,7 +89,8 @@ export function toProactivityDecision(input: ModelDecision): ProactivityDecision
       return proactivityDecisionSchema.parse({
         kind: 'defer',
         reason: input.reason,
-        reevaluateAt: normalizeTimestamp(input.reevaluateAt) ?? '',
+        reevaluateAt:
+          normalizeTimestamp(input.reevaluateAt) ?? new Date(Date.now() + 7 * DAY_MS).toISOString(),
         evidenceIds: input.evidenceIds,
       });
     case 'quiet':
@@ -273,5 +274,5 @@ function normalizeTimestamp(value: string | null): string | null {
   if (!value) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T09:00:00.000Z`;
   const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? value : new Date(parsed).toISOString();
+  return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
 }

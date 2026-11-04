@@ -154,19 +154,22 @@ describe('model-facing decision shape', () => {
     ).toThrow();
   });
 
-  it('rejects a defer without a reassessment time', () => {
-    expect(() =>
-      toProactivityDecision(
-        modelDecisionSchema.parse({
-          kind: 'defer',
-          summary: null,
-          reason: 'The reading is stale.',
-          nextStep: null,
-          reevaluateAt: null,
-          evidenceIds: ['ev-after'],
-        }),
-      ),
-    ).toThrow();
+  it('defaults a missing reassessment time to one week out', () => {
+    const decision = toProactivityDecision(
+      modelDecisionSchema.parse({
+        kind: 'defer',
+        summary: null,
+        reason: 'The reading is stale.',
+        nextStep: null,
+        reevaluateAt: null,
+        evidenceIds: ['ev-after'],
+      }),
+    );
+
+    expect(decision).toMatchObject({ kind: 'defer', evidenceIds: ['ev-after'] });
+    expect(decision.kind === 'defer' && Date.parse(decision.reevaluateAt)).toBeGreaterThan(
+      Date.now(),
+    );
   });
 
   it('drops unused fields from a quiet decision', () => {

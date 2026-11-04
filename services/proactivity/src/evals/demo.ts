@@ -117,7 +117,7 @@ function render(input: {
     cursor: pointer;
   }
   .filters button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; }
   .case {
     display: flex;
     flex-direction: column;
@@ -138,13 +138,14 @@ function render(input: {
   .badge.none, .badge.error { color: var(--none); background: var(--none-bg); }
   .case h3 { margin: 0; font-size: 1.35rem; line-height: 1.15; }
   .trigger { margin: 0; color: var(--muted); font-size: 0.85rem; }
-  .states { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .state { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.35); }
+  .states { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .state { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: rgba(255,255,255,0.35); }
   .state h4 { margin: 0 0 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-  .state dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 0.8rem; }
+  .state dl { margin: 0; display: grid; grid-template-columns: minmax(96px, 0.45fr) 1fr; gap: 4px 12px; font-size: 0.84rem; line-height: 1.45; }
   .state dt { color: var(--muted); }
-  .state dd { margin: 0; overflow-wrap: anywhere; }
+  .state dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .state .evid { display: block; margin-bottom: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; color: var(--muted); }
+  .redacted { color: var(--muted); font-style: italic; }
   .empty { color: var(--muted); font-size: 0.82rem; margin: 0; }
   .decision { border-top: 1px solid var(--line); padding-top: 14px; }
   .decision .summary { margin: 0 0 6px; font-weight: 800; }
@@ -302,10 +303,10 @@ function renderDelivery(result: ProactivityEvalResult, input: ProactivityEvalCas
     return `<div class="delivery withheld"><span class="label">Delivery</span>No evaluation, no email. ${escapeHtml(input.expected.rationale)}</div>`;
   }
   if (result.actual === 'defer') {
-    return `<div class="delivery withheld"><span class="label">Delivery withheld</span>${escapeHtml(result.decision?.reason ?? 'Waiting for better evidence.')}</div>`;
+    return `<div class="delivery withheld"><span class="label">Delivery withheld</span>No email sent; waiting for better evidence.</div>`;
   }
   if (result.actual === 'quiet') {
-    return `<div class="delivery withheld"><span class="label">Delivery withheld</span>No interruption. ${escapeHtml(result.decision?.reason ?? '')}</div>`;
+    return `<div class="delivery withheld"><span class="label">Delivery withheld</span>No interruption was sent.</div>`;
   }
   const intent = result.deliveryIntents.find((candidate) => candidate.kind === 'goal-proposal');
   if (!intent)
@@ -319,13 +320,19 @@ function renderSnapshot(snapshot: ProactivityEvalCase['current']): string {
     .map(
       (item) =>
         `<span class="evid">${escapeHtml(item.id)}</span><dl>${Object.entries(item.facts)
-          .map(
-            ([key, value]) =>
-              `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(formatValue(value))}</dd>`,
-          )
+          .map(([key, value]) => {
+            const shown = isSensitiveKey(key)
+              ? '<span class="redacted">[redacted]</span>'
+              : escapeHtml(formatValue(value));
+            return `<dt>${escapeHtml(humanizeKey(key))}</dt><dd>${shown}</dd>`;
+          })
           .join('')}</dl>`,
     )
     .join('');
+}
+
+function isSensitiveKey(key: string): boolean {
+  return key.toLowerCase().includes('private');
 }
 
 function triggerLabel(trigger: ProactivityEvalCase['trigger']): string {
@@ -365,13 +372,35 @@ function countDecisions(results: ProactivityEvalResult[]) {
 }
 
 function formatValue(value: unknown): string {
-  if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string') {
+    return value.length > 180 ? `${value.slice(0, 177)}…` : value;
   }
-  const text = JSON.stringify(value) ?? String(value);
-  return text.length > 110 ? `${text.slice(0, 107)}…` : text;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    return value.length === 0 ? '—' : value.map(formatArrayItem).join(', ');
+  }
+  if (isRecord(value)) {
+    return Object.entries(value)
+      .map(([key, entry]) => `${humanizeKey(key)}: ${formatValue(entry)}`)
+      .join(' · ');
+  }
+  return String(value);
+}
+
+function formatArrayItem(value: unknown): string {
+  if (isRecord(value) && typeof value.name === 'string') {
+    return value.amount === undefined ? value.name : `${value.name} (${formatValue(value.amount)})`;
+  }
+  return formatValue(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function humanizeKey(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
 }
 
 function formatDate(value: string): string {
