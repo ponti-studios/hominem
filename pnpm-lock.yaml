@@ -1296,6 +1296,9 @@ importers:
 
   services/proactivity:
     dependencies:
+      '@hominem/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1303,6 +1306,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.4.0
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

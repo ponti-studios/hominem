@@ -2,6 +2,19 @@ export { createProactivityEngine } from './engine.js';
 export { InMemoryJournal } from './memory.js';
 export { goalScenarios } from './scenarios.js';
 export {
+  buildProactivityPrompt,
+  createModelSlot,
+  modelDecisionSchema,
+  toProactivityDecision,
+  ProactivitySlotError,
+} from './slot.js';
+export type {
+  ModelDecision,
+  ModelSlotOptions,
+  ProactivityGenerate,
+  ProactivityGenerateRequest,
+} from './slot.js';
+export {
   deliveryIntentSchema,
   evaluationRunSchema,
   goalContextSchema,

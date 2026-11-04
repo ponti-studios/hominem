@@ -1,14 +1,37 @@
 # Proactivity engine
 
-This standalone Node package prototypes goal-centered evaluation and delivery
-planning. It is not wired to the API, MCP server, or client applications.
+Goal-centered evaluation and delivery planning for Hominem. The engine owns the
+trigger, context, decision, evaluation-run, and delivery-intent contracts; the
+API, scheduler, and clients are deliberately not wired yet.
 
-Run the mocked engine tests with:
+## Tests
+
+Run the engine and harness tests with:
 
 ```sh
 pnpm --filter @hominem/proactivity test
 ```
 
-The ten synthetic goal scenarios drive the same engine contract with a scripted
-evaluator slot. They validate orchestration, evidence boundaries, idempotency,
-and delivery planning; they do not measure a language model's reasoning.
+## Evaluations
+
+`src/evals/cases.ts` holds real-world scenarios with expected decisions,
+required evidence, forbidden language, and delivery expectations. The harness
+checks decision kind, evidence grounding, privacy terms, length limits, and
+delivery side effects.
+
+```sh
+# Deterministic harness run; no model calls.
+pnpm --filter @hominem/proactivity eval -- --offline
+
+# Live run against the shared OpenRouter client.
+pnpm --filter @hominem/proactivity eval -- --live --model openai/gpt-5-mini
+
+# One or more cases.
+pnpm --filter @hominem/proactivity eval -- --live --case grocery-overspend
+```
+
+The live slot builds its prompt and structured-output schema in
+`src/slot.ts`, and resolves the model's reasoning profile through
+`@hominem/ai/model-capabilities` so provider constraints (for example, GPT-5
+mini requiring `minimal` reasoning) stay in one place.
+

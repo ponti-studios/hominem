@@ -22,7 +22,8 @@
     { "path": "packages/services" },
     { "path": "packages/storage" },
     { "path": "packages/telemetry" },
-    { "path": "packages/utils" }
+    { "path": "packages/utils" },
+    { "path": "services/proactivity" }
   ],
   "exclude": [
     "node_modules",

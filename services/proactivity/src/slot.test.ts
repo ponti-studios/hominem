@@ -1,0 +1,193 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import {
+  buildProactivityPrompt,
+  createModelSlot,
+  modelDecisionSchema,
+  toProactivityDecision,
+  ProactivitySlotError,
+} from './slot.js';
+import type { GoalContext } from './types.js';
+
+const now = '2026-11-04T09:00:00.000Z';
+
+const context: GoalContext = {
+  goal: {
+    id: 'goal-1',
+    ownerId: 'person-1',
+    title: 'Keep groceries under £450',
+    status: 'active',
+    domains: ['finance'],
+  },
+  trigger: {
+    kind: 'critical-change',
+    id: 'change-1',
+    ownerId: 'person-1',
+    changedDomains: ['finance'],
+    occurredAt: now,
+  },
+  previous: {
+    id: 'before',
+    asOf: '2026-10-28T09:00:00.000Z',
+    evidence: [
+      {
+        id: 'ev-before',
+        domain: 'finance',
+        source: 'test',
+        observedAt: '2026-10-28T09:00:00.000Z',
+        facts: { monthlyGroceries: 412 },
+      },
+    ],
+  },
+  current: {
+    id: 'after',
+    asOf: now,
+    evidence: [
+      {
+        id: 'ev-after',
+        domain: 'finance',
+        source: 'test',
+        observedAt: now,
+        facts: { monthlyGroceries: 487, budget: 450 },
+      },
+    ],
+  },
+};
+
+const proposal = {
+  kind: 'propose' as const,
+  summary: 'Groceries are over the monthly limit',
+  reason: 'Spend rose to £487 against a £450 budget.',
+  nextStep: 'Review the grocery budget against this month’s spending.',
+  evidenceIds: ['ev-after'],
+};
+
+describe('proactivity model slot', () => {
+  it('builds a prompt with the goal, trigger, both states, and available evidence ids', () => {
+    const prompt = buildProactivityPrompt(context);
+
+    expect(prompt).toContain('Keep groceries under £450');
+    expect(prompt).toContain('critical change in finance');
+    expect(prompt).toContain('ev-before');
+    expect(prompt).toContain('ev-after');
+    expect(prompt).toContain('"monthlyGroceries": 487');
+    expect(prompt).toContain('Available evidence ids');
+  });
+
+  it('returns a valid grounded decision', async () => {
+    const generate = vi.fn(async () => proposal);
+    const slot = createModelSlot({ generate });
+
+    await expect(slot.evaluate(context)).resolves.toEqual(proposal);
+    expect(generate).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries once when the decision does not match the schema', async () => {
+    const generate = vi
+      .fn()
+      .mockResolvedValueOnce({ ...proposal, evidenceIds: [] })
+      .mockResolvedValueOnce(proposal);
+    const slot = createModelSlot({ generate });
+
+    await expect(slot.evaluate(context)).resolves.toEqual(proposal);
+    expect(generate).toHaveBeenCalledTimes(2);
+    const secondCall = generate.mock.calls[1];
+    if (!secondCall) throw new Error('Expected a second generate call.');
+    expect(requestPrompt(secondCall[0])).toContain('did not match the decision schema');
+  });
+
+  it('retries when the decision cites evidence outside the goal context', async () => {
+    const generate = vi
+      .fn()
+      .mockResolvedValueOnce({ ...proposal, evidenceIds: ['ev-invented'] })
+      .mockResolvedValueOnce(proposal);
+    const slot = createModelSlot({ generate });
+
+    await expect(slot.evaluate(context)).resolves.toEqual(proposal);
+    expect(generate).toHaveBeenCalledTimes(2);
+    const secondCall = generate.mock.calls[1];
+    if (!secondCall) throw new Error('Expected a second generate call.');
+    const secondPrompt = requestPrompt(secondCall[0]);
+    expect(secondPrompt).toContain('ev-invented');
+    expect(secondPrompt).toContain('Use only these evidence ids');
+  });
+
+  it('fails after the attempt budget with the last error attached', async () => {
+    const generate = vi.fn(async () => ({ ...proposal, evidenceIds: ['ev-invented'] }));
+    const slot = createModelSlot({ generate, maxAttempts: 2 });
+
+    await expect(slot.evaluate(context)).rejects.toBeInstanceOf(ProactivitySlotError);
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a non-positive attempt budget', () => {
+    expect(() => createModelSlot({ generate: async () => proposal, maxAttempts: 0 })).toThrow(
+      'maxAttempts must be a positive integer.',
+    );
+  });
+});
+
+describe('model-facing decision shape', () => {
+  const flat = {
+    kind: 'propose' as const,
+    summary: 'Groceries are over the monthly limit',
+    reason: 'Spend rose to £487 against a £450 budget.',
+    nextStep: 'Review the grocery budget.',
+    reevaluateAt: null,
+    evidenceIds: ['ev-after'],
+  };
+
+  it('normalizes a flat model decision into the internal union', () => {
+    expect(toProactivityDecision(modelDecisionSchema.parse(flat))).toEqual({
+      kind: 'propose',
+      summary: flat.summary,
+      reason: flat.reason,
+      nextStep: flat.nextStep,
+      evidenceIds: ['ev-after'],
+    });
+  });
+
+  it('rejects a proposal without a summary', () => {
+    expect(() =>
+      toProactivityDecision(modelDecisionSchema.parse({ ...flat, summary: null })),
+    ).toThrow();
+  });
+
+  it('rejects a defer without a reassessment time', () => {
+    expect(() =>
+      toProactivityDecision(
+        modelDecisionSchema.parse({
+          kind: 'defer',
+          summary: null,
+          reason: 'The reading is stale.',
+          nextStep: null,
+          reevaluateAt: null,
+          evidenceIds: ['ev-after'],
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it('drops unused fields from a quiet decision', () => {
+    expect(
+      toProactivityDecision(
+        modelDecisionSchema.parse({
+          kind: 'quiet',
+          summary: 'ignored',
+          reason: 'Nothing material changed.',
+          nextStep: 'ignored',
+          reevaluateAt: null,
+          evidenceIds: [],
+        }),
+      ),
+    ).toEqual({ kind: 'quiet', reason: 'Nothing material changed.', evidenceIds: [] });
+  });
+});
+
+function requestPrompt(value: unknown): string {
+  if (typeof value === 'object' && value !== null) {
+    const prompt = Reflect.get(value, 'prompt');
+    if (typeof prompt === 'string') return prompt;
+  }
+  throw new Error('The generate request did not include a prompt.');
+}
