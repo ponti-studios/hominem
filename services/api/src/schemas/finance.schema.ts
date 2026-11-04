@@ -1507,3 +1507,316 @@ export const financeAccountUpdateOutputSchema = z.object({
     .describe('Each altered field mapped to [from, to] — the audit record.'),
   reason: accountUpdateReasonSchema.nullable(),
 });
+
+// -- finance_bill_* (the Bills register: reference data plus read-time derivation) --
+
+export const financeBillKindSchema = z.enum([
+  'electricity',
+  'heating',
+  'water',
+  'broadband',
+  'council_tax',
+  'insurance',
+  'rent',
+  'other',
+]);
+
+export const financeBillPaymentMethodSchema = z.enum([
+  'direct_debit',
+  'pay_as_you_go',
+  'card',
+  'manual',
+  'other',
+]);
+
+export const financeBillAmountModelSchema = z.enum(['fixed', 'variable', 'top_up']);
+
+export const financeBillCadenceSchema = z.enum([
+  'weekly',
+  'monthly',
+  'quarterly',
+  'annual',
+  'one_off',
+]);
+
+export const financeBillStatusSchema = z.enum(['active', 'paused', 'closed']);
+
+export const financeBillTypeSchema = z.enum(['suggested', 'confirmed', 'cancelled']);
+
+export const financeBillSupplyStatusSchema = z.enum(['connected', 'disconnected', 'unknown']);
+
+export const financeBillBalanceSourceSchema = z.enum([
+  'agent_portal',
+  'user_report',
+  'meter_photo',
+]);
+
+const financeBillStoredSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  providerName: z.string().nullable(),
+  kind: financeBillKindSchema,
+  accountNumber: z.string().nullable(),
+  paymentMethod: financeBillPaymentMethodSchema,
+  amountModel: financeBillAmountModelSchema,
+  expectedAmountCents: z.number().int().min(0).nullable(),
+  currencyCode: z.string(),
+  cadence: financeBillCadenceSchema.nullable(),
+  dueDay: z.number().int().min(1).max(31).nullable(),
+  dueDate: z.string().nullable(),
+  anchorDate: z.string().nullable(),
+  status: financeBillStatusSchema,
+  type: financeBillTypeSchema,
+  isDismissed: z.boolean(),
+  lastDismissedAt: z.string().nullable(),
+  merchantMatch: z.array(z.string()),
+  staleAfterHours: z.number().int().positive(),
+  paygWarnDays: z.number().int().positive(),
+  notes: z.string().nullable(),
+  accountId: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const financeBillLastPaidSchema = z.object({
+  transactionId: z.string(),
+  postedOn: z.string(),
+  amount: z.number(),
+  currencyCode: z.string(),
+});
+
+const financeBillPaygSchema = z.object({
+  latestBalanceCents: z.number().int(),
+  latestCheckedAt: z.string(),
+  supplyStatus: financeBillSupplyStatusSchema,
+  meterReadingKwh: z.number().nullable(),
+  dailyBurnCents: z.number().nullable(),
+  daysRemaining: z.number().nullable(),
+  estimatedRunOutDate: z.string().nullable(),
+  isStale: z.boolean(),
+  isLow: z.boolean(),
+});
+
+export const financeBillDetailSchema = financeBillStoredSchema.extend({
+  nextDueDate: z
+    .string()
+    .nullable()
+    .describe('Computed at read time from the cadence and due day; never stored.'),
+  lastPaid: financeBillLastPaidSchema
+    .nullable()
+    .describe('The latest matched transaction; null when none has been claimed.'),
+  payg: financeBillPaygSchema
+    .nullable()
+    .describe('Pay-as-you-go derivation; null on bills that are not top-up.'),
+});
+
+const financeBillBalanceEntrySchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  billId: z.string(),
+  checkedAt: z.string(),
+  createdAt: z.string(),
+  balanceCents: z
+    .number()
+    .int()
+    .describe('Signed: a disconnected supply can sit at a negative balance.'),
+  meterReadingKwh: z.number().nullable(),
+  supplyStatus: financeBillSupplyStatusSchema,
+  source: financeBillBalanceSourceSchema,
+  note: z.string().nullable(),
+});
+
+const financeBillDetailWithLogSchema = financeBillDetailSchema.extend({
+  recentEntries: z
+    .array(financeBillBalanceEntrySchema)
+    .describe('The balance log, most recent first; empty on bills that are not top-up.'),
+});
+
+const financeBillWriteFields = {
+  name: z.string().trim().min(1).describe('Display name of the bill.'),
+  providerName: z.string().trim().min(1).optional().describe('Supplier name as billed.'),
+  kind: financeBillKindSchema.describe('What the bill is for.'),
+  accountNumber: z
+    .string()
+    .optional()
+    .describe('Stored and returned verbatim: account numbers, customer references, meter serials.'),
+  paymentMethod: financeBillPaymentMethodSchema.describe('How the bill is paid.'),
+  amountModel: financeBillAmountModelSchema.describe(
+    'fixed bills carry an expected amount, variable bills omit it, top-up bills carry the typical top-up amount.',
+  ),
+  expectedAmountCents: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe('Omit for a variable bill; the typical top-up amount on a top-up bill.'),
+  currencyCode: accountCurrencySchema.describe('ISO 4217 currency code, e.g. GBP.'),
+  cadence: financeBillCadenceSchema
+    .optional()
+    .describe('Omit for no recurrence — always omitted on a top-up bill.'),
+  dueDay: z
+    .number()
+    .int()
+    .min(1)
+    .max(31)
+    .optional()
+    .describe('1–31; a short month clamps the computed due date to its last day.'),
+  dueDate: isoDateSchema.optional().describe('The due date of a one_off bill as YYYY-MM-DD.'),
+  anchorDate: isoDateSchema
+    .optional()
+    .describe('Reference point weekly, quarterly and annual cadences step from.'),
+  status: financeBillStatusSchema
+    .default('active')
+    .describe('active, paused, or closed; closed is bookkeeping, not deletion.'),
+  type: financeBillTypeSchema
+    .default('confirmed')
+    .describe('Detection lifecycle: suggested, confirmed, or cancelled (terminal).'),
+  isDismissed: z
+    .boolean()
+    .default(false)
+    .describe('Dismissal lives on the suggested row itself; confirming clears it.'),
+  merchantMatch: z
+    .array(z.string().min(1))
+    .default([])
+    .describe(
+      'Every string that identifies this supplier in a feed; a transaction matches when any one of them is a case-insensitive substring of its merchant name or description.',
+    ),
+  staleAfterHours: z
+    .number()
+    .int()
+    .positive()
+    .default(48)
+    .describe(
+      'Top-up only: hours after the latest balance entry at which the balance is flagged stale.',
+    ),
+  paygWarnDays: z
+    .number()
+    .int()
+    .positive()
+    .default(7)
+    .describe('Top-up only: low-balance warning threshold in days of credit remaining, not money.'),
+  notes: z.string().optional().describe('Free-text notes.'),
+  accountId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('Linked finance account; the bill never moves money on it.'),
+};
+
+export const financeBillCreateInputSchema = z.object(financeBillWriteFields).strict();
+
+export const financeBillCreateOutputSchema = z.object({
+  bill: financeBillDetailSchema,
+});
+
+export const financeBillListInputSchema = z
+  .object({
+    status: financeBillStatusSchema.optional(),
+    type: financeBillTypeSchema.optional(),
+    kind: financeBillKindSchema.optional(),
+    limit: mcpLimitSchema.default(20),
+  })
+  .strict();
+
+export const financeBillListOutputSchema = z.object({
+  bills: z.array(financeBillDetailSchema),
+  count: z.number().int().min(0),
+});
+
+export const financeBillGetInputSchema = z
+  .object({
+    billId: z.string().uuid().describe('Stable bill id returned by finance_bill_list.'),
+  })
+  .strict();
+
+export const financeBillGetOutputSchema = z.object({
+  bill: financeBillDetailWithLogSchema.nullable(),
+});
+
+const financeBillPatchFields = {
+  name: financeBillWriteFields.name.optional(),
+  providerName: financeBillWriteFields.providerName.nullable(),
+  kind: financeBillKindSchema.optional(),
+  accountNumber: financeBillWriteFields.accountNumber.nullable(),
+  paymentMethod: financeBillPaymentMethodSchema.optional(),
+  amountModel: financeBillAmountModelSchema.optional(),
+  expectedAmountCents: financeBillWriteFields.expectedAmountCents.nullable(),
+  currencyCode: financeBillWriteFields.currencyCode.optional(),
+  cadence: financeBillCadenceSchema.nullable().optional(),
+  dueDay: financeBillWriteFields.dueDay.nullable(),
+  dueDate: financeBillWriteFields.dueDate.nullable(),
+  anchorDate: financeBillWriteFields.anchorDate.nullable(),
+  status: financeBillStatusSchema.optional(),
+  type: financeBillTypeSchema.optional(),
+  isDismissed: z.boolean().optional(),
+  merchantMatch: z.array(z.string().min(1)).optional(),
+  staleAfterHours: z.number().int().positive().optional(),
+  paygWarnDays: z.number().int().positive().optional(),
+  notes: financeBillWriteFields.notes.nullable(),
+  accountId: financeBillWriteFields.accountId.nullable(),
+};
+
+export const financeBillUpdateInputSchema = z
+  .object({
+    billId: z.string().uuid().describe('Stable bill id returned by finance_bill_list.'),
+    ...financeBillPatchFields,
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const { billId: _billId, ...patch } = value;
+    if (Object.keys(patch).length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Set at least one field to update.',
+        path: [],
+      });
+    }
+  });
+
+export const financeBillUpdateOutputSchema = z.object({
+  bill: financeBillDetailSchema.nullable(),
+});
+
+export const financeBillDeleteInputSchema = z
+  .object({
+    billId: z.string().uuid().describe('Stable bill id returned by finance_bill_list.'),
+    dryRun: z.boolean().default(false),
+  })
+  .strict();
+
+export const financeBillDeleteOutputSchema = z.object({
+  removed: z.boolean(),
+  dryRun: z.boolean(),
+  preview: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      balanceEntryCount: z.number().int().min(0),
+    }),
+  ),
+});
+
+export const financeBillLogBalanceInputSchema = z
+  .object({
+    billId: z.string().uuid().describe('Stable bill id returned by finance_bill_list.'),
+    checkedAt: z.iso
+      .datetime({ offset: true })
+      .describe('When the balance was observed; corrections are new rows, never edits.'),
+    balanceCents: z
+      .number()
+      .int()
+      .describe('Signed balance in minor units; negative when the supply sits in debt.'),
+    meterReadingKwh: z.number().optional().describe('A meter reading is a measurement, not money.'),
+    supplyStatus: financeBillSupplyStatusSchema,
+    source: financeBillBalanceSourceSchema.describe(
+      'Where the observation came from: the supplier portal, the user, or a meter photo.',
+    ),
+    note: z.string().optional(),
+  })
+  .strict();
+
+export const financeBillLogBalanceOutputSchema = z.object({
+  entry: financeBillBalanceEntrySchema.nullable(),
+  bill: financeBillDetailWithLogSchema.nullable(),
+});

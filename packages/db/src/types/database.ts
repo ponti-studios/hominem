@@ -583,6 +583,47 @@ export interface AppFinanceAccounts {
   userId: string;
 }
 
+export interface AppFinanceBillBalanceEntries {
+  balanceCents: number;
+  billId: string;
+  checkedAt: ColumnType<string, Date | string, Date | string>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  meterReadingKwh: Numeric | null;
+  note: string | null;
+  source: string;
+  supplyStatus: string;
+  userId: string;
+}
+
+export interface AppFinanceBills {
+  accountId: string | null;
+  accountNumber: string | null;
+  amountModel: string;
+  anchorDate: ColumnType<string, Date | string, Date | string> | null;
+  cadence: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  currencyCode: string;
+  dueDate: ColumnType<string, Date | string, Date | string> | null;
+  dueDay: number | null;
+  expectedAmountCents: number | null;
+  id: Generated<string>;
+  isDismissed: Generated<boolean>;
+  kind: string;
+  lastDismissedAt: ColumnType<string, Date | string, Date | string> | null;
+  merchantMatch: Generated<string[]>;
+  name: string;
+  notes: string | null;
+  paygWarnDays: Generated<number>;
+  paymentMethod: string;
+  providerName: string | null;
+  staleAfterHours: Generated<number>;
+  status: Generated<string>;
+  type: Generated<string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppFinanceBudgets {
   amountCents: number;
   cadence: string;
@@ -1776,6 +1817,8 @@ export interface DB {
   'app.creditState': AppCreditState;
   'app.files': AppFiles;
   'app.financeAccounts': AppFinanceAccounts;
+  'app.financeBillBalanceEntries': AppFinanceBillBalanceEntries;
+  'app.financeBills': AppFinanceBills;
   'app.financeBudgets': AppFinanceBudgets;
   'app.financeCategories': AppFinanceCategories;
   'app.financeInstitutions': AppFinanceInstitutions;

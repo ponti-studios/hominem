@@ -13,5 +13,23 @@ export type {
   FinanceSpendTotal,
   UncountedForeignTransaction,
 } from './services/finance/budget.repository';
+export { FinanceBillRepository } from './services/finance/bill.repository';
+export type {
+  FinanceBillAmountModel,
+  FinanceBillBalanceEntryRecord,
+  FinanceBillBalanceSource,
+  FinanceBillBalanceWriteInput,
+  FinanceBillCadence,
+  FinanceBillClaim,
+  FinanceBillKind,
+  FinanceBillListFilters,
+  FinanceBillPatch,
+  FinanceBillPaymentMethod,
+  FinanceBillRecord,
+  FinanceBillStatus,
+  FinanceBillSupplyStatus,
+  FinanceBillType,
+  FinanceBillWriteInput,
+} from './services/finance/bill.repository';
 export { FinanceQueryRepository } from './services/finance/finance-query.repository';
 export type { FinanceMonthlyTransactionRecord } from './services/finance/finance-query.repository';
