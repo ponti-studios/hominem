@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Fly only keeps a short log buffer, so this looks at whatever is still in it.
-echo "Speech diagnosis (Fly: hominem-api, hominem-worker)"
+echo "Speech diagnosis (Fly: active API and worker apps)"
 echo
 
 show_logs() {

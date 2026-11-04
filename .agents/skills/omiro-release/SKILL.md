@@ -37,9 +37,11 @@ particulars.
 - Build numbers: the marketing version is committed in `app.config.js`; EAS
   owns the iOS build-number increment. `apps/omiro/ios` is CNG-generated —
   never edit it; change config/plugins and regenerate.
-- EAS cloud is not used: `deploy-mobile.yml` is disabled (manual dispatch
-  only) and the cloud release path runs only when asked for by name. OTA
-  updates run on EAS Update and are unaffected — they are cheap and stay.
+- The normal release path builds locally. The cloud `production-release.yml`
+  remains available for a deliberate EAS dashboard run; the GitHub
+  `deploy-mobile` trigger was removed because its manual event could never pass
+  its `workflow_run`-only job condition. OTA updates still run through EAS
+  Update.
 - For New Relic integration, production verification, and the full
   operations reference, read
   [references/production-operations.md](references/production-operations.md).

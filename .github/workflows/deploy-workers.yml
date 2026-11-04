@@ -58,7 +58,7 @@ jobs:
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     with:
-      app: hominem-worker
-      config_path: infra/fly/worker.toml
+      app_variable: FLY_WORKER_APP_NAME
+      config_variable: FLY_WORKER_CONFIG
       dockerfile: services/api/worker/Dockerfile
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}

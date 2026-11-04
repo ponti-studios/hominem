@@ -1,7 +1,6 @@
 name: Production release
 
-# Normally triggered by deploy-mobile after validate-mobile passes on main.
-# Operators may rerun it from the EAS dashboard when recovering the pipeline.
+# Manually started from the EAS dashboard when a cloud build is explicitly chosen.
 on:
   workflow_dispatch: {}
 

@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: Production
+    env:
+      FLY_DB_APP_NAME: ${{ vars.FLY_DB_APP_NAME }}
     steps:
       - name: checkout-repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -39,13 +41,14 @@ jobs:
       - name: setup-flyctl
         uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
 
-      # hominem-db is private to Fly's network, so tunnel to it from the runner.
+      # The database is private to Fly's network, so tunnel to its app from the runner.
       - name: open-database-tunnel
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           set -euo pipefail
-          flyctl proxy 15432:5432 -a hominem-db >/tmp/fly-proxy.log 2>&1 &
+          test -n "$FLY_DB_APP_NAME" || { echo 'Missing database app name in the Production environment'; exit 1; }
+          flyctl proxy 15432:5432 -a "$FLY_DB_APP_NAME" >/tmp/fly-proxy.log 2>&1 &
           for _ in $(seq 1 30); do
             (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null && exit 0
             sleep 1

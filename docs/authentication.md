@@ -63,9 +63,9 @@ two different callers with two different trust boundaries:
 `HOMINEM_INTERNAL_API_URL` is server-only in both environments — never expose
 it as a `VITE_*` variable or use it in a browser redirect, client request, or
 auth client configuration. In production it must resolve to the API service's
-private Fly address (`*.internal`, e.g. `http://hominem-api.internal:4040`); in development it's the same local API URL as
+private Fly address (`*.internal`, configured in the private production reference); in development it's the same local API URL as
 `VITE_PUBLIC_API_URL`, since there's no private/public split on localhost. The
-actual values live in each app's `infra/fly/*.toml` `[env]` and Fly secrets (production) and
+actual values live in the GitHub `Production` environment and Fly secrets (production) and
 `.env.example` (development) — not here, so this doc can't drift from them.
 
 This split exists because the public API is Cloudflare-protected in

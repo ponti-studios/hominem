@@ -12,22 +12,24 @@ the "why" behind what's allowed in telemetry. This skill is the runbook.
 New Relic is the primary home for API/worker traces, metrics, and
 privacy-filtered application logs emitted through Hominem's shared logger. It
 also receives Omiro mobile crashes and JavaScript errors. Fly.io is the source
-of truth for complete container stdout/stderr (`fly logs`). Prod runs on Fly
-(region sjc); app names are in `infra/fly/`. Do not put OTLP credentials or New Relic user
-API keys in a Web or mobile bundle.
+of truth for complete container stdout/stderr (`fly logs`). Production service
+identifiers and monitoring endpoints are maintained in the private Notion
+production reference and GitHub `Production` environment. Do not put OTLP
+credentials or New Relic user API keys in a Web or mobile bundle.
 
 ## Pull production logs
 
 ```bash
-fly logs -a hominem-api              # live tail
-fly logs -a hominem-api --no-tail    # recent buffer
-fly logs -a hominem-worker --no-tail | grep -E 'error|warn'
+fly logs -a "$FLY_API_APP_NAME"              # live tail
+fly logs -a "$FLY_API_APP_NAME" --no-tail    # recent buffer
+fly logs -a "$FLY_WORKER_APP_NAME" --no-tail | grep -E 'error|warn'
 ```
 
-Apps: `hominem-api`, `hominem-worker`, `hominem-web`, `hominem-career`,
-`hominem-finance`, `hominem-redis`, `hominem-db`. `scripts/fly-logs.sh <service>` wraps `fly logs`. New Relic is in the EU region
-(`one.eu.newrelic.com`, OTLP `https://otlp.eu01.nr-data.net`); turn it on with
-`infra/fly/enable-newrelic.sh`.
+Production app names and retired app inventory are in the private Notion
+reference. `scripts/fly-logs.sh <service>` uses the corresponding
+`FLY_*_APP_NAME` environment variable. Open the configured New Relic account
+and use the OTLP endpoint supplied through the `Production` environment;
+configure API/worker export with `infra/fly/enable-newrelic.sh`.
 
 For aggregate database verification (reconciliation state, missing usage
 events, current-month feature totals — no individual user data):
@@ -36,8 +38,9 @@ events, current-month feature totals — no individual user data):
 DATABASE_URL=<url> scripts/diagnose-usage.sh
 ```
 
-Dashboard path: fly.io dashboard → app → Monitoring. Use api for HTTP/runtime,
-worker for queue processing, redis for cache health, db for database events.
+Dashboard path: fly.io dashboard → app → Monitoring. Use the active API for
+HTTP/runtime, worker for queue processing, Redis for queue/cache health, and
+PostgreSQL for database events.
 
 ## New Relic errors and traces
 

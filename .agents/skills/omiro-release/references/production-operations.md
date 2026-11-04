@@ -28,10 +28,10 @@ merge to main -> just mobile check -> build:prod:local -> submit:local -> TestFl
 TestFlight candidates and App Store releases use the same production bundle,
 backend, and native binary. There is no separate staging binary. The marketing version is committed in app config and EAS remotely increments
 only the iOS build number. The EAS cloud workflow
-([`.eas/workflows/production-release.yml`](../../../apps/omiro/.eas/workflows/production-release.yml),
-started by `deploy-mobile`) still exists but is not used: it builds on EAS,
-which the maintainer does not pay for. `deploy-mobile.yml` is disabled and only
-runs on manual dispatch.
+([`.eas/workflows/production-release.yml`](../../../../apps/omiro/.eas/workflows/production-release.yml),
+can be started from the EAS dashboard, but it builds on EAS and is not the
+normal release path. The nonfunctional GitHub trigger was removed; use the
+local release flow unless a cloud release is explicitly chosen.
 
 Deliver every production change as a new TestFlight candidate, then approve
 and release it through App Store Connect.
@@ -41,4 +41,4 @@ To release, run `pnpm build:prod:local`. It loads the gitignored `.eas-prod.loca
 artifact with `pnpm submit:local`; it re-checks the production identity and
 passes the file explicitly to `eas submit`.
 
-An IPA upload never publishes an OTA update. Ship JS-only fixes with `just mobile update "<message>"` ([`.eas/workflows/ota-update.yml`](../../../apps/omiro/.eas/workflows/ota-update.yml)) instead of a full store build. That starts the approval-gated EAS workflow and only reaches installs already running a native build with matching `runtimeVersion`; native dependency, permission, plugin, or other native changes require a new TestFlight build first.
+An IPA upload never publishes an OTA update. Ship JS-only fixes with `just mobile update "<message>"` ([`.eas/workflows/ota-update.yml`](../../../../apps/omiro/.eas/workflows/ota-update.yml)) instead of a full store build. That starts the approval-gated EAS workflow and only reaches installs already running a native build with matching `runtimeVersion`; native dependency, permission, plugin, or other native changes require a new TestFlight build first.

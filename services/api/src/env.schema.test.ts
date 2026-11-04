@@ -10,9 +10,9 @@ describe('apiSchema OTLP logs endpoint', () => {
   it('accepts a configured URL', () => {
     expect(
       apiSchema.shape.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT.parse(
-        'https://otlp.eu01.nr-data.net:4318/v1/logs',
+        'https://telemetry.example.test:4318/v1/logs',
       ),
-    ).toBe('https://otlp.eu01.nr-data.net:4318/v1/logs');
+    ).toBe('https://telemetry.example.test:4318/v1/logs');
   });
 });
 

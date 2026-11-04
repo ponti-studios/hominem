@@ -35,23 +35,26 @@ for service startup and worktree setup.
 
 ## Production read-only inspection
 
-Production PostgreSQL is the Fly app `hominem-db` (Postgres 18, region `sjc`,
-`pgdata` volume). Its private hostname (`hominem-db.internal`) is not
+Production PostgreSQL is a private Fly service. Its app, region, volume, and
+private hostname are maintained in the private Notion production reference and
+GitHub `Production` environment. They are not
 resolvable from a local machine. Use a temporary `fly proxy` instead of trying
 to connect to it directly or sourcing `packages/db/.env.production`.
+Set `FLY_DB_APP_NAME` from the private production reference before running the
+commands below.
 
 1. Verify the authenticated Fly account and the target app before connecting:
 
    ```bash
    fly auth whoami
-   fly status -a hominem-db
+   fly status -a "$FLY_DB_APP_NAME"
    ```
 
 2. Start a proxy to the explicitly named production database. Use an unused
    local port if `15432` is taken:
 
    ```bash
-   fly proxy 15432:5432 -a hominem-db
+   fly proxy 15432:5432 -a "$FLY_DB_APP_NAME"
    ```
 
    Keep this process running while the database client is connected. The

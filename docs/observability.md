@@ -17,19 +17,20 @@ runbook steps — see the `hominem-observability` skill
 navigation path.
 
 The API and worker send OTLP traces, metrics, and searchable application logs
-to New Relic. Configure these Fly secrets on both apps (`hominem-api`, `hominem-worker`):
+to New Relic. Configure these Fly secrets on the active API and worker apps;
+resolve their names from the private Notion production reference:
 
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
 - `OTEL_EXPORTER_OTLP_HEADERS` (`api-key` header with the New Relic license key;
   store it as a Fly secret)
-- `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (New Relic EU OTLP logs endpoint)
+- `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (New Relic OTLP logs endpoint)
 - `OTEL_EXPORTER_OTLP_LOGS_HEADERS` (`api-key` header with the New Relic license
   key; store it as a Fly secret)
 - `OTEL_TRACES_SAMPLER_ARG`
 
-Set `OTEL_EXPORTER_OTLP_ENDPOINT` to `https://otlp.eu01.nr-data.net:4318`.
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` from the GitHub `Production` environment.
 The SDK appends `/v1/traces` and `/v1/metrics`; the log-specific endpoint is
-`https://otlp.eu01.nr-data.net:4318/v1/logs`. The log-specific variables keep
+the configured OTLP endpoint plus `/v1/logs`. The log-specific variables keep
 the log destination configurable independently. When a log-specific endpoint
 is absent, the generic endpoint and headers are the fallback for local
 development.

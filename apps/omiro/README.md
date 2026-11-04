@@ -112,8 +112,8 @@ pnpm submit:local       # re-checks the identity, uploads that IPA to App Store 
   mismatches. That does not stop the build.
 
 Do not use `.eas/workflows/production-release.yml` for a normal release; it
-runs the build on EAS. The `deploy-mobile` GitHub workflow that starts it is
-disabled (manual dispatch only). A JavaScript-only hotfix that does
+runs the build on EAS. It remains available for a deliberate EAS dashboard
+run; the broken GitHub trigger was removed. A JavaScript-only hotfix that does
 not change native dependencies or config can use an OTA update, which does go
 through an EAS workflow, so check the cost first:
 

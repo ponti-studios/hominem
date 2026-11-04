@@ -242,7 +242,7 @@ For Fly, use a temporary proxy as `TARGET_DATABASE_URL`
 after the command finishes:
 
 ```bash
-fly proxy 15432:5432 -a hominem-db
+fly proxy 15432:5432 -a "$FLY_DB_APP_NAME"
 ```
 
 ## Development rules

@@ -21,10 +21,8 @@ jobs:
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     with:
-      app: hominem-web
-      config_path: infra/fly/web.toml
+      app_variable: FLY_WEB_APP_NAME
+      config_variable: FLY_WEB_CONFIG
       dockerfile: apps/web/Dockerfile
-      build_args: |
-        VITE_PUBLIC_API_URL=https://api.ponti.io
-        VITE_POSTHOG_PROJECT_TOKEN=${{ vars.VITE_POSTHOG_PROJECT_TOKEN }}
+      build_args_variable: FLY_WEB_BUILD_ARGS
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}

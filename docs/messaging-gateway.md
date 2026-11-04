@@ -57,7 +57,8 @@ operation for Telegram to call.
 
 ## Setup and activation
 
-Configure the following on both `hominem-api` and `hominem-worker` in Fly:
+Configure the following on the active Fly API and worker apps. Resolve app names
+from the private Notion production reference:
 
 - `TELEGRAM_BOT_TOKEN` — BotFather token; keep secret.
 - `TELEGRAM_BOT_USERNAME` — public bot username.

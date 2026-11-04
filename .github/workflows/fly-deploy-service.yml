@@ -3,20 +3,20 @@ name: fly-deploy-service
 on:
   workflow_call:
     inputs:
-      app:
+      app_variable:
         required: true
         type: string
-      config_path:
+      config_variable:
         required: true
         type: string
-      dockerfile:
-        required: true
-        type: string
-      build_args:
-        description: Newline-separated KEY=VALUE pairs passed to the image build
+      build_args_variable:
+        description: Optional Production environment variable containing newline-separated KEY=VALUE pairs
         required: false
         type: string
         default: ''
+      dockerfile:
+        required: true
+        type: string
       checkout_ref:
         required: false
         type: string
@@ -34,14 +34,14 @@ jobs:
     timeout-minutes: 30
     environment: Production
     concurrency:
-      group: fly-deploy-${{ inputs.app }}
+      group: fly-deploy-${{ inputs.app_variable }}
       cancel-in-progress: false
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      APP: ${{ inputs.app }}
-      CONFIG_PATH: ${{ inputs.config_path }}
+      APP: ${{ vars[inputs.app_variable] }}
+      CONFIG_CONTENT: ${{ vars[inputs.config_variable] }}
       DOCKERFILE: ${{ inputs.dockerfile }}
-      BUILD_ARGS: ${{ inputs.build_args }}
+      BUILD_ARGS: ${{ inputs.build_args_variable != '' && vars[inputs.build_args_variable] || '' }}
     steps:
       - name: checkout-repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -52,15 +52,22 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
 
       - name: validate-environment
+        id: prepare-config
         run: |
           set -euo pipefail
           test -n "$FLY_API_TOKEN" || { echo 'Missing FLY_API_TOKEN'; exit 1; }
-          test -f "$CONFIG_PATH" || { echo "Fly config not found: $CONFIG_PATH"; exit 1; }
+          test -n "$APP" || { echo 'Missing Fly app name in the Production environment'; exit 1; }
+          test -n "$CONFIG_CONTENT" || { echo 'Missing Fly config in the Production environment'; exit 1; }
           test -f "$DOCKERFILE" || { echo "Dockerfile not found: $DOCKERFILE"; exit 1; }
+          config_path="$RUNNER_TEMP/$APP.fly.toml"
+          printf '%s\n' "$CONFIG_CONTENT" > "$config_path"
+          echo "config_path=$config_path" >> "$GITHUB_OUTPUT"
 
       # Remote build on Fly's builder. flyctl waits for the new machines to pass
       # their health checks and rolls back on failure, so a red job means a bad deploy.
       - name: deploy-to-fly
+        env:
+          CONFIG_PATH: ${{ steps.prepare-config.outputs.config_path }}
         run: |
           set -euo pipefail
           args=(--config "$CONFIG_PATH" --dockerfile "$DOCKERFILE" --app "$APP" --remote-only --ha=false)

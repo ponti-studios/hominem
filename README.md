@@ -26,6 +26,7 @@ For PostgreSQL connection details, see [Database access](./docs/database.md). Fo
 and the tier limits the API enforces, see [Billing and paid tiers](./docs/billing.md).
 For stored category budgets, their cadences, rollover and currency rules, see
 [Finance budgets](./docs/finance-budgets.md).
+Production infrastructure and migration procedures are maintained in the private Hominem operations reference in Notion.
 For the visual direction used when restyling Hominem browser pages, see
 [Web design direction](./docs/web-design-direction.md).
 

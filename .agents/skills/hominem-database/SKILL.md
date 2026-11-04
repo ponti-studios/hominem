@@ -85,10 +85,10 @@ For a repository method that mutates (or looks up before mutating) a single row 
 
 ## Production Fly operations
 
-Use the `fly` CLI for all Fly operations. Resolve the target explicitly on
-every run; production's database app is `hominem-db`. Confirm its machine
-state, image digest, volume mount, and `/api/status` response before any
-mutation. The volume `pgdata` mounts at `/var/lib/postgresql`.
+Use the `fly` CLI for all Fly operations. Resolve the target from the private
+Notion production reference on every run. Confirm machine state, image digest,
+volume mount, and `/api/status` before any mutation. Keep production identifiers
+out of this repository.
 
 ### Backup and recovery gate
 
@@ -100,9 +100,10 @@ Before an extension, collation, schema, or image mutation:
    user-private, non-repository directory. Use restrictive permissions,
    validate it with `pg_restore --list`, record a SHA-256 checksum, and retain
    it for at least 30 days.
-3. Take a Fly volume snapshot (`fly volumes snapshots create <volume-id> -a hominem-db`).
-   There is no replica or automated backup for `hominem-db` yet, so the logical
-   dump above is the primary recovery path.
+3. Take a Fly volume snapshot (`fly volumes snapshots create <volume-id> -a "$FLY_DB_APP_NAME"`).
+   Fly-managed snapshots follow platform retention and are not a substitute
+   for the verified logical dump. The repository has no scheduled production
+   logical-dump workflow or database replica.
 
 Do not mutate the database until the logical dump verifies. Do not delete,
 recreate, detach, or remount the production volume. After an extension upgrade,
@@ -140,16 +141,16 @@ pending or run ad-hoc local migrations against production.
 
 After any maintenance or deployment, verify:
 
-- the `hominem-db` machine is `started`, with the expected image digest and
+- the production database machine is `started`, with the expected image digest and
   existing volume mount;
 - PostgreSQL version, required extension versions, collation versions, and
   index validity;
 - a transactional temporary-table read/write smoke test and a vector query or
   HNSW-index check;
 - `https://api.ponti.io/api/status` reports `database: connected`;
-- `fly logs -a hominem-db --no-tail` shows no new errors or collation
+- `fly logs -a "$FLY_DB_APP_NAME" --no-tail` shows no new errors or collation
   warnings, and volume use is stable.
 
-Do not claim an image deployment succeeded until `fly status -a hominem-db`
+Do not claim an image deployment succeeded until `fly status -a "$FLY_DB_APP_NAME"`
 shows the machine `started` on the new image. Keep the backup checksum, rollback image reference, and
 maintenance evidence with the change record.
