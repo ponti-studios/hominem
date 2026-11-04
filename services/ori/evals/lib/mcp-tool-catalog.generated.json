@@ -3278,6 +3278,419 @@
   {
     "type": "function",
     "function": {
+      "name": "finance_bill_create",
+      "description": "Register a bill: reference data about a recurring obligation — who it is with, how it is paid, what it should cost. A bill never creates, moves or edits a transaction; last-paid is derived at read time from matched transactions. A top-up bill carries no cadence, a variable bill carries no expected amount, and a one-off bill carries its due date. Mode: write. Use when: The user names a recurring bill to track, e.g. an energy supplier, broadband, or a pay-as-you-go meter to watch. Do not use when: Do not use for one-off spending or to record a payment — bills are reference data, and they never move money.  Produces: bill with computed next due date.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name of the bill."
+          },
+          "providerName": {
+            "description": "Supplier name as billed.",
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "electricity",
+              "heating",
+              "water",
+              "broadband",
+              "council_tax",
+              "insurance",
+              "rent",
+              "other"
+            ],
+            "description": "What the bill is for."
+          },
+          "accountNumber": {
+            "description": "Stored and returned verbatim: account numbers, customer references, meter serials.",
+            "type": "string"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["direct_debit", "pay_as_you_go", "card", "manual", "other"],
+            "description": "How the bill is paid."
+          },
+          "amountModel": {
+            "type": "string",
+            "enum": ["fixed", "variable", "top_up"],
+            "description": "fixed bills carry an expected amount, variable bills omit it, top-up bills carry the typical top-up amount."
+          },
+          "expectedAmountCents": {
+            "description": "Omit for a variable bill; the typical top-up amount on a top-up bill.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "currencyCode": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$",
+            "description": "ISO 4217 currency code, e.g. GBP."
+          },
+          "cadence": {
+            "description": "Omit for no recurrence — always omitted on a top-up bill.",
+            "type": "string",
+            "enum": ["weekly", "monthly", "quarterly", "annual", "one_off"]
+          },
+          "dueDay": {
+            "description": "1–31; a short month clamps the computed due date to its last day.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31
+          },
+          "dueDate": {
+            "description": "The due date of a one_off bill as YYYY-MM-DD.",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "anchorDate": {
+            "description": "Reference point weekly, quarterly and annual cadences step from.",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "status": {
+            "default": "active",
+            "description": "active, paused, or closed; closed is bookkeeping, not deletion.",
+            "type": "string",
+            "enum": ["active", "paused", "closed"]
+          },
+          "type": {
+            "default": "confirmed",
+            "description": "Detection lifecycle: suggested, confirmed, or cancelled (terminal).",
+            "type": "string",
+            "enum": ["suggested", "confirmed", "cancelled"]
+          },
+          "isDismissed": {
+            "default": false,
+            "description": "Dismissal lives on the suggested row itself; confirming clears it.",
+            "type": "boolean"
+          },
+          "merchantMatch": {
+            "default": [],
+            "description": "Every string that identifies this supplier in a feed; a transaction matches when any one of them is a case-insensitive substring of its merchant name or description.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "staleAfterHours": {
+            "default": 48,
+            "description": "Top-up only: hours after the latest balance entry at which the balance is flagged stale.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "paygWarnDays": {
+            "default": 7,
+            "description": "Top-up only: low-balance warning threshold in days of credit remaining, not money.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "notes": {
+            "description": "Free-text notes.",
+            "type": "string"
+          },
+          "accountId": {
+            "description": "Linked finance account; the bill never moves money on it.",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": [
+          "name",
+          "kind",
+          "paymentMethod",
+          "amountModel",
+          "currencyCode",
+          "status",
+          "type",
+          "isDismissed",
+          "merchantMatch",
+          "staleAfterHours",
+          "paygWarnDays"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_bill_delete",
+      "description": "Delete a bill and its balance log. The bill’s transactions are untouched — a bill is reference data, not a movement of money. The MCP server asks for confirmation before deletion. Set dryRun to preview the affected bill and its entry count without writing or requesting confirmation. Mode: write, confirmation required. Use when: The user no longer wants to track that bill. Do not use when: Do not delete a bill to pause it; update its status instead.  Prerequisites: finance_bill_list (resolve the bill id).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Stable bill id returned by finance_bill_list."
+          },
+          "dryRun": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["billId", "dryRun"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_bill_get",
+      "description": "Get one bill with its computed state and its recent balance log (most recent first; empty on bills that are not top-up). Null when the id is not the caller’s bill. Mode: read-only. Use when: The user asks about one specific bill by the id finance_bill_list returned. Do not use when: Do not invent a bill id; list bills first.  Prerequisites: finance_bill_list (resolve the bill id).  Produces: bill detail, next due date, pay-as-you-go status, recent balance log.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Stable bill id returned by finance_bill_list."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["billId"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_bill_list",
+      "description": "List the caller’s bills with their computed state: the next due date (from the cadence and due day, never stored), the latest matched transaction, and the pay-as-you-go derivation on top-up bills. Optionally filter by status, lifecycle type, or kind. Mode: read-only. Use when: The user asks what bills exist, what is due next, or how a pay-as-you-go balance is doing. Do not use when: Do not use for transaction history or spending reports.  Produces: bills with next due dates, last-paid transactions, pay-as-you-go status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "closed"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["suggested", "confirmed", "cancelled"]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "electricity",
+              "heating",
+              "water",
+              "broadband",
+              "council_tax",
+              "insurance",
+              "rent",
+              "other"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["limit"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_bill_log_balance",
+      "description": "Log a balance observation on a top-up bill: the supplier balance as of the checked time, plus the meter reading, supply status and where the observation came from. The log is append-only — corrections are new rows, never edits. Returns the entry and the bill with its updated pay-as-you-go derivation. Mode: write. Use when: An agent read a pay-as-you-go balance from the supplier portal (or the user reported one) and the observation needs recording. Do not use when: Do not use on bills that are not top-up, and do not edit a past entry — log the correction as a new row.  Prerequisites: finance_bill_list (resolve the bill id).  Produces: balance entry, updated pay-as-you-go status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Stable bill id returned by finance_bill_list."
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "description": "When the balance was observed; corrections are new rows, never edits."
+          },
+          "balanceCents": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Signed balance in minor units; negative when the supply sits in debt."
+          },
+          "meterReadingKwh": {
+            "description": "A meter reading is a measurement, not money.",
+            "type": "number"
+          },
+          "supplyStatus": {
+            "type": "string",
+            "enum": ["connected", "disconnected", "unknown"]
+          },
+          "source": {
+            "type": "string",
+            "enum": ["agent_portal", "user_report", "meter_photo"],
+            "description": "Where the observation came from: the supplier portal, the user, or a meter photo."
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["billId", "checkedAt", "balanceCents", "supplyStatus", "source"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_bill_update",
+      "description": "Update a bill’s reference data, schedule, or detection state: suggested bills confirm or cancel, cancelled is terminal and can never be left, and dismissal lives on the suggested row itself. Schedule rules are validated on the merged row, so a partial update cannot store a half-schedule. Null when the id is not the caller’s bill. Mode: write. Use when: The user corrects a bill, confirms or cancels a suggested bill, or pauses or closes one. Do not use when: Do not use to log a balance observation; that is finance_bill_log_balance.  Prerequisites: finance_bill_list (resolve the bill id).  Produces: updated bill.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Stable bill id returned by finance_bill_list."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name of the bill."
+          },
+          "providerName": {
+            "description": "Supplier name as billed.",
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "electricity",
+              "heating",
+              "water",
+              "broadband",
+              "council_tax",
+              "insurance",
+              "rent",
+              "other"
+            ]
+          },
+          "accountNumber": {
+            "description": "Stored and returned verbatim: account numbers, customer references, meter serials.",
+            "type": "string"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["direct_debit", "pay_as_you_go", "card", "manual", "other"]
+          },
+          "amountModel": {
+            "type": "string",
+            "enum": ["fixed", "variable", "top_up"]
+          },
+          "expectedAmountCents": {
+            "description": "Omit for a variable bill; the typical top-up amount on a top-up bill.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "currencyCode": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$",
+            "description": "ISO 4217 currency code, e.g. GBP."
+          },
+          "cadence": {
+            "type": "string",
+            "enum": ["weekly", "monthly", "quarterly", "annual", "one_off"]
+          },
+          "dueDay": {
+            "description": "1–31; a short month clamps the computed due date to its last day.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31
+          },
+          "dueDate": {
+            "description": "The due date of a one_off bill as YYYY-MM-DD.",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "anchorDate": {
+            "description": "Reference point weekly, quarterly and annual cadences step from.",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "closed"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["suggested", "confirmed", "cancelled"]
+          },
+          "isDismissed": {
+            "type": "boolean"
+          },
+          "merchantMatch": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "staleAfterHours": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "paygWarnDays": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "notes": {
+            "description": "Free-text notes.",
+            "type": "string"
+          },
+          "accountId": {
+            "description": "Linked finance account; the bill never moves money on it.",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["billId"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "finance_budget_breakdown",
       "description": "Split a monthly income into a 50/30/20 needs, wants and savings budget. Pure calculation over the given income; reads no ledger data. Mode: read-only. Use when: The user asks how to budget a given income. Do not use when: Do not use to report what the user actually spent.  Produces: needs allocation, wants allocation, savings allocation.",
       "parameters": {
