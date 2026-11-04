@@ -1,7 +1,8 @@
 import { db, pool } from '@hominem/db/core';
+import { FinanceBillRepository } from '@hominem/db/finance';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { computeNextDueDate } from '../../../../application/finance-bills.service';
+import { computeNextDueDate, getBill } from '../../../../application/finance-bills.service';
 import { callTool, type McpToolResult } from '../../../tool-registry';
 import '../register';
 
@@ -16,6 +17,10 @@ type TestBill = {
   name: string;
   status: string;
   type: string;
+  amountModel: string;
+  expectedAmountCents: number | null;
+  cadence: string | null;
+  dueDay: number | null;
   currencyCode: string;
   isDismissed: boolean;
   merchantMatch: string[];
@@ -298,6 +303,31 @@ describe('finance_bill_update', () => {
     expect(updated.bill?.merchantMatch).toEqual(['octopus energy', 'octopus']);
   });
 
+  it('clears nullable schedule fields when switching a fixed bill to variable', async () => {
+    const created = await createBill({
+      amountModel: 'fixed',
+      expectedAmountCents: 5000,
+      cadence: 'monthly',
+      dueDay: 15,
+    });
+    const updated = content(
+      await callTool(userId, 'finance_bill_update', {
+        billId: created.bill?.id,
+        amountModel: 'variable',
+        expectedAmountCents: null,
+        cadence: null,
+        dueDay: null,
+        dueDate: null,
+        anchorDate: null,
+      }),
+    );
+    expect(updated.bill?.amountModel).toBe('variable');
+    expect(updated.bill?.expectedAmountCents).toBeNull();
+    expect(updated.bill?.cadence).toBeNull();
+    expect(updated.bill?.dueDay).toBeNull();
+    expect(updated.bill?.nextDueDate).toBeNull();
+  });
+
   it('rejects an empty patch', async () => {
     const created = await createBill();
     await expect(
@@ -440,6 +470,25 @@ describe('lastPaid claims', () => {
     );
     expect(fetched.bill?.lastPaid?.transactionId).toBe(matchId);
   });
+  it('returns the latest claim per bill even when the row bound is small', async () => {
+    const alpha = await createBill({ name: 'Alpha Energy', merchantMatch: ['alpha'] });
+    const beta = await createBill({ name: 'Beta Water', merchantMatch: ['beta'] });
+    const alphaLatest = await insertTransaction({
+      merchantName: 'Alpha Energy',
+      postedOn: '2026-10-03',
+    });
+    const betaLatest = await insertTransaction({
+      merchantName: 'Beta Water',
+      postedOn: '2026-10-04',
+    });
+    await insertTransaction({ merchantName: 'Alpha Energy', postedOn: '2026-10-01' });
+    await insertTransaction({ merchantName: 'Beta Water', postedOn: '2026-10-02' });
+
+    const claims = await FinanceBillRepository.findClaimedTransactions(db, userId, 2);
+    const byBill = new Map(claims.map((claim) => [claim.billId, claim.transactionId]));
+    expect(byBill.get(alpha.bill?.id ?? '')).toBe(alphaLatest);
+    expect(byBill.get(beta.bill?.id ?? '')).toBe(betaLatest);
+  });
 });
 
 describe('finance_bill_log_balance', () => {
@@ -487,6 +536,44 @@ describe('finance_bill_log_balance', () => {
       second.entry?.id,
       first.entry?.id,
     ]);
+  });
+
+  it('counts down days remaining as the latest observation ages', async () => {
+    const created = await createBill({
+      name: 'PAYG aging',
+      amountModel: 'top_up',
+      expectedAmountCents: 2000,
+      paymentMethod: 'pay_as_you_go',
+      cadence: undefined,
+      dueDay: undefined,
+      staleAfterHours: 168,
+      paygWarnDays: 7,
+    });
+    await callTool(userId, 'finance_bill_log_balance', {
+      billId: created.bill?.id,
+      checkedAt: '2026-11-01T10:00:00.000Z',
+      balanceCents: 1100,
+      supplyStatus: 'connected',
+      source: 'user_report',
+    });
+    await callTool(userId, 'finance_bill_log_balance', {
+      billId: created.bill?.id,
+      checkedAt: '2026-11-02T10:00:00.000Z',
+      balanceCents: 1000,
+      supplyStatus: 'connected',
+      source: 'user_report',
+    });
+
+    const { bill } = await getBill(
+      userId,
+      created.bill?.id ?? '',
+      new Date('2026-11-08T10:00:00.000Z'),
+    );
+    expect(bill?.payg?.dailyBurnCents).toBeCloseTo(100, 5);
+    expect(bill?.payg?.daysRemaining).toBeCloseTo(4, 5);
+    expect(bill?.payg?.estimatedRunOutDate).toBe('2026-11-12');
+    expect(bill?.payg?.isLow).toBe(true);
+    expect(bill?.payg?.isStale).toBe(false);
   });
 
   it('rejects balance entries on bills that are not top-up, and isolates by user', async () => {

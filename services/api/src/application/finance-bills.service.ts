@@ -146,6 +146,10 @@ async function readLastPaidByBill(ownerUserId: string): Promise<Map<string, Bill
  * drop per day, and the run-out date projects the latest balance forward at that rate. A
  * rising balance (a top-up landed between checks) carries no run-out projection, and a single
  * observation carries no burn at all.
+ *
+ * Days remaining is measured from the read time, not the observation time: a balance observed
+ * a week ago has a week less credit left, so a stale reading can still cross the low-balance
+ * threshold.
  */
 function toPaygStatus(
   bill: FinanceBillRecord,
@@ -165,8 +169,13 @@ function toPaygStatus(
       const burn = (previous.balanceCents - latest.balanceCents) / daysBetween;
       if (burn > 0) {
         dailyBurnCents = burn;
-        daysRemaining = latest.balanceCents <= 0 ? 0 : latest.balanceCents / burn;
-        estimatedRunOutDate = addDays(latest.checkedAt.slice(0, 10), Math.floor(daysRemaining));
+        const creditDaysAtObservation = latest.balanceCents <= 0 ? 0 : latest.balanceCents / burn;
+        const elapsedDays = Math.max(0, (now.getTime() - Date.parse(latest.checkedAt)) / DAY_MS);
+        daysRemaining = Math.max(0, creditDaysAtObservation - elapsedDays);
+        estimatedRunOutDate = addDays(
+          latest.checkedAt.slice(0, 10),
+          Math.floor(creditDaysAtObservation),
+        );
       }
     }
   }

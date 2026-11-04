@@ -3581,9 +3581,16 @@
             "description": "Display name of the bill."
           },
           "providerName": {
-            "description": "Supplier name as billed.",
-            "type": "string",
-            "minLength": 1
+            "anyOf": [
+              {
+                "description": "Supplier name as billed.",
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "kind": {
             "type": "string",
@@ -3599,8 +3606,15 @@
             ]
           },
           "accountNumber": {
-            "description": "Stored and returned verbatim: account numbers, customer references, meter serials.",
-            "type": "string"
+            "anyOf": [
+              {
+                "description": "Stored and returned verbatim: account numbers, customer references, meter serials.",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "paymentMethod": {
             "type": "string",
@@ -3611,10 +3625,17 @@
             "enum": ["fixed", "variable", "top_up"]
           },
           "expectedAmountCents": {
-            "description": "Omit for a variable bill; the typical top-up amount on a top-up bill.",
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
+            "anyOf": [
+              {
+                "description": "Omit for a variable bill; the typical top-up amount on a top-up bill.",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "currencyCode": {
             "type": "string",
@@ -3622,26 +3643,54 @@
             "description": "ISO 4217 currency code, e.g. GBP."
           },
           "cadence": {
-            "type": "string",
-            "enum": ["weekly", "monthly", "quarterly", "annual", "one_off"]
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["weekly", "monthly", "quarterly", "annual", "one_off"]
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "dueDay": {
-            "description": "1–31; a short month clamps the computed due date to its last day.",
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 31
+            "anyOf": [
+              {
+                "description": "1–31; a short month clamps the computed due date to its last day.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "dueDate": {
-            "description": "The due date of a one_off bill as YYYY-MM-DD.",
-            "type": "string",
-            "format": "date",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            "anyOf": [
+              {
+                "description": "The due date of a one_off bill as YYYY-MM-DD.",
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "anchorDate": {
-            "description": "Reference point weekly, quarterly and annual cadences step from.",
-            "type": "string",
-            "format": "date",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            "anyOf": [
+              {
+                "description": "Reference point weekly, quarterly and annual cadences step from.",
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -3672,14 +3721,28 @@
             "maximum": 9007199254740991
           },
           "notes": {
-            "description": "Free-text notes.",
-            "type": "string"
+            "anyOf": [
+              {
+                "description": "Free-text notes.",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "accountId": {
-            "description": "Linked finance account; the bill never moves money on it.",
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            "anyOf": [
+              {
+                "description": "Linked finance account; the bill never moves money on it.",
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",

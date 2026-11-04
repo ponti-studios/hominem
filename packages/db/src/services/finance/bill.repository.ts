@@ -570,6 +570,9 @@ export const FinanceBillRepository = {
    * `(created_at, id)` order). Matching is a plain case-insensitive substring (`strpos`, not
    * `like`, so supplier codes containing `%` or `_` cannot escape the match) over the
    * transaction's merchant name or description.
+   *
+   * The outer `distinct on (billId)` keeps the latest claimed transaction per bill *before*
+   * the row bound is applied, so a long transaction history can never hide the newest payment.
    */
   async findClaimedTransactions(
     handle: DbHandle,
@@ -583,27 +586,37 @@ export const FinanceBillRepository = {
       amount: string;
       currencyCode: string;
     }>`
-      select distinct on (t.posted_on, t.id)
-        b.id as "billId",
-        t.id as "transactionId",
-        t.posted_on as "postedOn",
-        t.amount as amount,
-        t.currency_code as "currencyCode"
-      from app.finance_transactions t
-      join app.finance_bills b
-        on b.user_id = t.user_id
-        and exists (
-          select 1 from unnest(b.merchant_match) as m
-          where m <> ''
-            and (
-              strpos(lower(coalesce(t.merchant_name, '')), lower(m)) > 0
-              or strpos(lower(coalesce(t.description, '')), lower(m)) > 0
-            )
-        )
-      where t.user_id = ${ownerUserId}
-        and t.excluded = false
-        and t.pending = false
-      order by t.posted_on, t.id, b.created_at asc, b.id asc
+      with claimed as (
+        select distinct on (t.posted_on, t.id)
+          b.id as "billId",
+          t.id as "transactionId",
+          t.posted_on as "postedOn",
+          t.amount as amount,
+          t.currency_code as "currencyCode"
+        from app.finance_transactions t
+        join app.finance_bills b
+          on b.user_id = t.user_id
+          and exists (
+            select 1 from unnest(b.merchant_match) as m
+            where m <> ''
+              and (
+                strpos(lower(coalesce(t.merchant_name, '')), lower(m)) > 0
+                or strpos(lower(coalesce(t.description, '')), lower(m)) > 0
+              )
+          )
+        where t.user_id = ${ownerUserId}
+          and t.excluded = false
+          and t.pending = false
+        order by t.posted_on, t.id, b.created_at asc, b.id asc
+      )
+      select distinct on ("billId")
+        "billId",
+        "transactionId",
+        "postedOn",
+        amount,
+        "currencyCode"
+      from claimed
+      order by "billId", "postedOn" desc, "transactionId" desc
       limit ${limit}
     `.execute(handle);
     return rows.rows.map((row) => ({
