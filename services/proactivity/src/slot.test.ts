@@ -4,6 +4,7 @@ import {
   buildProactivityPrompt,
   createModelSlot,
   modelDecisionSchema,
+  preflight,
   toProactivityDecision,
   ProactivitySlotError,
 } from './slot.js';
@@ -181,6 +182,81 @@ describe('model-facing decision shape', () => {
         }),
       ),
     ).toEqual({ kind: 'quiet', reason: 'Nothing material changed.', evidenceIds: [] });
+  });
+
+  it('normalizes a date-only reassessment time', () => {
+    expect(
+      toProactivityDecision(
+        modelDecisionSchema.parse({
+          kind: 'defer',
+          summary: null,
+          reason: 'The reading is stale.',
+          nextStep: null,
+          reevaluateAt: '2026-11-11',
+          evidenceIds: ['ev-after'],
+        }),
+      ),
+    ).toMatchObject({ kind: 'defer', reevaluateAt: '2026-11-11T09:00:00.000Z' });
+  });
+
+  it('normalizes an offset reassessment time to UTC', () => {
+    expect(
+      toProactivityDecision(
+        modelDecisionSchema.parse({
+          kind: 'defer',
+          summary: null,
+          reason: 'The reading is stale.',
+          nextStep: null,
+          reevaluateAt: '2026-11-11T09:00:00+00:00',
+          evidenceIds: ['ev-after'],
+        }),
+      ),
+    ).toMatchObject({ kind: 'defer', reevaluateAt: '2026-11-11T09:00:00.000Z' });
+  });
+});
+
+describe('grounding preflight', () => {
+  const evidence = context.current.evidence[0];
+  if (!evidence) throw new Error('Test context is missing current evidence.');
+
+  it('defers when there is no current evidence', () => {
+    const guarded = preflight({
+      ...context,
+      current: { ...context.current, evidence: [] },
+    });
+
+    expect(guarded).toMatchObject({ kind: 'defer', evidenceIds: [] });
+    expect(guarded?.reason).toContain('No current evidence');
+  });
+
+  it('defers when current evidence carries a blocking data-quality flag', () => {
+    const guarded = preflight({
+      ...context,
+      current: {
+        ...context.current,
+        evidence: [{ ...evidence, facts: { dataQuality: 'duplicate_unreconciled' } }],
+      },
+    });
+
+    expect(guarded).toMatchObject({ kind: 'defer', evidenceIds: ['ev-after'] });
+    expect(guarded?.reason).toContain('duplicate_unreconciled');
+  });
+
+  it('defers when the newest current evidence is older than seven days', () => {
+    const guarded = preflight({
+      ...context,
+      current: {
+        ...context.current,
+        evidence: [{ ...evidence, observedAt: '2026-10-15T09:00:00.000Z' }],
+      },
+    });
+
+    expect(guarded).toMatchObject({ kind: 'defer', evidenceIds: ['ev-after'] });
+    expect(guarded?.reason).toContain('seven days old');
+  });
+
+  it('lets fresh, well-formed evidence through to the model', () => {
+    expect(preflight(context)).toBeNull();
   });
 });
 

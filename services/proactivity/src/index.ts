@@ -5,6 +5,7 @@ export {
   buildProactivityPrompt,
   createModelSlot,
   modelDecisionSchema,
+  preflight,
   toProactivityDecision,
   ProactivitySlotError,
 } from './slot.js';

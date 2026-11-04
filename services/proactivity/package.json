@@ -21,6 +21,7 @@
     "test": "vitest run src",
     "eval": "tsx src/evals/run.ts",
     "eval:live": "tsx src/evals/run.ts --live",
+    "demo": "tsx src/evals/demo.ts",
     "format": "oxfmt src --write",
     "format:check": "oxfmt src --check",
     "lint": "oxlint src"

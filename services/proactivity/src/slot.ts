@@ -89,7 +89,7 @@ export function toProactivityDecision(input: ModelDecision): ProactivityDecision
       return proactivityDecisionSchema.parse({
         kind: 'defer',
         reason: input.reason,
-        reevaluateAt: input.reevaluateAt ?? '',
+        reevaluateAt: normalizeTimestamp(input.reevaluateAt) ?? '',
         evidenceIds: input.evidenceIds,
       });
     case 'quiet':
@@ -115,6 +115,62 @@ export type ModelSlotOptions = {
   /** Total attempts when the model returns an invalid or ungrounded decision. */
   maxAttempts?: number;
 };
+
+const DAY_MS = 86_400_000;
+const BLOCKING_DATA_QUALITY = new Set([
+  'duplicate_unreconciled',
+  'missing_current_measurements',
+  'missing_required_support_hours',
+  'stale',
+]);
+
+/**
+ * Deterministic grounding checks. These do not judge materiality; they stop the
+ * model from evaluating when the supplied state cannot support a trustworthy
+ * decision. The model handles the remaining propose/defer/quiet judgement.
+ */
+export function preflight(context: GoalContext): ProactivityDecision | null {
+  const current = context.current.evidence;
+  const triggerAt = Date.parse(
+    context.trigger.kind === 'critical-change' ? context.trigger.occurredAt : context.trigger.asOf,
+  );
+  const reevaluateAt = new Date(triggerAt + 7 * DAY_MS).toISOString();
+
+  if (current.length === 0) {
+    return proactivityDecisionSchema.parse({
+      kind: 'defer',
+      reason: 'No current evidence is available for this goal.',
+      reevaluateAt,
+      evidenceIds: [],
+    });
+  }
+
+  for (const item of current) {
+    const quality = item.facts.dataQuality;
+    if (typeof quality === 'string' && BLOCKING_DATA_QUALITY.has(quality)) {
+      return proactivityDecisionSchema.parse({
+        kind: 'defer',
+        reason: `Evidence ${item.id} is flagged as ${quality}; deferring until it is resolved.`,
+        reevaluateAt,
+        evidenceIds: [item.id],
+      });
+    }
+  }
+
+  const newest = current.reduce((latest, item) =>
+    Date.parse(item.observedAt) > Date.parse(latest.observedAt) ? item : latest,
+  );
+  if (Number.isFinite(triggerAt) && triggerAt - Date.parse(newest.observedAt) > 7 * DAY_MS) {
+    return proactivityDecisionSchema.parse({
+      kind: 'defer',
+      reason: `The newest current evidence is more than seven days old; request a fresh observation.`,
+      reevaluateAt,
+      evidenceIds: [newest.id],
+    });
+  }
+
+  return null;
+}
 
 export class ProactivitySlotError extends Error {
   constructor(
@@ -161,6 +217,9 @@ export function createModelSlot({ generate, maxAttempts = 2 }: ModelSlotOptions)
 
   return {
     async evaluate(context: GoalContext): Promise<ProactivityDecision> {
+      const guarded = preflight(context);
+      if (guarded) return guarded;
+
       const available = new Set(collectEvidenceIds(context));
       let feedback = '';
       let lastError: unknown;
@@ -208,4 +267,11 @@ function correctionFor(error: unknown, available: Set<string>): string {
     return `\n\nYour previous answer was rejected: ${error.message} Use only these evidence ids: ${ids}.`;
   }
   return `\n\nYour previous answer was rejected. Use only these evidence ids: ${ids}.`;
+}
+
+function normalizeTimestamp(value: string | null): string | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T09:00:00.000Z`;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? value : new Date(parsed).toISOString();
 }
