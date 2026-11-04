@@ -10,6 +10,18 @@
       "types": "./build/index.d.ts",
       "default": "./src/index.ts"
     },
+    "./text": {
+      "types": "./build/text.d.ts",
+      "default": "./src/text.ts"
+    },
+    "./shared": {
+      "types": "./build/shared.d.ts",
+      "default": "./src/shared.ts"
+    },
+    "./model-capabilities": {
+      "types": "./build/model-capabilities.d.ts",
+      "default": "./src/model-capabilities.ts"
+    },
     "./package.json": "./package.json",
     "./reply-profile": {
       "types": "./build/reply-profile.d.ts",
