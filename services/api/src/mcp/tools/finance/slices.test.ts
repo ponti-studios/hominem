@@ -4,11 +4,11 @@ import { createToolRegistry } from '../../tool-registry';
 import { financeSlices } from './index';
 
 describe('finance tool slices', () => {
-  it('composes the account, budget and transaction slices without duplicate names', () => {
+  it('composes the account, bill, budget and transaction slices without duplicate names', () => {
     const registry = createToolRegistry(financeSlices);
     const names = registry.listTools().map((tool) => tool.name);
 
-    expect(names).toHaveLength(18);
+    expect(names).toHaveLength(24);
     expect(new Set(names).size).toBe(names.length);
     expect(names).toContain('finance_accounts');
     expect(names).toContain('finance_account_delete');
@@ -18,5 +18,11 @@ describe('finance tool slices', () => {
     expect(names).toContain('finance_budget_get');
     expect(names).toContain('finance_budget_update');
     expect(names).toContain('finance_budget_delete');
+    expect(names).toContain('finance_bill_create');
+    expect(names).toContain('finance_bill_list');
+    expect(names).toContain('finance_bill_get');
+    expect(names).toContain('finance_bill_update');
+    expect(names).toContain('finance_bill_delete');
+    expect(names).toContain('finance_bill_log_balance');
   });
 });
