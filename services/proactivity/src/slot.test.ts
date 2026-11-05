@@ -113,6 +113,72 @@ describe('proactivity model slot', () => {
     expect(secondPrompt).toContain('Use only these evidence ids');
   });
 
+  it('sanitizes field names, evidence ids, and ISO dates in user-facing copy', async () => {
+    const generate = vi.fn().mockResolvedValue({
+      ...proposal,
+      summary: 'ev-after shows the review is booked for 2026-11-05.',
+      reason: 'monthlyGroceries rose to £487; see ev-after.',
+    });
+    const slot = createModelSlot({ generate });
+
+    const decision = await slot.evaluate(context);
+    expect(generate).toHaveBeenCalledTimes(1);
+    if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
+    expect(decision.summary).not.toContain('ev-after');
+    expect(decision.summary).toContain('the latest evidence');
+    expect(decision.summary).toContain('5 November 2026');
+    expect(decision.reason).not.toContain('monthlyGroceries');
+    expect(decision.reason).toContain('monthly groceries');
+  });
+
+  it('retries when the next step recommends an irreversible action', async () => {
+    const generate = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ...proposal,
+        nextStep: 'Pay the £420 deposit today.',
+      })
+      .mockResolvedValueOnce(proposal);
+    const slot = createModelSlot({ generate });
+
+    await expect(slot.evaluate(context)).resolves.toEqual(proposal);
+    expect(generate).toHaveBeenCalledTimes(2);
+    const secondCall = generate.mock.calls[1];
+    if (!secondCall) throw new Error('Expected a second generate call.');
+    expect(requestPrompt(secondCall[0])).toContain('irreversible');
+  });
+
+  it('retries when the next step suggests moving funds', async () => {
+    const generate = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ...proposal,
+        nextStep: 'Move funds from savings to cover the deposit.',
+      })
+      .mockResolvedValueOnce(proposal);
+    const slot = createModelSlot({ generate });
+
+    await expect(slot.evaluate(context)).resolves.toEqual(proposal);
+    expect(generate).toHaveBeenCalledTimes(2);
+    const secondCall = generate.mock.calls[1];
+    if (!secondCall) throw new Error('Expected a second generate call.');
+    expect(requestPrompt(secondCall[0])).toContain('irreversible');
+  });
+
+  it('falls back to a safe next step when every attempt recommends an unsafe action', async () => {
+    const generate = vi.fn(async () => ({
+      ...proposal,
+      nextStep: 'Pay the £420 deposit today.',
+    }));
+    const slot = createModelSlot({ generate, maxAttempts: 2 });
+
+    const decision = await slot.evaluate(context);
+    expect(generate).toHaveBeenCalledTimes(2);
+    if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
+    expect(decision.summary).toBe(proposal.summary);
+    expect(decision.nextStep).toBe('Review the change and decide which option fits your plan.');
+  });
+
   it('fails after the attempt budget with the last error attached', async () => {
     const generate = vi.fn(async () => ({ ...proposal, evidenceIds: ['ev-invented'] }));
     const slot = createModelSlot({ generate, maxAttempts: 2 });
@@ -170,6 +236,20 @@ describe('model-facing decision shape', () => {
     expect(decision.kind === 'defer' && Date.parse(decision.reevaluateAt)).toBeGreaterThan(
       Date.now(),
     );
+  });
+
+  it('ends a reason that hits the length cap at a sentence boundary', () => {
+    const decision = toProactivityDecision(
+      modelDecisionSchema.parse({
+        ...proposal,
+        reason: `${'a'.repeat(120)}; ${'b'.repeat(78)}`,
+        reevaluateAt: null,
+      }),
+    );
+
+    if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
+    expect(decision.reason.length).toBeLessThanOrEqual(240);
+    expect(decision.reason.endsWith('.')).toBe(true);
   });
 
   it('drops unused fields from a quiet decision', () => {

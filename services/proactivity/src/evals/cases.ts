@@ -191,7 +191,10 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     current: snapshot('groceries-refund-nov', now, [
       evidence('ev-groceries-refund-nov', 'finance', {
         monthlyGroceries: 415,
+        grossGroceries: 455,
+        netGroceries: 415,
         refund: 40,
+        refundApplied: true,
         refundRecorded: true,
         budget: 450,
       }),

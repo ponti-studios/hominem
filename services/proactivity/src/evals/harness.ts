@@ -140,17 +140,21 @@ export async function runProactivityEvalCase(
 
     return result(input, decision, run.deliveryIntents, failures, startedAt);
   } catch (error) {
-    failures.push(
-      error instanceof Error
-        ? `Evaluation threw: ${error.message}`
-        : 'Evaluation threw an unknown error.',
-    );
+    const message = describeError(error);
+    failures.push(`Evaluation threw: ${message}`);
     return {
       ...result(input, null, [], failures, startedAt),
       actual: 'error',
-      error: error instanceof Error ? error.message : String(error),
+      error: message,
     };
   }
+}
+
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  if (error.cause instanceof Error) return `${error.message} · ${error.cause.message}`;
+  if (error.cause !== undefined) return `${error.message} · ${String(error.cause)}`;
+  return error.message;
 }
 
 export async function runProactivityEvalSuite(

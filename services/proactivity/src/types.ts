@@ -69,20 +69,20 @@ const evidenceIdsSchema = z.array(idSchema);
 export const proactivityDecisionSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('propose'),
-    summary: z.string().min(1).max(160),
-    reason: z.string().min(1).max(240),
-    nextStep: z.string().min(1).max(200),
+    summary: z.string().min(1).max(140),
+    reason: z.string().min(1).max(200),
+    nextStep: z.string().min(1).max(180),
     evidenceIds: evidenceIdsSchema.min(1),
   }),
   z.object({
     kind: z.literal('defer'),
-    reason: z.string().min(1).max(240),
+    reason: z.string().min(1).max(200),
     reevaluateAt: timestampSchema,
     evidenceIds: evidenceIdsSchema,
   }),
   z.object({
     kind: z.literal('quiet'),
-    reason: z.string().min(1).max(240),
+    reason: z.string().min(1).max(200),
     evidenceIds: evidenceIdsSchema,
   }),
 ]);
