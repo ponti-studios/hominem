@@ -6,6 +6,10 @@ API, scheduler, and production clients are deliberately not wired yet. See
 [the proactivity PRD](../../docs/proactivity-engine-prd.md) for scope and open
 product decisions.
 
+New to the engine? [The one-week explainer](../../docs/proactivity-engine-explainer.html)
+walks a single goal through the machine across four days, showing the real
+records each part sends and receives.
+
 ## Tests
 
 ```sh
