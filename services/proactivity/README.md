@@ -17,22 +17,43 @@ world invariants, and the evaluation harness.
 
 ## Evaluations
 
-`src/evals/cases.ts` holds 18 real-world scenarios with expected decisions,
+`src/evals/cases.ts` holds 26 real-world scenarios with expected decisions,
 required evidence, forbidden language, and delivery expectations. The harness
 checks decision kind, evidence grounding, privacy terms, length limits, and
-delivery side effects. The live suite currently passes 18/18 on
-`openai/gpt-5-mini`.
+delivery side effects, and records the goal, trigger, and snapshot identifiers
+for every case.
+
+Cases are split into two suites. Tune against `regression` and validate with
+`holdout`, so prompt and threshold changes cannot be shaped by the whole
+benchmark:
+
+| Suite        | Cases | Use                                             |
+| ------------ | ----- | ----------------------------------------------- |
+| `regression` | 18    | Day-to-day tuning of the slot and harness.      |
+| `holdout`    | 8     | Review runs; not used to tune prompts.          |
 
 ```sh
 # Deterministic harness run; no model calls.
 pnpm --filter @hominem/proactivity eval -- --offline
 
+# One suite.
+pnpm --filter @hominem/proactivity eval -- --offline --suite holdout
+
 # Live run against the shared OpenRouter client.
-pnpm --filter @hominem/proactivity eval -- --live --model openai/gpt-5-mini
+pnpm --filter @hominem/proactivity eval -- --live --suite regression
 
 # One or more cases.
 pnpm --filter @hominem/proactivity eval -- --live --case grocery-overspend
 ```
+
+The live suite needs `OPENROUTER_API_KEY`. Run `--suite regression` live while
+tuning; run `--suite holdout` live at review time and treat a failure as a
+finding about the engine rather than retuning prompts against it.
+
+Deterministic preflights run before the model. A goal with no current evidence,
+a blocking data-quality flag, or evidence older than seven days defers without a
+model call, and a recorded refund, credit, correction, or adjustment resolves to
+quiet.
 
 ## Studio
 

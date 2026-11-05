@@ -12,10 +12,18 @@ export type ProactivityEvalCategory =
 
 export type ExpectedDecisionKind = 'propose' | 'defer' | 'quiet' | 'none';
 
+/**
+ * Regression cases are the ones used while tuning prompts and thresholds.
+ * Holdout cases are reserved for review runs so that tuning cannot leak the
+ * whole benchmark into development.
+ */
+export type ProactivityEvalSplit = 'regression' | 'holdout';
+
 export type ProactivityEvalCase = {
   id: string;
   title: string;
   category: ProactivityEvalCategory;
+  split: ProactivityEvalSplit;
   goal: Goal;
   trigger: ProactivityTrigger;
   previous: StateSnapshot;
@@ -24,6 +32,8 @@ export type ProactivityEvalCase = {
     decision: ExpectedDecisionKind;
     requiredEvidenceIds?: readonly string[];
     forbiddenTerms?: readonly string[];
+    /** Re-run the same trigger and require the journaled result to be reused. */
+    idempotentReplay?: boolean;
     rationale: string;
   };
 };
@@ -89,6 +99,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'grocery-overspend',
     title: 'Grocery spend crosses the monthly limit',
     category: 'finance',
+    split: 'regression',
     goal: goal('eval-groceries', 'Keep monthly groceries under £450', ['finance']),
     trigger: critical('eval-groceries-change', ['finance']),
     previous: snapshot('groceries-oct', oct, [
@@ -117,6 +128,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'emergency-fund-income-drop',
     title: 'Keep an emergency fund on track after an income drop',
     category: 'finance',
+    split: 'regression',
     goal: goal('eval-emergency', 'Build a £9,000 emergency fund by June 2027', [
       'finance',
       'career',
@@ -142,6 +154,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'debt-paydown-progress',
     title: 'Debt is shrinking on plan — stay quiet',
     category: 'finance',
+    split: 'regression',
     goal: goal('eval-debt', 'Pay off the £6,200 credit card', ['finance']),
     trigger: critical('eval-debt-change', ['finance']),
     previous: snapshot('debt-oct', oct, [
@@ -160,6 +173,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'rent-increase-notice',
     title: 'Rent increase breaches the housing budget',
     category: 'finance',
+    split: 'regression',
     goal: goal('eval-housing', 'Keep housing costs under £1,250 a month', ['finance']),
     trigger: critical('eval-housing-change', ['finance']),
     previous: snapshot('housing-oct', oct, [
@@ -183,6 +197,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'grocery-refund',
     title: 'A refund brings groceries back under budget',
     category: 'noise',
+    split: 'regression',
     goal: goal('eval-groceries-2', 'Keep monthly groceries under £450', ['finance']),
     trigger: critical('eval-groceries-refund', ['finance']),
     previous: snapshot('groceries-refund-oct', oct, [
@@ -209,6 +224,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'duplicate-transaction',
     title: 'Duplicate charge makes the grocery total unreliable',
     category: 'data-quality',
+    split: 'regression',
     goal: goal('eval-groceries-3', 'Keep monthly groceries under £450', ['finance']),
     trigger: critical('eval-groceries-duplicate', ['finance']),
     previous: snapshot('groceries-dup-oct', oct, [
@@ -234,6 +250,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'career-interview',
     title: 'A first interview changes the career plan',
     category: 'career',
+    split: 'regression',
     goal: goal('eval-career', 'Move into a staff engineering role', ['career', 'tasks']),
     trigger: critical('eval-career-change', ['career']),
     previous: snapshot('career-oct', oct, [
@@ -258,6 +275,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'career-rejection-feedback',
     title: 'Rejection feedback suggests a concrete gap',
     category: 'career',
+    split: 'regression',
     goal: goal('eval-career-2', 'Move into a staff engineering role', ['career', 'tasks']),
     trigger: critical('eval-career-rejection', ['career']),
     previous: snapshot('career-reject-oct', oct, [
@@ -283,6 +301,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'income-goal-achieved',
     title: 'An achieved income goal is not evaluated',
     category: 'career',
+    split: 'regression',
     goal: goal('eval-income', 'Reach £4,500 monthly income', ['finance', 'career'], 'achieved'),
     trigger: critical('eval-income-change', ['career', 'finance']),
     previous: snapshot('income-oct', oct, [
@@ -306,6 +325,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'travel-over-budget',
     title: 'A booked flight pushes the trip over budget',
     category: 'travel',
+    split: 'regression',
     goal: goal('eval-japan', 'Take the Japan trip within £3,000', ['travel', 'finance']),
     trigger: critical('eval-japan-change', ['travel', 'finance']),
     previous: snapshot('japan-oct', oct, [
@@ -327,6 +347,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'health-missing-data',
     title: 'No recent training data — defer, do not invent progress',
     category: 'health',
+    split: 'regression',
     goal: goal('eval-5k', 'Run 5k under 25 minutes', ['health']),
     trigger: critical('eval-5k-change', ['health']),
     previous: snapshot('5k-oct', oct, [
@@ -344,6 +365,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'caregiving-capacity',
     title: 'Care capacity changed but the required hours are unknown',
     category: 'caregiving',
+    split: 'regression',
     goal: goal('eval-care', "Support Mum's weekly appointments", ['people', 'tasks', 'calendar']),
     trigger: critical('eval-care-change', ['calendar']),
     previous: snapshot('care-oct', oct, [
@@ -370,6 +392,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'relocation-cross-domain',
     title: 'An accepted offer plus a higher rent changes the relocation plan',
     category: 'cross-domain',
+    split: 'regression',
     goal: goal('eval-relocate', 'Relocate to Edinburgh for work', [
       'career',
       'finance',
@@ -404,6 +427,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'unrelated-finance-change',
     title: 'A finance change unrelated to groceries is quiet',
     category: 'noise',
+    split: 'regression',
     goal: goal('eval-groceries-4', 'Keep monthly groceries under £450', ['finance']),
     trigger: critical('eval-mortgage-change', ['finance']),
     previous: snapshot('mortgage-oct', oct, [
@@ -425,6 +449,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'stale-grocery-evidence',
     title: 'The only grocery reading is three weeks old',
     category: 'data-quality',
+    split: 'regression',
     goal: goal('eval-groceries-5', 'Keep monthly groceries under £450', ['finance']),
     trigger: critical('eval-groceries-stale', ['finance']),
     previous: snapshot('groceries-stale-oct', oct, [
@@ -450,6 +475,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'conflicting-income',
     title: 'Two income sources disagree',
     category: 'data-quality',
+    split: 'regression',
     goal: goal('eval-emergency-2', 'Build a £9,000 emergency fund', ['finance', 'career']),
     trigger: critical('eval-income-conflict', ['career', 'finance']),
     previous: snapshot('income-conflict-oct', oct, [
@@ -471,6 +497,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'unrelated-domain',
     title: 'A health change cannot touch a debt goal',
     category: 'noise',
+    split: 'regression',
     goal: goal('eval-debt-2', 'Pay off the £6,200 credit card', ['finance']),
     trigger: critical('eval-health-change', ['health']),
     previous: snapshot('health-oct', oct, [
@@ -487,6 +514,7 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
     id: 'scheduled-pass-no-change',
     title: 'Scheduled pass with no change stays quiet',
     category: 'noise',
+    split: 'regression',
     goal: goal('eval-groceries-6', 'Keep monthly groceries under £450', ['finance']),
     trigger: scheduled('eval-scheduled-no-change'),
     previous: snapshot('scheduled-oct', oct, [
@@ -499,6 +527,251 @@ export const proactivityEvalCases: readonly ProactivityEvalCase[] = [
       decision: 'quiet',
       forbiddenTerms: ['over budget', 'increased'],
       rationale: 'The scheduled pass finds identical state and should not manufacture a proposal.',
+    },
+  },
+  {
+    id: 'paused-goal-critical-change',
+    title: 'A paused goal is not evaluated after a finance change',
+    category: 'noise',
+    split: 'holdout',
+    goal: goal('eval-groceries-paused', 'Keep monthly groceries under £450', ['finance'], 'paused'),
+    trigger: critical('eval-groceries-paused-change', ['finance']),
+    previous: snapshot('groceries-paused-oct', oct, [
+      evidence('ev-groceries-paused-oct', 'finance', { monthlyGroceries: 412, budget: 450 }, oct),
+    ]),
+    current: snapshot('groceries-paused-nov', now, [
+      evidence('ev-groceries-paused-nov', 'finance', {
+        monthlyGroceries: 512,
+        budget: 450,
+        overBy: 62,
+      }),
+    ]),
+    expected: {
+      decision: 'none',
+      rationale: 'The person paused this goal, so a finance change must not resume it.',
+    },
+  },
+  {
+    id: 'scheduled-pass-material-setback',
+    title: 'A scheduled pass catches a setback with no critical event',
+    category: 'finance',
+    split: 'holdout',
+    goal: goal('eval-emergency-scheduled', 'Build a £9,000 emergency fund by June 2027', [
+      'finance',
+    ]),
+    trigger: scheduled('eval-emergency-scheduled-pass'),
+    previous: snapshot('emergency-scheduled-oct', oct, [
+      evidence(
+        'ev-emergency-sched-oct',
+        'finance',
+        { savings: 5400, target: 9000, monthlyContribution: 400 },
+        oct,
+      ),
+    ]),
+    current: snapshot('emergency-scheduled-nov', now, [
+      evidence('ev-emergency-sched-nov', 'finance', {
+        savings: 4100,
+        target: 9000,
+        monthlyContribution: 0,
+        unexpectedExpense: 1300,
+      }),
+    ]),
+    expected: {
+      decision: 'propose',
+      requiredEvidenceIds: ['ev-emergency-sched-nov'],
+      forbiddenTerms: ['guarantee', 'you will'],
+      rationale:
+        'Savings fell by £1,300 with no contribution this month, so the June 2027 target is no longer on track.',
+    },
+  },
+  {
+    id: 'repeat-handled-change',
+    title: 'Replaying a handled change does not evaluate twice',
+    category: 'finance',
+    split: 'holdout',
+    goal: goal('eval-groceries-repeat', 'Keep monthly groceries under £450', ['finance']),
+    trigger: critical('eval-groceries-repeat-change', ['finance']),
+    previous: snapshot('groceries-repeat-oct', oct, [
+      evidence('ev-groceries-repeat-oct', 'finance', { monthlyGroceries: 418, budget: 450 }, oct),
+    ]),
+    current: snapshot('groceries-repeat-nov', now, [
+      evidence('ev-groceries-repeat-nov', 'finance', {
+        monthlyGroceries: 489,
+        budget: 450,
+        overBy: 39,
+      }),
+    ]),
+    expected: {
+      decision: 'propose',
+      requiredEvidenceIds: ['ev-groceries-repeat-nov'],
+      idempotentReplay: true,
+      forbiddenTerms: ['guarantee', 'you must'],
+      rationale:
+        'Spend is £39 over the limit, and a replay of the same trigger id must reuse the recorded evaluation.',
+    },
+  },
+  {
+    id: 'home-deposit-progress',
+    title: 'A home deposit grows on plan — stay quiet',
+    category: 'finance',
+    split: 'holdout',
+    goal: goal('eval-home', 'Save a £40,000 deposit for a home', ['finance']),
+    trigger: critical('eval-home-change', ['finance']),
+    previous: snapshot('home-oct', oct, [
+      evidence(
+        'ev-home-oct',
+        'finance',
+        { depositSaved: 31200, target: 40000, monthlyContribution: 900 },
+        oct,
+      ),
+    ]),
+    current: snapshot('home-nov', now, [
+      evidence('ev-home-nov', 'finance', {
+        depositSaved: 32100,
+        target: 40000,
+        monthlyContribution: 900,
+        targetDateUnchanged: true,
+      }),
+    ]),
+    expected: {
+      decision: 'quiet',
+      forbiddenTerms: ['behind', 'missed', 'shortfall'],
+      rationale:
+        'The deposit grew by the planned £900 and the target date is unchanged, so nothing needs attention.',
+    },
+  },
+  {
+    id: 'business-runway-setback',
+    title: 'A client loss shortens the business runway',
+    category: 'cross-domain',
+    split: 'holdout',
+    goal: goal('eval-business', 'Launch the studio with 12 months of runway', [
+      'finance',
+      'career',
+      'tasks',
+    ]),
+    trigger: critical('eval-business-change', ['finance', 'career']),
+    previous: snapshot('business-oct', oct, [
+      evidence(
+        'ev-business-oct',
+        'finance',
+        { runwayMonths: 9.4, monthlyBurn: 3200, savings: 30080 },
+        oct,
+      ),
+    ]),
+    current: snapshot('business-nov', now, [
+      evidence('ev-business-nov', 'finance', {
+        runwayMonths: 6.1,
+        monthlyBurn: 4700,
+        savings: 28670,
+        lostClient: 'Northwind retainer',
+        lostMonthlyRevenue: 2100,
+      }),
+    ]),
+    expected: {
+      decision: 'propose',
+      requiredEvidenceIds: ['ev-business-nov'],
+      forbiddenTerms: ['viable', 'will fail', 'guarantee'],
+      rationale:
+        'Runway fell from 9.4 to 6.1 months after losing a retainer, against a 12-month launch goal.',
+    },
+  },
+  {
+    id: 'promotion-stalled-prerequisite',
+    title: 'The only worklog evidence is six weeks old',
+    category: 'data-quality',
+    split: 'holdout',
+    goal: goal('eval-promotion', 'Grow into a staff engineering role', ['career', 'tasks']),
+    trigger: scheduled('eval-promotion-scheduled-pass'),
+    previous: snapshot('promotion-sep', '2026-09-20T09:00:00.000Z', [
+      evidence(
+        'ev-promotion-sep',
+        'career',
+        { lastWorklogAt: '2026-09-18', prerequisitesCovered: 2, prerequisitesTotal: 5 },
+        '2026-09-20T09:00:00.000Z',
+      ),
+    ]),
+    current: snapshot('promotion-nov', now, [
+      evidence(
+        'ev-promotion-nov',
+        'career',
+        { lastWorklogAt: '2026-09-18', prerequisitesCovered: 2, prerequisitesTotal: 5 },
+        '2026-09-20T09:00:00.000Z',
+      ),
+    ]),
+    expected: {
+      decision: 'defer',
+      requiredEvidenceIds: ['ev-promotion-nov'],
+      forbiddenTerms: ['stalled', 'no progress', 'you have not'],
+      rationale:
+        'The latest worklog evidence is six weeks old, so the engine must ask for a fresh entry instead of declaring a stall.',
+    },
+  },
+  {
+    id: 'travel-plan-changed',
+    title: 'A moved trip makes the old booking deadline moot',
+    category: 'travel',
+    split: 'holdout',
+    goal: goal('eval-trip', 'Take the family trip to Lisbon', ['travel', 'finance']),
+    trigger: critical('eval-trip-change', ['travel']),
+    previous: snapshot('trip-oct', oct, [
+      evidence(
+        'ev-trip-oct',
+        'travel',
+        { bookingDeadline: '2026-11-06', depositDue: 300, tripDate: '2026-12-18' },
+        oct,
+      ),
+    ]),
+    current: snapshot('trip-nov', now, [
+      evidence('ev-trip-nov', 'travel', {
+        tripDate: '2027-05-14',
+        bookingWindowOpensAt: '2027-02-01',
+        depositRefunded: true,
+        originalDeadlineCancelled: true,
+      }),
+    ]),
+    expected: {
+      decision: 'propose',
+      requiredEvidenceIds: ['ev-trip-nov'],
+      forbiddenTerms: ['book now', 'expiring', 'due today', 'act now'],
+      rationale:
+        'The trip moved to May 2027 with the deposit refunded, so the plan needs rebooking rather than a reminder about the old date.',
+    },
+  },
+  {
+    id: 'caregiving-commitment-covered',
+    title: 'A caregiving commitment is covered by scheduled help',
+    category: 'caregiving',
+    split: 'holdout',
+    goal: goal('eval-care-2', "Support Dad's weekly physio appointments", [
+      'people',
+      'tasks',
+      'calendar',
+    ]),
+    trigger: critical('eval-care-covered-change', ['calendar']),
+    previous: snapshot('care-covered-oct', oct, [
+      evidence(
+        'ev-care-covered-oct',
+        'calendar',
+        { appointmentsPerWeek: 3, freeHoursPerWeek: 5, coveredByScheduledHelp: false },
+        oct,
+      ),
+    ]),
+    current: snapshot('care-covered-nov', now, [
+      evidence('ev-care-covered-nov', 'calendar', {
+        appointmentsPerWeek: 3,
+        freeHoursPerWeek: 5,
+        coveredByScheduledHelp: true,
+        coveredHoursPerWeek: 4,
+        privateNote: 'Dad started a new treatment plan',
+      }),
+    ]),
+    expected: {
+      decision: 'propose',
+      requiredEvidenceIds: ['ev-care-covered-nov'],
+      forbiddenTerms: ['treatment plan', 'diagnosis', 'condition worsened'],
+      rationale:
+        'Scheduled help now covers four hours of the weekly appointments, so which appointments the person still attends is a decision they can make this week.',
     },
   },
 ];

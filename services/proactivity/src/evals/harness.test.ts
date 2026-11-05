@@ -5,6 +5,7 @@ import {
   createExpectedSlot,
   runProactivityEvalCase,
   runProactivityEvalSuite,
+  selectEvalCases,
   type ProactivitySlot,
 } from './harness.js';
 
@@ -104,5 +105,67 @@ describe('proactivity eval suite', () => {
     expect(result.passed).toBe(true);
     expect(result.actual).toBe('none');
     expect(result.deliveryIntents).toEqual([]);
+  });
+
+  it('partitions every case into exactly one split', () => {
+    const regression = selectEvalCases(proactivityEvalCases, 'regression');
+    const holdout = selectEvalCases(proactivityEvalCases, 'holdout');
+    const ids = [...regression, ...holdout].map(({ id }) => id);
+
+    expect(selectEvalCases(proactivityEvalCases, 'all')).toHaveLength(proactivityEvalCases.length);
+    expect(new Set(ids).size).toBe(proactivityEvalCases.length);
+    expect(regression.length + holdout.length).toBe(proactivityEvalCases.length);
+    expect(regression.length).toBeGreaterThan(0);
+    expect(holdout.length).toBeGreaterThan(0);
+  });
+
+  it('records the goal, trigger, and snapshot identifiers on every result', async () => {
+    const result = await runProactivityEvalCase(
+      caseById('grocery-overspend'),
+      createExpectedSlot(proactivityEvalCases),
+    );
+
+    expect(result).toMatchObject({
+      caseId: 'grocery-overspend',
+      split: 'regression',
+      goalId: 'eval-groceries',
+      triggerKind: 'critical-change',
+      previousSnapshotId: 'groceries-oct',
+      currentSnapshotId: 'groceries-nov',
+    });
+    expect(result.decision?.evidenceIds).toContain('ev-groceries-nov');
+  });
+
+  it('skips a paused goal', async () => {
+    const result = await runProactivityEvalCase(
+      caseById('paused-goal-critical-change'),
+      createExpectedSlot(proactivityEvalCases),
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.actual).toBe('none');
+    expect(result.split).toBe('holdout');
+  });
+
+  it('reuses the journaled evaluation when the same trigger is replayed', async () => {
+    let evaluateCalls = 0;
+    const slot: ProactivitySlot = {
+      evaluate: async () => {
+        evaluateCalls += 1;
+        return {
+          kind: 'propose',
+          summary: 'Groceries are over budget',
+          reason: 'Spending is above the monthly limit.',
+          nextStep: 'Review the budget.',
+          evidenceIds: ['ev-groceries-repeat-nov'],
+        };
+      },
+    };
+
+    const result = await runProactivityEvalCase(caseById('repeat-handled-change'), slot);
+
+    expect(evaluateCalls).toBe(1);
+    expect(result.passed).toBe(true);
+    expect(result.deliveryIntents).toHaveLength(1);
   });
 });

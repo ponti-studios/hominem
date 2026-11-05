@@ -21,6 +21,11 @@ export type ProactivityEvalResult = {
   caseId: string;
   title: string;
   category: ProactivityEvalCase['category'];
+  split: ProactivityEvalCase['split'];
+  goalId: string;
+  triggerKind: ProactivityTrigger['kind'];
+  previousSnapshotId: string | null;
+  currentSnapshotId: string;
   expected: ExpectedDecisionKind;
   actual: ExpectedDecisionKind | 'error';
   passed: boolean;
@@ -30,6 +35,15 @@ export type ProactivityEvalResult = {
   latencyMs: number;
   error?: string;
 };
+
+export type ProactivityEvalSuite = 'all' | ProactivityEvalCase['split'];
+
+export function selectEvalCases(
+  cases: readonly ProactivityEvalCase[],
+  suite: ProactivityEvalSuite,
+): readonly ProactivityEvalCase[] {
+  return suite === 'all' ? cases : cases.filter((input) => input.split === suite);
+}
 
 const MAX_SUMMARY = 160;
 const MAX_REASON = 240;
@@ -66,6 +80,26 @@ export async function runProactivityEvalCase(
 
   try {
     const run = await engine.run(input.trigger);
+
+    if (input.expected.idempotentReplay) {
+      const replay = await engine.run(input.trigger);
+      const originalKeys = run.deliveryIntents.map(({ idempotencyKey }) => idempotencyKey).join();
+      const replayKeys = replay.deliveryIntents.map(({ idempotencyKey }) => idempotencyKey).join();
+      if (replay.evaluations.length !== run.evaluations.length) {
+        failures.push(
+          `Replay produced ${replay.evaluations.length} evaluations, expected ${run.evaluations.length}.`,
+        );
+      }
+      if (replay.deliveryIntents.length !== run.deliveryIntents.length) {
+        failures.push(
+          `Replay produced ${replay.deliveryIntents.length} delivery intents, expected ${run.deliveryIntents.length}.`,
+        );
+      }
+      if (replayKeys !== originalKeys) {
+        failures.push('Replay produced different delivery idempotency keys.');
+      }
+    }
+
     const evaluations = run.evaluations;
     const decision = evaluations[0]?.decision ?? null;
 
@@ -101,8 +135,9 @@ export async function runProactivityEvalCase(
     for (const id of decision.evidenceIds) {
       if (!available.has(id)) failures.push(`Decision cited unavailable evidence "${id}".`);
     }
+    const cited = new Set(decision.evidenceIds);
     for (const id of input.expected.requiredEvidenceIds ?? []) {
-      if (!decision.evidenceIds.includes(id)) {
+      if (!cited.has(id)) {
         failures.push(`Decision did not cite required evidence "${id}".`);
       }
     }
@@ -220,6 +255,11 @@ function result(
     caseId: input.id,
     title: input.title,
     category: input.category,
+    split: input.split,
+    goalId: input.goal.id,
+    triggerKind: input.trigger.kind,
+    previousSnapshotId: input.previous?.id ?? null,
+    currentSnapshotId: input.current.id,
     expected: input.expected.decision,
     actual:
       input.expected.decision === 'none' && decision === null

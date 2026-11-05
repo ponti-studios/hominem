@@ -2,43 +2,58 @@ import { proactivityEvalCases } from './cases.js';
 import {
   createExpectedSlot,
   runProactivityEvalSuite,
+  selectEvalCases,
   type ProactivityEvalResult,
+  type ProactivityEvalSuite,
 } from './harness.js';
 
 const DEFAULT_LIVE_MODEL = 'openai/gpt-5-mini';
+const SUITES: readonly ProactivityEvalSuite[] = ['all', 'regression', 'holdout'];
 
 const args = process.argv.slice(2);
 const live = args.includes('--live') || args.includes('--openrouter');
 const json = args.includes('--json');
 const list = args.includes('--list');
 const caseIds = valuesFor('--case');
+const suiteArg = valueFor('--suite') ?? 'all';
+const suite = SUITES.find((candidate) => candidate === suiteArg);
 const model = valueFor('--model') ?? process.env.PROACTIVITY_EVAL_MODEL ?? DEFAULT_LIVE_MODEL;
+
+if (!suite) {
+  console.error(`Unknown suite "${suiteArg}". Use one of: ${SUITES.join(', ')}.`);
+  process.exit(2);
+}
 
 if (args.includes('--help') || args.includes('-h')) {
   console.log(`Proactivity eval
 
-  pnpm --filter @hominem/proactivity eval -- --offline
-  pnpm --filter @hominem/proactivity eval -- --live [--model <id>] [--case <id>] [--json] [--list]
+  pnpm --filter @hominem/proactivity eval -- --offline [--suite <all|regression|holdout>]
+  pnpm --filter @hominem/proactivity eval -- --live [--model <id>] [--suite <all|regression|holdout>] [--case <id>] [--json] [--list]
 
-Default: offline (scripted evaluator, no model calls).
+Default: offline (scripted evaluator, no model calls), suite "all".
+
+Regression cases are the ones used while tuning. Holdout cases are reserved for
+review runs, so tune against --suite regression and validate with --suite holdout.
 `);
   process.exit(0);
 }
 
 if (list) {
-  for (const input of proactivityEvalCases) {
-    console.log(`${input.id}\t${input.expected.decision}\t${input.category}\t${input.title}`);
+  for (const input of selectEvalCases(proactivityEvalCases, suite)) {
+    console.log(
+      `${input.id}\t${input.split}\t${input.expected.decision}\t${input.category}\t${input.title}`,
+    );
   }
   process.exit(0);
 }
 
+const suiteCases = selectEvalCases(proactivityEvalCases, suite);
+const requested = new Set(caseIds);
 const cases =
-  caseIds.length === 0
-    ? proactivityEvalCases
-    : proactivityEvalCases.filter((input) => caseIds.includes(input.id));
+  caseIds.length === 0 ? suiteCases : suiteCases.filter((input) => requested.has(input.id));
 
 if (cases.length === 0) {
-  console.error(`No cases matched: ${caseIds.join(', ')}`);
+  console.error(`No cases matched in suite "${suite}": ${caseIds.join(', ')}`);
   process.exit(2);
 }
 
@@ -47,7 +62,7 @@ const slot = live
   : createExpectedSlot(cases);
 
 console.log(
-  `Proactivity eval — ${cases.length} case(s), ${live ? `live model ${model}` : 'offline expected slot'}\n`,
+  `Proactivity eval — ${cases.length} case(s) from the ${suite} suite, ${live ? `live model ${model}` : 'offline expected slot'}\n`,
 );
 
 const results = await runProactivityEvalSuite(cases, slot, {
@@ -63,6 +78,7 @@ if (json) {
     JSON.stringify(
       {
         mode: live ? 'live' : 'offline',
+        suite,
         model: live ? model : null,
         passed,
         failed: results.length - passed,
