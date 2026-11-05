@@ -274,6 +274,14 @@ missing evidence, goal already achieved or paused, and a repeat of an already
 handled change. Cases should state the expected decision and the evidence that
 would justify it, not just a preferred prose answer.
 
+## Demo surface
+
+`services/proactivity/studio` is a local, synthetic-data studio that runs the
+real engine, model slot, delivery policy, and SQLite journal. It exists to
+demonstrate behaviour and inspect decisions during product review. It is not
+wired to the API, scheduler, or production data, and it does not resolve any
+open question below.
+
 ## Open questions
 
 - **Critical-change catalog and severity rules** — OPEN — USER DECISION REQUIRED.
@@ -312,7 +320,7 @@ would justify it, not just a preferred prose answer.
   model before the contract and ownership are reviewed.
 - Treating the ten benchmark goals as mandatory goal categories in the mobile
   interface.
-- Building client-specific proactivity logic or evaluating scenarios through
-  a simulated app flow.
+- Shipping a production client-specific proactivity flow. The local studio is
+  a review and demonstration surface, not a product client.
 - Taking irreversible financial, career, health, travel, or communication
   actions without a separate explicit product decision.
