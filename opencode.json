@@ -9,9 +9,9 @@
       },
       "maestro": {
         "type": "local",
-        "command": ["{env:MAESTRO_BIN}", "mcp"],
+        "command": ["/bin/sh", "-c", "exec \"${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}\" mcp"],
         "environment": {
-          "JAVA_HOME": "{env:JAVA_HOME}"
+          "JAVA_HOME": "/Users/charlesponti/.local/share/mise/installs/java/17.0.2"
         },
         "disabled": false
       },
@@ -22,7 +22,11 @@
       },
       "tableplus": {
         "type": "local",
-        "command": ["{env:TABLEPLUS_MCP_BIN}"],
+        "command": [
+          "/bin/sh",
+          "-c",
+          "exec \"${TABLEPLUS_MCP_BIN:-/Applications/Setapp/TablePlus.app/Contents/MacOS/tableplus-mcp}\""
+        ],
         "disabled": false
       }
     }
