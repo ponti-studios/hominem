@@ -242,14 +242,27 @@ describe('model-facing decision shape', () => {
     const decision = toProactivityDecision(
       modelDecisionSchema.parse({
         ...proposal,
-        reason: `${'a'.repeat(120)}; ${'b'.repeat(78)}`,
+        reason: `${'a'.repeat(150)}; ${'b'.repeat(108)}`,
         reevaluateAt: null,
       }),
     );
 
     if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
-    expect(decision.reason.length).toBeLessThanOrEqual(240);
+    expect(decision.reason.length).toBeLessThanOrEqual(200);
     expect(decision.reason.endsWith('.')).toBe(true);
+  });
+
+  it('caps an over-length reason that already ends with a sentence terminator', () => {
+    const decision = toProactivityDecision(
+      modelDecisionSchema.parse({
+        ...proposal,
+        reason: `${'The trip moved and the deposit was refunded. '.repeat(8)}`,
+        reevaluateAt: null,
+      }),
+    );
+
+    if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
+    expect(decision.reason.length).toBeLessThanOrEqual(200);
   });
 
   it('drops unused fields from a quiet decision', () => {
@@ -336,6 +349,41 @@ describe('grounding preflight', () => {
 
     expect(guarded).toMatchObject({ kind: 'defer', evidenceIds: ['ev-after'] });
     expect(guarded?.reason).toContain('seven days old');
+  });
+
+  it('returns quiet when the current state records an applied refund', () => {
+    const guarded = preflight({
+      ...context,
+      current: {
+        ...context.current,
+        evidence: [
+          {
+            ...evidence,
+            facts: { monthlyGroceries: 415, budget: 450, refund: 40, refundApplied: true },
+          },
+        ],
+      },
+    });
+
+    expect(guarded).toMatchObject({ kind: 'quiet', evidenceIds: ['ev-after'] });
+    expect(guarded?.reason).toContain('refund');
+  });
+
+  it('still defers when a refund carries a blocking data-quality flag', () => {
+    const guarded = preflight({
+      ...context,
+      current: {
+        ...context.current,
+        evidence: [
+          {
+            ...evidence,
+            facts: { refundApplied: true, dataQuality: 'duplicate_unreconciled' },
+          },
+        ],
+      },
+    });
+
+    expect(guarded).toMatchObject({ kind: 'defer', evidenceIds: ['ev-after'] });
   });
 
   it('lets fresh, well-formed evidence through to the model', () => {

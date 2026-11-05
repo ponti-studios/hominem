@@ -13,8 +13,9 @@ state warrants an interruption.
 
 Return exactly one decision:
 
-- "propose" when the new state materially changes the goal's outlook or needs a concrete next step.
-  Cite at least one supplied evidence id and name the specific fact that changed.
+- "propose" when the new state creates a decision or risk the person has not already planned for and
+  waiting would make it worse. Cite at least one supplied evidence id and name the specific fact
+  that changed.
 - "defer" when the evidence is missing, stale, conflicting, or insufficient to decide. Say what is
   missing and when to reassess.
 - "quiet" when nothing material changed, the change is unrelated to this goal, or the goal is
@@ -53,7 +54,8 @@ Before deciding, run these grounding checks:
 5. Check observedAt on the newest relevant current evidence. If it is more than seven days older than
    the trigger time, you must defer and ask for a fresh observation.
 6. If the evidence flags duplicates, reconciliation issues, or unverified records, you must defer.
-7. If the goal is already achieved, clearly on track, or the change is only progress, quiet.
+7. If the goal is already achieved, clearly on track, the change is only progress, or the change
+   removes work, quiet.
 
 Decision threshold:
 - Propose only when the new state creates a decision or risk the user has not already planned for, and
@@ -62,6 +64,8 @@ Decision threshold:
   numbers changed. Do not propose "record", "update", "confirm", "monitor", or "recalculate" work.
 - A refund, credit, correction, or reconciliation that brings the current figure back inside the
   goal's limit is a resolution, not a new decision. Quiet.
+- Quiet when the change only removes work: a pending action that was completed or cancelled and leaves
+  nothing to decide. Less effort or less urgency is not a new decision.
 - Defer for stale, duplicate, unreconciled, conflicting, or missing required evidence. Verification and
   data cleanup are deferrals, not proposals.
 
@@ -141,6 +145,18 @@ const BLOCKING_DATA_QUALITY = new Set([
 ]);
 
 /**
+ * Facts whose presence means the change already resolved itself. The model
+ * agrees with this rule in the prompt but applies it inconsistently, so the
+ * resolution is enforced deterministically.
+ */
+const RESOLUTION_FLAGS: Readonly<Record<string, string>> = {
+  refundApplied: 'refund',
+  creditApplied: 'credit',
+  correctionApplied: 'correction',
+  adjustmentApplied: 'adjustment',
+};
+
+/**
  * Deterministic grounding checks. These do not judge materiality; they stop the
  * model from evaluating when the supplied state cannot support a trustworthy
  * decision. The model handles the remaining propose/defer/quiet judgement.
@@ -183,6 +199,17 @@ export function preflight(context: GoalContext): ProactivityDecision | null {
       reevaluateAt,
       evidenceIds: [newest.id],
     });
+  }
+
+  for (const item of current) {
+    const label = Object.keys(RESOLUTION_FLAGS).find((flag) => item.facts[flag] === true);
+    if (label) {
+      return proactivityDecisionSchema.parse({
+        kind: 'quiet',
+        reason: `The recorded ${RESOLUTION_FLAGS[label]} already resolves the change; no action is needed.`,
+        evidenceIds: [item.id],
+      });
+    }
   }
 
   return null;
@@ -415,8 +442,7 @@ function correctionFor(error: unknown, available: Set<string>): string {
 
 function tidyProse(value: string, max: number): string {
   const trimmed = value.trim().replace(/\s+/g, ' ');
-  if (trimmed.length < max - 1) return trimmed;
-  if (/[.!?…]$/.test(trimmed)) return trimmed;
+  if (trimmed.length <= max) return trimmed;
   const cut = trimmed.slice(0, max);
   const boundary = Math.max(
     cut.lastIndexOf('. '),
