@@ -29,13 +29,17 @@ pnpm --filter @hominem/proactivity eval -- --live --model openai/gpt-5-mini
 # One or more cases.
 pnpm --filter @hominem/proactivity eval -- --live --case grocery-overspend
 
-# Generate the stakeholder showcase from live results.
+# Start the live demo server (real model calls from the page).
 pnpm --filter @hominem/proactivity demo
+
+# Generate a static snapshot of the showcase.
+pnpm --filter @hominem/proactivity demo:report
 ```
 
-The demo writes `services/proactivity/demo/proactivity-demo.html`: a
-self-contained, filterable page with the before/after evidence, the decision,
-the email it would send, and the cases where it deliberately stays quiet.
+The live demo serves `http://127.0.0.1:4177`. Pick a scenario, edit the
+current state, and hit Evaluate; the page calls the model and renders the
+decision, evidence, email preview, and latency. `demo:report` writes
+`services/proactivity/demo/proactivity-demo.html` for offline sharing.
 
 The live slot builds its prompt and structured-output schema in
 `src/slot.ts`, and resolves the model's reasoning profile through
