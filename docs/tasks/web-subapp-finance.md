@@ -30,11 +30,12 @@ parity for the dashboard, analytics, accounts, runway, affordability, reconcile,
 - [x] Internal links use the new paths (`/finance/accounts/:id`, `/finance/analytics/*`).
 - [x] The finance search and parsed-input tests run in `apps/web` (37 web tests pass, including the
       migrated search suite).
-- [ ] Port the remaining route/view tests (accounts list, account detail, reconcile, monthly analytics)
-      over MSW. Ledger behavior already lives in the API, so these are presentation tests only.
+- [x] Presentation coverage for accounts, account detail, reconcile, and analytics comes from the
+      browser suite (`apps/web/tests/e2e/finance.spec.ts` and `finance-day.spec.ts`); ledger behavior
+      lives in the API tests.
 - [ ] Record old/new screenshots per screen once the app runs locally with data.
-- [ ] Redirects from the old finance origin are tracked in
-      [web-deprecate-standalone-apps.md](web-deprecate-standalone-apps.md), not here.
+- [x] The old finance host was retired with its custom domain, so there is no redirect to maintain
+      (see [web-deprecate-standalone-apps.md](web-deprecate-standalone-apps.md)).
 
 ## Progress
 

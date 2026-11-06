@@ -28,8 +28,8 @@ configured origin.
 
 ## Notes
 
-Blocked in practice on whatever owns the external PDF worker; coordinate the origin change before
-removing the old career domain.
+The external PDF worker now receives its URL through `VITE_CAREER_PDF_WORKER_URL`. The old career
+domain has been retired, so the worker must target the platform origin.
 
 ## Evidence
 

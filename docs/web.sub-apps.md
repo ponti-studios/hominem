@@ -380,21 +380,20 @@ API integration tests. Delete `apps/career/app/test/db` — it only exists becau
 
 ### Phase 5 — Deprecate the standalone apps
 
-Only after Phase 3 and Phase 4 exit, and after a redirect soak.
+Only after Phase 3 and Phase 4 exit.
 
-1. Add permanent redirects on the old origins (or old paths) to the new locations (section 6).
-2. Remove: `apps/finance`, `apps/career`, their Dockerfiles, `validate-finance.yml`,
+1. Remove: `apps/finance`, `apps/career`, their Dockerfiles, `validate-finance.yml`,
    `validate-career.yml`, `dev:finance` / `dev:career` scripts, turbo entries, `just/ui.just`
    `ui_consumers`, `.env.example` files. Neither app has a `deploy-*.yml` in `.github/workflows`
    today (only `validate-*` with a `docker-build` job), so also remove whatever manual Fly app and
-   `FLY_*` variables back the current deployments.
-3. Update `docs/architecture.md`'s data-path table and the root `AGENTS.md` repo structure list. Add
+   `FLY_*` variables backed the deployments.
+2. Update `docs/architecture.md`'s data-path table and the root `AGENTS.md` repo structure list. Add
    the sub-app rule to the "Adding a new package, app, or service" guidance.
-4. Keep `packages/finance` and `packages/career` — they are the domain logic behind the API and
+3. Keep `packages/finance` and `packages/career` — they are the domain logic behind the API and
    should remain the single implementation.
 
-**Exit:** the monorepo builds and tests without either app; both old domains redirect; the docs match
-reality.
+**Exit:** the monorepo builds and tests without either app; the old hostnames are retired (their
+custom domains were removed, so there is no redirect layer to own); the docs match reality.
 
 ### Phase 6 — Platform integration (post-migration, not required to retire the apps)
 
@@ -411,61 +410,19 @@ layer. Add the second consumer before generalizing.
 
 ## 6. Compatibility and deprecation
 
-### 6.1 Proposed redirect map (pending D1/D2)
+The platform paths are the only addresses now. `apps/finance` and `apps/career` were deleted and their
+custom domains retired, so the old finance/career hostnames no longer resolve and there is no redirect
+layer to maintain. Anyone following an old bookmark has to navigate to the platform origin.
 
-| Old | New |
-| --- | --- |
-| `finance.<origin>/` | `/finance` |
-| `finance.<origin>/finance`, `/finance/runway`, `/finance/affordability`, `/finance/reconcile`, `/finance/transfers` | same path under `/finance` |
-| `finance.<origin>/analytics`, `/analytics/*` | `/finance/analytics`, `/finance/analytics/*` |
-| `finance.<origin>/accounts`, `/accounts/:id` | `/finance/accounts`, `/finance/accounts/:id` |
-| `finance.<origin>/account` | `/settings` |
-| `finance.<origin>/auth*` | `/` |
-| `finance.<origin>/<anything else>` | `/finance` |
-| `career.<origin>/` | `/career` (or `/tasks`, if the platform home absorbs it — D3) |
-| `career.<origin>/profile`, `/work*`, `/projects*`, `/skills`, `/testimonials*`, `/applications*`, `/onboarding` | `/career/<same>` |
-| `career.<origin>/account` | `/settings` |
-| `career.<origin>/p/:slug` | unchanged public path (D2) |
-| `career.<origin>/demo`, `/prototypes/*` | `/career` (surfaces removed, D6) |
-| `career.<origin>/auth*`, `/login` | `/` |
-| `career.<origin>/<anything else>` | `/career` |
+Two contract points still matter:
 
-### 6.2 Auth
+- `/p/:slug` is unchanged, so shared portfolio links keep working on the platform origin (D2).
+- Web login is the only auth surface; `webAuthConfig.allowedPrefixes` includes `/finance`, `/career`,
+  and `/p`, so a logged-out deep link returns to the page after OTP verification.
 
-Both old apps bounce unauthenticated users through the API's hosted login with their own `next` URL.
-After the move, all login returns must resolve to web paths: extend
-`webAuthConfig.allowedPrefixes` with `/finance` and `/career` (and `/p` if public profiles are
-root-mounted). Verify with the `hominem-auth-production-verify` skill after the deploy topology
-changes.
-
-### 6.3 Service workers
-
-Three service workers cannot coexist on one origin. Web's workbox config uses
-`navigateFallback: '/'` with a denylist; the old apps' workers have their own scopes and caches. On
-migration, the old origins must either stop serving a worker or serve a worker that unregisters
-itself and clears caches, otherwise returning users keep a stale shell that ignores redirects. Plan
-this explicitly; it is the most common way a "merged" app looks broken for a week.
-
-
-### 6.4 Cutover runbook
-
-The code side is done: `apps/web` serves the redirect map above, and the two standalone apps and their
-CI are deleted. The remaining step is operational, because it moves traffic between deployments:
-
-1. Move the old custom domains (`finance.*`, `career.*`) onto the `web` Fly app. Do not delete the old
-   Fly apps until the new DNS/certificate state is verified.
-2. Set `LEGACY_FINANCE_HOSTS` and `LEGACY_CAREER_HOSTS` on the web app to those hostnames
-   (comma-separated). With them unset, the redirect middleware is inert.
-3. Verify each host returns `301` to the platform path with `Cache-Control: no-store` and
-   `Clear-Site-Data: "cache"`, including `/analytics/*`, `/accounts/:id`, `/work/*`, `/applications/*`,
-   and `/p/:slug` (which must not redirect).
-4. Keep the redirects in place through the soak window, then delete the retired Fly apps and their
-   secrets/config variables.
-
-The redirect middleware also sends `Clear-Site-Data: "cache"` so a previously installed service worker
-on a retired origin does not keep serving its cached shell instead of following the redirect.
-
----
+There is no service-worker migration either: the retired origins are gone, and the platform owns a
+single worker on its own origin. Data was never stranded in the old apps — by the end they were API
+clients, so the same API and database hold everything.
 
 ## 7. Testing and evidence
 
@@ -490,13 +447,12 @@ Per phase, following `hominem-evidence`:
 | Risk | Why it bites | Mitigation |
 | --- | --- | --- |
 | Porting DB code into `apps/web` | Fastest local fix, creates a second writer and a second schema consumer | Phase 2 is a hard prerequisite; add a dependency check that fails if `@hominem/db` appears in web |
-| Service worker collision (6.3) | Users get a stale shell and never see redirects | Explicit unregister worker on old origins before redirect soak |
 | Finance theme (S6/D4) | A data-dense dark surface dropped into a light shell | Scope tokens to `[data-domain="finance"]`; screenshot parity per screen |
 | Bundle growth from `recharts`, `react-image-crop`, `simple-icons` | Platform first load regresses | Route-level code splitting; keep heavy deps inside the domain module; check the bundle visualizer (`ANALYZE=true`) |
 | SSE resume streaming through a new origin | Stream breaks behind proxies or auth redirects | Phase 2 owns the transport; test through the same path the app will use |
 | External PDF worker's hardcoded origin | Public profile PDF silently breaks | Make the worker URL config, test one real generate after Phase 4 |
 | Two implementations of resume pipeline | Behavior drift and double AI spend | Delete app-local pipeline in the same commit as the API route |
-| Public profile SEO/history | Shared links break | Keep `/p/:slug` at the root (D2) and 301 the old host |
+| Public profile SEO/history | Shared links break | Keep `/p/:slug` at the platform root (D2) |
 | Redirect-only deprecation leaves API keys/flows in old envs | Zombie deploys | Phase 5 removes Fly apps, workflows, and secrets explicitly |
 
 ---
@@ -514,8 +470,9 @@ Career to `/career/*`. No sub-app may claim a root-level generic noun.
 ### D2 — Public profile URL: keep `/p/:slug`
 
 Career's public profile stays at the platform root so existing shared links and the PDF worker keep
-working. The old career host 301s to the platform origin. The worker's hardcoded
-`https://career-worker.fly.dev/trigger-task` call becomes configuration in the same change that moves
+working. The retired career host is not redirected — the domain was removed — so anything still
+pointing at it must be updated to the platform origin. The worker's hardcoded
+`https://career-worker.fly.dev/trigger-task` call became configuration in the same change that moved
 the profile route.
 
 ### D3 — Root destination: keep `/tasks`
