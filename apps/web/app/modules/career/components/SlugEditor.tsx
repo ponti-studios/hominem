@@ -4,6 +4,7 @@ import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { cn } from '~/lib/utils';
+import { careerApiUrl } from '~/modules/career/lib/api-url';
 
 interface SlugEditorProps {
   profileId: string;
@@ -70,27 +71,29 @@ export function SlugEditor({ profileId, initialSlug, liveUrl, onSave }: SlugEdit
       });
 
       try {
+        const query = new URLSearchParams({ slug, currentProfileId: profileId });
         const response = await fetch(
-          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(profileId)}`,
+          `${careerApiUrl('/api/career/profile/slug-available')}?${query.toString()}`,
+          { credentials: 'include' },
         );
         const data: {
-          success: boolean;
-          data?: { isAvailable: boolean; message: string };
-          error?: string;
+          slug?: string;
+          isAvailable?: boolean;
+          message?: string;
         } = await response.json();
 
-        if (data.success && data.data) {
+        if (response.ok && typeof data.isAvailable === 'boolean') {
           setValidation({
             isChecking: false,
-            isAvailable: data.data.isAvailable,
-            message: data.data.message,
-            isValid: data.data.isAvailable,
+            isAvailable: data.isAvailable,
+            message: data.isAvailable ? 'Available' : 'That URL is already taken',
+            isValid: data.isAvailable,
           });
         } else {
           setValidation({
             isChecking: false,
             isAvailable: false,
-            message: data.error || 'Invalid slug format',
+            message: data.message || 'Invalid slug format',
             isValid: false,
           });
         }

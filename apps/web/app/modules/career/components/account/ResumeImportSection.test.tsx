@@ -81,10 +81,13 @@ describe('ResumeImportSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /analyze resume/i }));
 
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith('/api/career/resume/analyze', expect.anything()),
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/career\/resume\/analyze$/),
+        expect.anything(),
+      ),
     );
     await waitFor(() =>
-      expect(currentEventSource().url).toBe('/api/career/resume/jobs/job-1/stream'),
+      expect(currentEventSource().url).toMatch(/\/api\/career\/resume\/jobs\/job-1\/stream$/),
     );
 
     const diff = {

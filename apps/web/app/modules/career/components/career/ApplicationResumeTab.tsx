@@ -16,6 +16,7 @@ import type {
   CustomizeResumeApiResponse,
   JobAnalysis,
 } from '~/modules/career/lib/api-contracts';
+import { careerApiUrl } from '~/modules/career/lib/api-url';
 import type { CareerApplicationRecord } from '~/modules/career/lib/types/records';
 import { getCompanyName } from '~/modules/career/lib/utils/applicationUtils';
 
@@ -108,9 +109,10 @@ export function ApplicationResumeTab({
           .filter(Boolean),
         job_posting: postingText,
       };
-      const response = await fetch('/api/resume/customize', {
+      const response = await fetch(careerApiUrl('/api/career/resume/customize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(request),
       });
       const data: CustomizeResumeApiResponse = await response.json();

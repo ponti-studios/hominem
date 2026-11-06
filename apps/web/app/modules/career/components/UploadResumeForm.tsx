@@ -4,6 +4,7 @@ import { LogIn } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import type { UploadResumeApiResponse } from '~/modules/career/lib/api-contracts';
+import { careerApiUrl } from '~/modules/career/lib/api-url';
 import type { ResumeConvertStage } from '~/modules/career/lib/types/resume';
 
 type DropZoneStatus = DropZoneProps['status'];
@@ -120,9 +121,9 @@ export function UploadResumeForm({
       const formData = new FormData();
       formData.append('pdf', selectedFile);
       if (mode === 'replace') formData.append('replaceExisting', 'true');
-      const res = await fetch('/api/career/resume/convert', {
+      const res = await fetch(careerApiUrl('/api/career/resume/convert'), {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         body: formData,
         signal: abortController.signal,
       });

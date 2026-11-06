@@ -7,6 +7,7 @@ import { useRevalidator, useSearchParams } from 'react-router';
 
 import { cn } from '~/lib/utils';
 import type { AccountDocumentFile } from '~/modules/career/lib/account/types';
+import { careerApiUrl } from '~/modules/career/lib/api-url';
 import { RESUME_STAGE_INFO } from '~/modules/career/lib/resume-import/stages';
 import type {
   ResumeAnalysisStage,
@@ -83,7 +84,9 @@ export function ResumeImportSection({
 
   useEffect(() => {
     if (!streamJobId) return;
-    const es = new EventSource(`/api/career/resume/jobs/${streamJobId}/stream`);
+    const es = new EventSource(careerApiUrl(`/api/career/resume/jobs/${streamJobId}/stream`), {
+      withCredentials: true,
+    });
     eventSourceRef.current = es;
 
     es.onmessage = (event) => {
@@ -127,7 +130,11 @@ export function ResumeImportSection({
     dispatch({ type: 'analysis-uploading' });
 
     try {
-      const response = await fetch('/api/career/resume/analyze', { method: 'POST', body });
+      const response = await fetch(careerApiUrl('/api/career/resume/analyze'), {
+        method: 'POST',
+        body,
+        credentials: 'include',
+      });
       if (!response.ok) {
         const result: { error?: string } = await response.json();
         setDropzoneStatus('failed');
