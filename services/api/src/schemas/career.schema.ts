@@ -948,6 +948,41 @@ export const careerSlugAvailabilityOutputSchema = z.object({
   isAvailable: z.boolean(),
 });
 
+// Public portfolio projections: only fields the public page renders. Compensation,
+// contact details, hidden items, and private evidence never leave the API.
+export const careerPublicPositionSchema = z.object({
+  id: z.string().uuid(),
+  company: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  location: z.string().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  isCurrent: z.boolean(),
+});
+
+export const careerPublicProjectSchema = z.object({
+  id: z.string().uuid(),
+  organization: z.string().nullable(),
+  title: z.string(),
+  description: z.string().nullable(),
+  shortDescription: z.string().nullable(),
+  liveUrl: z.string().nullable(),
+  githubUrl: z.string().nullable(),
+  technologies: z.array(z.string()),
+  status: careerProjectStatusSchema.nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  isFeatured: z.boolean(),
+});
+
+export const careerPublicSkillSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  category: z.string().nullable(),
+  level: z.number().nullable(),
+});
+
 export const careerPortfolioOutputSchema = z.object({
   profile: careerProfileDetailSchema.omit({
     id: true,
@@ -963,7 +998,7 @@ export const careerPortfolioOutputSchema = z.object({
     availabilityStatus: true,
     openToRemote: true,
   }),
-  positions: z.array(careerEngagementSchema),
-  projects: z.array(careerProjectSchema),
-  skills: z.array(careerSkillSchema),
+  positions: z.array(careerPublicPositionSchema),
+  projects: z.array(careerPublicProjectSchema),
+  skills: z.array(careerPublicSkillSchema),
 });

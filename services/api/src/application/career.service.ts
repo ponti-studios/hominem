@@ -988,9 +988,42 @@ export async function getPublicCareerPortfolio(slug: string) {
       profileImageUrl: detail.profileImageUrl,
       tagline: detail.tagline,
     },
-    positions: positions.map(toEngagementDto),
-    projects: projects.map(toProjectDto),
-    skills: skills.map(toSkillDto),
+    positions: positions.map((position) => ({
+      id: position.id,
+      company: position.company,
+      title: position.title,
+      description: position.description,
+      location: position.location,
+      startDate: position.startDate,
+      endDate: position.endDate,
+      isCurrent: position.isCurrent ?? false,
+    })),
+    projects: projects
+      .filter((project) => project.isVisible)
+      .map((project) => ({
+        id: project.id,
+        organization: project.organization,
+        title: project.title,
+        description: project.description,
+        shortDescription: project.shortDescription,
+        liveUrl: project.liveUrl,
+        githubUrl: project.githubUrl,
+        technologies: Array.isArray(project.technologies)
+          ? project.technologies.filter((item): item is string => typeof item === 'string')
+          : [],
+        status: project.status === null ? null : careerProjectStatusSchema.parse(project.status),
+        startDate: project.startDate,
+        endDate: project.endDate,
+        isFeatured: project.isFeatured,
+      })),
+    skills: skills
+      .filter((skill) => skill.isVisible)
+      .map((skill) => ({
+        id: skill.id,
+        name: skill.name,
+        category: skill.category,
+        level: skill.level,
+      })),
   };
 }
 

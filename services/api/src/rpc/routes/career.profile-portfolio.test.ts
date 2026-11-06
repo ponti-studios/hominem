@@ -69,15 +69,30 @@ beforeAll(async () => {
 
   await db
     .insertInto('app.careerEngagements')
-    .values({ ownerUserid: ownerId, company: 'Analytical Engines', title: 'Engineer' })
+    .values({
+      ownerUserid: ownerId,
+      company: 'Analytical Engines',
+      title: 'Engineer',
+      salaryLow: 120000,
+      salaryHigh: 160000,
+      contactName: 'Private Referee',
+      contactPhone: '+44 7700 900000',
+      reasonForLeaving: 'Private reason',
+    })
     .execute();
   await db
     .insertInto('app.careerProjects')
-    .values({ ownerUserid: ownerId, title: 'Difference Engine' })
+    .values([
+      { ownerUserid: ownerId, title: 'Difference Engine', isVisible: true },
+      { ownerUserid: ownerId, title: 'Hidden Project', isVisible: false },
+    ])
     .execute();
   await db
     .insertInto('app.careerSkills')
-    .values({ ownerUserid: ownerId, name: 'Mathematics' })
+    .values([
+      { ownerUserid: ownerId, name: 'Mathematics', isVisible: true },
+      { ownerUserid: ownerId, name: 'Hidden Skill', isVisible: false },
+    ])
     .execute();
 });
 
@@ -133,6 +148,27 @@ describe('career profile and portfolio', () => {
     expect(body.positions).toHaveLength(1);
     expect(body.projects).toHaveLength(1);
     expect(body.skills).toHaveLength(1);
+  });
+
+  it('never exposes compensation, contacts, or private reasons publicly', async () => {
+    const response = await publicApp().request(`/career/portfolio/${ownerSlug}`);
+    const body = await response.json();
+
+    expect(body.positions[0]).not.toHaveProperty('salaryLow');
+    expect(body.positions[0]).not.toHaveProperty('salaryHigh');
+    expect(body.positions[0]).not.toHaveProperty('contactName');
+    expect(body.positions[0]).not.toHaveProperty('contactPhone');
+    expect(body.positions[0]).not.toHaveProperty('reasonForLeaving');
+  });
+
+  it('omits projects and skills flagged as hidden', async () => {
+    const response = await publicApp().request(`/career/portfolio/${ownerSlug}`);
+    const body = await response.json();
+
+    expect(body.projects.map((project: { title: string }) => project.title)).toEqual([
+      'Difference Engine',
+    ]);
+    expect(body.skills.map((skill: { name: string }) => skill.name)).toEqual(['Mathematics']);
   });
 
   it('404s a portfolio that is not public or does not exist', async () => {
