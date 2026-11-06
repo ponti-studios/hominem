@@ -1,31 +1,22 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-
   "workspaces": {
     "apps/omiro": {
       "entry": ["app/**/*.{ts,tsx}"],
       "project": ["**/*.{ts,tsx}"]
     },
-
     "apps/web": {
       "entry": ["app/routes/**/*.{ts,tsx}", "tests/e2e/*.{ts,tsx}"],
       "project": ["app/**/*.{ts,tsx}", "tests/**/*.ts"]
     },
-
-    "apps/career": {
-      "project": ["app/**/*.{ts,tsx}"]
-    },
-
     "services/api": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     },
-
     "packages/*": {
       "project": ["src/**/*.{ts,tsx}"]
     }
   },
-
   "ignoreDependencies": [
     "babel-preset-expo",
     "tw-animate-css",
@@ -33,10 +24,7 @@
     "expo-updates",
     "@expo/plist"
   ],
-
   "ignoreBinaries": [],
-
   "ignoreUnresolved": ["^\\.\\/\\+types\\/"],
-
   "ignore": ["apps/omiro/components/**", "apps/omiro/services/**", "apps/omiro/modules/**"]
 }

@@ -1,10 +1,9 @@
 # Web sub-apps
 
-**Status:** Accepted. Decisions D1–D6 are settled (section 9). The platform shell, the Finance
-sub-app, and the Career sub-app are in place and browser-tested (`apps/web/tests/e2e/`); the remaining
-work is retiring the two standalone deployments
-([web-deprecate-standalone-apps.md](tasks/web-deprecate-standalone-apps.md)) and the visual-parity
-screenshot pass.
+**Status:** Accepted and cut over. Decisions D1–D6 are settled (section 9). The platform shell, the
+Finance sub-app, and the Career sub-app are in place and browser-tested (`apps/web/tests/e2e/`); the
+standalone `apps/finance` and `apps/career` deployments are removed. Moving the old custom domains onto
+the web app is the one operational step left (6.4), plus the visual-parity screenshot pass.
 
 **Direction:** Hominem stops shipping Finance and Career as standalone products and serves both as
 sub-apps of `apps/web`. The platform shell owns identity, navigation, and cross-domain surfaces; each
@@ -416,16 +415,20 @@ layer. Add the second consumer before generalizing.
 
 | Old | New |
 | --- | --- |
-| `finance.<origin>/` | `web.<origin>/finance` |
+| `finance.<origin>/` | `/finance` |
 | `finance.<origin>/finance`, `/finance/runway`, `/finance/affordability`, `/finance/reconcile`, `/finance/transfers` | same path under `/finance` |
 | `finance.<origin>/analytics`, `/analytics/*` | `/finance/analytics`, `/finance/analytics/*` |
 | `finance.<origin>/accounts`, `/accounts/:id` | `/finance/accounts`, `/finance/accounts/:id` |
 | `finance.<origin>/account` | `/settings` |
+| `finance.<origin>/auth*` | `/` |
+| `finance.<origin>/<anything else>` | `/finance` |
 | `career.<origin>/` | `/career` (or `/tasks`, if the platform home absorbs it — D3) |
 | `career.<origin>/profile`, `/work*`, `/projects*`, `/skills`, `/testimonials*`, `/applications*`, `/onboarding` | `/career/<same>` |
 | `career.<origin>/account` | `/settings` |
 | `career.<origin>/p/:slug` | unchanged public path (D2) |
-| `career.<origin>/demo` | `/career/demo` or removed (D6) |
+| `career.<origin>/demo`, `/prototypes/*` | `/career` (surfaces removed, D6) |
+| `career.<origin>/auth*`, `/login` | `/` |
+| `career.<origin>/<anything else>` | `/career` |
 
 ### 6.2 Auth
 
@@ -442,6 +445,25 @@ Three service workers cannot coexist on one origin. Web's workbox config uses
 migration, the old origins must either stop serving a worker or serve a worker that unregisters
 itself and clears caches, otherwise returning users keep a stale shell that ignores redirects. Plan
 this explicitly; it is the most common way a "merged" app looks broken for a week.
+
+
+### 6.4 Cutover runbook
+
+The code side is done: `apps/web` serves the redirect map above, and the two standalone apps and their
+CI are deleted. The remaining step is operational, because it moves traffic between deployments:
+
+1. Move the old custom domains (`finance.*`, `career.*`) onto the `web` Fly app. Do not delete the old
+   Fly apps until the new DNS/certificate state is verified.
+2. Set `LEGACY_FINANCE_HOSTS` and `LEGACY_CAREER_HOSTS` on the web app to those hostnames
+   (comma-separated). With them unset, the redirect middleware is inert.
+3. Verify each host returns `301` to the platform path with `Cache-Control: no-store` and
+   `Clear-Site-Data: "cache"`, including `/analytics/*`, `/accounts/:id`, `/work/*`, `/applications/*`,
+   and `/p/:slug` (which must not redirect).
+4. Keep the redirects in place through the soak window, then delete the retired Fly apps and their
+   secrets/config variables.
+
+The redirect middleware also sends `Clear-Site-Data: "cache"` so a previously installed service worker
+on a retired origin does not keep serving its cached shell instead of following the redirect.
 
 ---
 

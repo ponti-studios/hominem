@@ -52,7 +52,7 @@ Composite packages flip `exports.types` to `build/index.d.ts` while `default` st
 
 **Trade accepted:** an editor only sees a dependency's type change after that dependency rebuilds. `pnpm dev:types` runs the watcher (`scripts/watch-types.sh`) that keeps declarations fresh; restart tsserver if a change ripples further than one hop.
 
-**Phase 0 proof it works:** a scratch `emitDeclarationOnly` build of `services/api` produced 176 self-contained `.d.ts`. `packages/rpc`, `apps/omiro`, and `apps/career` all typechecked clean against them, with zero `services/api/src` files in `apps/omiro`'s program and cold typecheck dropping 9.1s → 6.4s.
+**Phase 0 proof it works:** a scratch `emitDeclarationOnly` build of `services/api` produced 176 self-contained `.d.ts`. `packages/rpc`, `apps/omiro`, and the then-standalone Career app all typechecked clean against them, with zero `services/api/src` files in `apps/omiro`'s program and cold typecheck dropping 9.1s → 6.4s.
 
 ### Why zero `references`, not "usually fine"
 
@@ -68,7 +68,7 @@ pnpm hard-copies any `react`-peer-dependent package into an isolated `.pnpm` var
 
 ### Why narrow domain exports beat the root `AppType`
 
-`services/api`'s `rpcRoutes` mounts 15 domains into one Hono chain, and the root `@hominem/api/types` is `typeof rpcApp` over all of them — so a consumer needing one domain still forces tsserver to resolve all 15. `apps/finance` was rebuilt on the narrow `@hominem/api/finance` export instead of the root type: `open` dropped 13%, `geterr` (the cleaner signal, since it scales with graph size) dropped 46%. `apps/web` (6 of 15 domains used) and `apps/omiro` (8 of 15) have the same opportunity, unclaimed — composing several domain routers into one scoped client type is a bigger lift than `apps/finance`'s single-export swap was.
+`services/api`'s `rpcRoutes` mounts 15 domains into one Hono chain, and the root `@hominem/api/types` is `typeof rpcApp` over all of them — so a consumer needing one domain still forces tsserver to resolve all 15. The then-standalone Finance app was rebuilt on the narrow `@hominem/api/finance` export instead of the root type: `open` dropped 13%, `geterr` (the cleaner signal, since it scales with graph size) dropped 46%. `apps/web` (6 of 15 domains used) and `apps/omiro` (8 of 15) have the same opportunity, unclaimed — composing several domain routers into one scoped client type is a bigger lift than that single-export swap was.
 
 ### Why callback annotations sometimes do nothing
 

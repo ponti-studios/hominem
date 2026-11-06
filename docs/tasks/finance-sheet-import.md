@@ -87,7 +87,7 @@ daily wiring, deletes, write-back (Phases 2–4).
   `unknown_account`); no id-scoped read tool was added in this phase.
 - Implementation note: the thin service first lived in a new
   `services/api/src/application/finance-import.service.ts`, but that broke
-  `apps/finance` + `apps/career` typechecks — they resolve `@hominem/api/types`
+  the then-standalone Finance and Career app typechecks — they resolve `@hominem/api/types`
   to api source through stale pnpm `file:` copies that miss new files (and
   neither plain nor frozen `pnpm install` refreshes them). Merged the three
   functions into the existing `services/api/src/application/finance.service.ts`

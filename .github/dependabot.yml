@@ -17,14 +17,6 @@ updates:
       prefix: 'chore(deps)'
 
   - package-ecosystem: docker
-    directory: /apps/career
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: 'chore(deps)'
-
-  - package-ecosystem: docker
     directory: /services/api
     schedule:
       interval: weekly

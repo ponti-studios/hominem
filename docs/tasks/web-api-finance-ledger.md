@@ -10,7 +10,7 @@ estimated_size: 'M'
 
 ## Outcome
 
-The ledger operations that `apps/finance` performed by importing `@hominem/finance-services` directly
+The ledger operations the then-standalone Finance app performed by importing `@hominem/finance-services` directly
 are available over `/api/finance/ledger`, so a browser app can read and reconcile the books without a
 services dependency.
 

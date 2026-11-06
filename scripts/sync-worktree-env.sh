@@ -119,7 +119,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 declare -A portless_urls=()
-for app in api web career finance; do
+for app in api web; do
   url="$(cd "$dest_root" && pnpm exec portless get "$app" 2>/dev/null)" || url=""
   if [[ -n "$url" ]]; then
     portless_urls["$app"]="$url"
@@ -145,13 +145,13 @@ if [[ -n "${portless_urls[api]:-}" ]]; then
   if was_copied "services/api/.env"; then
     set_env_url "$dest_root/services/api/.env" API_URL "$api_url"
   fi
-  for app_dir in apps/web apps/career apps/finance; do
+  for app_dir in apps/web; do
     was_copied "$app_dir/.env" || continue
     set_env_url "$dest_root/$app_dir/.env" VITE_PUBLIC_API_URL "$api_url"
     set_env_url "$dest_root/$app_dir/.env" HOMINEM_INTERNAL_API_URL "$api_url"
   done
 fi
-for app in web career finance; do
+for app in web; do
   [[ -n "${portless_urls[$app]:-}" ]] || continue
   if was_copied "services/api/.env"; then
     set_env_url "$dest_root/services/api/.env" "$(echo "$app" | tr '[:lower:]' '[:upper:]')_URL" "${portless_urls[$app]}"

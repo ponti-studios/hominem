@@ -10,7 +10,7 @@ estimated_size: 'L'
 
 ## Outcome
 
-Everything `apps/career` currently does inside its own React Router server — profile writes, the public
+Everything the then-standalone Career app did inside its own React Router server — profile writes, the public
 portfolio read, documents, resume AI flows, skills derivation/search, slug availability, and file
 uploads — is available over `/api/career`, backed by `application/career.service.ts` and
 `schemas/career.schema.ts`.
@@ -30,8 +30,8 @@ uploads — is available over `/api/career`, backed by `application/career.servi
       `applications/:id/files/create` attach.
 - [ ] Each endpoint has an integration test, and MCP adapters exist where the capability is
       agent-relevant.
-- [ ] `apps/career` no longer imports `@hominem/db`, `@hominem/queues`, `@hominem/storage`, or
-      `@hominem/ai` outside of a documented transitional exception.
+- [x] The standalone app is deleted, so nothing outside the API imports `@hominem/db`,
+      `@hominem/queues`, `@hominem/storage`, or `@hominem/ai` for career data.
 
 ## Notes
 

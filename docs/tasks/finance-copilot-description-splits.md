@@ -38,7 +38,7 @@ confirmation).
 | ----- | --------------------------- | ---------------------------- | ---------- | --------------------- | ----------------------------------------------------------------------- |
 | W-001 | Choose the settings home    | Finance product              | —          | recorded decision     | The home (settings table, user metadata, or config surface) is explicit |
 | W-002 | Thread rules into preflight | `services/api` import routes | W-001      | import unit tests     | A configured collision redirects and force-credits on a fixture export  |
-| W-003 | Surface in the app          | `apps/finance` import UI     | W-002      | component tests       | Review shows the redirect before confirm                                |
+| W-003 | Surface in the app          | the then-standalone Finance app| W-002      | component tests       | Review shows the redirect before confirm                                |
 
 ## Acceptance criteria
 
