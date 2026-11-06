@@ -589,6 +589,42 @@ export const CareerRepository = {
       .executeTakeFirstOrThrow();
   },
 
+  async listApplicationStages(
+    handle: DbHandle,
+    applicationId: string,
+  ): Promise<CareerApplicationStageRecord[]> {
+    return handle
+      .selectFrom('app.careerApplicationStages')
+      .selectAll()
+      .where('applicationId', '=', applicationId)
+      .orderBy('stageOrder', 'asc')
+      .execute();
+  },
+
+  async addApplicationStage(
+    handle: DbHandle,
+    applicationId: string,
+    data: { stage: string; stageKind: 'APPLICATION' | 'SCREEN' | 'OFFER' | 'OUTCOME' },
+  ): Promise<CareerApplicationStageRecord> {
+    const existing = await handle
+      .selectFrom('app.careerApplicationStages')
+      .select((eb) => eb.fn.max<number>('stageOrder').as('maxOrder'))
+      .where('applicationId', '=', applicationId)
+      .executeTakeFirst();
+    const maxOrder = Number(existing?.maxOrder ?? 0);
+
+    return handle
+      .insertInto('app.careerApplicationStages')
+      .values({
+        applicationId,
+        stage: data.stage,
+        stageKind: data.stageKind,
+        stageOrder: maxOrder + 1,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+  },
+
   /** Every application that came from a posting, so callers can match on normalized keys. */
   async listApplicationsWithPosting(
     handle: DbHandle,

@@ -15,6 +15,7 @@ import {
   type CareerEngagementRecord,
   type CareerProjectInput,
   type CareerProjectRecord,
+  type CareerProfileRecord,
   type CareerSkillInput,
   type CareerSocialLinksInput,
   type CareerTestimonialInput,
@@ -37,6 +38,7 @@ import {
   careerMcpProfileSchema,
   careerProfileSchema,
   careerProfileUpdateSchema,
+  careerProfileDetailSchema,
   careerProjectSchema,
   careerProjectStatusSchema,
   careerProjectsSchema,
@@ -195,21 +197,56 @@ async function findExistingPosting(
   );
 }
 
+// A status that requires a pipeline stage must have one before the row is
+// written: a constraint trigger rejects APPLIED/SCREENING/OFFER without a
+// matching active stage (services/api/AGENTS.md, "Career domain").
+type ApplicationStatus = z.infer<typeof careerApplicationStatusSchema>;
+
+const STATUS_STAGE: Partial<
+  Record<ApplicationStatus, { stage: string; stageKind: 'APPLICATION' | 'SCREEN' | 'OFFER' }>
+> = {
+  APPLIED: { stage: 'Applied', stageKind: 'APPLICATION' },
+  SCREENING: { stage: 'Screening', stageKind: 'SCREEN' },
+  OFFER: { stage: 'Offer', stageKind: 'OFFER' },
+};
+
+async function pipelineUpdateForStatus(
+  tx: DbHandle,
+  applicationId: string,
+  status: ApplicationStatus | null | undefined,
+) {
+  if (!status) return {};
+  const mapping = STATUS_STAGE[status];
+  if (!mapping) return { status, currentStageId: null };
+
+  const stages = await CareerRepository.listApplicationStages(tx, applicationId);
+  const existing = stages.find((stage) => stage.stageKind === mapping.stageKind);
+  const stage =
+    existing ?? (await CareerRepository.addApplicationStage(tx, applicationId, mapping));
+  return { status, currentStageId: stage.id };
+}
+
 export async function createCareerApplication(
   ownerUserId: string,
   input: z.infer<typeof careerApplicationCreateSchema>,
 ) {
   const existing = await findExistingPosting(ownerUserId, input);
   if (existing) return { application: toApplicationDto(existing), alreadyExisted: true };
-  return {
-    application: toApplicationDto(
-      await CareerRepository.createApplication(db, ownerUserId, {
-        ...input,
-        status: input.status ?? 'WISHLIST',
-      }),
-    ),
-    alreadyExisted: false,
-  };
+
+  return runInTransaction(async (tx) => {
+    const requestedStatus = input.status ?? 'WISHLIST';
+    const created = await CareerRepository.createApplication(tx, ownerUserId, {
+      ...input,
+      status: 'WISHLIST',
+    });
+    const pipeline = await pipelineUpdateForStatus(tx, created.id, requestedStatus);
+    const application =
+      Object.keys(pipeline).length === 0
+        ? created
+        : ((await CareerRepository.updateApplication(tx, ownerUserId, created.id, pipeline)) ??
+          created);
+    return { application: toApplicationDto(application), alreadyExisted: false };
+  });
 }
 
 export async function updateCareerApplication(
@@ -217,10 +254,16 @@ export async function updateCareerApplication(
   id: string,
   data: Partial<z.infer<typeof careerApplicationCreateSchema>>,
 ) {
-  const existing = await CareerRepository.getApplicationWithRelations(db, ownerUserId, id);
-  if (!existing) return null;
-  const updated = await CareerRepository.updateApplication(db, ownerUserId, id, data);
-  return updated ? toApplicationDto(updated) : null;
+  return runInTransaction(async (tx) => {
+    const existing = await CareerRepository.getApplicationWithRelations(tx, ownerUserId, id);
+    if (!existing) return null;
+    const pipeline = await pipelineUpdateForStatus(tx, id, data.status);
+    const updated = await CareerRepository.updateApplication(tx, ownerUserId, id, {
+      ...data,
+      ...pipeline,
+    });
+    return updated ? toApplicationDto(updated) : null;
+  });
 }
 
 export async function removeCareerApplication(ownerUserId: string, id: string) {
@@ -723,7 +766,7 @@ export async function removeCareerApplicationFile(
   return true;
 }
 
-function toSkillDto(skill: {
+export function toSkillDto(skill: {
   id: string;
   name: string;
   category: string | null;
@@ -753,7 +796,7 @@ function toSkillDto(skill: {
   };
 }
 
-function toEngagementDto(
+export function toEngagementDto(
   engagement: CareerEngagementRecord,
 ): z.infer<typeof careerEngagementSchema> {
   return careerEngagementSchema.parse({
@@ -778,7 +821,7 @@ function toEngagementDto(
   });
 }
 
-function toProjectDto(project: CareerProjectRecord): z.infer<typeof careerProjectSchema> {
+export function toProjectDto(project: CareerProjectRecord): z.infer<typeof careerProjectSchema> {
   return careerProjectSchema.parse({
     id: project.id,
     organization: project.organization,
@@ -869,4 +912,93 @@ function toApplicationFileDto(file: {
     fileType: file.fileType,
     createdAt: String(file.createdAt),
   };
+}
+
+function toProfileDetailDto(profile: CareerProfileRecord) {
+  return careerProfileDetailSchema.parse({
+    id: profile.id,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    headline: profile.headline,
+    summary: profile.summary,
+    email: profile.email,
+    phone: profile.phone,
+    location: profile.location,
+    industry: profile.industry,
+    linkedinUrl: profile.linkedinUrl,
+    websites: profile.websites,
+    twitterHandles: profile.twitterHandles,
+    initials: profile.initials,
+    tagline: profile.tagline,
+    title: profile.title,
+    copyright: profile.copyright,
+    slug: profile.slug,
+    profileImageUrl: profile.profileImageUrl,
+    isPublic: profile.isPublic ?? false,
+    availabilityStatus: profile.availabilityStatus ?? false,
+    openToRemote: profile.openToRemote ?? false,
+  });
+}
+
+export async function getCareerProfileDetail(ownerUserId: string) {
+  const profile = await CareerRepository.getProfile(db, ownerUserId);
+  return profile ? toProfileDetailDto(profile) : null;
+}
+
+export async function updateCareerProfileDetail(
+  ownerUserId: string,
+  data: Partial<CareerProfileRecord>,
+) {
+  if (data.slug) {
+    const existing = await CareerRepository.getProfile(db, ownerUserId);
+    const available = await CareerRepository.isSlugAvailable(db, data.slug, existing?.id);
+    if (!available) {
+      throw new ValidationError('That profile URL is already taken.');
+    }
+  }
+
+  const profile = await CareerRepository.saveProfile(db, ownerUserId, data);
+  return toProfileDetailDto(profile);
+}
+
+export async function isCareerSlugAvailable(slug: string, currentProfileId?: string) {
+  return CareerRepository.isSlugAvailable(db, slug, currentProfileId);
+}
+
+export async function getPublicCareerPortfolio(slug: string) {
+  const profile = await CareerRepository.getProfileBySlug(db, slug);
+  if (!profile) return null;
+
+  const [positions, projects, skills] = await Promise.all([
+    CareerRepository.listEngagements(db, profile.ownerUserid, { type: 'employment' }),
+    ProjectRepository.list(db, profile.ownerUserid),
+    SkillRepository.list(db, profile.ownerUserid),
+  ]);
+  const detail = toProfileDetailDto(profile);
+
+  return {
+    profile: {
+      slug: detail.slug,
+      firstName: detail.firstName,
+      lastName: detail.lastName,
+      headline: detail.headline,
+      summary: detail.summary,
+      location: detail.location,
+      copyright: detail.copyright,
+      profileImageUrl: detail.profileImageUrl,
+      tagline: detail.tagline,
+    },
+    positions: positions.map(toEngagementDto),
+    projects: projects.map(toProjectDto),
+    skills: skills.map(toSkillDto),
+  };
+}
+
+export async function getCareerTestimonial(ownerUserId: string, id: string) {
+  const testimonials = await TestimonialRepository.list(db, ownerUserId);
+  return testimonials.find((testimonial) => testimonial.id === id) ?? null;
+}
+
+export async function deleteCareerProfile(ownerUserId: string) {
+  return CareerRepository.deleteProfile(db, ownerUserId);
 }

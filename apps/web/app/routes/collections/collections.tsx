@@ -1,5 +1,4 @@
 import { CollectionsPage } from '~/components/collections/collections-page';
-import { RouteHeader } from '~/components/route-header';
 
 import type { Route } from './+types/collections';
 
@@ -9,7 +8,6 @@ export const meta = () => [{ title: 'Collections' }];
 export default function CollectionsRoute(_: Route.ComponentProps) {
   return (
     <div className="h-full overflow-auto">
-      <RouteHeader />
       <CollectionsPage />
     </div>
   );

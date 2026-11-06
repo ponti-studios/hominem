@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import {
+  getCareerProject,
   createCareerProject,
   listCareerProjects,
   removeCareerProject,
@@ -21,6 +22,11 @@ export const careerProjectsRoutes = new Hono<AppContext>()
   .get('/', zValidator('query', careerProjectsQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json(await listCareerProjects(userId, c.req.valid('query')));
+  })
+  .get('/:id', async (c) => {
+    const item = await getCareerProject(c.get('auth')!.userId, c.req.param('id'));
+    if (!item) throw new NotFoundError('Project not found');
+    return c.json(item);
   })
   .post('/create', zValidator('json', careerProjectCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;
