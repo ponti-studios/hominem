@@ -7,6 +7,8 @@ export const webSchema = runtimeSchema.extend({
   VITE_PUBLIC_API_URL: z.url(),
   HOMINEM_INTERNAL_API_URL: z.url(),
   PUBLIC_APP_URL: z.url(),
+  LEGACY_FINANCE_HOSTS: z.preprocess(blankAsUndefined, z.string().optional()),
+  LEGACY_CAREER_HOSTS: z.preprocess(blankAsUndefined, z.string().optional()),
   VITE_CAREER_PDF_WORKER_URL: z.preprocess(blankAsUndefined, z.url().optional()),
   VITE_POSTHOG_PROJECT_TOKEN: z.preprocess(blankAsUndefined, z.string().optional()),
   VITE_POSTHOG_HOST: z.preprocess(

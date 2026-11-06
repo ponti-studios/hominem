@@ -20,7 +20,7 @@ import { ErrorState } from './components/error-state';
 import './app.css';
 import { HonoProvider } from './lib/api';
 import { serverEnv } from './lib/env.server';
-import { sessionMiddleware } from './lib/middleware';
+import { legacyHostRedirectMiddleware, sessionMiddleware } from './lib/middleware';
 
 const ICON_VERSION = '20260407';
 
@@ -60,6 +60,7 @@ export async function loader() {
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
+  (args, next) => legacyHostRedirectMiddleware(args, next),
   (args, next) => sessionMiddleware(args, next),
 ];
 
