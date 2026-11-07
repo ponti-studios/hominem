@@ -49,7 +49,7 @@
     "react-image-crop": "^11.0.10",
     "react-router": "catalog:",
     "recharts": "3.10.1",
-    "simple-icons": "16.35.0",
+    "simple-icons": "16.36.0",
     "tailwind-merge": "^3.7.0",
     "workbox-window": "^7.4.0",
     "zod": "catalog:"
