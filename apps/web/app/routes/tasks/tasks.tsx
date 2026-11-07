@@ -1,4 +1,3 @@
-import { RouteHeader } from '~/components/route-header';
 import { TasksPage } from '~/components/tasks/tasks-page';
 
 import type { Route } from './+types/tasks';
@@ -9,7 +8,6 @@ export const meta = () => [{ title: 'Tasks' }];
 export default function TasksRoute(_: Route.ComponentProps) {
   return (
     <div className="h-full overflow-auto">
-      <RouteHeader />
       <TasksPage />
     </div>
   );

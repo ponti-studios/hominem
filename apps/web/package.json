@@ -20,6 +20,7 @@
     "typecheck": "react-router typegen && rm -rf .cache && tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",
@@ -35,6 +36,7 @@
     "better-auth": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "catalog:",
+    "date-fns": "4.4.0",
     "dotenv": "catalog:",
     "isbot": "^5",
     "lucide-react": "catalog:",
@@ -43,7 +45,11 @@
     "radix-ui": "^1.8.1",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "^7.90.0",
+    "react-image-crop": "^11.0.10",
     "react-router": "catalog:",
+    "recharts": "3.10.1",
+    "simple-icons": "16.35.0",
     "tailwind-merge": "^3.7.0",
     "workbox-window": "^7.4.0",
     "zod": "catalog:"
@@ -53,7 +59,9 @@
     "@react-router/dev": "catalog:",
     "@storybook/react-vite": "^10.6.3",
     "@tailwindcss/vite": "^4.1.8",
+    "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitest/coverage-v8": "5.0.5",

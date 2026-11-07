@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import {
+  getCareerEngagement,
   createCareerEngagement,
   listCareerEngagements,
   removeCareerEngagement,
@@ -23,6 +24,11 @@ export const careerEngagementsRoutes = new Hono<AppContext>()
     const { type, limit, cursor } = c.req.valid('query');
     const result = await listCareerEngagements(userId, { type, limit, cursor });
     return c.json(result);
+  })
+  .get('/:id', async (c) => {
+    const item = await getCareerEngagement(c.get('auth')!.userId, c.req.param('id'));
+    if (!item) throw new NotFoundError('Engagement not found');
+    return c.json(item);
   })
   .post('/create', zValidator('json', careerEngagementCreateSchema), async (c) => {
     const created = await createCareerEngagement(c.get('auth')!.userId, c.req.valid('json'));

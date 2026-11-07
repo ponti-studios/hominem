@@ -2,22 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "career",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@hominem/career", "dev"],
-      "port": 4451,
-      "autoPort": true,
-      "url": "http://localhost:4451"
-    },
-    {
-      "name": "finance",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@hominem/finance", "dev"],
-      "port": 4444,
-      "autoPort": true,
-      "url": "http://localhost:4444"
-    },
-    {
       "name": "web",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@hominem/web", "dev"],

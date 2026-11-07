@@ -14,11 +14,10 @@ export function createAuthRoutes(dependencies: AuthDependencies) {
   const { auth } = dependencies;
   const authRoutes = new Hono<AppEnv>();
 
-  // Session / logout for SSR + first-party apps.
-  // getServerAuth (packages/auth/src/server.ts) now hits Better Auth's own
-  // GET /api/auth/get-session directly instead of going through this endpoint.
-  // This route is only still here because apps/finance's logout action calls it
-  // directly — remove once that's migrated to the native Better Auth endpoints.
+  // Session / logout reshape for first-party clients and the e2e helpers.
+  // getServerAuth (packages/auth/src/server.ts) hits Better Auth's own
+  // GET /api/auth/get-session directly; these routes stay for callers that POST
+  // /api/auth/logout and for the session shape other clients still consume.
 
   authRoutes.get('/session', async (c) => {
     try {

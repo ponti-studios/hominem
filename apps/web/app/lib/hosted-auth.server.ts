@@ -3,7 +3,17 @@ import { buildHostedLoginUrl } from '@ponti-studios/auth/shared/redirect-policy'
 import { serverEnv } from './env.server';
 
 export const webAuthConfig = {
-  allowedPrefixes: ['/', '/tasks', '/collections', '/account', '/settings', '/usage'],
+  allowedPrefixes: [
+    '/',
+    '/tasks',
+    '/collections',
+    '/finance',
+    '/career',
+    '/p',
+    '/account',
+    '/settings',
+    '/usage',
+  ],
   fallback: '/tasks',
 } as const;
 

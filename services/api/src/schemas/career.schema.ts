@@ -241,6 +241,8 @@ export const careerApplicationCreateSchema = z.object({
       'What the user hopes to earn, in whole currency units per year, like salaryMin and salaryMax. For the pay range in the posting use salaryMin and salaryMax instead.',
     ),
   notes: z.string().nullable().optional().describe("The user's own notes, not the posting text."),
+  resumeUrl: z.string().nullable().optional(),
+  coverLetterUrl: z.string().nullable().optional(),
 });
 export const careerApplicationUpdateSchema = z.object({
   id: z.string().uuid(),
@@ -868,4 +870,135 @@ export const careerProjectUpdateOutputSchema = z.object({
 
 export const careerProfileOutputSchema = z.object({
   profile: careerMcpProfileSchema.nullable(),
+});
+
+// RPC-only profile surface: the browser app edits fields MCP does not expose
+// (email, phone, slug, visibility, portfolio copy).
+export const careerProfileWriteSchema = z
+  .object({
+    firstName: z.string().nullable().optional(),
+    lastName: z.string().nullable().optional(),
+    headline: z.string().nullable().optional(),
+    summary: z.string().nullable().optional(),
+    email: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    location: z.string().nullable().optional(),
+    industry: z.string().nullable().optional(),
+    linkedinUrl: z.string().nullable().optional(),
+    websites: z.string().nullable().optional(),
+    twitterHandles: z.string().nullable().optional(),
+    initials: z.string().nullable().optional(),
+    tagline: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+    copyright: z.string().nullable().optional(),
+    availabilityStatus: z.boolean().optional(),
+    openToRemote: z.boolean().optional(),
+    isPublic: z.boolean().optional(),
+    slug: z
+      .string()
+      .min(3)
+      .max(50)
+      .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+      .nullable()
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });
+
+export const careerProfileDetailSchema = z.object({
+  id: z.string().uuid(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  headline: z.string().nullable(),
+  summary: z.string().nullable(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  location: z.string().nullable(),
+  industry: z.string().nullable(),
+  linkedinUrl: z.string().nullable(),
+  websites: z.string().nullable(),
+  twitterHandles: z.string().nullable(),
+  initials: z.string().nullable(),
+  tagline: z.string().nullable(),
+  title: z.string().nullable(),
+  copyright: z.string().nullable(),
+  slug: z.string().nullable(),
+  profileImageUrl: z.string().nullable(),
+  isPublic: z.boolean(),
+  availabilityStatus: z.boolean(),
+  openToRemote: z.boolean(),
+});
+
+export const careerProfileDetailOutputSchema = z.object({
+  profile: careerProfileDetailSchema.nullable(),
+});
+
+export const careerSlugAvailabilityQuerySchema = z.object({
+  slug: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
+  currentProfileId: z.string().uuid().optional(),
+});
+
+export const careerSlugAvailabilityOutputSchema = z.object({
+  slug: z.string(),
+  isAvailable: z.boolean(),
+});
+
+// Public portfolio projections: only fields the public page renders. Compensation,
+// contact details, hidden items, and private evidence never leave the API.
+export const careerPublicPositionSchema = z.object({
+  id: z.string().uuid(),
+  company: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  location: z.string().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  isCurrent: z.boolean(),
+});
+
+export const careerPublicProjectSchema = z.object({
+  id: z.string().uuid(),
+  organization: z.string().nullable(),
+  title: z.string(),
+  description: z.string().nullable(),
+  shortDescription: z.string().nullable(),
+  liveUrl: z.string().nullable(),
+  githubUrl: z.string().nullable(),
+  technologies: z.array(z.string()),
+  status: careerProjectStatusSchema.nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  isFeatured: z.boolean(),
+});
+
+export const careerPublicSkillSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  category: z.string().nullable(),
+  level: z.number().nullable(),
+});
+
+export const careerPortfolioOutputSchema = z.object({
+  profile: careerProfileDetailSchema.omit({
+    id: true,
+    email: true,
+    phone: true,
+    industry: true,
+    linkedinUrl: true,
+    websites: true,
+    twitterHandles: true,
+    initials: true,
+    title: true,
+    isPublic: true,
+    availabilityStatus: true,
+    openToRemote: true,
+  }),
+  positions: z.array(careerPublicPositionSchema),
+  projects: z.array(careerPublicProjectSchema),
+  skills: z.array(careerPublicSkillSchema),
 });

@@ -1,0 +1,128 @@
+import { Skeleton } from '@ponti-studios/ui/feedback';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { redirect, useParams } from 'react-router';
+
+import { MonthlySummaryCard } from '~/modules/finance/components/analytics/monthly-summary-card';
+import { useMonthlyStats } from '~/modules/finance/hooks/use-monthly-stats';
+import { formatCurrency } from '~/modules/finance/lib/number.utils';
+import { createFinanceServerClient } from '~/modules/finance/lib/server-client';
+
+import type { Route } from './+types/analytics.monthly.$month';
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { month } = params;
+  if (!month) {
+    return redirect('/finance/analytics');
+  }
+
+  const finance = createFinanceServerClient(request);
+
+  const stats = await finance.analyze['monthly-stats']
+    .$get({ query: { month } })
+    .then((r) => r.json());
+
+  return { stats };
+}
+
+// turns "2024-05" into "May 2024"
+function formatMonthDisplay(monthStr: string | undefined) {
+  if (!monthStr) return '';
+  const [year, month] = monthStr.split('-');
+  const date = new Date(Number(year), Number(month) - 1);
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProps) {
+  const { month } = useParams<{ month: string }>();
+  const { stats: initialStats } = loaderData;
+  const { stats, isLoading, error } = useMonthlyStats(month, { initialData: initialStats });
+
+  const formattedMonth = formatMonthDisplay(month);
+  const spendingByTag =
+    stats?.currencyBreakdown.length && stats.currencyBreakdown.length > 1
+      ? stats.currencyBreakdown.flatMap((currency) =>
+          currency.tagSpending.map((tag) => ({ ...tag, currencyCode: currency.currencyCode })),
+        )
+      : (stats?.tagSpending ?? []);
+
+  return (
+    <div className="p-4 md:p-8">
+      <h1 className="text-xl font-bold mb-6 flex flex-col">
+        Monthly Analytics
+        <span className="text-lg text-primary/40">{formattedMonth}</span>
+      </h1>
+
+      {isLoading && (
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2, 3].map((index) => (
+            <Card key={index}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map((index) => (
+                  <div key={index} className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {error ? (
+        <div className="text-destructive p-4 border border-destructive/50 bg-destructive/10">
+          <p>Error loading monthly statistics</p>
+        </div>
+      ) : null}
+
+      {stats && !isLoading && !error && (
+        <div className="flex flex-col gap-4">
+          <MonthlySummaryCard stats={stats} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Spending by Tag</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {spendingByTag.length > 0 ? (
+                <ul className="space-y-2">
+                  {spendingByTag.map((tag) => (
+                    <li
+                      key={`${tag.currencyCode ?? stats?.currencyCode ?? 'USD'}-${tag.name ?? 'untagged'}`}
+                      className="flex justify-between items-center border-b pb-1"
+                    >
+                      <span>{tag.name}</span>
+                      <span className="font-mono">
+                        {formatCurrency(
+                          tag.amount,
+                          tag.currencyCode ?? stats?.currencyCode ?? 'USD',
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">No spending recorded for this month.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* TODO: Add more details like top transactions, comparison to previous month/budget, etc. */}
+        </div>
+      )}
+    </div>
+  );
+}

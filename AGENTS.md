@@ -27,9 +27,7 @@
 pnpm monorepo orchestrated with Turbo. Key directories:
 
 - `apps/omiro` — Expo/React Native iOS app (Apple-only; no Android fallbacks). See [apps/omiro/AGENTS.md](apps/omiro/AGENTS.md).
-- `apps/career` — React Router web app
-- `apps/finance` — React Router web app
-- `apps/web` — React Router web app
+- `apps/web` — the platform React Router web app. Finance and Career are sub-apps here (`app/modules/<domain>` + `/finance/*`, `/career/*`); see [docs/web.sub-apps.md](docs/web.sub-apps.md).
 - `services/api` — Hono HTTP + BullMQ worker. See [services/api/AGENTS.md](services/api/AGENTS.md).
 - `packages/db` — PostgreSQL + Kysely + Goose migrations. See the `hominem-database` skill.
 - `packages/auth` — Better-auth (passkeys + OTP)
@@ -96,7 +94,7 @@ just db migrate
 }
 ```
 
-Keep it in sync with whatever `services/api/package.json`'s `exports` map says that subpath resolves to. `packages/rpc`, `apps/career`, `apps/omiro`, `apps/finance`, and `apps/web` all do this for `@hominem/api` — copy the pattern.
+Keep it in sync with whatever `services/api/package.json`'s `exports` map says that subpath resolves to. `packages/rpc`, `apps/omiro`, and `apps/web` all do this for `@hominem/api` — copy the pattern.
 
 **New package used by other packages at runtime:**
 
@@ -112,8 +110,8 @@ Keep it in sync with whatever `services/api/package.json`'s `exports` map says t
 
 **New deployable app or service:**
 
-1. `Dockerfile`, if it deploys via Fly/Docker: follow `services/api/Dockerfile` / `apps/career/Dockerfile` — `COPY` only `packages`, `services/api` (if you need its types), and your own app directory, never `COPY . .`, then `pnpm install --frozen-lockfile --filter @hominem/<name>...` (scoped install) before building. This keeps build time and context size flat as unrelated apps get added to the monorepo.
-2. `.github/workflows/validate-<name>.yml`: model it on `validate-career.yml`. Set every env var your app _and its transitive dependencies_ actually require in the job's `env:` block with fake test values — including ones you don't obviously need yourself (e.g. `DATABASE_URL` if you depend on `@hominem/db`, `BETTER_AUTH_SECRET` if anything in your dependency chain imports `services/api` for real). Use `./.github/actions/setup-pnpm-workspace` for setup — it caches both the pnpm store and turbo's local cache directory (`.turbo/cache`), shared across all `validate-*.yml` workflows, so your new workflow reuses whatever core packages an earlier workflow already built/tested on this branch instead of rebuilding them from scratch. This is the main lever keeping CI time from growing linearly with app count — see "Build / CI" below.
+1. `Dockerfile`, if it deploys via Fly/Docker: follow `services/api/Dockerfile` / `apps/web/Dockerfile` — `COPY` only `packages`, `services/api` (if you need its types), and your own app directory, never `COPY . .`, then `pnpm install --frozen-lockfile --filter @hominem/<name>...` (scoped install) before building. This keeps build time and context size flat as unrelated apps get added to the monorepo.
+2. `.github/workflows/validate-<name>.yml`: model it on `validate-web.yml`. Set every env var your app _and its transitive dependencies_ actually require in the job's `env:` block with fake test values — including ones you don't obviously need yourself (e.g. `DATABASE_URL` if you depend on `@hominem/db`, `BETTER_AUTH_SECRET` if anything in your dependency chain imports `services/api` for real). Use `./.github/actions/setup-pnpm-workspace` for setup — it caches both the pnpm store and turbo's local cache directory (`.turbo/cache`), shared across all `validate-*.yml` workflows, so your new workflow reuses whatever core packages an earlier workflow already built/tested on this branch instead of rebuilding them from scratch. This is the main lever keeping CI time from growing linearly with app count — see "Build / CI" below.
 3. `deploy-<name>.yml`, if it deploys: trigger on `workflow_run: { workflows: [validate-<name>] }`. The workflow **name** (the `name:` field, not the filename) must match exactly — renaming a `validate-*.yml` workflow silently breaks its deploy trigger with no error.
 4. A new deployable app's CI workflow must set every env var required by its own code _and_ its transitive `@hominem/*` dependencies — missing one silently breaks CI with an `EnvValidationError`, not an obviously-related error message.
 

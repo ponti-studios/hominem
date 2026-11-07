@@ -92,12 +92,37 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     // pre-bundle radix primitives used by lazily-loaded components so the
     // optimizer doesn't discover them mid-session — that causes
     // duplicate-React invalid-hook crashes until you hard reload
+    // Pre-bundle the libraries every route can reach. Without this, Vite
+    // discovers them lazily as routes are visited and can build a second React
+    // copy mid-session ("Invalid hook call"), which crashes client navigation.
+    // Do not force re-optimization on start: the cache is what keeps one React.
     optimizeDeps: {
-      force: mode === 'development',
       include: [
+        '@base-ui/react/collapsible',
+        '@hominem/rpc/react',
+        '@ponti-studios/ui',
+        '@ponti-studios/ui/data-display',
+        '@ponti-studios/ui/feedback',
+        '@ponti-studios/ui/forms',
+        '@ponti-studios/ui/layout',
+        '@ponti-studios/ui/navigation',
+        '@ponti-studios/ui/overlays',
+        '@ponti-studios/ui/primitives',
+        '@ponti-studios/ui/tokens',
+        '@ponti-studios/ui/utilities',
         '@radix-ui/react-alert-dialog',
         '@radix-ui/react-dropdown-menu',
         '@radix-ui/react-slot',
+        '@tanstack/react-query',
+        'lucide-react',
+        'motion/react',
+        'posthog-js',
+        'posthog-js/react',
+        'radix-ui',
+        'react-hook-form',
+        'react-image-crop',
+        'recharts',
+        'simple-icons',
       ],
     },
 

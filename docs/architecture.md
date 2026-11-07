@@ -10,8 +10,9 @@ Omiro
   -> API
   -> database and infrastructure
 
-Career browser
-  -> Career server routes and services
+Web (platform)
+  -> RPC client and shared domain packages
+  -> API
   -> database and infrastructure
 
 API
@@ -20,8 +21,11 @@ API
   -> persistence and orchestration
 ```
 
+- Web is the platform surface. Its domains (Tasks, Collections, Finance, Career) are sub-apps inside
+  `apps/web`, not separate deployments. A sub-app renders and calls the API; it never imports
+  `@hominem/db`, `@hominem/queues`, `@hominem/storage`, or a `*-services` package. The standalone
+  Finance and Career apps were retired, along with their custom domains. See [web.sub-apps.md](web.sub-apps.md) for the sub-app contract and the cutover runbook.
 - Omiro must use `@hominem/rpc` to access data.
-- Career route's `loaders` and `actions` access the database directly. Browser components should use database-derived TypeScript types, but database handles and queries must stay on the server.
 - Most protected RPC and MCP requests use the auth context created by the API's global auth middleware. The middleware resolves identity before route handling, and protected route middleware rejects requests without that context.
 - The `/api/auth` routes are an exception. The global auth middleware skips them because they implement session and authentication operations, and those routes call Better Auth directly when they need the current session.
 - The API is both a deployable service and the source of several client contracts. It exports `@hominem/api/types`, `@hominem/api/career`, and `@hominem/api/finance`; client packages consume those type contracts without using the API as a runtime dependency.

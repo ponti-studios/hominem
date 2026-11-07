@@ -26,7 +26,7 @@ contracts so all displayed outcomes follow their inputs.
 | ----- | ------------------------------------------------- | --------------------------------- | ------------ | ---------------------- | ------------------------------------------------------------ |
 | W-001 | Persist user-scoped currency and caps             | `packages/db`, `packages/finance` | —            | migration and DB tests | Users can only read and mutate their own settings            |
 | W-002 | Filter live forecast by selected currency         | `packages/finance`                | W-001        | DB-backed tests        | Balances, recurring debits, and caps use one currency        |
-| W-003 | Add Runway settings controls and Analytics totals | `apps/finance`                    | W-001, W-002 | UI tests               | Currency and caps persist; budget summary uses saved caps    |
+| W-003 | Add Runway settings controls and Analytics totals | the then-standalone Finance app| W-001, W-002 | UI tests               | Currency and caps persist; budget summary uses saved caps    |
 | W-004 | Repair manual scenario calculation and JSON API   | finance packages/API/app          | —            | unit/API/UI tests      | Purchases affect projection, depletion, end date, and danger |
 | W-005 | Repair affordability JSON API and UI states       | finance packages/API/app          | —            | unit/API/UI tests      | Finite inputs and unbounded/depleted states render safely    |
 
