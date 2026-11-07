@@ -41,7 +41,7 @@
     "isbot": "^5",
     "lucide-react": "catalog:",
     "motion": "^14.4.0",
-    "posthog-js": "^1.438.13",
+    "posthog-js": "^1.445.3",
     "radix-ui": "^1.8.1",
     "react": "catalog:",
     "react-dom": "catalog:",
