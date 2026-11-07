@@ -1,4 +1,4 @@
-import { Library, ListTodo, LogOut, Settings } from 'lucide-react';
+import { Activity, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
 import { Button } from '~/components/ui/button';
@@ -44,22 +44,16 @@ export function AccountMenu({ user }: { user: User }) {
         <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/tasks" viewTransition>
-            <ListTodo />
-            Tasks
+          <Link to="/usage" viewTransition>
+            <Activity />
+            Usage
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/collections" viewTransition>
-            <Library />
-            Collections
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={`${import.meta.env.VITE_PUBLIC_API_URL}/account`}>
+          <Link to="/settings" viewTransition>
             <Settings />
             Settings
-          </a>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(event) => {

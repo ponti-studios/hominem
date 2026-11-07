@@ -188,6 +188,12 @@
           "notes": {
             "description": "The user's own notes, not the posting text.",
             "type": ["string", "null"]
+          },
+          "resumeUrl": {
+            "type": ["string", "null"]
+          },
+          "coverLetterUrl": {
+            "type": ["string", "null"]
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -452,6 +458,12 @@
               },
               "notes": {
                 "description": "The user's own notes, not the posting text.",
+                "type": ["string", "null"]
+              },
+              "resumeUrl": {
+                "type": ["string", "null"]
+              },
+              "coverLetterUrl": {
                 "type": ["string", "null"]
               }
             },

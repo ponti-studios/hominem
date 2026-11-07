@@ -103,3 +103,6 @@ debug-storybook.log
 
 # generated eval cost reports
 services/ori/eval-costs/
+
+# local proactivity studio journal
+services/proactivity/.data/

@@ -28,17 +28,6 @@
       "console": "integratedTerminal",
       "autoAttachChildProcesses": true,
       "skipFiles": ["<node_internals>/**"]
-    },
-    {
-      "name": "Career dev server",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["./node_modules/.bin/react-router", "dev"],
-      "cwd": "${workspaceFolder}/apps/career",
-      "console": "integratedTerminal",
-      "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }

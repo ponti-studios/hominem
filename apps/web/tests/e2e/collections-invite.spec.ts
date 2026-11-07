@@ -37,7 +37,8 @@ test.afterAll(async ({ request }) => {
 
 test('owner creates a collection and invites a collaborator', async ({ page }) => {
   await page.goto('/collections');
-  await page.getByRole('button', { name: 'New collection' }).click();
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: 'New collection' }).first().click();
   await page.getByPlaceholder('Lake Arrowhead').fill(collectionName);
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(page).toHaveURL(/\/collections\/[0-9a-f-]{36}$/);
@@ -66,19 +67,20 @@ test('owner creates a collection and invites a collaborator', async ({ page }) =
 
 test('collaborator sees and accepts the invite from notifications', async () => {
   await collaboratorPage.goto('/collections');
+  await collaboratorPage.waitForLoadState('networkidle');
   await collaboratorPage.getByRole('button', { name: 'Open account menu' }).click();
   await expect(collaboratorPage.getByText(collectionName)).toBeVisible();
-  await expect(collaboratorPage.getByText('invited you as editor')).toBeVisible();
+  await expect(collaboratorPage.getByText('invited you as editor').first()).toBeVisible();
 
   const acceptResponsePromise = collaboratorPage.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
       new URL(response.url()).pathname === `/api/collections/invites/${collectionId}/accept`,
   );
-  await collaboratorPage.getByRole('button', { name: 'Accept' }).click();
+  await collaboratorPage.getByRole('button', { name: 'Accept' }).first().click();
   const acceptResponse = await acceptResponsePromise;
   expect(acceptResponse.ok()).toBeTruthy();
-  await expect(collaboratorPage.getByText('Accepted')).toBeVisible();
+  await expect(collaboratorPage.getByText('Accepted').first()).toBeVisible();
 
   await collaboratorPage.keyboard.press('Escape');
   await collaboratorPage.reload();

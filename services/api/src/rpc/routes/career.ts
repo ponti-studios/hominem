@@ -3,10 +3,13 @@ import { Hono } from 'hono';
 import type { AppContext } from '../middleware/auth';
 import { careerApplicationsRoutes } from './career.applications';
 import { careerCertificationsRoutes } from './career.certifications';
+import { careerDocumentsRoutes } from './career.documents';
 import { careerEducationRoutes } from './career.education';
 import { careerEngagementsRoutes } from './career.engagements';
+import { careerPortfolioRoutes } from './career.portfolio';
 import { careerProfileRoutes } from './career.profile';
 import { careerProjectsRoutes } from './career.projects';
+import { careerResumeRoutes } from './career.resume';
 import { careerSkillsRoutes } from './career.skills';
 import { careerSocialLinksRoutes } from './career.social-links';
 import { careerTestimonialsRoutes } from './career.testimonials';
@@ -20,6 +23,9 @@ import { careerWishlistRoutes } from './career.wishlist';
 // split) keeps each one cheap to typecheck.
 export const careerRoutes = new Hono<AppContext>()
   .route('/profile', careerProfileRoutes)
+  .route('/portfolio', careerPortfolioRoutes)
+  .route('/documents', careerDocumentsRoutes)
+  .route('/resume', careerResumeRoutes)
   .route('/engagements', careerEngagementsRoutes)
   .route('/applications', careerApplicationsRoutes)
   .route('/wishlist', careerWishlistRoutes)

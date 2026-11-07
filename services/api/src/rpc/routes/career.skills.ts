@@ -1,5 +1,10 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 
+import {
+  deriveAndReplaceCareerSkills,
+  searchCareerSkills,
+} from '../../application/career-skills.service';
 import {
   createCareerSkill,
   listCareerSkills,
@@ -38,4 +43,16 @@ export const careerSkillsRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     await removeCareerSkill(userId, c.req.valid('json').id);
     return c.json({ success: true });
+  })
+  .get(
+    '/search',
+    zValidator('query', z.object({ q: z.string().max(120).optional().default('') })),
+    async (c) => {
+      const suggestions = await searchCareerSkills(c.get('auth')!.userId, c.req.valid('query').q);
+      return c.json({ suggestions });
+    },
+  )
+  .post('/derive', async (c) => {
+    const skills = await deriveAndReplaceCareerSkills(c.get('auth')!.userId);
+    return c.json({ success: true, skills });
   });

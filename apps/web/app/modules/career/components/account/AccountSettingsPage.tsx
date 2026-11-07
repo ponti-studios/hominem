@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+
+import { AccountActions } from '~/modules/career/components/account/AccountActions';
+import { EmailField } from '~/modules/career/components/EmailField';
+import type {
+  AccountActionResult,
+  AccountSettingsLoaderData,
+} from '~/modules/career/lib/account/types';
+
+export function AccountSettingsPage({ loaderData }: { loaderData: AccountSettingsLoaderData }) {
+  const navigate = useNavigate();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const { user, currentProfile } = loaderData;
+
+  const submitAccountAction = async <TData,>(
+    formData: FormData,
+  ): Promise<AccountActionResult<TData>> => {
+    const response = await fetch('/account', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const isJson = response.headers.get('content-type')?.includes('application/json');
+
+    if (!response.ok) {
+      const failure: Partial<AccountActionResult<TData>> = isJson
+        ? await response.json()
+        : { error: await response.text() };
+      throw new Error(failure.error || failure.message || 'Request failed');
+    }
+
+    const result: AccountActionResult<TData> = isJson
+      ? await response.json()
+      : { success: true, error: undefined };
+
+    return result;
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      // Full-page hop through the API's logout so the user lands on its signed-out sign-in.
+      const logoutUrl = new URL('/logout', import.meta.env.VITE_PUBLIC_API_URL);
+      logoutUrl.searchParams.set('next', window.location.origin);
+      window.location.assign(logoutUrl.toString());
+    } catch {
+      // sign-out failed, just stay put on the account page
+      setIsSigningOut(false);
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('profileId', currentProfile.id);
+
+    await submitAccountAction(formData);
+    navigate('/career/work');
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+      <div>
+        <h2 className="heading-2 text-foreground">Account</h2>
+        <p className="body-3 text-muted-foreground">
+          Sign-in, visibility, and administration for your career account.
+        </p>
+      </div>
+
+      <div className="space-y-8 rounded-xl border border-border bg-card p-6">
+        <section className="space-y-4">
+          <h3 className="heading-4">Identity</h3>
+          <EmailField id="account-email" value={user.email ?? ''} disabled readOnly />
+        </section>
+
+        <section className="space-y-4 border-t border-border pt-6">
+          <AccountActions
+            isSigningOut={isSigningOut}
+            onDeleteProfile={handleDeleteProfile}
+            onSignOut={handleSignOut}
+          />
+        </section>
+      </div>
+    </div>
+  );
+}

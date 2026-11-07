@@ -188,7 +188,7 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   app.route('/', billingRoutes);
   app.route('/', creditRoutes);
   app.route('/', legalRoutes);
-  // Our own auth extras go first (session/logout reshape for apps/finance, e2e helpers).
+  // Our own auth extras go first (session/logout reshape for first-party clients, e2e helpers).
   // Anything under /api/auth/* that doesn't match falls through to Better Auth's catch-all.
   app.route('/api/auth', authRoutes);
   app.route('/api/status', statusRoutes);

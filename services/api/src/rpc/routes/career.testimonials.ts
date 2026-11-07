@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import {
+  getCareerTestimonial,
   createCareerTestimonial,
   listCareerTestimonials,
   removeCareerTestimonial,
@@ -20,6 +21,11 @@ export const careerTestimonialsRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json(await listCareerTestimonials(userId));
+  })
+  .get('/:id', async (c) => {
+    const item = await getCareerTestimonial(c.get('auth')!.userId, c.req.param('id'));
+    if (!item) throw new NotFoundError('Testimonial not found');
+    return c.json(item);
   })
   .post('/create', zValidator('json', careerTestimonialCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;

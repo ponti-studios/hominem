@@ -1,0 +1,1824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Proactivity Engine, told as one week</title>
+    <style>
+      :root {
+        --paper: #f6f1e6;
+        --ink: #23203a;
+        --ink-soft: #5d5878;
+        --card: #ffffff;
+        --line: #e6dfd0;
+        --purple: #6c4df6;
+        --purple-soft: #eee9ff;
+        --amber: #f5a524;
+        --amber-soft: #fff2d9;
+        --green: #0f9d70;
+        --green-soft: #dcf7ec;
+        --blue: #2f7fd6;
+        --blue-soft: #e2f0ff;
+        --red: #e5484d;
+        --gray: #8a849c;
+        --gray-soft: #efece7;
+        --shadow: 0 10px 30px rgba(35, 32, 58, 0.08), 0 2px 6px rgba(35, 32, 58, 0.04);
+        --radius: 22px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0 20px 96px;
+        background:
+          radial-gradient(circle at 12% -10%, #ffe9c4 0%, transparent 45%),
+          radial-gradient(circle at 92% 4%, #e6e0ff 0%, transparent 40%),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          'SF Pro Rounded', ui-rounded, 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system,
+          'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        max-width: 1060px;
+        margin: 0 auto;
+      }
+
+      /* ---------- hero ---------- */
+
+      header.hero {
+        padding: 56px 0 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: var(--purple-soft);
+        color: var(--purple);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+      }
+
+      h1 {
+        font-size: clamp(34px, 6vw, 54px);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        margin: 18px 0 14px;
+      }
+
+      h1 em {
+        font-style: normal;
+        color: var(--purple);
+        background: linear-gradient(180deg, transparent 62%, #ddd3ff 62%);
+        padding: 0 4px;
+      }
+
+      .lede {
+        font-size: clamp(17px, 2.2vw, 20px);
+        color: var(--ink-soft);
+        max-width: 62ch;
+        margin: 0 0 22px;
+      }
+
+      .mode-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 8px 6px 16px;
+        box-shadow: var(--shadow);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .switch {
+        display: inline-flex;
+        background: var(--gray-soft);
+        border-radius: 999px;
+        padding: 3px;
+      }
+
+      .switch button {
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink-soft);
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .switch button[aria-pressed='true'] {
+        background: var(--purple);
+        color: #fff;
+      }
+
+      .switch button:focus-visible,
+      .btn:focus-visible,
+      .moment:focus-visible,
+      .actor:focus-visible,
+      .answers button:focus-visible {
+        outline: 3px solid #b9a8ff;
+        outline-offset: 2px;
+      }
+
+      /* ---------- shared card ---------- */
+
+      section {
+        margin-top: 46px;
+      }
+
+      h2 {
+        font-size: clamp(24px, 3.4vw, 32px);
+        letter-spacing: -0.02em;
+        margin: 0 0 6px;
+      }
+
+      .sub {
+        color: var(--ink-soft);
+        margin: 0 0 22px;
+        max-width: 70ch;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      /* ---------- cast ---------- */
+
+      .cast-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      @media (max-width: 860px) {
+        .cast-layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .cast-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .actor {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        text-align: left;
+        background: var(--card);
+        border: 1.5px solid var(--line);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: var(--shadow);
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        transition:
+          transform 0.12s ease,
+          border-color 0.12s ease,
+          background 0.12s ease;
+      }
+
+      .actor:hover {
+        transform: translateY(-1px);
+        border-color: #cdbdff;
+      }
+
+      .actor[aria-pressed='true'] {
+        border-color: var(--purple);
+        background: var(--purple-soft);
+      }
+
+      .actor .emoji {
+        font-size: 24px;
+        line-height: 1.1;
+      }
+
+      .actor .actor-name {
+        display: block;
+        margin: 0 0 2px;
+        font-size: 15.5px;
+        font-weight: 800;
+      }
+
+      .actor .actor-role {
+        display: block;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+        line-height: 1.45;
+      }
+
+      .payload {
+        position: sticky;
+        top: 16px;
+      }
+
+      @media (max-width: 860px) {
+        .payload {
+          position: static;
+        }
+      }
+
+      .payload-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        min-width: 0;
+      }
+
+      .payload-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px 12px;
+        border-bottom: 1px dashed var(--line);
+        padding-bottom: 12px;
+      }
+
+      .payload-name {
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .payload-flow {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--purple);
+        background: var(--purple-soft);
+        border-radius: 999px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+
+      .payload-code {
+        display: block;
+        font-size: 12.5px;
+        color: var(--gray);
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+      }
+
+      .payload-code code {
+        background: var(--gray-soft);
+        border-radius: 5px;
+        padding: 1px 5px;
+      }
+
+      .json-block {
+        margin-top: 16px;
+      }
+
+      .json-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin-bottom: 6px;
+      }
+
+      .json-block pre {
+        margin: 0;
+        background: #1d1a2e;
+        color: #ece8ff;
+        border-radius: 14px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+        font-size: 12.5px;
+        line-height: 1.55;
+        tab-size: 2;
+      }
+
+      .json-note {
+        margin: 7px 0 0;
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
+
+      .payload-note {
+        margin: 16px 0 0;
+        padding-top: 14px;
+        border-top: 1px dashed var(--line);
+        font-size: 13.5px;
+        color: var(--ink-soft);
+      }
+
+      /* ---------- playground ---------- */
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .moment {
+        text-align: left;
+        border: 1.5px solid var(--line);
+        background: #fff;
+        border-radius: 16px;
+        padding: 12px 14px;
+        font: inherit;
+        color: var(--ink);
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        transition:
+          transform 0.12s ease,
+          border-color 0.12s ease,
+          background 0.12s ease;
+      }
+
+      .moment:hover {
+        transform: translateY(-1px);
+        border-color: #cdbdff;
+      }
+
+      .moment[aria-pressed='true'] {
+        border-color: var(--purple);
+        background: var(--purple-soft);
+      }
+
+      .moment .day {
+        display: block;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .moment .what {
+        display: block;
+        margin-top: 3px;
+        font-size: 14.5px;
+        font-weight: 700;
+      }
+
+      .playground {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      @media (max-width: 860px) {
+        .playground {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .rail {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+
+      .rail .pip {
+        flex: 1;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--gray-soft);
+        transition: background 0.25s ease;
+      }
+
+      .rail .pip.done {
+        background: #c9baff;
+      }
+
+      .rail .pip.now {
+        background: var(--purple);
+      }
+
+      .story {
+        min-height: 300px;
+      }
+
+      .stage-kicker {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--ink-soft);
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+      }
+
+      .stage-title {
+        font-size: clamp(21px, 3vw, 27px);
+        letter-spacing: -0.015em;
+        margin: 0 0 8px;
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .stage-title .big {
+        font-size: 26px;
+      }
+
+      .stage-body {
+        color: var(--ink-soft);
+        font-size: 16px;
+        margin: 0 0 16px;
+      }
+
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 6px;
+      }
+
+      .fact {
+        background: #fbf9f4;
+        border: 1px dashed var(--line);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .fact.bad {
+        background: #fff0f0;
+        border-color: #f6c6c8;
+        color: #a32428;
+      }
+
+      .fact.good {
+        background: var(--green-soft);
+        border-color: #b3e8d4;
+        color: #0a6e4f;
+      }
+
+      .fact.warn {
+        background: var(--amber-soft);
+        border-color: #f7ddb0;
+        color: #85570a;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 14px;
+        padding: 12px 20px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          opacity 0.12s ease;
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .btn.primary {
+        background: var(--purple);
+        color: #fff;
+      }
+
+      .btn.ghost {
+        background: #fff;
+        border: 1.5px solid var(--line);
+        color: var(--ink);
+      }
+
+      /* ---------- side panel ---------- */
+
+      .side {
+        display: grid;
+        gap: 14px;
+      }
+
+      .badge-card {
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        box-shadow: var(--shadow);
+      }
+
+      .badge-card h3 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--ink-soft);
+      }
+
+      .decision-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        padding: 10px 16px;
+        border-radius: 14px;
+        background: var(--gray-soft);
+        color: var(--gray);
+      }
+
+      .decision-badge[data-kind='propose'] {
+        background: var(--amber-soft);
+        color: #8a5a00;
+      }
+
+      .decision-badge[data-kind='defer'] {
+        background: var(--blue-soft);
+        color: #1a5ca3;
+      }
+
+      .decision-badge[data-kind='quiet'] {
+        background: var(--green-soft);
+        color: #0a6e4f;
+      }
+
+      .decision-badge[data-kind='none'] {
+        background: var(--gray-soft);
+        color: #625d73;
+      }
+
+      .empty-note {
+        color: var(--ink-soft);
+        font-size: 14px;
+        margin: 10px 0 0;
+      }
+
+      .notebook {
+        list-style: none;
+        margin: 10px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      .notebook li {
+        display: flex;
+        gap: 10px;
+        font-size: 14px;
+        align-items: flex-start;
+        color: var(--ink);
+      }
+
+      .notebook li .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--purple);
+        margin-top: 7px;
+        flex: none;
+      }
+
+      .notebook li.off .dot {
+        background: #d9d4e5;
+      }
+
+      .notebook li.off {
+        color: var(--gray);
+      }
+
+      /* ---------- three choices ---------- */
+
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 14px;
+      }
+
+      .choice {
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+
+      .choice h3 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .choice .tag {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+
+      .choice p {
+        margin: 8px 0 0;
+        font-size: 14.5px;
+        color: var(--ink-soft);
+      }
+
+      .choice.propose {
+        border-color: #f2d5a2;
+        background: linear-gradient(180deg, #fffaf0, #fff);
+      }
+
+      .choice.defer {
+        border-color: #c4ddf7;
+        background: linear-gradient(180deg, #f4faff, #fff);
+      }
+
+      .choice.quiet {
+        border-color: #b9e6d4;
+        background: linear-gradient(180deg, #f2fdf8, #fff);
+      }
+
+      /* ---------- quiz ---------- */
+
+      .quiz {
+        display: grid;
+        gap: 14px;
+      }
+
+      .question {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+
+      .question p.q {
+        margin: 0 0 12px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .answers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .answers button {
+        border: 1.5px solid var(--line);
+        background: #fff;
+        border-radius: 12px;
+        padding: 9px 14px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .answers button:hover:not(:disabled) {
+        border-color: var(--purple);
+      }
+
+      .answers button[data-state='right'] {
+        background: var(--green-soft);
+        border-color: #9fdfc8;
+        color: #0a6e4f;
+      }
+
+      .answers button[data-state='wrong'] {
+        background: #fff0f0;
+        border-color: #f6c6c8;
+        color: #a32428;
+      }
+
+      .feedback {
+        margin: 10px 0 0;
+        font-size: 14px;
+        color: var(--ink-soft);
+        min-height: 21px;
+      }
+
+      /* ---------- map ---------- */
+
+      .table-scroll {
+        overflow-x: auto;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        background: #fff;
+      }
+
+      .map {
+        width: 100%;
+        min-width: 560px;
+        border-collapse: collapse;
+        font-size: 14.5px;
+        background: #fff;
+      }
+
+      .map th,
+      .map td {
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+
+      .map th {
+        background: #fbf9f4;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--ink-soft);
+      }
+
+      .map td code {
+        background: var(--gray-soft);
+        border-radius: 6px;
+        padding: 1px 6px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .map tr:last-child td {
+        border-bottom: 0;
+      }
+
+      /* ---------- nerd / kid mode ---------- */
+
+      .nerd,
+      body.kid-mode .nerd {
+        display: none;
+      }
+
+      body.nerd-mode .nerd {
+        display: revert;
+      }
+
+      body.nerd-mode .kid {
+        display: none;
+      }
+
+      .aside {
+        border-left: 4px solid var(--purple);
+        background: #fbf9ff;
+        border-radius: 0 14px 14px 0;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--ink-soft);
+        margin: 14px 0 0;
+      }
+
+      .aside code {
+        background: #efeaff;
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+
+      footer {
+        margin-top: 54px;
+        color: var(--ink-soft);
+        font-size: 13.5px;
+        border-top: 1px dashed var(--line);
+        padding-top: 20px;
+      }
+
+      footer code {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+
+      .pop {
+        animation: pop 0.28s ease;
+      }
+
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <span class="eyebrow">🧠 A friendly tour · 15 minutes</span>
+        <h1>The Proactivity Engine,<br /><em>told as one week</em></h1>
+        <p class="lede">
+          This page follows a single goal — keeping groceries under £450 — across four days of one
+          week. Something changes, the helper checks which goals it touches, reads the facts, and
+          decides whether to speak. Same goal, same people, same week, every time.
+        </p>
+        <div class="mode-switch">
+          <span>Words for…</span>
+          <div class="switch" role="group" aria-label="Choose explanation level">
+            <button type="button" data-mode="kid" aria-pressed="true">a 5-year-old</button>
+            <button type="button" data-mode="nerd" aria-pressed="false">an engineer</button>
+          </div>
+        </div>
+      </header>
+
+      <section aria-labelledby="cast-heading">
+        <h2 id="cast-heading">First, the cast of characters</h2>
+        <p class="sub">
+          Six things, and that's the whole machine. Pick one on the left to see the actual record it
+          sends or receives. This is the part people miss: a fact is a JSON record, not a sentence —
+          the engine can only compare, sum, and cite values it can read as data.
+        </p>
+
+        <div class="cast-layout">
+          <div class="cast-list" id="cast-list" aria-label="Cast of characters"></div>
+          <div class="payload" id="payload" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="play-heading">
+        <h2 id="play-heading">Four days of the same goal</h2>
+        <p class="sub">
+          The goal never changes; only the facts do. Pick a day, then press <strong>Next step</strong>
+          to walk it through the machine. Monday, Tuesday and Wednesday end differently, and Sunday
+          shows what a routine check-up does.
+        </p>
+
+        <div class="timeline" id="moments" role="group" aria-label="Pick a day of the week"></div>
+
+        <div class="playground">
+          <div class="card story" id="story" aria-live="polite">
+            <div class="rail" id="rail" aria-hidden="true"></div>
+            <div class="stage-kicker">
+              <span id="stage-count">Step 1 of 6</span>
+              <span id="stage-name"></span>
+            </div>
+            <h3 class="stage-title" id="stage-title"></h3>
+            <p class="stage-body" id="stage-body"></p>
+            <div class="facts" id="stage-facts"></div>
+            <p class="aside nerd" id="stage-nerd"></p>
+            <div class="controls">
+              <button type="button" class="btn primary" id="next">Next step →</button>
+              <button type="button" class="btn ghost" id="restart">Start over</button>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="badge-card">
+              <h3>The decision so far</h3>
+              <div class="decision-badge" id="decision-badge" data-kind="none">
+                <span id="decision-emoji">…</span>
+                <span id="decision-label">not decided yet</span>
+              </div>
+              <p class="empty-note" id="decision-note">
+                Walk the steps and watch this change.
+              </p>
+            </div>
+
+            <div class="badge-card">
+              <h3>The notebook</h3>
+              <ul class="notebook" id="notebook">
+                <li class="off"><span class="dot"></span><span>Nothing written yet.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="aside nerd">
+          This walkthrough mirrors <code>services/proactivity/src/engine.ts</code>: journal lookup →
+          active-goal filter → domain selection → context load → deterministic preflight in the slot
+          → decision validation → delivery policy → journal commit keyed by
+          <code>(ownerId, triggerId)</code>.
+        </div>
+      </section>
+
+      <section aria-labelledby="choices-heading">
+        <h2 id="choices-heading">The only three things it can say</h2>
+        <p class="sub">
+          Monday, Tuesday and Wednesday of this same week each ended in a different answer. Most
+          systems like this fail by talking too much; here, silence is a real answer with a written
+          reason.
+        </p>
+        <div class="choices">
+          <article class="choice propose">
+            <span class="tag">Propose — Wednesday</span>
+            <h3>🍪 "Hey — look at this."</h3>
+            <p>
+              Spend reached £487 against the £450 limit, the numbers were clean, and waiting makes
+              it worse. It must point at the exact fact that changed and suggest one small,
+              reversible step. It is never allowed to say "move money", "pay", "buy", "book" or
+              "contact them".
+            </p>
+          </article>
+          <article class="choice defer">
+            <span class="tag">Defer — Tuesday</span>
+            <h3>🤔 "I can't tell yet."</h3>
+            <p>
+              Two identical charges made the total unreliable. Rather than guess, it said what was
+              wrong and when it would look again. A blurry number is not a fact — guessing from one
+              is how these systems get a reputation for being confidently wrong.
+            </p>
+          </article>
+          <article class="choice quiet">
+            <span class="tag">Quiet — Monday</span>
+            <h3>😴 "Nothing to do."</h3>
+            <p>
+              The £40 refund fixed the month, so there was nothing to say. Progress, resolutions, a
+              paused goal, an unrelated change — all quiet. Quiet still gets written down with its
+              reason, so "why didn't it tell me?" always has an answer.
+            </p>
+          </article>
+        </div>
+        <div class="aside">
+          Sunday is the fourth shape: a check-up with no new facts. And two things never reach this
+          point at all — a paused goal, and a change in a domain the goal doesn't cover. The engine
+          filters them out before it loads any evidence.
+        </div>
+      </section>
+
+      <section aria-labelledby="quiz-heading">
+        <h2 id="quiz-heading">Quick check: would you make the same call?</h2>
+        <p class="sub">Four questions. No score, no shame.</p>
+        <div class="quiz" id="quiz"></div>
+      </section>
+
+      <section aria-labelledby="map-heading">
+        <h2 id="map-heading">Now the grown-up words</h2>
+        <p class="sub">
+          Every crayon word maps to a real name in the code. Switch the toggle at the top to see the
+          engineering labels appear on this page too.
+        </p>
+        <div class="table-scroll">
+          <table class="map">
+          <thead>
+            <tr>
+              <th>Crayon word</th>
+              <th>Real name</th>
+              <th>Where it lives</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ding-dong</td>
+              <td><code>ProactivityTrigger</code></td>
+              <td><code>src/types.ts</code> — a discriminated union of change, scheduled, weekly</td>
+            </tr>
+            <tr>
+              <td>Before / now pictures</td>
+              <td><code>StateSnapshot</code></td>
+              <td><code>src/types.ts</code> — id, asOf, evidence[]</td>
+            </tr>
+            <tr>
+              <td>Little facts</td>
+              <td><code>Evidence</code></td>
+              <td>domain, source, observedAt, facts</td>
+            </tr>
+            <tr>
+              <td>Pick the goals</td>
+              <td><code>selectGoals</code></td>
+              <td><code>src/engine.ts</code> — active only, domain intersection</td>
+            </tr>
+            <tr>
+              <td>Quick sanity checks</td>
+              <td><code>preflight</code></td>
+              <td><code>src/slot.ts</code> — no model call, pure rules</td>
+            </tr>
+            <tr>
+              <td>The helper's brain</td>
+              <td>model slot</td>
+              <td><code>src/slot.ts</code> + <code>src/openrouter-slot.ts</code></td>
+            </tr>
+            <tr>
+              <td>The three answers</td>
+              <td><code>ProactivityDecision</code></td>
+              <td><code>propose | defer | quiet</code>, each with evidence ids</td>
+            </tr>
+            <tr>
+              <td>Email or not</td>
+              <td><code>DeliveryIntent</code></td>
+              <td>only for proposals, with an idempotency key</td>
+            </tr>
+            <tr>
+              <td>Notebook</td>
+              <td><code>EvaluationRun</code> journal</td>
+              <td>SQLite in the studio, in memory in eval runs</td>
+            </tr>
+            <tr>
+              <td>Practice stories</td>
+              <td>eval cases</td>
+              <td><code>src/evals/cases.ts</code> — 26 cases, regression + holdout</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="aside">
+          The one idea worth remembering: <strong>the model is only asked to judge materiality.</strong>
+          Everything else — which goals, whether evidence is fresh enough, whether a refund already
+          settled it, whether an email may be sent, whether this ding-dong was already handled — is
+          plain deterministic code you can read and test without a model.
+        </div>
+      </section>
+
+      <section aria-labelledby="limits-heading">
+        <h2 id="limits-heading">What it can't do yet</h2>
+        <p class="sub">
+          Being clear about the edges is part of understanding it. None of these are wired up today.
+        </p>
+        <div class="card">
+          <ul style="margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 15px">
+            <li>It isn't connected to your real accounts — the studio and evals use synthetic data.</li>
+            <li>It doesn't send email yet; it only plans the email it would send.</li>
+            <li>No scheduler runs it on a timer; you press a day in the studio or run the evals.</li>
+            <li>
+              It never moves money or books anything. The worst it can do is suggest a reversible
+              review step.
+            </li>
+            <li>
+              The product decisions still open are listed in <code>docs/proactivity-engine-prd.md</code>
+              — what counts as a critical change, delivery consent, goal lifecycle, and cadence.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <footer>
+        Built from the real code in <code>services/proactivity</code>. To see it think for real, run
+        <code>pnpm --filter @hominem/proactivity demo</code> and open
+        <code>http://127.0.0.1:4177</code>.
+      </footer>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------------------
+      // One story, one goal: keep groceries under £450, followed across a week.
+      // Every example on this page comes from this story.
+      // ---------------------------------------------------------------------
+      const story = {
+        person: 'person-charles',
+        goalId: 'goal-groceries',
+        goalTitle: 'Keep monthly groceries under £450',
+        domain: 'finance',
+      };
+
+      const moments = [
+        {
+          id: 'monday-refund',
+          day: 'Monday 2 November',
+          chip: '💸 A £40 refund',
+          event: 'The shop refunded £40 for an item it scanned twice.',
+          triggerId: 'trigger-refund',
+          triggerKind: 'change',
+          changed: 'finance',
+          previous: [['Spent this month', '£455', 'warn']],
+          current: [
+            ['Refund', '−£40', 'good'],
+            ['Spent after refund', '£415', 'good'],
+            ['Limit', '£450'],
+          ],
+          preflight: {
+            kind: 'quiet',
+            why: 'The evidence records that the refund was applied, so a plain rule answers before the model is asked. No guesswork, no cost.',
+          },
+          decision: 'quiet',
+          decisionWhy:
+            'The refund brought spending back under the limit. There is nothing for you to do, so there is nothing to say.',
+          delivery: 'No email. Good news is not an interruption.',
+        },
+        {
+          id: 'tuesday-duplicate',
+          day: 'Tuesday 3 November',
+          chip: '🧾 The same charge twice',
+          event: 'The bank feed shows two identical £21 charges on the same afternoon.',
+          triggerId: 'trigger-duplicate',
+          triggerKind: 'change',
+          changed: 'finance',
+          previous: [['Spent this month', '£412']],
+          current: [
+            ['Spent this month', '£455', 'warn'],
+            ['Identical charges', '2', 'warn'],
+            ['Reconciled yet?', 'no', 'warn'],
+          ],
+          preflight: {
+            kind: 'defer',
+            why: 'The total is flagged as a duplicate and not reconciled, so it cannot be trusted yet. Guessing on a wrong number is worse than waiting.',
+          },
+          decision: 'defer',
+          decisionWhy:
+            'The £455 might be a shop mistake. The helper asks for a clean number instead of acting on a blurry one.',
+          delivery: 'No email. It will look again once the duplicate is sorted out.',
+        },
+        {
+          id: 'wednesday-overspend',
+          day: 'Wednesday 4 November',
+          chip: '🍪 Over the £450 limit',
+          event: 'This month’s groceries crossed the limit and the total is clean.',
+          triggerId: 'trigger-overspend',
+          triggerKind: 'change',
+          changed: 'finance',
+          previous: [['Spent this month', '£412']],
+          current: [
+            ['Spent this month', '£487', 'bad'],
+            ['Limit', '£450'],
+            ['Over by', '£37', 'bad'],
+          ],
+          preflight: null,
+          decision: 'propose',
+          decisionWhy:
+            'The total is £37 over the limit, it genuinely changed since last month, and there is one small reversible thing you could look at.',
+          delivery: 'One email: “Groceries are £37 over the £450 limit.”',
+        },
+        {
+          id: 'sunday-checkup',
+          day: 'Sunday 8 November',
+          chip: '😴 The Sunday check-up',
+          event: 'The weekly check-up runs over every active goal. Nothing new has been recorded since Wednesday.',
+          triggerId: 'trigger-sunday',
+          triggerKind: 'scheduled',
+          changed: null,
+          previous: [['Spent this month', '£487']],
+          current: [['Spent this month', '£487']],
+          preflight: null,
+          decision: 'quiet',
+          decisionWhy:
+            'Same numbers as Wednesday, when you already got the email. Saying it again would be nagging.',
+          delivery: 'No email. A check-up is allowed to find nothing.',
+        },
+      ];
+
+      const stageNames = [
+        'A thing changes',
+        'Ding-dong',
+        'Which goals?',
+        'Before and now',
+        'Quick checks',
+        'One decision',
+      ];
+
+      const stepCount = 6;
+      const state = { moment: 0, step: 0 };
+
+      const el = (id) => document.getElementById(id);
+
+      function moment() {
+        return moments[state.moment];
+      }
+
+      function stepsFor(m) {
+        const steps = [];
+
+        steps.push({
+          title: 'Something happens',
+          nerd: 'A committed change emits a critical-change signal; a timer emits a scheduled-pass signal.',
+          body:
+            m.triggerKind === 'scheduled'
+              ? `${m.day}. ${m.event}`
+              : `${m.day}. ${m.event} Nothing is decided yet — the app only reports that something it owns has changed.`,
+          facts:
+            m.triggerKind === 'scheduled'
+              ? [
+                  ['Day', m.day],
+                  ['Kind', 'regular check-up'],
+                ]
+              : [
+                  ['Day', m.day],
+                  ['Kind', 'big change'],
+                  ['Domain', m.changed],
+                ],
+        });
+
+        steps.push({
+          title: 'The ding-dong',
+          nerd: 'Trigger coordinator: one trigger record, one id, one durable request.',
+          body:
+            m.triggerKind === 'scheduled'
+              ? 'A scheduled-pass trigger names the moment to evaluate. Every active goal will be checked against it.'
+              : 'A critical-change trigger names the domain that changed. It is a request to evaluate, not a notification — nobody has been told anything yet.',
+          facts: [
+            ['Trigger id', m.triggerId],
+            ['Goal owner', story.person],
+          ],
+        });
+
+        steps.push({
+          title: 'Which goals does this touch?',
+          nerd: 'selectGoals: active goals only, intersected with the changed domains.',
+          body: `“${story.goalTitle}” is active and about ${story.domain}, and this trigger is about ${m.changed ?? 'the regular sweep'}. So it is pulled in. Every other goal you own is left alone.`,
+          facts: [
+            ['Goal', story.goalTitle],
+            ['Goal id', story.goalId],
+            ['Domain', story.domain],
+          ],
+        });
+
+        steps.push({
+          title: 'Line up before and now',
+          nerd: 'Context assembler: previous and current StateSnapshot, each fact with an id and a timestamp.',
+          body:
+            'The helper never reads your bank or your shopping list. It receives two pictures of this one goal — before and now — and everything it is allowed to use is in them.',
+          facts: [
+            ...m.previous.map(([label, value, tone]) => [`Before: ${label}`, value, tone ?? '']),
+            ...m.current.map(([label, value, tone]) => [`Now: ${label}`, value, tone ?? '']),
+          ],
+        });
+
+        steps.push({
+          title: 'The quick checks',
+          nerd: 'Deterministic preflight — no model call, no cost, no retries.',
+          body:
+            m.preflight === null
+              ? 'Fresh facts, the right goal, no flagged data problems. No shortcut applies, so this is one of the few cases that actually needs the model.'
+              : m.preflight.why,
+          facts:
+            m.preflight === null
+              ? [['Preflight', 'no shortcut — asking the brain', 'warn']]
+              : [
+                  [
+                    'Preflight answer',
+                    m.preflight.kind,
+                    m.preflight.kind === 'quiet' ? 'good' : 'warn',
+                  ],
+                ],
+        });
+
+        steps.push({
+          title: 'One decision',
+          nerd: 'Model slot returns propose | defer | quiet with the evidence ids it used.',
+          body: `${m.decisionWhy} ${
+            m.preflight
+              ? 'Because a rule already answered, the model is never called — this whole day costs nothing.'
+              : 'The model answers once, and the engine checks that every fact it cites is one it was actually given.'
+          }`,
+          facts:
+            m.decision === 'propose'
+              ? [
+                  ['Decision', 'propose', 'warn'],
+                  ['Email', m.delivery],
+                ]
+              : [
+                  ['Decision', m.decision, 'good'],
+                  ['Email', m.delivery],
+                ],
+        });
+
+        return steps;
+      }
+
+      function renderRail() {
+        const rail = el('rail');
+        rail.innerHTML = '';
+        for (let i = 0; i < stepCount; i += 1) {
+          const pip = document.createElement('div');
+          pip.className = 'pip';
+          if (i < state.step) pip.classList.add('done');
+          if (i === state.step) pip.classList.add('now');
+          rail.appendChild(pip);
+        }
+      }
+
+      function renderDecision(m) {
+        const badge = el('decision-badge');
+        const emoji = el('decision-emoji');
+        const label = el('decision-label');
+        const note = el('decision-note');
+        const revealed = state.step >= stepCount - 1;
+
+        if (!revealed) {
+          badge.dataset.kind = 'none';
+          emoji.textContent = '…';
+          label.textContent = 'not decided yet';
+          note.textContent = 'Walk this day through the machine and watch the answer.';
+          return;
+        }
+
+        const map = {
+          propose: ['🍪', 'Tell you now'],
+          defer: ['🤔', 'Wait for better info'],
+          quiet: ['😴', 'Say nothing'],
+        };
+        const [chosenEmoji, chosenLabel] = map[m.decision];
+        badge.dataset.kind = m.decision;
+        emoji.textContent = chosenEmoji;
+        label.textContent = chosenLabel;
+        note.textContent =
+          m.decision === 'propose'
+            ? 'The only outcome that produces an email.'
+            : m.decision === 'defer'
+              ? 'It asks for better information instead of guessing.'
+              : 'Quiet is a real answer, with a written reason.';
+      }
+
+      function renderNotebook(m) {
+        const list = el('notebook');
+        const revealed = state.step >= stepCount - 1;
+        list.innerHTML = '';
+
+        if (!revealed) {
+          const li = document.createElement('li');
+          li.className = 'off';
+          li.innerHTML = '<span class="dot"></span><span>Nothing written yet.</span>';
+          list.appendChild(li);
+          return;
+        }
+
+        const entries = [
+          `Run stored for ${m.triggerId}.`,
+          `Decision: ${m.decision}.`,
+          m.decision === 'propose'
+            ? 'One email planned, with an idempotency key so a retry cannot send it twice.'
+            : 'No email planned.',
+        ];
+
+        for (const text of entries) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="dot"></span><span>${text}</span>`;
+          list.appendChild(li);
+        }
+      }
+
+      function renderStory() {
+        const m = moment();
+        const steps = stepsFor(m);
+        const current = steps[state.step];
+
+        const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+        if (params.get('m') !== m.id || params.get('step') !== String(state.step + 1)) {
+          history.replaceState(null, '', `#m=${m.id}&step=${state.step + 1}`);
+        }
+
+        el('stage-count').textContent = `Step ${state.step + 1} of ${stepCount}`;
+        el('stage-name').textContent = stageNames[state.step];
+        el('stage-title').innerHTML = current.title;
+        el('stage-body').innerHTML = current.body;
+
+        const facts = el('stage-facts');
+        facts.innerHTML = '';
+        for (const [label, value, tone] of current.facts) {
+          const span = document.createElement('span');
+          span.className = `fact ${tone ?? ''}`.trim();
+          span.textContent = `${label}: ${value}`;
+          facts.appendChild(span);
+        }
+
+        el('stage-nerd').textContent = current.nerd;
+
+        renderRail();
+        renderDecision(m);
+        renderNotebook(m);
+
+        el('next').disabled = state.step >= stepCount - 1;
+        el('next').textContent = state.step >= stepCount - 1 ? 'That’s the whole day' : 'Next step →';
+        el('story').classList.remove('pop');
+        void el('story').offsetWidth;
+        el('story').classList.add('pop');
+      }
+
+      function renderMoments() {
+        const wrap = el('moments');
+        wrap.innerHTML = '';
+        moments.forEach((m, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'moment';
+          button.dataset.id = m.id;
+          button.setAttribute('aria-pressed', String(index === state.moment));
+          button.innerHTML = `<span class="day">${m.day}</span><span class="what">${m.chip}</span>`;
+          button.addEventListener('click', () => {
+            state.moment = index;
+            state.step = 0;
+            renderMoments();
+            renderStory();
+          });
+          wrap.appendChild(button);
+        });
+      }
+
+      // --- cast of characters: the real records from this same story ---
+      const actors = [
+        {
+          emoji: '🎯',
+          name: 'Goal',
+          role: 'What you want. Stored once, read on every evaluation.',
+          flow: 'API → engine',
+          code: 'src/types.ts · goalSchema',
+          blocks: [
+            {
+              label: 'Stored goal',
+              json: `{
+  "id": "goal-groceries",
+  "ownerId": "person-charles",
+  "title": "Keep monthly groceries under £450",
+  "status": "active",
+  "domains": ["finance"]
+}`,
+              note: 'Only goals with status "active" are evaluated. Pause this one and the whole week goes silent — the engine filters it out before anything else runs.',
+            },
+          ],
+        },
+        {
+          emoji: '🧾',
+          name: 'Evidence',
+          role: 'The facts it is allowed to use, each with an id and a timestamp.',
+          flow: 'domain write → context',
+          code: 'src/types.ts · evidenceSchema',
+          blocks: [
+            {
+              label: 'What a naive write would store',
+              json: `"Spent £487 on groceries this month, £37 over the £450 budget"`,
+              note: 'A sentence cannot be compared with last month, summed, or tested against a limit. Something would have to parse it back into numbers, and that parsing is where the bugs live.',
+            },
+            {
+              label: 'What Wednesday’s evidence really looks like',
+              json: `{
+  "id": "ev-groceries-wed",
+  "domain": "finance",
+  "source": "monzo",
+  "observedAt": "2026-11-04T09:00:00.000Z",
+  "facts": {
+    "monthlyGroceries": 487,
+    "budget": 450,
+    "overBy": 37
+  }
+}`,
+              note: 'Same fact, now machine-readable. The id lets a decision cite it, the domain lets this goal match it, and observedAt lets the preflight refuse it when it is stale.',
+            },
+          ],
+        },
+        {
+          emoji: '🔔',
+          name: 'Trigger',
+          role: 'The ding-dong. One durable request, with an id.',
+          flow: 'domain write / timer → engine',
+          code: 'src/types.ts · proactivityTriggerSchema',
+          blocks: [
+            {
+              label: 'Wednesday’s change',
+              json: `{
+  "kind": "critical-change",
+  "id": "trigger-overspend",
+  "ownerId": "person-charles",
+  "changedDomains": ["finance"],
+  "occurredAt": "2026-11-04T09:00:00.000Z"
+}`,
+            },
+            {
+              label: 'Sunday’s check-up',
+              json: `{
+  "kind": "scheduled-pass",
+  "id": "trigger-sunday",
+  "ownerId": "person-charles",
+  "asOf": "2026-11-08T09:00:00.000Z"
+}`,
+              note: 'The id is the deduplication key. Send the same trigger twice and the notebook returns the first run instead of evaluating again — that is how a retry cannot email you twice.',
+            },
+          ],
+        },
+        {
+          emoji: '🤖',
+          name: 'Engine',
+          role: 'Picks goals, loads both snapshots, asks the model once.',
+          flow: 'engine → model → engine',
+          code: 'src/slot.ts · buildProactivityPrompt',
+          blocks: [
+            {
+              label: 'Engine → model (Wednesday’s request)',
+              json: `{
+  "model": "openai/gpt-5-mini",
+  "temperature": 0,
+  "schemaName": "proactivity_decision",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are the proactivity evaluator for Hominem. Decide whether the new state warrants an interruption..."
+    },
+    {
+      "role": "user",
+      "content": "Trigger: critical change in finance at 2026-11-04T09:00:00.000Z\\nGoal: Keep monthly groceries under £450\\nPrevious state: { ... }\\nCurrent state: { ... }"
+    }
+  ]
+}`,
+              note: 'Everything the model may use is in this one message: the goal, the trigger, and the two pictures. No tools and no database access, so it cannot go looking for extra facts.',
+            },
+            {
+              label: 'Model → engine (Wednesday’s reply)',
+              json: `{
+  "kind": "propose",
+  "summary": "Groceries are £37 over the £450 limit.",
+  "reason": "Spend rose from £412 to £487 this month, so the limit no longer covers it.",
+  "nextStep": "Compare this month's grocery receipts and pick one category to trim.",
+  "reevaluateAt": null,
+  "evidenceIds": ["ev-groceries-wed"]
+}`,
+              note: 'The reply is checked before the engine sees it: schema, evidence ids, plain-language copy, and a reversible next step. A bad answer is retried, then replaced with a safe fallback.',
+            },
+          ],
+        },
+        {
+          emoji: '🚦',
+          name: 'Decision',
+          role: 'Exactly one of three answers, with the evidence it used.',
+          flow: 'engine → delivery + notebook',
+          code: 'src/types.ts · proactivityDecisionSchema',
+          blocks: [
+            {
+              label: 'Wednesday — propose',
+              json: `{
+  "kind": "propose",
+  "summary": "Groceries are £37 over the £450 limit.",
+  "reason": "Spend rose from £412 to £487 this month, so the limit no longer covers it.",
+  "nextStep": "Compare this month's grocery receipts and pick one category to trim.",
+  "evidenceIds": ["ev-groceries-wed"]
+}`,
+            },
+            {
+              label: 'Tuesday — defer',
+              json: `{
+  "kind": "defer",
+  "reason": "Two identical charges make the monthly total unreliable.",
+  "reevaluateAt": "2026-11-11T09:00:00.000Z",
+  "evidenceIds": ["ev-groceries-tue"]
+}`,
+            },
+            {
+              label: 'Monday — quiet',
+              json: `{
+  "kind": "quiet",
+  "reason": "A £40 refund brought spend back to £415, under the £450 limit.",
+  "evidenceIds": ["ev-groceries-mon"]
+}`,
+              note: 'evidenceIds must exist in the supplied snapshots. A decision that cites a fact the engine did not send is rejected outright — the mechanical version of "do not invent evidence".',
+            },
+          ],
+        },
+        {
+          emoji: '📬',
+          name: 'Delivery & notebook',
+          role: 'A proposal becomes one email; every run is written down.',
+          flow: 'engine → adapter / journal',
+          code: 'src/studio/delivery.ts · evaluationRunSchema',
+          blocks: [
+            {
+              label: 'Wednesday’s delivery intent (email plan)',
+              json: `{
+  "kind": "goal-proposal",
+  "idempotencyKey": "trigger-overspend:goal-groceries",
+  "ownerId": "person-charles",
+  "goalId": "goal-groceries",
+  "channel": "email",
+  "subject": "Groceries are £37 over the £450 limit.",
+  "body": "Spend rose from £412 to £487 this month. Compare the receipts and pick one category to trim.",
+  "sendAt": "2026-11-04T09:00:00.000Z"
+}`,
+            },
+            {
+              label: 'Wednesday’s journal record (the notebook)',
+              json: `{
+  "ownerId": "person-charles",
+  "triggerId": "trigger-overspend",
+  "processedAt": "2026-11-04T09:00:00.000Z",
+  "evaluations": [
+    {
+      "ownerId": "person-charles",
+      "triggerId": "trigger-overspend",
+      "goalId": "goal-groceries",
+      "evaluatedAt": "2026-11-04T09:00:00.000Z",
+      "decision": {
+        "kind": "propose",
+        "summary": "Groceries are £37 over the £450 limit.",
+        "reason": "Spend rose from £412 to £487 this month, so the limit no longer covers it.",
+        "nextStep": "Compare this month's grocery receipts and pick one category to trim.",
+        "evidenceIds": ["ev-groceries-wed"]
+      }
+    }
+  ],
+  "deliveryIntents": []
+}`,
+              note: 'The run is written before any send is attempted, so a failed email leaves the reasoning and its evidence intact. Monday and Tuesday are in this same notebook — quiet and defer are recorded, not discarded.',
+            },
+          ],
+        },
+      ];
+
+      const castState = { actor: 0 };
+
+      const escapeHtml = (value) =>
+        value.replace(/[&<>]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character]);
+
+      function renderPayload() {
+        const actor = actors[castState.actor];
+        const blocks = actor.blocks
+          .map(
+            (block) => `
+              <div class="json-block">
+                <div class="json-label"><span>${block.label}</span></div>
+                <pre><code>${escapeHtml(block.json)}</code></pre>
+                ${block.note ? `<p class="json-note">${block.note}</p>` : ''}
+              </div>`,
+          )
+          .join('');
+
+        el('payload').innerHTML = `
+          <div class="payload-card">
+            <div class="payload-head">
+              <div>
+                <span class="payload-name">${actor.emoji} ${actor.name}</span>
+                <span class="payload-code"><code>${actor.code}</code></span>
+              </div>
+              <span class="payload-flow">${actor.flow}</span>
+            </div>
+            ${blocks}
+            ${actor.note ? `<p class="payload-note">${actor.note}</p>` : ''}
+          </div>`;
+      }
+
+      function renderCast() {
+        const list = el('cast-list');
+        list.innerHTML = '';
+        actors.forEach((actor, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'actor';
+          button.setAttribute('aria-pressed', String(index === castState.actor));
+          button.innerHTML = `
+            <span class="emoji" aria-hidden="true">${actor.emoji}</span>
+            <span>
+              <span class="actor-name">${actor.name}</span>
+              <span class="actor-role">${actor.role}</span>
+            </span>`;
+          button.addEventListener('click', () => {
+            castState.actor = index;
+            renderCast();
+            if (window.matchMedia('(max-width: 860px)').matches) {
+              el('payload').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+          list.appendChild(button);
+        });
+        renderPayload();
+      }
+
+      // --- quiz: same story only ---
+      const quiz = [
+        {
+          q: 'Monday: the £40 refund brings spending to £415, under the £450 limit. What should the helper say?',
+          options: ['Propose a budget cut', 'Defer', 'Nothing — quiet'],
+          answer: 2,
+          why: 'A refund that restores the limit is a resolution. A rule catches it before the model is even asked.',
+        },
+        {
+          q: 'Tuesday: two identical £21 charges make the total unreliable. What should it do?',
+          options: ['Propose a budget cut', 'Defer and ask for clean data', 'Quiet'],
+          answer: 1,
+          why: 'Guessing on an unreliable number is worse than waiting for a clean one.',
+        },
+        {
+          q: 'Wednesday: spending is £487 against a £450 limit, and the numbers are clean. What happens?',
+          options: ['One proposal and one email', 'A defer', 'Nothing'],
+          answer: 0,
+          why: 'Propose is the only decision that becomes a delivery intent.',
+        },
+        {
+          q: 'Wednesday’s trigger arrives a second time because a retry fired. How many emails?',
+          options: ['Two, one per arrival', 'One — the notebook remembers', 'None, it is cancelled'],
+          answer: 1,
+          why: 'The journal keys a run by its trigger id, so a replay returns the first result instead of sending again.',
+        },
+      ];
+
+      function renderQuiz() {
+        const wrap = el('quiz');
+        wrap.innerHTML = '';
+        quiz.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.className = 'question';
+          card.innerHTML = `<p class="q">${index + 1}. ${item.q}</p>`;
+
+          const answers = document.createElement('div');
+          answers.className = 'answers';
+
+          const feedback = document.createElement('p');
+          feedback.className = 'feedback';
+          feedback.setAttribute('aria-live', 'polite');
+
+          item.options.forEach((option, optionIndex) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = option;
+            button.addEventListener('click', () => {
+              const buttons = answers.querySelectorAll('button');
+              buttons.forEach((b) => {
+                b.disabled = true;
+              });
+              const isRight = optionIndex === item.answer;
+              button.dataset.state = isRight ? 'right' : 'wrong';
+              if (!isRight) {
+                buttons[item.answer].dataset.state = 'right';
+              }
+              feedback.textContent = isRight ? `Yes. ${item.why}` : `Not quite. ${item.why}`;
+            });
+            answers.appendChild(button);
+          });
+
+          card.appendChild(answers);
+          card.appendChild(feedback);
+          wrap.appendChild(card);
+        });
+      }
+
+      // --- mode switch ---
+      function setMode(mode) {
+        document.body.classList.toggle('nerd-mode', mode === 'nerd');
+        document.body.classList.toggle('kid-mode', mode === 'kid');
+        document.querySelectorAll('.switch button').forEach((button) => {
+          button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+        });
+      }
+
+      document.querySelectorAll('.switch button').forEach((button) => {
+        button.addEventListener('click', () => setMode(button.dataset.mode));
+      });
+
+      // --- controls ---
+      el('next').addEventListener('click', () => {
+        if (state.step < stepCount - 1) state.step += 1;
+        renderStory();
+      });
+
+      el('restart').addEventListener('click', () => {
+        state.step = 0;
+        renderStory();
+      });
+
+      // Deep links: #m=<moment id>&step=<1-6>
+      function applyHash() {
+        const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+        const index = moments.findIndex((item) => item.id === params.get('m'));
+        if (index >= 0) state.moment = index;
+        const step = Number(params.get('step'));
+        if (Number.isInteger(step) && step >= 1 && step <= stepCount) state.step = step - 1;
+      }
+
+      applyHash();
+      setMode('kid');
+      renderCast();
+      renderMoments();
+      renderQuiz();
+      renderStory();
+    </script>
+  </body>
+</html>

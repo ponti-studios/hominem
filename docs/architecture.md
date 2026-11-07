@@ -10,8 +10,9 @@ Omiro
   -> API
   -> database and infrastructure
 
-Career browser
-  -> Career server routes and services
+Web (platform)
+  -> RPC client and shared domain packages
+  -> API
   -> database and infrastructure
 
 API
@@ -20,8 +21,11 @@ API
   -> persistence and orchestration
 ```
 
+- Web is the platform surface. Its domains (Tasks, Collections, Finance, Career) are sub-apps inside
+  `apps/web`, not separate deployments. A sub-app renders and calls the API; it never imports
+  `@hominem/db`, `@hominem/queues`, `@hominem/storage`, or a `*-services` package. The standalone
+  Finance and Career apps were retired, along with their custom domains. See [web.sub-apps.md](web.sub-apps.md) for the sub-app contract and the cutover runbook.
 - Omiro must use `@hominem/rpc` to access data.
-- Career route's `loaders` and `actions` access the database directly. Browser components should use database-derived TypeScript types, but database handles and queries must stay on the server.
 - Most protected RPC and MCP requests use the auth context created by the API's global auth middleware. The middleware resolves identity before route handling, and protected route middleware rejects requests without that context.
 - The `/api/auth` routes are an exception. The global auth middleware skips them because they implement session and authentication operations, and those routes call Better Auth directly when they need the current session.
 - The API is both a deployable service and the source of several client contracts. It exports `@hominem/api/types`, `@hominem/api/career`, and `@hominem/api/finance`; client packages consume those type contracts without using the API as a runtime dependency.
@@ -55,6 +59,15 @@ enforcement point for this contract.
 - **Career list routes page by keyset with `cursor`/`nextCursor`.** `GET /api/career/{engagements,education,wishlist,certifications,projects,skills,imports}` accept `limit` (1–50, default 20) and an opaque `cursor`, and answer their existing payload plus `nextCursor`, which is `null` on the last page. Each route keeps its established order and adds `id` as the unique tiebreaker: engagements and education by `end_date` then `start_date` descending (PostgreSQL's `desc` puts NULLs first), wishlist companies by `applied_at` descending (nulls last), certifications, projects and skills by `sort_order` ascending, and open imports by `updated_at` descending. The cursor names the route and filter that issued it, so a malformed cursor, a cursor from another route, or one from a different `type` filter is a validation error rather than a walk over a different list.
 - **`GET /api/finance/transactions/list` pages by keyset with `cursor`/`nextCursor`.** It accepts `limit` (1–50, default 20) and an opaque `cursor`, and answers `{ data, filteredCount, totalUserCount, nextCursor }`, with `nextCursor` `null` on the last page. Ordering is the list's existing `posted_on` descending with `id` descending as the unique tiebreaker; a text search keeps its similarity ranking ahead of that pair. The cursor carries the last row's `(rank, posted_on, id)` plus a fingerprint of the account, date, text, tag, category, type and amount filters, so a malformed cursor, one issued by another endpoint, or one replayed against a different filter is a validation error instead of a walk over a different list. The list no longer accepts `offset`; `finance_transaction_search` keeps offset paging on its own contract.
 - **Collections and files page by keyset with `cursor`/`nextCursor`.** `GET /api/collections` and `GET /api/files` accept `limit` (1–50, default 20) and an opaque `cursor`, and answer `{ collections, count, nextCursor }` and `{ files, count, nextCursor }` respectively, with `nextCursor: null` on the last page. They keep their established `created_at` descending order and add `id` descending as the unique tiebreaker: collections over every collection the caller owns or has an accepted membership in, files over the caller's uploads. The cursor names the endpoint that issued it, so a malformed cursor or a cursor from the other endpoint is a validation error.
+
+## Proactivity engine (proposed)
+
+`@hominem/proactivity` is a standalone, test-covered evaluation engine for
+goal-centered proactivity. It defines the trigger, goal-context, decision,
+evaluation-run, and delivery-intent contracts, and runs the ten cross-domain
+scenario families against a scripted slot. It is deliberately not wired into
+the API, scheduler, or clients yet; the product decisions required before that
+integration are recorded in [the proactivity PRD](./proactivity-engine-prd.md).
 
 ## Open decisions
 

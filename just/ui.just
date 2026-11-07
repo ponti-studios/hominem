@@ -3,7 +3,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 root_dir := justfile_directory()
 ui_repo_default := root_dir + "/../ui"
 
-ui_consumers := root_dir + "/apps/career" + " " + root_dir + "/apps/finance" + " " + root_dir + "/apps/omiro"
+ui_consumers := root_dir + "/apps/omiro"
 
 link path=ui_repo_default:
     #!/usr/bin/env bash

@@ -28,4 +28,13 @@ describe('request body limit', () => {
     const guarded = new Hono().use('*', requestBodyLimit()).options('/x', (c) => c.body(null, 204));
     expect((await guarded.request('/x', { method: 'OPTIONS' })).status).toBe(204);
   });
+
+  it('skips the limiter for DELETE so deletes reach their route', async () => {
+    const guarded = new Hono()
+      .use('*', requestBodyLimit())
+      .delete('/x', (c) => c.json({ deleted: true }));
+    const response = await guarded.request('/x', { method: 'DELETE' });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ deleted: true });
+  });
 });

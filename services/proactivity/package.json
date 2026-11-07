@@ -1,0 +1,46 @@
+{
+  "name": "@hominem/proactivity",
+  "version": "0.0.0",
+  "description": "Goal-centered proactive evaluation engine",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js"
+    },
+    "./openrouter": {
+      "types": "./build/openrouter-slot.d.ts",
+      "import": "./build/openrouter-slot.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf build .cache && tsc -p tsconfig.json && vite build --config studio/vite.config.ts",
+    "typecheck": "rm -rf .cache && tsc --noEmit && tsc -p studio/tsconfig.json --noEmit",
+    "test": "vitest run src",
+    "eval": "tsx src/evals/run.ts",
+    "eval:live": "tsx src/evals/run.ts --live",
+    "demo": "tsx src/studio/server.ts",
+    "format": "oxfmt src studio --write",
+    "format:check": "oxfmt src studio --check",
+    "lint": "oxlint src studio",
+    "studio:build": "vite build --config studio/vite.config.ts",
+    "studio:serve": "NODE_ENV=production tsx src/studio/server.ts"
+  },
+  "dependencies": {
+    "@hominem/ai": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tsx": "^4.23.15",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

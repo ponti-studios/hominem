@@ -1,0 +1,376 @@
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ponti-studios/ui/forms';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { AlertCircle, CheckCircle, Copy, Download, FileText, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { useFetcher } from 'react-router';
+
+import type {
+  CustomizeResumeApiRequest,
+  CustomizeResumeApiResponse,
+  JobAnalysis,
+} from '~/modules/career/lib/api-contracts';
+import { careerApiUrl } from '~/modules/career/lib/api-url';
+import type { CareerApplicationRecord } from '~/modules/career/lib/types/records';
+import { getCompanyName } from '~/modules/career/lib/utils/applicationUtils';
+
+const RESUME_FORMATS = ['professional', 'modern', 'technical', 'executive'] as const;
+const TARGET_LENGTHS = ['concise', 'standard', 'detailed'] as const;
+type ResumeFormat = (typeof RESUME_FORMATS)[number];
+type TargetLength = (typeof TARGET_LENGTHS)[number];
+
+// Select hands back a plain string; keep the current choice if it is ever not one we offer.
+function parseResumeFormat(value: string | null): ResumeFormat {
+  return RESUME_FORMATS.find((format) => format === value) ?? 'professional';
+}
+
+function parseTargetLength(value: string | null): TargetLength {
+  return TARGET_LENGTHS.find((length) => length === value) ?? 'standard';
+}
+
+interface ApplicationResumeTabProps {
+  application: CareerApplicationRecord;
+  applicationId: string;
+}
+
+function toFilenamePart(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'resume'
+  );
+}
+
+function downloadMarkdown(filename: string, content: string): void {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+export function ApplicationResumeTab({
+  application,
+  applicationId: _applicationId,
+}: ApplicationResumeTabProps) {
+  const fetcher = useFetcher();
+
+  const [resumeFormat, setResumeFormat] = useState<ResumeFormat>('professional');
+  const [targetLength, setTargetLength] = useState<TargetLength>('standard');
+  const [focusAreas, setFocusAreas] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedResume, setGeneratedResume] = useState<string | null>(null);
+  const [jobAnalysis, setJobAnalysis] = useState<JobAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [showRegenerate, setShowRegenerate] = useState(false);
+  // The posting text is pushed by the user's own agent (career_application_create/update);
+  // Hominem never fetches job sites itself.
+  const postingText = application.postingText?.trim() ?? '';
+  const hasAnyPosting = postingText.length > 0;
+  const resumeFilename = `${toFilenamePart(getCompanyName(application.company))}-${toFilenamePart(
+    application.title,
+  )}-resume.md`;
+
+  const isSaving = fetcher.state !== 'idle';
+  const saveSuccess =
+    typeof fetcher.data === 'object' &&
+    fetcher.data !== null &&
+    'message' in fetcher.data &&
+    fetcher.data.message === 'Resume saved successfully';
+
+  async function handleGenerate() {
+    if (!hasAnyPosting) {
+      setError('This application has no saved job posting text to generate a resume from.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const request: CustomizeResumeApiRequest = {
+        resumeFormat,
+        targetLength,
+        focusAreas: focusAreas
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        job_posting: postingText,
+      };
+      const response = await fetch(careerApiUrl('/api/career/resume/customize'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(request),
+      });
+      const data: CustomizeResumeApiResponse = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Generation failed');
+      }
+      setGeneratedResume(data.customizedResume);
+      setJobAnalysis(data.jobAnalysis);
+      setShowRegenerate(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'An error occurred');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  function handleSave() {
+    if (!generatedResume) return;
+    const formData = new FormData();
+    formData.set('operation', 'save_resume');
+    formData.set('resume', generatedResume);
+    fetcher.submit(formData, { method: 'POST' });
+  }
+
+  async function handleCopy(text: string) {
+    await navigator.clipboard.writeText(text);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  }
+
+  function handleDownload(text: string) {
+    downloadMarkdown(resumeFilename, text);
+  }
+
+  // A saved resume stays viewable without posting text; only (re)generating needs it.
+  if (!hasAnyPosting && !application.resumeUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <FileText className="size-10 text-muted-foreground/50" />
+        <p className="body-3 text-muted-foreground">
+          No job description saved for this application.
+        </p>
+        <p className="body-3 text-muted-foreground">
+          Ask your AI agent to save the posting text to this application, then come back to generate
+          a tailored resume.
+        </p>
+      </div>
+    );
+  }
+
+  const showGenerateForm =
+    hasAnyPosting && (!application.resumeUrl || showRegenerate || generatedResume);
+
+  return (
+    <div className="space-y-4">
+      {application.resumeUrl && !showRegenerate && !generatedResume && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>Saved Resume</CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopy(application.resumeUrl!)}
+                >
+                  <Copy className="size-4 mr-1" />
+                  Copy
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(application.resumeUrl!)}
+                >
+                  <Download className="size-4 mr-1" />
+                  Download
+                </Button>
+                {hasAnyPosting && (
+                  <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)}>
+                    <Sparkles className="size-4 mr-1" />
+                    Regenerate
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <pre className="text-sm text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+              {application.resumeUrl.slice(0, 800)}
+              {application.resumeUrl.length > 800 ? '\n\n…' : ''}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+
+      {showGenerateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Sparkles className="size-4" />
+              {application.resumeUrl ? 'Regenerate Resume' : 'Generate Tailored Resume'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label htmlFor="resume-format">Format</label>
+                <Select
+                  value={resumeFormat}
+                  onValueChange={(v) => setResumeFormat(parseResumeFormat(v))}
+                >
+                  <SelectTrigger id="resume-format">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="modern">Modern</SelectItem>
+                    <SelectItem value="technical">Technical</SelectItem>
+                    <SelectItem value="executive">Executive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="resume-length">Length</label>
+                <Select
+                  value={targetLength}
+                  onValueChange={(v) => setTargetLength(parseTargetLength(v))}
+                >
+                  <SelectTrigger id="resume-length">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="concise">Concise</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="detailed">Detailed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="resume-focus-areas">
+                Focus Areas{' '}
+                <span className="font-normal text-muted-foreground/70">
+                  (optional, comma-separated)
+                </span>
+              </label>
+              <Input
+                id="resume-focus-areas"
+                placeholder="e.g. leadership, TypeScript, distributed systems"
+                value={focusAreas}
+                onChange={(e) => setFocusAreas(e.target.value)}
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 body-3 text-destructive">
+                <AlertCircle className="size-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                isLoading={isGenerating}
+                loadingLabel="Generating..."
+                className="flex-1"
+              >
+                <Sparkles className="size-4 mr-2" />
+                Generate Resume
+              </Button>
+              {showRegenerate && (
+                <Button variant="outline" onClick={() => setShowRegenerate(false)}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {generatedResume && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>Generated Resume</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => handleCopy(generatedResume)}>
+                  <Copy className="size-4 mr-1" />
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(generatedResume)}>
+                  <Download className="size-4 mr-1" />
+                  Download
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  isLoading={isSaving}
+                  loadingLabel="Saving..."
+                >
+                  {saveSuccess ? (
+                    <>
+                      <CheckCircle className="size-4 mr-1" />
+                      Saved
+                    </>
+                  ) : (
+                    'Save to Application'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {jobAnalysis && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg body-3">
+                {jobAnalysis.requiredSkills.length > 0 && (
+                  <div>
+                    <p className="subheading-4 text-foreground mb-1">Matched Skills</p>
+                    <div className="flex flex-wrap gap-1">
+                      {jobAnalysis.requiredSkills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-1.5 py-0.5 bg-success/10 text-success caption1 rounded"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {jobAnalysis.recommendedKeywords.length > 0 && (
+                  <div>
+                    <p className="subheading-4 text-foreground mb-1">ATS Keywords</p>
+                    <div className="flex flex-wrap gap-1">
+                      {jobAnalysis.recommendedKeywords.slice(0, 6).map((kw) => (
+                        <span
+                          key={kw}
+                          className="px-1.5 py-0.5 bg-accent/20 text-muted-foreground caption1 rounded"
+                        >
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <pre className="caption1 font-mono whitespace-pre-wrap leading-relaxed max-h-[32rem] overflow-y-auto border border-border rounded-lg p-4">
+              {generatedResume}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
