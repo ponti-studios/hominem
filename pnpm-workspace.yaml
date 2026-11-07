@@ -8,7 +8,7 @@ catalog:
   '@tanstack/react-query': 5.104.5
   '@testing-library/jest-dom': 7.0.1
   '@types/node': 25.4.0
-  dotenv: 17.4.2
+  dotenv: 18.0.9
   '@react-router/dev': 8.5.1
   '@react-router/node': 8.5.0
   '@react-router/serve': 8.5.0
