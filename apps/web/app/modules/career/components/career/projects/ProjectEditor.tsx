@@ -5,8 +5,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  TextField,
-  Textarea,
 } from '@ponti-studios/ui/forms';
 import {
   Sheet,
@@ -17,11 +15,13 @@ import {
   SheetTitle,
 } from '@ponti-studios/ui/overlays';
 import { Button } from '@ponti-studios/ui/primitives';
-import { BriefcaseIcon, SearchIcon, XIcon } from 'lucide-react';
+import { BriefcaseIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Form, useNavigation } from 'react-router';
+import { Form } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
+import { Chip } from '~/components/design/chip';
+import { FormActions, FormGrid, TextAreaInput, TextInput } from '~/components/design/forms';
+import { SearchInput } from '~/components/design/search-input';
 import type { CareerProjectRecord } from '~/modules/career/lib/types/records';
 
 const PROJECT_STATUSES = [
@@ -44,8 +44,6 @@ export function ProjectEditor({
   onCancel,
   submitLabel = 'Save project',
 }: ProjectEditorProps) {
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
   const [selectedIds, setSelectedIds] = useState<string[]>(
     () => project?.engagements?.map((e) => e.id) ?? [],
   );
@@ -64,23 +62,23 @@ export function ProjectEditor({
 
   return (
     <Form method="post" className="flex flex-col gap-4">
-      <TextField label="Title" name="title" required defaultValue={project?.title ?? ''} />
-      <TextField
+      <TextInput label="Title" name="title" required defaultValue={project?.title ?? ''} />
+      <TextInput
         label="Organization"
         name="organization"
         placeholder="Optional company or client"
         defaultValue={project?.organization ?? ''}
       />
-      <TextField
+      <TextInput
         label="Short description"
         name="shortDescription"
         placeholder="One-line summary"
         defaultValue={project?.shortDescription ?? ''}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <FormGrid cols={3}>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="status" className="text-sm font-medium">
+          <label htmlFor="status" className="text-sm font-medium text-[#f2f4f8]">
             Status
           </label>
           <Select
@@ -100,7 +98,7 @@ export function ProjectEditor({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5 md:col-span-2">
+        <div className="md:col-span-2">
           <DatePicker
             mode="range"
             id="startDate"
@@ -110,31 +108,24 @@ export function ProjectEditor({
             defaultValue={{ from: project?.startDate, to: project?.endDate }}
           />
         </div>
-      </div>
+      </FormGrid>
 
       {engagements.length > 0 && (
-        <div className="space-y-2">
-          <span className="block text-sm font-medium">Related work engagements</span>
+        <div className="flex flex-col gap-2">
+          <span className="block text-sm font-medium text-[#f2f4f8]">Related work engagements</span>
           {selectedIds.map((id) => (
             <input key={id} type="hidden" name="engagementIds" value={id} />
           ))}
           {selected.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {selected.map((engagement) => (
-                <span
+                <Chip
                   key={engagement.id}
-                  className="body-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1"
+                  onRemove={() => toggle(engagement.id)}
+                  removeLabel={`Remove ${engagement.title}`}
                 >
                   {engagement.title} at {engagement.company}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${engagement.title}`}
-                    onClick={() => toggle(engagement.id)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <XIcon className="size-3.5" />
-                  </button>
-                </span>
+                </Chip>
               ))}
             </div>
           )}
@@ -155,37 +146,33 @@ export function ProjectEditor({
                   Choose the work engagements this project relates to.
                 </SheetDescription>
               </SheetHeader>
-              <label className="relative block">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search engagements"
-                  aria-label="Search engagements"
-                  className="h-10 w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm"
-                />
-              </label>
+              <SearchInput
+                value={query}
+                onChange={setQuery}
+                onClear={() => setQuery('')}
+                placeholder="Search engagements"
+                ariaLabel="Search engagements"
+              />
               <div className="flex flex-col gap-1 overflow-y-auto">
                 {visible.map((engagement) => (
                   <label
                     key={engagement.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-muted"
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-white/[0.04]"
                   >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(engagement.id)}
                       onChange={() => toggle(engagement.id)}
-                      className="size-4 accent-primary"
+                      className="size-4 accent-[#d7ff3e]"
                     />
-                    <span>
+                    <span className="text-[#f2f4f8]">
                       {engagement.title}{' '}
-                      <span className="text-muted-foreground">at {engagement.company}</span>
+                      <span className="text-[#9ba3b4]">at {engagement.company}</span>
                     </span>
                   </label>
                 ))}
                 {visible.length === 0 && (
-                  <p className="body-3 px-2 py-4 text-muted-foreground">
+                  <p className="px-2 py-4 text-sm text-[#9ba3b4]">
                     No engagements match “{query.trim()}”.
                   </p>
                 )}
@@ -208,55 +195,37 @@ export function ProjectEditor({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="description" className="text-foreground text-sm font-medium">
-          Description
-        </label>
-        <Textarea
-          id="description"
-          name="description"
-          rows={4}
-          defaultValue={project?.description ?? ''}
-        />
-      </div>
+      <TextAreaInput
+        label="Description"
+        name="description"
+        rows={4}
+        defaultValue={project?.description ?? ''}
+      />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <TextField
+      <FormGrid>
+        <TextInput
           label="Live URL"
           name="liveUrl"
           placeholder="https://"
           defaultValue={project?.liveUrl ?? ''}
         />
-        <TextField
+        <TextInput
           label="GitHub URL"
           name="githubUrl"
           placeholder="https://"
           defaultValue={project?.githubUrl ?? ''}
         />
-      </div>
+      </FormGrid>
 
-      <TextField
+      <TextInput
         label="Technologies"
         name="technologies"
         placeholder="TypeScript, React, PostgreSQL"
-        helpText="Comma-separated"
+        hint="Comma-separated"
         defaultValue={Array.isArray(project?.technologies) ? project.technologies.join(', ') : ''}
       />
 
-      <div className="flex justify-end gap-3">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        )}
-        {submitLabel.startsWith('Add ') ? (
-          <AddButton type="submit" label={submitLabel} disabled={isSubmitting} />
-        ) : (
-          <Button type="submit" disabled={isSubmitting}>
-            {submitLabel}
-          </Button>
-        )}
-      </div>
+      <FormActions submitLabel={submitLabel} onCancel={onCancel} />
     </Form>
   );
 }

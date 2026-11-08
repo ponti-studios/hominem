@@ -1,19 +1,19 @@
-import { EmptyState } from '@ponti-studios/ui/feedback';
-import { TextField } from '@ponti-studios/ui/forms';
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@ponti-studios/ui/overlays';
-import { LightbulbIcon, XIcon } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Form, useNavigation } from 'react-router';
+import { Form } from 'react-router';
 
+import { DetailSection } from '~/components/design';
+import { Chip } from '~/components/design/chip';
+import { FormActions, FormGrid, TextInput } from '~/components/design/forms';
 import { AddButton } from '~/modules/career/components/AddButton';
+import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 
@@ -45,13 +45,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   if (intent === 'create') {
-    const name = formData.get('name');
-    if (typeof name === 'string' && name.trim()) {
+    const name = formText(formData, 'name')?.trim();
+    if (name) {
       const level = formData.get('level');
       const years = formData.get('yearsOfExperience');
       await career.skills.create.$post({
         json: {
-          name: name.trim(),
+          name,
           category: formText(formData, 'category') || null,
           level: level ? Number(level) : null,
           yearsOfExperience: years ? Number(years) : null,
@@ -67,13 +67,13 @@ export async function action({ request }: Route.ActionArgs) {
 export default function SkillsRoute({ loaderData }: Route.ComponentProps) {
   const { skills } = loaderData;
   const [open, setOpen] = useState(false);
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-4">
-        <SectionIntro title="Skills" description="Skills and areas of expertise." />
+    <CollectionIndex
+      eyebrow="Career · Skills"
+      title="Skills"
+      description="Skills and areas of expertise."
+      actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <AddButton label="Add skill" />
@@ -89,53 +89,50 @@ export default function SkillsRoute({ loaderData }: Route.ComponentProps) {
               navigate={false}
             >
               <input type="hidden" name="intent" value="create" />
-              <TextField label="Name" name="name" required placeholder="TypeScript" />
-              <TextField label="Category" name="category" placeholder="Technical" />
-              <div className="grid grid-cols-2 gap-4">
-                <TextField label="Level (1-100)" name="level" min={1} max={100} />
-                <TextField label="Years of experience" name="yearsOfExperience" min={0} />
-              </div>
-              <DialogFooter>
-                <AddButton type="submit" label="Add skill" disabled={isSubmitting} />
-              </DialogFooter>
+              <TextInput label="Name" name="name" required placeholder="TypeScript" />
+              <TextInput label="Category" name="category" placeholder="Technical" />
+              <FormGrid>
+                <TextInput label="Level (1-100)" name="level" type="number" min={1} max={100} />
+                <TextInput
+                  label="Years of experience"
+                  name="yearsOfExperience"
+                  type="number"
+                  min={0}
+                />
+              </FormGrid>
+              <FormActions submitLabel="Add skill" />
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {skills.length === 0 ? (
-        <EmptyState
-          icon={<LightbulbIcon className="size-6" />}
-          title="No skills yet"
-          description="Add a skill to start building your profile."
-          className="mt-6"
-        />
-      ) : (
-        <div className="mt-6 flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <div
-              key={skill.id}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5"
-            >
-              <span className="body-3">{skill.name}</span>
-              {skill.category && (
-                <span className="footnote text-muted-foreground">{skill.category}</span>
-              )}
-              <Form method="post" navigate={false}>
-                <input type="hidden" name="intent" value="delete" />
-                <input type="hidden" name="id" value={skill.id} />
-                <button
-                  type="submit"
-                  aria-label={`Remove ${skill.name}`}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              </Form>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      }
+    >
+      <DetailSection title="Your skills">
+        {skills.length === 0 ? (
+          <p className="text-sm text-[#9ba3b4]">No skills yet — add your first above.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {skills.map((skill) => (
+              <Chip key={skill.id}>
+                <span className="font-medium">{skill.name}</span>
+                {skill.category && (
+                  <span className="font-mono text-[11px] text-[#5e6678]">{skill.category}</span>
+                )}
+                <Form method="post" navigate={false} className="inline-flex">
+                  <input type="hidden" name="intent" value="delete" />
+                  <input type="hidden" name="id" value={skill.id} />
+                  <button
+                    type="submit"
+                    aria-label={`Remove ${skill.name}`}
+                    className="-mr-1 text-[#5e6678] transition-colors hover:text-[#f2f4f8]"
+                  >
+                    <XIcon className="size-3.5" />
+                  </button>
+                </Form>
+              </Chip>
+            ))}
+          </div>
+        )}
+      </DetailSection>
+    </CollectionIndex>
   );
 }

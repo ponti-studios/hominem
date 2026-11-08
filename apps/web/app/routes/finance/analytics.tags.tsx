@@ -1,11 +1,15 @@
 import { Spinner } from '@ponti-studios/ui/feedback';
-import { Badge } from '@ponti-studios/ui/primitives';
-import { Button } from '@ponti-studios/ui/primitives';
 import { format, subMonths } from 'date-fns';
-import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { PageHeader, PanelState } from '~/components/design';
+import { Chip } from '~/components/design/chip';
+import { DataTable } from '~/components/design/data-table';
+import { ListSkeleton } from '~/components/design/skeleton';
+import { SectionCard } from '~/components/design/surfaces';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import { TransactionFilters } from '~/modules/finance/components/finance/transaction-filters';
 import { useTagBreakdown } from '~/modules/finance/hooks/use-analytics';
 import { type FilterArgs, useFinanceAccounts } from '~/modules/finance/hooks/use-finance-data';
@@ -197,8 +201,13 @@ export default function TagsAnalyticsPage() {
   const loading = isLoading || accountsLoading;
 
   return (
-    <div className="container">
-      <h1 className="text-2xl font-bold mb-4">Tags Breakdown</h1>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        eyebrow="Finance · Analytics"
+        title="Tags Breakdown"
+        description="Spending by tag for the selected period."
+        accent="#9d7bff"
+      />
 
       <TransactionFilters
         accountsMap={accountsMap}
@@ -217,189 +226,124 @@ export default function TagsAnalyticsPage() {
       />
 
       {(activeFilters.length > 0 || searchValue.trim()) && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((filter) => (
-            <Badge key={filter.id}>
-              <span>{filter.label}</span>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                aria-label={`Remove ${filter.label}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  filter.onRemove();
-                }}
-              >
-                <X className="size-3" />
-              </Button>
-            </Badge>
+            <Chip key={filter.id} onRemove={filter.onRemove} removeLabel={`Remove ${filter.label}`}>
+              {filter.label}
+            </Chip>
           ))}
           {searchValue.trim() && (
-            <Badge>
-              <span>Search: {searchValue}</span>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                aria-label="Clear search"
-                onClick={() => setSearchValue('')}
-              >
-                <X className="size-3" />
-              </Button>
-            </Badge>
+            <Chip onRemove={() => setSearchValue('')} removeLabel="Clear search">
+              Search: {searchValue}
+            </Chip>
           )}
           {(activeFilters.length > 0 || searchValue.trim()) && (
-            <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters}>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="inline-flex h-7 items-center rounded-full px-3 text-[13px] font-medium text-[#9ba3b4] transition-colors hover:text-[#f2f4f8]"
+            >
               Clear all
-            </Button>
+            </button>
           )}
         </div>
       )}
 
       {/* Loading State */}
       {loading ? (
-        <div className="flex justify-center py-10">
-          <output className="space-y-4 w-full" aria-live="polite">
-            {[1, 2, 3, 4, 5].map((val) => (
-              <div key={val} className="h-12 w-full border border-border" />
-            ))}
-          </output>
-        </div>
+        <SectionCard>
+          <ListSkeleton rows={5} label="Loading tags" />
+        </SectionCard>
       ) : error ? (
         /* Error State */
-        <div className="p-8 text-center text-destructive" role="alert">
-          <p className="mb-4">
-            {typeof error === 'string'
+        <PanelState
+          title="Tags unavailable"
+          description={
+            typeof error === 'string'
               ? error
               : error instanceof Error
                 ? error.message
-                : 'An unknown error occurred'}
-          </p>
-          <Button onClick={() => refetchBreakdown()} variant="outline">
-            Retry
-          </Button>
-        </div>
+                : 'An unknown error occurred'
+          }
+          action={
+            <Button onClick={() => refetchBreakdown()} variant="outline">
+              Retry
+            </Button>
+          }
+        />
       ) : filteredAndSortedData.length === 0 ? (
         /* Empty State */
-        <div className="p-8 text-center text-muted-foreground">
-          {searchValue.trim() || activeFilters.length > 0
-            ? 'No tags found matching your filters.'
-            : 'No tag data available for the selected period.'}
-        </div>
+        <PanelState
+          title={
+            searchValue.trim() || activeFilters.length > 0
+              ? 'No tags found matching your filters'
+              : 'No tag data available for the selected period'
+          }
+        />
       ) : (
         /* Table with Data */
-        <div className="relative">
-          {isFetching && !isLoading && (
-            <div className="absolute inset-0 bg-emphasis-medium z-10 flex items-center justify-center">
-              <Spinner size="md" />
-            </div>
-          )}
-          <table className="w-full text-sm" aria-label="Tags breakdown">
-            <thead>
-              <tr>
-                <th
-                  className="text-left py-2"
-                  aria-sort={
-                    getSortDirection('tag') === 'asc'
-                      ? 'ascending'
-                      : getSortDirection('tag') === 'desc'
-                        ? 'descending'
-                        : 'none'
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSortHeaderClick('tag')}
-                    className="flex items-center gap-1 hover:text-foreground"
-                    aria-label="Sort by tag"
-                  >
-                    Tag
-                    {getSortDirection('tag') === 'asc' && (
-                      <ArrowUp className="size-4" aria-hidden="true" />
-                    )}
-                    {getSortDirection('tag') === 'desc' && (
-                      <ArrowDown className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </th>
-                <th
-                  className="text-right py-2"
-                  aria-sort={
-                    getSortDirection('amount') === 'asc'
-                      ? 'ascending'
-                      : getSortDirection('amount') === 'desc'
-                        ? 'descending'
-                        : 'none'
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSortHeaderClick('amount')}
-                    className="flex items-center gap-1 justify-end hover:text-foreground ml-auto"
-                    aria-label="Sort by total"
-                  >
-                    Total
-                    {getSortDirection('amount') === 'asc' && (
-                      <ArrowUp className="size-4" aria-hidden="true" />
-                    )}
-                    {getSortDirection('amount') === 'desc' && (
-                      <ArrowDown className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAndSortedData.map((item) => {
-                const percentage = item.percentage;
-
-                return (
-                  <tr
-                    key={`${item.currencyCode}-${item.tag}`}
-                    className="border-b border-border "
-                    onClick={() =>
-                      navigate(`/finance/analytics/tag/${encodeURIComponent(item.tag)}`)
-                    }
-                    tabIndex={0}
-                    aria-label={`View details for ${item.tag}`}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        navigate(`/finance/analytics/tag/${encodeURIComponent(item.tag)}`);
-                      }
-                    }}
-                  >
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{item.transactionCount}x</Badge>
-                        <span className="font-medium">{item.tag}</span>
-                      </div>
-                    </td>
-                    <td className="text-right py-3">
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="font-mono font-semibold">
-                          {formatCurrency(item.amount, item.currencyCode)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {percentage.toFixed(1)}%
-                        </div>
-                        <div className="h-1 w-24 border border-border">
-                          <div
-                            className="h-1 bg-primary"
-                            style={{
-                              width: `${Math.min(percentage, 100)}%`,
-                            }}
-                            aria-hidden="true"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <SectionCard>
+          <div className="relative p-2 sm:p-4">
+            {isFetching && !isLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">
+                <Spinner size="md" />
+              </div>
+            )}
+            <DataTable
+              ariaLabel="Tags breakdown"
+              rows={filteredAndSortedData}
+              keyOf={(item) => `${item.currencyCode}-${item.tag}`}
+              onRowClick={(item) =>
+                navigate(`/finance/analytics/tag/${encodeURIComponent(item.tag)}`)
+              }
+              rowLabel={(item) => `View details for ${item.tag}`}
+              columns={[
+                {
+                  key: 'tag',
+                  header: 'Tag',
+                  sort: {
+                    direction: getSortDirection('tag') ?? null,
+                    onSort: () => handleSortHeaderClick('tag'),
+                    label: 'Sort by tag',
+                  },
+                  render: (item) => (
+                    <span className="inline-flex items-center gap-2">
+                      <Badge variant="secondary">{item.transactionCount}x</Badge>
+                      <span className="font-medium">{item.tag}</span>
+                    </span>
+                  ),
+                },
+                {
+                  key: 'total',
+                  header: 'Total',
+                  align: 'right',
+                  sort: {
+                    direction: getSortDirection('amount') ?? null,
+                    onSort: () => handleSortHeaderClick('amount'),
+                    label: 'Sort by total',
+                  },
+                  render: (item) => (
+                    <span className="inline-flex flex-col items-end gap-1">
+                      <span className="font-mono font-semibold">
+                        {formatCurrency(item.amount, item.currencyCode)}
+                      </span>
+                      <span className="text-xs text-[#9ba3b4]">{item.percentage.toFixed(1)}%</span>
+                      <span
+                        className="block h-1 w-24 overflow-hidden rounded-full bg-white/[0.08]"
+                        aria-hidden
+                      >
+                        <span
+                          className="block h-full bg-[#d7ff3e]"
+                          style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                        />
+                      </span>
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </SectionCard>
       )}
     </div>
   );

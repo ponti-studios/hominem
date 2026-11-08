@@ -11,6 +11,14 @@ updated: 2026-10-30
 
 # Web design direction
 
+> **Superseded for `apps/web` (Nov 2026, branch `feature/web-dark-redesign`):**
+> the product direction is now **Obsidian Volt** — a single dark-only design
+> system (obsidian ground, volt primary, violet/cyan aurora accents, glass
+> chrome, choreographed motion). The billing-page monochrome reference below
+> no longer governs `apps/web`; it remains the reference only for the
+> API-hosted account/billing surfaces until those are migrated. This override
+> was explicitly directed by the product owner.
+
 Use the current Hominem billing page as the visual source of truth when restyling browser pages. Keep its editorial typography, open layout, black-and-white palette, fine rules, and direct controls. The account shell carries those same choices across profile, usage, connections, and data pages (`services/api/src/routes/billing/index.tsx:84-137`; `services/api/src/routes/login/app/account-shell.module.css:1-97`).
 
 This direction governs presentation. A restyle keeps the page's existing route, navigation hierarchy, content, permissions, and behavior unless the user explicitly asks for those to change. A page may use a different composition when its task needs it; do not make every page a billing page or a grid of cards.

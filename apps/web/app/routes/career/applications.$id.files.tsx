@@ -1,9 +1,10 @@
 import { DropZone, type DropZoneProps } from '@ponti-studios/ui/forms';
-import { Button } from '@ponti-studios/ui/primitives';
-import { PaperclipIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Form } from 'react-router';
 
+import { DeleteButton } from '~/components/design';
+import { List } from '~/components/design/lists';
+import { SectionCard } from '~/components/design/surfaces';
 import { createCareerServerClient, uploadCareerDocument } from '~/modules/career/lib/server-client';
 
 import { Route } from './+types/applications.$id.files';
@@ -71,114 +72,133 @@ export default function ApplicationFilesRoute({ loaderData }: Route.ComponentPro
 
   if (files.length === 0 && status === 'empty') {
     return (
-      <Form method="post" ref={formRef} navigate={false} encType="multipart/form-data">
-        <input type="hidden" name="intent" value="upload" />
-        <input
-          type="file"
-          name="file"
-          style={{ display: 'none' }}
-          id="hidden-file-input"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setSelectedFile(file);
-              setStatus('armed');
-            }
-          }}
-        />
-        <DropZone
-          status={status}
-          file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}
-          accept=".pdf,.doc,.docx,.txt,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          emptyHint="PDF, Word, or text files — up to 25 MB"
-          notice={error || undefined}
-          onFiles={(files) => {
-            const fileInput = document.getElementById('hidden-file-input');
-            if (fileInput instanceof HTMLInputElement) {
-              const dt = new DataTransfer();
-              dt.items.add(files[0]);
-              fileInput.files = dt.files;
-              setSelectedFile(files[0]);
-              setError(null);
-              setStatus('armed');
-            }
-          }}
-          onSubmit={handleSubmit}
-          onClear={() => {
-            setStatus('empty');
-            setSelectedFile(null);
-            setError(null);
-          }}
-        />
-      </Form>
+      <UploadForm
+        formRef={formRef}
+        status={status}
+        selectedFile={selectedFile}
+        error={error}
+        onSelect={(file) => {
+          setSelectedFile(file);
+          setStatus('armed');
+        }}
+        onFiles={(file) => {
+          setSelectedFile(file);
+          setError(null);
+          setStatus('armed');
+        }}
+        onSubmit={handleSubmit}
+        onClear={() => {
+          setStatus('empty');
+          setSelectedFile(null);
+          setError(null);
+        }}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Form method="post" ref={formRef} navigate={false} encType="multipart/form-data">
-        <input type="hidden" name="intent" value="upload" />
-        <input
-          type="file"
-          name="file"
-          style={{ display: 'none' }}
-          id="hidden-file-input"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setSelectedFile(file);
-              setStatus('armed');
-            }
-          }}
-        />
-        <DropZone
-          status={status}
-          file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}
-          accept=".pdf,.doc,.docx,.txt,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          emptyHint="PDF, Word, or text files — up to 25 MB"
-          notice={error || undefined}
-          onFiles={(files) => {
-            const fileInput = document.getElementById('hidden-file-input');
-            if (fileInput instanceof HTMLInputElement) {
-              const dt = new DataTransfer();
-              dt.items.add(files[0]);
-              fileInput.files = dt.files;
-              setSelectedFile(files[0]);
-              setError(null);
-              setStatus('armed');
-            }
-          }}
-          onSubmit={handleSubmit}
-          onClear={() => {
-            setStatus('empty');
-            setSelectedFile(null);
-            setError(null);
-          }}
-        />
-      </Form>
+    <div className="flex flex-col gap-4">
+      <UploadForm
+        formRef={formRef}
+        status={status}
+        selectedFile={selectedFile}
+        error={error}
+        onSelect={(file) => {
+          setSelectedFile(file);
+          setStatus('armed');
+        }}
+        onFiles={(file) => {
+          setSelectedFile(file);
+          setError(null);
+          setStatus('armed');
+        }}
+        onSubmit={handleSubmit}
+        onClear={() => {
+          setStatus('empty');
+          setSelectedFile(null);
+          setError(null);
+        }}
+      />
 
-      <div className="divide-y divide-border overflow-hidden rounded-3xl border border-border bg-surface shadow-xs">
-        {files.map((file) => (
-          <div key={file.id} className="flex items-center justify-between p-4">
-            <a
-              href={file.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 body-3 min-w-0 text-blue-600 hover:underline"
-            >
-              <PaperclipIcon className="size-4 shrink-0" />
-              <span className="truncate">{file.fileName}</span>
-            </a>
-            <Form method="post" navigate={false}>
-              <input type="hidden" name="intent" value="delete" />
-              <input type="hidden" name="id" value={file.id} />
-              <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
-                Remove
-              </Button>
-            </Form>
-          </div>
-        ))}
-      </div>
+      <SectionCard>
+        <List ariaLabel="Attached files">
+          {files.map((file) => (
+            <li key={file.id} className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+              <a
+                href={file.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-w-0 items-center gap-2 text-sm text-[#d7ff3e] hover:underline"
+              >
+                <span className="truncate">{file.fileName}</span>
+              </a>
+              <DeleteButton
+                itemName={file.fileName}
+                label="Remove"
+                variant="ghost"
+                hiddenFields={{ id: file.id }}
+              />
+            </li>
+          ))}
+        </List>
+      </SectionCard>
     </div>
+  );
+}
+
+const ACCEPT =
+  '.pdf,.doc,.docx,.txt,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
+
+function UploadForm({
+  formRef,
+  status,
+  selectedFile,
+  error,
+  onSelect,
+  onFiles,
+  onSubmit,
+  onClear,
+}: {
+  formRef: React.RefObject<HTMLFormElement | null>;
+  status: DropZoneStatus;
+  selectedFile: File | null;
+  error: string | null;
+  onSelect: (file: File) => void;
+  onFiles: (file: File) => void;
+  onSubmit: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <Form method="post" ref={formRef} navigate={false} encType="multipart/form-data">
+      <input type="hidden" name="intent" value="upload" />
+      <input
+        type="file"
+        name="file"
+        style={{ display: 'none' }}
+        id="hidden-file-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onSelect(file);
+        }}
+      />
+      <DropZone
+        status={status}
+        file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}
+        accept={ACCEPT}
+        emptyHint="PDF, Word, or text files — up to 25 MB"
+        notice={error || undefined}
+        onFiles={(files) => {
+          const fileInput = document.getElementById('hidden-file-input');
+          if (fileInput instanceof HTMLInputElement && files[0]) {
+            const dt = new DataTransfer();
+            dt.items.add(files[0]);
+            fileInput.files = dt.files;
+            onFiles(files[0]);
+          }
+        }}
+        onSubmit={onSubmit}
+        onClear={onClear}
+      />
+    </Form>
   );
 }

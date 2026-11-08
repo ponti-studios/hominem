@@ -1,8 +1,9 @@
-import { Input } from '@ponti-studios/ui/forms';
-import { Button } from '@ponti-studios/ui/primitives';
 import { AwardIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
+import { DetailSection } from '~/components/design';
+import { FormGrid, TextInput } from '~/components/design/forms';
+import { Button } from '~/components/ui/button';
 import { AddButton } from '~/modules/career/components/AddButton';
 import { FormErrorAlert } from '~/modules/career/components/FormErrorAlert';
 import type {
@@ -60,27 +61,24 @@ export function CertificationsSection({
   };
 
   return (
-    <section className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="heading-3">Certifications</h2>
-        <p className="body-3 text-muted-foreground">
-          Licenses and certifications that back up your experience.
-        </p>
-      </div>
+    <DetailSection title="Certifications">
+      <p className="-mt-2 mb-4 text-[13px] text-[#9ba3b4]">
+        Licenses and certifications that back up your experience.
+      </p>
 
       <FormErrorAlert message={error} />
 
       {certifications.length > 0 && (
-        <ul className="flex flex-col gap-2">
+        <ul className="mb-4 flex flex-col gap-2">
           {certifications.map((certification) => (
             <li
               key={certification.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3"
             >
-              <AwardIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <AwardIcon className="size-4 shrink-0 text-[#9ba3b4]" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="body-3 truncate text-foreground">{certification.name}</p>
-                <p className="footnote truncate text-muted-foreground">
+                <p className="truncate text-sm text-[#f2f4f8]">{certification.name}</p>
+                <p className="truncate font-mono text-[11px] text-[#5e6678]">
                   {certification.issuingOrganization}
                   {certification.issueDate && ` · ${certification.issueDate}`}
                 </p>
@@ -100,34 +98,34 @@ export function CertificationsSection({
         </ul>
       )}
 
-      <form onSubmit={handleAdd} className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <label htmlFor="cert-name">Name</label>
-          <Input
-            id="cert-name"
+      <form onSubmit={handleAdd} className="flex flex-col gap-4">
+        <FormGrid cols={3}>
+          <TextInput
+            label="Name"
+            name="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="AWS Certified"
             required
           />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="cert-org">Issuing organization</label>
-          <Input
-            id="cert-org"
+          <TextInput
+            label="Issuing organization"
+            name="issuingOrganization"
             value={issuingOrganization}
             onChange={(e) => setIssuingOrganization(e.target.value)}
             required
           />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="cert-date">Issue date</label>
-          <Input id="cert-date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
-        </div>
-        <div className="sm:col-span-3">
+          <TextInput
+            label="Issue date"
+            name="issueDate"
+            value={issueDate}
+            onChange={(e) => setIssueDate(e.target.value)}
+          />
+        </FormGrid>
+        <div>
           <AddButton type="submit" label="Add certification" disabled={isSubmitting} />
         </div>
       </form>
-    </section>
+    </DetailSection>
   );
 }

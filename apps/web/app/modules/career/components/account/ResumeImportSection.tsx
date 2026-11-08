@@ -1,10 +1,18 @@
 import { Collapsible } from '@base-ui/react/collapsible';
 import { DropZone, type DropZoneProps } from '@ponti-studios/ui/forms';
 import { Button, buttonVariants } from '@ponti-studios/ui/primitives';
-import { ChevronDown, FileTextIcon, Loader2Icon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
+import { ChevronDown, FileTextIcon, Loader2Icon, RefreshCwIcon } from 'lucide-react';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useRevalidator, useSearchParams } from 'react-router';
 
+import {
+  DeleteButton,
+  DetailSection,
+  List,
+  Meter,
+  PanelState,
+  SectionCard,
+} from '~/components/design';
 import { cn } from '~/lib/utils';
 import type { AccountDocumentFile } from '~/modules/career/lib/account/types';
 import { careerApiUrl } from '~/modules/career/lib/api-url';
@@ -191,7 +199,6 @@ export function ResumeImportSection({
   };
 
   const handleDeleteDocument = async (doc: AccountDocumentFile) => {
-    if (!confirm(`Delete "${doc.displayName}"? This cannot be undone.`)) return;
     setDocError(null);
     setBusyDocId(doc.id);
     try {
@@ -275,13 +282,10 @@ export function ResumeImportSection({
   const selectionCount = selectedScalarKeys.size + selectedListKeys.size;
 
   return (
-    <section className="space-y-4 border border-border rounded-2xl p-4">
-      <div className="space-y-1">
-        <h2 className="heading-4">Resume</h2>
-        <p className="body-3 text-muted-foreground">
-          Upload a resume PDF to fill out or update your profile with AI-parsed details.
-        </p>
-      </div>
+    <DetailSection title="Resume">
+      <p className="-mt-2 mb-4 text-[13px] text-[#9ba3b4]">
+        Upload a resume PDF to fill out or update your profile with AI-parsed details.
+      </p>
 
       {phase === 'idle' ? (
         <Collapsible.Root open={open} onOpenChange={setOpen}>
@@ -329,57 +333,58 @@ export function ResumeImportSection({
       ) : null}
 
       {phase === 'uploading' || phase === 'analyzing' ? (
-        <div className="space-y-2 rounded-2xl bg-muted/40 p-4">
+        <div className="rounded-2xl bg-white/[0.03] p-4">
           <div className="flex items-center gap-2">
-            <Loader2Icon className="size-4 animate-spin text-primary" />
-            <p className="body-3 text-foreground">{stageInfo.label}</p>
+            <Loader2Icon className="size-4 animate-spin text-[#d7ff3e]" />
+            <p className="text-[13px] text-[#f2f4f8]">{stageInfo.label}</p>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full rounded-full bg-primary transition-[width]"
-              style={{ width: `${stageInfo.percent}%` }}
-            />
-          </div>
+          <Meter
+            label="Analysis progress"
+            valueLabel={`${stageInfo.percent}%`}
+            percent={stageInfo.percent}
+          />
         </div>
       ) : null}
 
       {phase === 'error' ? (
-        <div className="rounded-2xl bg-destructive/10 p-4 space-y-2">
-          <p className="subheading-4 text-destructive">Resume analysis failed</p>
-          <p className="body-3 text-destructive">
-            {stageEvent?.errorMessage ?? 'Something went wrong. Try again.'}
-          </p>
-          <Button type="button" size="sm" variant="outline" onClick={resetToIdle}>
-            Try again
-          </Button>
-        </div>
+        <PanelState
+          title="Resume analysis failed"
+          description={stageEvent?.errorMessage ?? 'Something went wrong. Try again.'}
+          action={
+            <Button type="button" size="sm" variant="outline" onClick={resetToIdle}>
+              Try again
+            </Button>
+          }
+        />
       ) : null}
 
       {(phase === 'reviewing' || phase === 'applying') && diff ? (
-        <div className="space-y-4 rounded-2xl border border-border p-4">
-          <div className="space-y-1">
-            <h3 className="subheading-3">Review changes</h3>
-            <p className="body-3 text-muted-foreground">
+        <div className="hairline rounded-2xl bg-white/[0.02] p-5">
+          <div className="mb-4">
+            <h3 className="text-[15px] font-semibold text-[#f2f4f8]">Review changes</h3>
+            <p className="mt-1 text-[13px] text-[#9ba3b4]">
               Choose which updates from your resume to apply. Nothing changes until you apply.
             </p>
           </div>
 
           {applyError ? (
-            <p className="body-3 text-destructive" role="alert">
+            <p className="text-sm text-[#ff9d9d]" role="alert">
               {applyError}
             </p>
           ) : null}
 
           {diff.scalarChanges.length === 0 && diff.listChanges.length === 0 ? (
-            <p className="body-3 text-muted-foreground">
+            <p className="text-sm text-[#9ba3b4]">
               Nothing new was found — your profile already matches this resume.
             </p>
           ) : null}
 
           {Array.from(groupedScalarChanges.entries()).map(([group, changes]) => (
-            <div key={group} className="space-y-2">
-              <p className="subheading-4 text-foreground">{SCALAR_GROUP_LABELS[group]}</p>
-              <ul className="space-y-2">
+            <div key={group} className="mt-4">
+              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+                {SCALAR_GROUP_LABELS[group]}
+              </p>
+              <ul className="flex flex-col gap-2">
                 {changes.map((change) => {
                   const key = scalarKey(change);
                   return (
@@ -387,17 +392,17 @@ export function ResumeImportSection({
                       <input
                         type="checkbox"
                         id={`scalar-${key}`}
-                        className="mt-1 size-4 accent-primary"
+                        className="mt-1 size-4 accent-[#d7ff3e]"
                         checked={selectedScalarKeys.has(key)}
                         disabled={phase === 'applying'}
                         onChange={(event) => toggleScalar(key, event.target.checked)}
                       />
-                      <label htmlFor={`scalar-${key}`} className="body-3 flex-1">
-                        <span className="font-medium text-foreground">{change.label}: </span>
-                        <span className="text-muted-foreground line-through">
+                      <label htmlFor={`scalar-${key}`} className="flex-1 text-sm">
+                        <span className="font-medium text-[#f2f4f8]">{change.label}: </span>
+                        <span className="text-[#5e6678] line-through">
                           {String(change.current ?? '—')}
                         </span>{' '}
-                        <span className="text-foreground">→ {String(change.proposed ?? '—')}</span>
+                        <span className="text-[#f2f4f8]">→ {String(change.proposed ?? '—')}</span>
                       </label>
                     </li>
                   );
@@ -407,20 +412,22 @@ export function ResumeImportSection({
           ))}
 
           {Array.from(groupedListChanges.entries()).map(([group, items]) => (
-            <div key={group} className="space-y-2">
-              <p className="subheading-4 text-foreground">{GROUP_LABELS[group]}</p>
-              <ul className="space-y-2">
+            <div key={group} className="mt-4">
+              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+                {GROUP_LABELS[group]}
+              </p>
+              <ul className="flex flex-col gap-2">
                 {items.map((item) => (
                   <li key={item.key} className="flex items-start gap-2">
                     <input
                       type="checkbox"
                       id={`list-${item.key}`}
-                      className="mt-1 size-4 accent-primary"
+                      className="mt-1 size-4 accent-[#d7ff3e]"
                       checked={selectedListKeys.has(item.key)}
                       disabled={phase === 'applying'}
                       onChange={(event) => toggleListKey(item.key, event.target.checked)}
                     />
-                    <label htmlFor={`list-${item.key}`} className="body-3 flex-1 text-foreground">
+                    <label htmlFor={`list-${item.key}`} className="flex-1 text-sm text-[#f2f4f8]">
                       {item.summary}
                     </label>
                   </li>
@@ -429,7 +436,7 @@ export function ResumeImportSection({
             </div>
           ))}
 
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-2 pt-4">
             <Button
               type="button"
               size="sm"
@@ -454,58 +461,61 @@ export function ResumeImportSection({
       ) : null}
 
       {documents.length > 0 ? (
-        <div className="space-y-2">
-          <p className="subheading-4 text-foreground">Uploaded resumes</p>
+        <div className="mt-4">
+          <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+            Uploaded resumes
+          </p>
           {docError ? (
-            <p className="body-3 text-destructive" role="alert">
+            <p className="text-sm text-[#ff9d9d]" role="alert">
               {docError}
             </p>
           ) : null}
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
-            {documents.map((doc) => {
-              const isBusy = busyDocId === doc.id;
-              return (
-                <li
-                  key={doc.id}
-                  className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <FileTextIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="subheading-4 truncate text-foreground">{doc.displayName}</p>
-                      <p className="text-sm text-muted-foreground">{formatBytes(doc.size)}</p>
+          <SectionCard>
+            <List ariaLabel="Uploaded resumes">
+              {documents.map((doc) => {
+                const isBusy = busyDocId === doc.id;
+                return (
+                  <li
+                    key={doc.id}
+                    className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+                  >
+                    <div className="flex min-w-0 items-start gap-3">
+                      <FileTextIcon className="mt-0.5 size-4 shrink-0 text-[#9ba3b4]" aria-hidden />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[#f2f4f8]">
+                          {doc.displayName}
+                        </p>
+                        <p className="font-mono text-[11px] text-[#5e6678]">
+                          {formatBytes(doc.size)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={isBusy || phase !== 'idle'}
-                      onClick={() => handleConvertDocument(doc.id)}
-                    >
-                      <RefreshCwIcon className="size-4" />
-                      Convert
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={isBusy}
-                      isLoading={isBusy}
-                      loadingLabel="Deleting…"
-                      onClick={() => handleDeleteDocument(doc)}
-                    >
-                      <Trash2Icon className="size-4" />
-                      Delete
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isBusy || phase !== 'idle'}
+                        onClick={() => handleConvertDocument(doc.id)}
+                      >
+                        <RefreshCwIcon className="size-4" />
+                        Convert
+                      </Button>
+                      <DeleteButton
+                        itemName={doc.displayName}
+                        label="Delete"
+                        variant="ghost"
+                        hiddenFields={{ id: doc.id }}
+                        onConfirm={() => handleDeleteDocument(doc)}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </List>
+          </SectionCard>
         </div>
       ) : null}
-    </section>
+    </DetailSection>
   );
 }

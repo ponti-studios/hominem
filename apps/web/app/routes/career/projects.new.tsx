@@ -1,6 +1,7 @@
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import { redirect } from 'react-router';
 
+import { DetailSection, PageHeader } from '~/components/design';
+import { Container } from '~/components/design/container';
 import { ProjectEditor } from '~/modules/career/components/career/projects/ProjectEditor';
 import { PROJECT_STATUSES } from '~/modules/career/lib/career-options';
 import { formChoice, formText } from '~/modules/career/lib/route-utils';
@@ -52,14 +53,20 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function NewProjectRoute({ loaderData, actionData }: Route.ComponentProps) {
   return (
-    <div className="max-w-2xl">
-      <SectionIntro title="Add project" description="Add a side project or portfolio piece." />
-      <div className="mt-6">
+    <Container size="xs">
+      <PageHeader
+        eyebrow="Career · Projects"
+        title="Add project"
+        description="Add a side project or portfolio piece."
+      />
+      <DetailSection title="Project">
         <ProjectEditor engagements={loaderData.engagements} submitLabel="Add project" />
         {actionData?.error && (
-          <p className="body-3 text-destructive-text mt-3">{actionData.error}</p>
+          <p role="alert" className="mt-4 text-sm text-[#ff9d9d]">
+            {actionData.error}
+          </p>
         )}
-      </div>
-    </div>
+      </DetailSection>
+    </Container>
   );
 }

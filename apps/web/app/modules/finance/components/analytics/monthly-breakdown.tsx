@@ -1,8 +1,10 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
-import { Skeleton } from '@ponti-studios/ui/feedback';
-import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import { Link, useNavigate } from 'react-router';
 
+import { BlockSkeleton, PanelState } from '~/components/design';
+import { DataTable } from '~/components/design/data-table';
+import { SectionHeader } from '~/components/design/section-header';
+import { SectionCard } from '~/components/design/surfaces';
 import { cn } from '~/lib/utils';
 import { useTimeSeriesData } from '~/modules/finance/hooks/use-time-series';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
@@ -105,50 +107,6 @@ interface MonthItemProps {
   selectedTag: string | undefined;
 }
 
-function MonthTableRow({ item, compareToPrevious, formatDateLabel, selectedTag }: MonthItemProps) {
-  const navigate = useNavigate();
-
-  const monthlyAnalyticsUrl = selectedTag
-    ? `/finance/analytics/monthly/${item.date}?tag=${encodeURIComponent(selectedTag)}`
-    : `/finance/analytics/monthly/${item.date}`;
-
-  return (
-    <tr
-      className="border-b hover:bg-muted/50 "
-      onClick={() => navigate(monthlyAnalyticsUrl)}
-      tabIndex={0}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') navigate(monthlyAnalyticsUrl);
-      }}
-    >
-      <td className="py-2">
-        <Link
-          to={monthlyAnalyticsUrl}
-          className="hover:underline"
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          {formatDateLabel(item.date)}
-        </Link>
-      </td>
-      <td className="text-right py-2">{item.count}</td>
-      <td className="text-right py-2 font-mono">{formatCurrency(Math.abs(item.expenses))}</td>
-      <td className="text-right py-2 font-mono">{formatCurrency(Math.abs(item.average))}</td>
-      {compareToPrevious && (
-        <td
-          className={cn('text-right py-2 font-mono', {
-            'text-destructive': item.trend?.directionExpenses === 'up',
-            'text-foreground': item.trend?.directionExpenses === 'down',
-          })}
-        >
-          {item.trend
-            ? `${item.trend.directionExpenses === 'up' ? '+' : '-'}${item.trend.percentChangeExpenses}%`
-            : '-'}
-        </td>
-      )}
-    </tr>
-  );
-}
-
 function MonthMobileItem({
   item,
   compareToPrevious,
@@ -233,30 +191,22 @@ export function MonthlyBreakdown({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-48" />
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard>
+        <div className="flex flex-col gap-2 p-5">
+          <BlockSkeleton className="h-6 w-48" label="Loading breakdown" />
+          <BlockSkeleton label="Loading breakdown" />
+          <BlockSkeleton label="Loading breakdown" />
+          <BlockSkeleton label="Loading breakdown" />
+        </div>
+      </SectionCard>
     );
   }
 
   if (error || !Array.isArray(data?.data) || data.data.length === 0) {
     return (
-      <Card>
-        <CardContent>
-          <div className="text-center text-muted-foreground">
-            {error ? 'Error loading data' : 'No data available for the selected period'}
-          </div>
-        </CardContent>
-      </Card>
+      <PanelState
+        title={error ? 'Breakdown unavailable' : 'No data available for the selected period'}
+      />
     );
   }
 
@@ -268,66 +218,97 @@ export function MonthlyBreakdown({
   const prevMonth = showTrends ? sortedData[1] : null;
   const currMonth = showTrends ? sortedData[0] : null;
 
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{title}</h3>
-            {selectedTag && (
-              <span className="text-sm text-muted-foreground">Filtered by: {selectedTag}</span>
-            )}
-          </div>
+  const monthlyUrl = (date: string) =>
+    selectedTag
+      ? `/finance/analytics/monthly/${date}?tag=${encodeURIComponent(selectedTag)}`
+      : `/finance/analytics/monthly/${date}`;
+  const navigate = useNavigate();
 
-          {showTrends && prevMonth && currMonth && (
+  return (
+    <SectionCard>
+      <div className="p-5 sm:p-6">
+        <SectionHeader
+          title={title}
+          description={selectedTag ? `Filtered by: ${selectedTag}` : undefined}
+        />
+
+        {showTrends && prevMonth && currMonth && (
+          <div className="mt-4">
             <TrendsContent
               prevMonth={prevMonth}
               currMonth={currMonth}
               formatDateLabel={formatDateLabel}
               formatCurrency={formatCurrency}
             />
-          )}
-
-          {/* Desktop Table */}
-          <div className="hidden md:block">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-medium">Period</th>
-                  <th className="text-right py-2 font-medium">Transactions</th>
-                  <th className="text-right py-2 font-medium">Total Spent</th>
-                  <th className="text-right py-2 font-medium">Average</th>
-                  {compareToPrevious && <th className="text-right py-2 font-medium">Trend</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((item) => (
-                  <MonthTableRow
-                    key={item.date}
-                    item={item}
-                    compareToPrevious={compareToPrevious}
-                    formatDateLabel={formatDateLabel}
-                    selectedTag={selectedTag}
-                  />
-                ))}
-              </tbody>
-            </table>
           </div>
+        )}
 
-          {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
-            {sortedData.map((item) => (
-              <MonthMobileItem
-                key={item.date}
-                item={item}
-                compareToPrevious={compareToPrevious}
-                formatDateLabel={formatDateLabel}
-                selectedTag={selectedTag}
-              />
-            ))}
-          </div>
+        {/* Desktop Table */}
+        <div className="mt-4 hidden md:block">
+          <DataTable
+            ariaLabel={title}
+            rows={sortedData}
+            keyOf={(item) => item.date}
+            onRowClick={(item) => navigate(monthlyUrl(item.date))}
+            rowLabel={(item) => `View details for ${formatDateLabel(item.date)}`}
+            columns={[
+              { key: 'period', header: 'Period', render: (item) => formatDateLabel(item.date) },
+              {
+                key: 'count',
+                header: 'Transactions',
+                align: 'right',
+                render: (item) => String(item.count),
+              },
+              {
+                key: 'spent',
+                header: 'Total Spent',
+                align: 'right',
+                render: (item) => formatCurrency(Math.abs(item.expenses)),
+              },
+              {
+                key: 'avg',
+                header: 'Average',
+                align: 'right',
+                render: (item) => formatCurrency(Math.abs(item.average)),
+              },
+              ...(compareToPrevious
+                ? [
+                    {
+                      key: 'trend',
+                      header: 'Trend',
+                      align: 'right' as const,
+                      render: (item: TimeSeriesDataPoint) => (
+                        <span
+                          className={cn({
+                            'text-[#ff9d9d]': item.trend?.directionExpenses === 'up',
+                            'text-[#f2f4f8]': item.trend?.directionExpenses === 'down',
+                          })}
+                        >
+                          {item.trend
+                            ? `${item.trend.directionExpenses === 'up' ? '+' : '-'}${item.trend.percentChangeExpenses}%`
+                            : '-'}
+                        </span>
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Mobile Cards */}
+        <div className="mt-4 flex flex-col gap-3 md:hidden">
+          {sortedData.map((item) => (
+            <MonthMobileItem
+              key={item.date}
+              item={item}
+              compareToPrevious={compareToPrevious}
+              formatDateLabel={formatDateLabel}
+              selectedTag={selectedTag}
+            />
+          ))}
+        </div>
+      </div>
+    </SectionCard>
   );
 }

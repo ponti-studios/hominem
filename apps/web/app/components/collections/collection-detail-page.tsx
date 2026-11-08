@@ -1,7 +1,19 @@
-import { ArrowLeft, LogOut, Mail, Pencil, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { LogOut, Mail, Pencil, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate, useRouteLoaderData } from 'react-router';
+import { useNavigate, useRouteLoaderData } from 'react-router';
 
+import {
+  BackLink,
+  DeleteButton,
+  DetailHero,
+  PanelState,
+  SectionHeader,
+  SelectField,
+} from '~/components/design';
+import { Container } from '~/components/design/container';
+import { TextAreaInput, TextInput } from '~/components/design/forms';
+import { List } from '~/components/design/lists';
+import { SectionCard } from '~/components/design/surfaces';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
@@ -12,15 +24,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
-import { Input } from '~/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select';
-import { Textarea } from '~/components/ui/textarea';
 import {
   isInvitableRole,
   memberDisplayName,
@@ -88,25 +91,26 @@ function EditCollectionDialog({
         <DialogHeader>
           <DialogTitle>Edit collection</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <label className="block space-y-2 text-xs">
-            <span className="text-muted-foreground">Name</span>
-            <Input onChange={(event) => setNameValue(event.target.value)} value={nameValue} />
-          </label>
-          <label className="block space-y-2 text-xs">
-            <span className="text-muted-foreground">Description (optional)</span>
-            <Textarea
-              onChange={(event) => setDescriptionValue(event.target.value)}
-              rows={3}
-              value={descriptionValue}
-            />
-          </label>
-          <label className="block space-y-2 text-xs">
-            <span className="text-muted-foreground">Visibility</span>
+        <div className="flex flex-col gap-4">
+          <TextInput
+            label="Name"
+            name="name"
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
+          />
+          <TextAreaInput
+            label="Description (optional)"
+            name="description"
+            rows={3}
+            value={descriptionValue}
+            onChange={(e) => setDescriptionValue(e.target.value)}
+          />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-[#f2f4f8]">Visibility</span>
             <VisibilitySelect onChange={setVisibilityValue} value={visibilityValue} />
-          </label>
+          </div>
           {updateCollection.isError ? (
-            <p className="text-sm text-destructive">Could not save changes.</p>
+            <p className="text-sm text-[#ff9d9d]">Could not save changes.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -169,38 +173,32 @@ function InviteMemberDialog({
         <DialogHeader>
           <DialogTitle>Invite a collaborator</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <label className="block space-y-2 text-xs">
-            <span className="text-muted-foreground">Email</span>
-            <Input
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
-              type="email"
-              value={email}
-            />
-          </label>
-          <label className="block space-y-2 text-xs">
-            <span className="text-muted-foreground">Role</span>
-            <Select
-              onValueChange={(value) => {
-                if (isInvitableRole(value)) setRole(value);
-              }}
-              value={role}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="viewer">Viewer</SelectItem>
-                <SelectItem value="editor">Editor</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
+        <div className="flex flex-col gap-4">
+          <TextInput
+            label="Email"
+            name="email"
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <SelectField
+            label="Role"
+            name="role"
+            value={role}
+            onChange={(v) => {
+              if (isInvitableRole(v)) setRole(v);
+            }}
+            options={[
+              { value: 'viewer', label: 'Viewer' },
+              { value: 'editor', label: 'Editor' },
+            ]}
+          />
           {isSelfInvite ? (
-            <p className="text-sm text-destructive">You can't invite yourself.</p>
+            <p className="text-sm text-[#ff9d9d]">You can't invite yourself.</p>
           ) : null}
           {inviteMember.isError ? (
-            <p className="text-sm text-destructive">Could not send invite.</p>
+            <p className="text-sm text-[#ff9d9d]">Could not send invite.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -241,11 +239,6 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
     void navigate('/collections', { viewTransition: true });
   }
 
-  function handleDelete() {
-    if (!window.confirm(`Delete "${collection?.name}"? This can't be undone.`)) return;
-    deleteCollection.mutate(undefined, { onSuccess: goToCollectionsList });
-  }
-
   function handleLeave() {
     if (!window.confirm(`Leave "${collection?.name}"?`)) return;
     leaveCollection.mutate(undefined, { onSuccess: goToCollectionsList });
@@ -257,187 +250,182 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to collections" asChild size="icon-sm" variant="ghost">
-          <Link to="/collections" viewTransition>
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">
-            {collection?.name ?? (isPending ? 'Loading…' : 'Collection')}
-          </h1>
-          {collection?.description ? (
-            <p className="text-sm text-muted-foreground">{collection.description}</p>
-          ) : null}
-        </div>
-        {collection && isOwner ? (
-          <div className="flex shrink-0 items-center gap-1">
-            <EditCollectionDialog
-              collectionId={collectionId}
-              description={collection.description}
-              name={collection.name}
-              visibility={collection.visibility}
+    <main className="h-full overflow-auto">
+      <Container size="sm">
+        <div className="mb-6 flex items-center gap-3">
+          <BackLink to="/collections" label="Back to collections" variant="icon" />
+          <div className="min-w-0 flex-1">
+            <DetailHero
+              title={collection?.name ?? (isPending ? 'Loading…' : 'Collection')}
+              subtitle={collection?.description ?? undefined}
+              actions={
+                <>
+                  {collection && isOwner ? (
+                    <>
+                      <EditCollectionDialog
+                        collectionId={collectionId}
+                        description={collection.description}
+                        name={collection.name}
+                        visibility={collection.visibility}
+                      />
+                      <DeleteButton
+                        itemName={collection.name}
+                        onConfirm={() =>
+                          deleteCollection.mutate(undefined, { onSuccess: goToCollectionsList })
+                        }
+                      />
+                    </>
+                  ) : null}
+                  {collection && canLeave ? (
+                    <Button
+                      disabled={leaveCollection.isPending}
+                      onClick={handleLeave}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <LogOut className="size-4" /> Leave
+                    </Button>
+                  ) : null}
+                </>
+              }
             />
-            <Button
-              aria-label="Delete collection"
-              disabled={deleteCollection.isPending}
-              onClick={handleDelete}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <Trash2 className="size-4 text-destructive" />
-            </Button>
+          </div>
+        </div>
+
+        {error ? (
+          <PanelState
+            title="Collection unavailable"
+            action={
+              <Button onClick={handleRetry} variant="secondary">
+                Try again
+              </Button>
+            }
+          />
+        ) : null}
+
+        {!isPending && !error && !collection ? (
+          <PanelState
+            title="Not found"
+            description="This collection doesn't exist, or you don't have access to it."
+          />
+        ) : null}
+
+        {collection ? (
+          <div className="flex flex-col gap-4">
+            <SectionCard>
+              <div className="p-5">
+                <SectionHeader
+                  title={`Items · ${items.length} item${items.length === 1 ? '' : 's'}`}
+                />
+                <div className="mt-3">
+                  {items.length === 0 ? (
+                    <PanelState title="Nothing in this collection yet" />
+                  ) : (
+                    <List ariaLabel="Collection items">
+                      {items.map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-sm font-medium text-[#f2f4f8]">
+                                {item.entityName ?? '(unnamed)'}
+                              </span>
+                              <Badge variant="secondary">{item.entityType}</Badge>
+                            </div>
+                            {item.note ? (
+                              <p className="truncate text-[13px] text-[#9ba3b4]">{item.note}</p>
+                            ) : null}
+                          </div>
+                          <span className="shrink-0 font-mono text-[11px] text-[#5e6678] tabular-nums">
+                            {dateFormatter.format(new Date(item.addedAt))}
+                          </span>
+                          {canManageItems ? (
+                            <DeleteButton
+                              itemName={item.entityName ?? 'this item'}
+                              label="Remove"
+                              variant="ghost"
+                              onConfirm={() =>
+                                removeItem.mutate({
+                                  entityType: item.entityType,
+                                  entityId: item.entityId,
+                                })
+                              }
+                            />
+                          ) : null}
+                        </li>
+                      ))}
+                    </List>
+                  )}
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard>
+              <div className="p-5">
+                <SectionHeader
+                  title={`Collaborators · ${members.length} member${members.length === 1 ? '' : 's'}`}
+                  actions={
+                    isOwner ? (
+                      <InviteMemberDialog collectionId={collectionId} ownEmail={currentUserEmail} />
+                    ) : undefined
+                  }
+                />
+                <div className="mt-3">
+                  <List ariaLabel="Collaborators">
+                    {members.map((member) => {
+                      const isSelf = member.userId === currentUserId;
+                      const isPendingInvite = !member.acceptedAt;
+                      const canManage = isOwner && !isSelf && member.role !== 'owner';
+                      return (
+                        <li
+                          key={member.id}
+                          className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate text-sm text-[#f2f4f8]">
+                              {memberDisplayName(member)}
+                            </span>
+                            {isOwner && !isSelf && member.role !== 'owner' ? (
+                              <RoleSelect
+                                collectionId={collectionId}
+                                memberId={member.id}
+                                role={member.role}
+                              />
+                            ) : (
+                              <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
+                                {member.role}
+                              </Badge>
+                            )}
+                            {isPendingInvite ? (
+                              <Badge className="gap-1" variant="outline">
+                                <Mail className="size-3" /> Pending
+                              </Badge>
+                            ) : null}
+                          </div>
+                          {canManage ? (
+                            <DeleteButton
+                              itemName={memberDisplayName(member)}
+                              label="Remove collaborator"
+                              variant="ghost"
+                              disabled={
+                                removeMember.isPending &&
+                                removeMember.variables?.memberId === member.id
+                              }
+                              onConfirm={() => removeMember.mutate({ memberId: member.id })}
+                            />
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </List>
+                </div>
+              </div>
+            </SectionCard>
           </div>
         ) : null}
-        {collection && canLeave ? (
-          <Button
-            disabled={leaveCollection.isPending}
-            onClick={handleLeave}
-            size="sm"
-            variant="outline"
-          >
-            <LogOut className="size-4" /> Leave
-          </Button>
-        ) : null}
-      </div>
-
-      {error ? (
-        <div className="space-y-3 rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-destructive">Collection unavailable.</p>
-          <Button onClick={handleRetry} variant="secondary">
-            Try again
-          </Button>
-        </div>
-      ) : null}
-
-      {!isPending && !error && !collection ? (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            This collection doesn't exist, or you don't have access to it.
-          </p>
-        </div>
-      ) : null}
-
-      {collection ? (
-        <div className="space-y-6">
-          <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <h2 className="text-sm font-semibold">
-                Items · {items.length} item{items.length === 1 ? '' : 's'}
-              </h2>
-            </div>
-            {items.length === 0 ? (
-              <p className="p-5 text-sm text-muted-foreground">Nothing in this collection yet.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {items.map((item) => (
-                  <div className="flex items-center justify-between gap-4 px-5 py-3" key={item.id}>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate font-medium">
-                          {item.entityName ?? '(unnamed)'}
-                        </span>
-                        <Badge variant="secondary">{item.entityType}</Badge>
-                      </div>
-                      {item.note ? (
-                        <p className="truncate text-sm text-muted-foreground">{item.note}</p>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 text-sm text-muted-foreground">
-                      {dateFormatter.format(new Date(item.addedAt))}
-                    </span>
-                    {canManageItems ? (
-                      <Button
-                        aria-label="Remove item"
-                        disabled={
-                          removeItem.isPending &&
-                          removeItem.variables?.entityId === item.entityId &&
-                          removeItem.variables?.entityType === item.entityType
-                        }
-                        onClick={() => {
-                          if (window.confirm(`Remove ${item.entityName ?? 'this item'}?`)) {
-                            removeItem.mutate({
-                              entityType: item.entityType,
-                              entityId: item.entityId,
-                            });
-                          }
-                        }}
-                        size="icon-sm"
-                        variant="ghost"
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <h2 className="text-sm font-semibold">
-                Collaborators · {members.length} member{members.length === 1 ? '' : 's'}
-              </h2>
-              {isOwner ? (
-                <InviteMemberDialog collectionId={collectionId} ownEmail={currentUserEmail} />
-              ) : null}
-            </div>
-            <div className="divide-y divide-border">
-              {members.map((member) => {
-                const isSelf = member.userId === currentUserId;
-                const isPendingInvite = !member.acceptedAt;
-                const canManage = isOwner && !isSelf && member.role !== 'owner';
-                return (
-                  <div
-                    className="flex items-center justify-between gap-4 px-5 py-3"
-                    key={member.id}
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-sm">{memberDisplayName(member)}</span>
-                      {isOwner && !isSelf && member.role !== 'owner' ? (
-                        <RoleSelect
-                          collectionId={collectionId}
-                          memberId={member.id}
-                          role={member.role}
-                        />
-                      ) : (
-                        <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
-                          {member.role}
-                        </Badge>
-                      )}
-                      {isPendingInvite ? (
-                        <Badge className="gap-1" variant="outline">
-                          <Mail className="size-3" /> Pending
-                        </Badge>
-                      ) : null}
-                    </div>
-                    {canManage ? (
-                      <Button
-                        aria-label="Remove collaborator"
-                        disabled={
-                          removeMember.isPending && removeMember.variables?.memberId === member.id
-                        }
-                        onClick={() => {
-                          if (window.confirm(`Remove ${memberDisplayName(member)}?`)) {
-                            removeMember.mutate({ memberId: member.id });
-                          }
-                        }}
-                        size="icon-sm"
-                        variant="ghost"
-                      >
-                        <UserMinus className="size-4" />
-                      </Button>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      ) : null}
+      </Container>
     </main>
   );
 }

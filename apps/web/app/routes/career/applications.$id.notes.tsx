@@ -1,7 +1,7 @@
-import { Textarea } from '@ponti-studios/ui/forms';
-import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import { Form } from 'react-router';
 
+import { DeleteButton, PanelState, TextAreaInput } from '~/components/design';
+import { SectionCard } from '~/components/design/surfaces';
 import { AddButton } from '~/modules/career/components/AddButton';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
@@ -48,41 +48,48 @@ export default function ApplicationNotesRoute({ loaderData }: Route.ComponentPro
   const { notes } = loaderData;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Form method="post" navigate={false} className="flex flex-col gap-3">
-        <Textarea name="content" rows={3} placeholder="Add a note..." required />
-        <div className="flex justify-end">
-          <AddButton type="submit" label="Add note" />
+    <div className="flex flex-col gap-4">
+      <SectionCard>
+        <div className="p-5">
+          <Form method="post" navigate={false} className="flex flex-col gap-3">
+            <TextAreaInput
+              label="Add a note"
+              labelHidden
+              name="content"
+              rows={3}
+              placeholder="Add a note..."
+              required
+            />
+            <div className="flex justify-end">
+              <AddButton type="submit" label="Add note" />
+            </div>
+          </Form>
         </div>
-      </Form>
+      </SectionCard>
 
       {notes.length === 0 ? (
-        <p className="body-3 text-muted-foreground text-center py-6">No notes yet.</p>
+        <PanelState title="No notes yet" />
       ) : (
-        <Card>
-          <CardContent className="space-y-3">
+        <SectionCard>
+          <div className="flex flex-col gap-3 p-5">
             {notes.map((note) => (
-              <div key={note.id} className="rounded-lg border border-border p-4">
+              <div key={note.id} className="hairline rounded-xl bg-white/[0.02] p-4">
                 <div className="flex items-start justify-between gap-4">
-                  <p className="body-3 whitespace-pre-wrap">{note.content}</p>
-                  <Form method="post" navigate={false}>
-                    <input type="hidden" name="intent" value="delete" />
-                    <input type="hidden" name="id" value={note.id} />
-                    <button
-                      type="submit"
-                      className="footnote shrink-0 text-muted-foreground hover:text-destructive-text"
-                    >
-                      Remove
-                    </button>
-                  </Form>
+                  <p className="text-sm whitespace-pre-wrap text-[#f2f4f8]">{note.content}</p>
+                  <DeleteButton
+                    itemName="note"
+                    label="Remove"
+                    variant="ghost"
+                    hiddenFields={{ id: note.id }}
+                  />
                 </div>
-                <p className="footnote text-muted-foreground mt-2">
+                <p className="mt-2 font-mono text-[11px] text-[#5e6678]">
                   {formatApplicationDate(note.createdAt)}
                 </p>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       )}
     </div>
   );

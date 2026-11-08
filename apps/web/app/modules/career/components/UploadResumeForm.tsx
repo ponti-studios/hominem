@@ -164,10 +164,7 @@ export function UploadResumeForm({
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 border rounded-2xl p-2 flex flex-col items-center">
-      <h2 className="heading-4 self-start">
-        {mode === 'replace' ? 'Replace your profile' : 'Upload your resume'}
-      </h2>
+    <div className="flex w-full flex-col items-center">
       <DropZone
         status={status}
         file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}

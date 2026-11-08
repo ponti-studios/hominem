@@ -1,9 +1,8 @@
-import { Input } from '@ponti-studios/ui/forms';
-import { Button } from '@ponti-studios/ui/primitives';
 import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { cn } from '~/lib/utils';
+import { PrefixInput } from '~/components/design/forms';
+import { Button } from '~/components/ui/button';
 import { careerApiUrl } from '~/modules/career/lib/api-url';
 
 interface SlugEditorProps {
@@ -130,9 +129,8 @@ export function SlugEditor({ profileId, initialSlug, liveUrl, onSave }: SlugEdit
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    setSlugValue(newValue);
+  const handleInputChange = (newValue: string) => {
+    setSlugValue(newValue.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   };
 
   const canSave =
@@ -156,37 +154,28 @@ export function SlugEditor({ profileId, initialSlug, liveUrl, onSave }: SlugEdit
     return null;
   };
 
-  const helperToneClassName = validation.isChecking
-    ? 'text-primary'
-    : validation.isAvailable
-      ? 'text-success'
-      : 'text-destructive';
-
   const statusIcon = getValidationStatus();
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1">
-          <span className="inline-flex shrink-0 items-center rounded-l-md border border-r-0 bg-surface-base px-3 body-3 text-muted-foreground">
-            career.dev/p/
-          </span>
-          <div className="relative min-w-0 flex-1">
-            {statusIcon ? (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                {statusIcon}
-              </span>
-            ) : null}
-            <Input
-              id="profile-slug"
-              type="text"
-              value={slugValue}
-              onChange={handleInputChange}
-              aria-invalid={!validation.isValid}
-              className={cn('rounded-l-none', statusIcon && 'pr-10')}
-              placeholder={DEFAULT_SLUG_PLACEHOLDER}
-            />
-          </div>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <PrefixInput
+            label="Profile URL"
+            labelHidden
+            name="slug"
+            prefix="career.dev/p/"
+            value={slugValue}
+            onChange={handleInputChange}
+            placeholder={DEFAULT_SLUG_PLACEHOLDER}
+            error={validation.isValid ? null : validation.message || 'Invalid slug'}
+            hint={
+              validation.isValid
+                ? validation.message || 'Lowercase letters, numbers, and hyphens only.'
+                : undefined
+            }
+            suffix={statusIcon}
+          />
         </div>
 
         {liveUrl ? (
@@ -214,15 +203,6 @@ export function SlugEditor({ profileId, initialSlug, liveUrl, onSave }: SlugEdit
           Save
         </Button>
       </div>
-
-      <p
-        className={cn(
-          'text-sm',
-          validation.message ? helperToneClassName : 'text-muted-foreground',
-        )}
-      >
-        {validation.message || 'Lowercase letters, numbers, and hyphens only.'}
-      </p>
     </div>
   );
 }

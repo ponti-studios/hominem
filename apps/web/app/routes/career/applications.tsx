@@ -1,12 +1,10 @@
 import { humanizeIdentifier } from '@hominem/utils/text';
-import { SectionIntro } from '@ponti-studios/ui/layout';
-import { Button } from '@ponti-studios/ui/primitives';
-import { BriefcaseBusinessIcon, FolderIcon, PlusIcon, SearchIcon } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router';
+import { BriefcaseBusinessIcon } from 'lucide-react';
+import { useSearchParams } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
 import { ApplicationsFilters } from '~/modules/career/components/career/applications/ApplicationsFilters';
 import { CareerCollection } from '~/modules/career/components/career/career-list';
+import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { StatusBadge } from '~/modules/career/components/status-badge';
 import { buildStatusOptions } from '~/modules/career/lib/career/queries/job-applications';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
@@ -107,20 +105,15 @@ export default function ApplicationsRoute({
   const pageEnd = Math.min(currentPage * PAGE_SIZE, total);
 
   return (
-    <div>
-      <SectionIntro
-        title="Applications"
-        actions={
-          <AddButton asChild label="Add application">
-            <Link to="/career/applications/new">
-              <PlusIcon aria-hidden />
-            </Link>
-          </AddButton>
-        }
-      />
-
+    <CollectionIndex
+      eyebrow="Career · Applications"
+      title="Applications"
+      description="Track and manage your job applications in one place."
+      addTo="/career/applications/new"
+      addLabel="Add application"
+    >
       {hasApplications && (
-        <div className="mt-6">
+        <div className="mb-4">
           <ApplicationsFilters
             statusOptions={statusOptions}
             searchValue={query}
@@ -140,20 +133,19 @@ export default function ApplicationsRoute({
       )}
 
       <CareerCollection
-        className="mt-6"
         items={applications}
         keyFor={(app) => app.id}
         hrefFor={(app) => `/career/applications/${app.id}`}
         leading={() => (
-          <span className="flex size-10 items-center justify-center rounded-xl bg-accent-subtle text-accent sm:size-11">
-            <BriefcaseBusinessIcon className="size-5" aria-hidden />
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5eead4]/10 text-[#5eead4]">
+            <BriefcaseBusinessIcon className="size-4" aria-hidden />
           </span>
         )}
         title={(app) => app.company}
         subtitle={(app) => app.title}
         meta={(app) => (app.appliedAt ? formatApplicationDate(app.appliedAt) : undefined)}
         trailing={(app) => (
-          <div className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5">
             {app.status && (
               <StatusBadge
                 tone={getApplicationStatusTone(app.status)}
@@ -161,40 +153,35 @@ export default function ApplicationsRoute({
               />
             )}
             {app.hasOffer && <StatusBadge tone="success" label="Offer" />}
-          </div>
+          </span>
         )}
         empty={
           !hasApplications
             ? {
-                icon: <FolderIcon className="size-6" />,
                 title: 'No applications yet',
-                description:
-                  'Applications will appear here once data is migrated from your warehouse.',
+                description: 'Applications will appear here once you start tracking.',
               }
             : {
-                icon: <SearchIcon className="size-6" />,
-                variant: 'search',
                 title: 'No matching applications',
                 description: 'Try adjusting your filters or search.',
                 action: (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => clearParams(['status', 'query', 'sort'])}
+                    className="inline-flex h-7 items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-[13px] font-medium text-[#f2f4f8] transition-colors hover:border-white/20"
                   >
                     Clear filters
-                  </Button>
+                  </button>
                 ),
               }
         }
       />
 
       {applications.length > 0 && (
-        <p className="footnote text-muted-foreground mt-4">
+        <p className="mt-4 font-mono text-[11px] tracking-[0.12em] text-[#5e6678] uppercase tabular-nums">
           Showing {pageStart}–{pageEnd} of {total}
         </p>
       )}
-    </div>
+    </CollectionIndex>
   );
 }

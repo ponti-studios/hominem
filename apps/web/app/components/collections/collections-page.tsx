@@ -3,6 +3,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { CollaborationNotifications } from '~/components/collaboration-notifications';
+import { Container } from '~/components/design/container';
+import { List, RowLink } from '~/components/design/lists';
+import { PageHeader } from '~/components/design/page-header';
+import { ListSkeleton } from '~/components/design/skeleton';
+import { PanelState, SectionCard } from '~/components/design/surfaces';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useCollectionsList } from '~/hooks/use-collections';
@@ -30,104 +35,105 @@ export function CollectionsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to tasks" asChild size="icon-sm" variant="ghost">
-          <Link to="/tasks" viewTransition>
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Collections</h1>
-          <p className="text-sm text-muted-foreground">
-            Everything you've grouped together, owned or shared with you.
-          </p>
+    <main className="h-full overflow-auto">
+      <Container size="sm">
+        <PageHeader
+          eyebrow="Collections"
+          title="Collections"
+          description="Everything you've grouped together, owned or shared with you."
+          actions={
+            <div className="flex items-center gap-2">
+              <Button aria-label="Back to tasks" asChild size="icon-sm" variant="ghost">
+                <Link to="/tasks" viewTransition>
+                  <ArrowLeft />
+                </Link>
+              </Button>
+              <CreateCollectionDialog />
+            </div>
+          }
+        />
+
+        <div className="flex flex-col gap-4">
+          <SectionCard index={0}>
+            <div className="p-5">
+              <CollaborationNotifications />
+            </div>
+          </SectionCard>
+
+          <SectionCard index={1}>
+            {isPending ? <ListSkeleton rows={5} label="Loading collections" /> : null}
+            {error ? (
+              <PanelState
+                title="Collections unavailable"
+                action={
+                  <Button onClick={handleRetry} variant="secondary">
+                    Try again
+                  </Button>
+                }
+              />
+            ) : null}
+            {!isPending && !error && collections.length === 0 ? (
+              <PanelState
+                title="No collections yet"
+                description="Group notes and sets together to find them faster."
+                action={<CreateCollectionDialog />}
+              />
+            ) : null}
+            {!isPending && !error && pageCollections.length > 0 ? (
+              <List ariaLabel="Collections">
+                {pageCollections.map((collection) => (
+                  <li key={collection.id}>
+                    <RowLink
+                      to={`/collections/${collection.id}`}
+                      title={collection.name}
+                      subtitle={collection.description ?? undefined}
+                      badges={
+                        collection.visibility === 'shared' ? (
+                          <Badge className="gap-1" variant="secondary">
+                            <Users className="size-3" /> Shared
+                          </Badge>
+                        ) : null
+                      }
+                      meta={
+                        <>
+                          <span>
+                            {collection.itemCount} item{collection.itemCount === 1 ? '' : 's'}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {dateFormatter.format(new Date(collection.updatedAt))}
+                          </span>
+                        </>
+                      }
+                    />
+                  </li>
+                ))}
+              </List>
+            ) : null}
+          </SectionCard>
         </div>
-        <CreateCollectionDialog />
-      </div>
 
-      <section className="mb-6 rounded-xl border border-border bg-card p-5">
-        <CollaborationNotifications />
-      </section>
-
-      <section className="overflow-hidden rounded-xl border border-border bg-card">
-        {isPending ? (
-          <p className="p-5 text-sm text-muted-foreground">Loading collections…</p>
-        ) : null}
-        {error ? (
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-destructive">Collections unavailable.</p>
-            <Button onClick={handleRetry} variant="secondary">
-              Try again
+        {collections.length > PAGE_SIZE ? (
+          <nav aria-label="Collection pages" className="mt-5 flex items-center justify-between">
+            <Button
+              disabled={page === 0}
+              onClick={() => setPage((current) => current - 1)}
+              variant="outline"
+            >
+              <ChevronLeft /> Previous
             </Button>
-          </div>
+            <span className="text-sm text-[#9ba3b4] tabular-nums">
+              Page {page + 1} of {pageCount}
+            </span>
+            <Button
+              disabled={page >= pageCount - 1}
+              onClick={() => setPage((current) => current + 1)}
+              variant="outline"
+            >
+              Next <ChevronRight />
+            </Button>
+          </nav>
         ) : null}
-        {!isPending && !error && collections.length === 0 ? (
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-muted-foreground">No collections yet.</p>
-            <CreateCollectionDialog />
-          </div>
-        ) : null}
-        {!isPending && !error && pageCollections.length > 0 ? (
-          <div className="divide-y divide-border">
-            {pageCollections.map((collection) => (
-              <Link
-                className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted"
-                key={collection.id}
-                to={`/collections/${collection.id}`}
-                viewTransition
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{collection.name}</span>
-                    {collection.visibility === 'shared' ? (
-                      <Badge className="gap-1" variant="secondary">
-                        <Users className="size-3" /> Shared
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {collection.description ? (
-                    <p className="truncate text-sm text-muted-foreground">
-                      {collection.description}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex shrink-0 items-center gap-4 text-sm text-muted-foreground">
-                  <span>
-                    {collection.itemCount} item{collection.itemCount === 1 ? '' : 's'}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {dateFormatter.format(new Date(collection.updatedAt))}
-                  </span>
-                  <ChevronRight className="size-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      {collections.length > PAGE_SIZE ? (
-        <nav aria-label="Collection pages" className="mt-5 flex items-center justify-between">
-          <Button
-            disabled={page === 0}
-            onClick={() => setPage((current) => current - 1)}
-            variant="outline"
-          >
-            <ChevronLeft /> Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page + 1} of {pageCount}
-          </span>
-          <Button
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage((current) => current + 1)}
-            variant="outline"
-          >
-            Next <ChevronRight />
-          </Button>
-        </nav>
-      ) : null}
+      </Container>
     </main>
   );
 }

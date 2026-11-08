@@ -1,9 +1,9 @@
-import { Input } from '@ponti-studios/ui/forms';
-import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import { Globe } from 'lucide-react';
-import { useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { siGithub, siX } from 'simple-icons';
 
+import { DetailSection } from '~/components/design/detail';
+import { PrefixInput } from '~/components/design/forms';
 import type { ProfileDetailsFormValues } from '~/modules/career/lib/account/types';
 
 const linkedinPath =
@@ -11,150 +11,112 @@ const linkedinPath =
 
 function BrandIcon({ path, viewBox = '0 0 24 24' }: { path: string; viewBox?: string }) {
   return (
-    <svg
-      aria-hidden="true"
-      className="size-4 text-muted-foreground"
-      fill="currentColor"
-      viewBox={viewBox}
-    >
+    <svg aria-hidden="true" className="size-4 text-[#9ba3b4]" fill="currentColor" viewBox={viewBox}>
       <path d={path} />
     </svg>
   );
 }
 
+const FIELDS = [
+  {
+    name: 'github' as const,
+    label: (
+      <>
+        <BrandIcon path={siGithub.path} />
+        GitHub
+      </>
+    ),
+    prefix: 'github.com/',
+    placeholder: 'username',
+    pattern: {
+      value: /^[a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]$/,
+      message: 'Enter a valid GitHub username',
+    },
+  },
+  {
+    name: 'linkedin' as const,
+    label: (
+      <>
+        <BrandIcon path={linkedinPath} viewBox="0 0 448 512" />
+        LinkedIn
+      </>
+    ),
+    prefix: 'linkedin.com/in/',
+    placeholder: 'username',
+    pattern: {
+      value: /^[a-zA-Z0-9-]+$/,
+      message: 'Enter a valid LinkedIn username',
+    },
+  },
+  {
+    name: 'twitter' as const,
+    label: (
+      <>
+        <BrandIcon path={siX.path} />
+        Twitter / X
+      </>
+    ),
+    prefix: 'x.com/',
+    placeholder: 'username',
+    pattern: {
+      value: /^[a-zA-Z0-9_]+$/,
+      message: 'Enter a valid Twitter username',
+    },
+  },
+  {
+    name: 'website' as const,
+    label: (
+      <>
+        <Globe className="size-4 text-[#9ba3b4]" />
+        Website
+      </>
+    ),
+    prefix: 'https://',
+    placeholder: 'yoursite.com',
+    pattern: {
+      value: /^https?:\/\/.+\..+/,
+      message: 'Enter a valid URL starting with https://',
+    },
+  },
+] as const;
+
 // Hooks into the page-level react-hook-form context (not its own form) so
 // this fieldset shares dirty state and the save action with ProfilePage's SaveBar.
 export function SocialLinksSection() {
   const {
-    register,
+    control,
     formState: { errors },
   } = useFormContext<ProfileDetailsFormValues>();
 
   return (
-    <section className="space-y-4">
-      <h2 className="heading-3 text-foreground">Social</h2>
-
-      <Card>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="github"
-                className="subheading-4 text-text-primary flex items-center gap-2"
-              >
-                <BrandIcon path={siGithub.path} />
-                GitHub
-              </label>
-              <div className="flex">
-                <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-surface-base">
-                  github.com/
-                </span>
-                <Input
-                  id="github"
-                  type="text"
-                  placeholder="username"
-                  className="rounded-l-none"
-                  aria-invalid={errors.github ? true : undefined}
-                  {...register('github', {
-                    pattern: {
-                      value: /^[a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]$/,
-                      message: 'Enter a valid GitHub username',
-                    },
-                  })}
-                />
-              </div>
-              {errors.github && <p className="text-sm text-destructive">{errors.github.message}</p>}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="linkedin"
-                className="subheading-4 text-text-primary flex items-center gap-2"
-              >
-                <BrandIcon path={linkedinPath} viewBox="0 0 448 512" />
-                LinkedIn
-              </label>
-              <div className="flex">
-                <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-surface-base">
-                  linkedin.com/in/
-                </span>
-                <Input
-                  id="linkedin"
-                  type="text"
-                  placeholder="username"
-                  className="rounded-l-none"
-                  aria-invalid={errors.linkedin ? true : undefined}
-                  {...register('linkedin', {
-                    pattern: {
-                      value: /^[a-zA-Z0-9-]+$/,
-                      message: 'Enter a valid LinkedIn username',
-                    },
-                  })}
-                />
-              </div>
-              {errors.linkedin && (
-                <p className="text-sm text-destructive">{errors.linkedin.message}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="twitter"
-                className="subheading-4 text-text-primary flex items-center gap-2"
-              >
-                <BrandIcon path={siX.path} />
-                Twitter / X
-              </label>
-              <div className="flex">
-                <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-surface-base">
-                  x.com/
-                </span>
-                <Input
-                  id="twitter"
-                  type="text"
-                  placeholder="username"
-                  className="rounded-l-none"
-                  aria-invalid={errors.twitter ? true : undefined}
-                  {...register('twitter', {
-                    pattern: {
-                      value: /^[a-zA-Z0-9_]+$/,
-                      message: 'Enter a valid Twitter username',
-                    },
-                  })}
-                />
-              </div>
-              {errors.twitter && (
-                <p className="text-sm text-destructive">{errors.twitter.message}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="website"
-                className="subheading-4 text-text-primary flex items-center gap-2"
-              >
-                <Globe className="size-4 text-muted-foreground" />
-                Website
-              </label>
-              <Input
-                id="website"
-                type="url"
-                placeholder="https://yoursite.com"
-                aria-invalid={errors.website ? true : undefined}
-                {...register('website', {
-                  pattern: {
-                    value: /^https?:\/\/.+\..+/,
-                    message: 'Enter a valid URL starting with https://',
+    <DetailSection title="Social">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {FIELDS.map((field) => (
+          <Controller
+            key={field.name}
+            name={field.name}
+            control={control}
+            rules={{ pattern: field.pattern }}
+            render={({ field: controllerField }) => (
+              <PrefixInput
+                label={field.label}
+                name={field.name}
+                prefix={field.prefix}
+                field={{
+                  value: controllerField.value ?? '',
+                  name: controllerField.name,
+                  onChange: (value: string) => controllerField.onChange(value),
+                  onBlur: () => {
+                    controllerField.onBlur();
                   },
-                })}
+                }}
+                placeholder={field.placeholder}
+                error={errors[field.name]?.message}
               />
-              {errors.website && (
-                <p className="text-sm text-destructive">{errors.website.message}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </section>
+            )}
+          />
+        ))}
+      </div>
+    </DetailSection>
   );
 }

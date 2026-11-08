@@ -1,5 +1,5 @@
 import { FilterChip, SortControls } from '@ponti-studios/ui/data-display';
-import { DatePicker, Input, parseDateInput } from '@ponti-studios/ui/forms';
+import { DatePicker, parseDateInput } from '@ponti-studios/ui/forms';
 import { type SortOption } from '@ponti-studios/ui/hooks';
 import type { SortField } from '@ponti-studios/ui/hooks';
 import {
@@ -14,6 +14,7 @@ import { Button } from '@ponti-studios/ui/primitives';
 import { ListFilter, RefreshCcw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { SearchInput } from '~/components/design/search-input';
 import { AccountSelect } from '~/modules/finance/components/account-select';
 import type { FilterArgs, useFinanceAccounts } from '~/modules/finance/hooks/use-finance-data';
 import { useSelectedAccount } from '~/modules/finance/hooks/use-selected-account';
@@ -213,13 +214,13 @@ export function TransactionFilters({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Input
+        <SearchInput
           ref={searchInputRef}
-          type="search"
           value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={onSearchChange}
+          onClear={() => onSearchChange('')}
           placeholder="Search transactions..."
-          aria-label="Search transactions"
+          ariaLabel="Search transactions"
           className="sm:min-w-0 sm:flex-1"
         />
 

@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form';
 import { useRevalidator } from 'react-router';
 
+import { BackLink, DetailSection, PageHeader, PanelState } from '~/components/design';
+import { Container } from '~/components/design/container';
+import { Button } from '~/components/ui/button';
 import {
   BasicInfoForm,
   profileToFormValues,
@@ -22,8 +25,6 @@ import type {
   ProfileLoaderData,
   SocialLinksFormValues,
 } from '~/modules/career/lib/account/types';
-
-import { ActionButtonRow } from './ActionButtonRow';
 
 const SOCIAL_KEYS: readonly string[] = [
   'github',
@@ -269,41 +270,46 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
   };
 
   return (
-    <div className="space-y-12 mx-auto max-w-3xl">
-      <header className="flex justify-between">
-        <h2 className="text-4xl italic font-serif text-foreground">
-          Profile
-          <p className="text-sm text-muted-foreground/25">
-            Last Updated:{' '}
-            {new Date(currentProfile.updatedAt ?? Date.now()).toLocaleDateString('en-US')}
-          </p>
-        </h2>
-        <ActionButtonRow
-          icon={Download}
-          onClick={() => handleDownloadPdf()}
-          variant="outline"
-          disabled={pdfGenerating}
-          isLoading={pdfGenerating}
-          loadingLabel="Generating PDF..."
-          helper={!isPublic ? 'Make your profile public to generate a PDF.' : undefined}
-        />
-      </header>
-
-      <div className="max-w-2xl space-y-6">
-        <section className="space-y-4 border border-border rounded-2xl p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <label htmlFor="profile-slug">Profile URL</label>
-              <p className="text-sm text-muted-foreground">
-                {isPublic
-                  ? 'Anyone with the link can view your profile at this URL.'
-                  : 'Private — only you can see this. Turn it on to share it.'}
+    <Container size="sm">
+      <BackLink to="/career" label="Career" />
+      <PageHeader
+        eyebrow="Career · Profile"
+        title="Profile"
+        description={
+          currentProfile.updatedAt
+            ? `Last updated ${new Date(currentProfile.updatedAt).toLocaleDateString('en-US')}`
+            : undefined
+        }
+        actions={
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleDownloadPdf()}
+              disabled={pdfGenerating}
+            >
+              <Download className="size-4" />
+              {pdfGenerating ? 'Generating PDF…' : 'Download PDF'}
+            </Button>
+            {!isPublic ? (
+              <p className="mt-1 px-1 text-[13px] text-[#9ba3b4]">
+                Make your profile public to generate a PDF.
               </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2 pt-0.5">
-              <span className="text-sm text-muted-foreground">
-                {isPublic ? 'Public' : 'Private'}
-              </span>
+            ) : null}
+          </div>
+        }
+      />
+
+      <div className="flex flex-col gap-4">
+        <DetailSection title="Visibility">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <p className="text-sm text-[#9ba3b4]">
+              {isPublic
+                ? 'Anyone with the link can view your profile at this URL.'
+                : 'Private — only you can see this. Turn it on to share it.'}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-sm text-[#9ba3b4]">{isPublic ? 'Public' : 'Private'}</span>
               <Switch
                 checked={isPublic}
                 disabled={isTogglingVisibility}
@@ -318,22 +324,19 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
             liveUrl={isPublic && currentProfile.slug ? `/p/${currentProfile.slug}` : null}
             onSave={handleUpdateSlug}
           />
-        </section>
+        </DetailSection>
 
-        {pdfError ? (
-          <div className="rounded-2xl bg-destructive/10 p-4">
-            <p className="subheading-4 text-destructive">PDF export unavailable</p>
-            <p className="body-3 mt-1 text-destructive">{pdfError}</p>
-          </div>
-        ) : null}
+        {pdfError ? <PanelState title="PDF export unavailable" description={pdfError} /> : null}
 
         <ResumeImportSection documents={documents} onDelete={handleDeleteDocument} />
 
         <FormProvider {...detailsForm}>
-          <form onSubmit={handleDetailsSubmit(onSaveDetails)} className="space-y-6">
+          <form onSubmit={handleDetailsSubmit(onSaveDetails)} className="flex flex-col gap-4">
             <FormErrorAlert title="Profile changes weren't saved" message={detailsError} />
 
-            <BasicInfoForm profile={currentProfile} onImageUpload={handleImageUpload} />
+            <DetailSection title="Basics">
+              <BasicInfoForm profile={currentProfile} onImageUpload={handleImageUpload} />
+            </DetailSection>
 
             <SocialLinksSection />
 
@@ -347,6 +350,6 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
           onDelete={handleDeleteCertification}
         />
       </div>
-    </div>
+    </Container>
   );
 }

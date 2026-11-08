@@ -1,11 +1,8 @@
-import { SectionIntro } from '@ponti-studios/ui/layout';
-import { FolderIcon, FolderKanbanIcon, PlusIcon } from 'lucide-react';
+import { FolderKanbanIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
 import { CareerCollection } from '~/modules/career/components/career/career-list';
-import { ExpandableSearch } from '~/modules/career/components/career/ExpandableSearch';
+import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 import type { CareerProjectRecord } from '~/modules/career/lib/types/records';
 import { formatDateRange } from '~/modules/career/lib/utils/dateRange';
@@ -47,56 +44,45 @@ export default function ProjectsRoute({ loaderData }: Route.ComponentProps) {
   const filtered = useMemo(() => filterProjects(projects, search), [projects, search]);
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-4">
-        <SectionIntro title="Projects" description="Side projects and portfolio work." />
-        <AddButton asChild label="Add project">
-          <Link to="/career/projects/new">
-            <PlusIcon aria-hidden />
-          </Link>
-        </AddButton>
-      </div>
-
-      {projects.length > 0 && (
-        <div className="mt-4">
-          <ExpandableSearch
-            id="projects-search"
-            value={search}
-            onChange={setSearch}
-            placeholder="Search projects..."
-            ariaLabel="Search projects"
-          />
-        </div>
-      )}
-
-      <div className="mt-6">
-        <CareerCollection
-          items={filtered}
-          keyFor={(p) => p.id}
-          hrefFor={(p) => `/career/projects/${p.id}`}
-          leading={() => (
-            <span className="flex size-10 items-center justify-center rounded-xl bg-warning-subtle text-warning sm:size-11">
-              <FolderKanbanIcon className="size-5" aria-hidden />
-            </span>
-          )}
-          title={(p) => p.title}
-          subtitle={(p) => p.organization ?? p.shortDescription ?? undefined}
-          meta={(p) => (p.startDate || p.endDate) && formatDateRange(p.startDate, p.endDate)}
-          empty={
-            projects.length === 0
-              ? {
-                  icon: <FolderIcon className="size-6" />,
-                  title: 'No projects yet',
-                  description: 'Add a project to showcase your work.',
-                }
-              : {
-                  variant: 'search',
-                  title: 'No matching projects',
-                  description: 'Try a different search.',
-                }
-          }
-        />
-      </div>
-    </div>
+    <CollectionIndex
+      eyebrow="Career · Projects"
+      title="Projects"
+      description="Side projects and portfolio work."
+      addTo="/career/projects/new"
+      addLabel="Add project"
+      showSearch={projects.length > 0}
+      search={{
+        id: 'projects-search',
+        value: search,
+        onChange: setSearch,
+        placeholder: 'Search projects...',
+        ariaLabel: 'Search projects',
+      }}
+    >
+      <CareerCollection
+        items={filtered}
+        keyFor={(p) => p.id}
+        hrefFor={(p) => `/career/projects/${p.id}`}
+        leading={() => (
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#d7ff3e]/10 text-[#d7ff3e]">
+            <FolderKanbanIcon className="size-4" aria-hidden />
+          </span>
+        )}
+        title={(p) => p.title}
+        subtitle={(p) => p.organization ?? p.shortDescription ?? undefined}
+        meta={(p) => (p.startDate || p.endDate) && formatDateRange(p.startDate, p.endDate)}
+        empty={
+          projects.length === 0
+            ? {
+                title: 'No projects yet',
+                description: 'Add a project to showcase your work.',
+              }
+            : {
+                title: 'No matching projects',
+                description: 'Try a different search.',
+              }
+        }
+      />
+    </CollectionIndex>
   );
 }

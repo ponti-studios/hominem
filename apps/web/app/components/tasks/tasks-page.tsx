@@ -1,7 +1,12 @@
-import { ChevronRight } from 'lucide-react';
+import { Inbox, Plus, TriangleAlert } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
-import { Link } from 'react-router';
 
+import { Container } from '~/components/design/container';
+import { List, RowLink } from '~/components/design/lists';
+import { PageHeader } from '~/components/design/page-header';
+import { ListSkeleton } from '~/components/design/skeleton';
+import { PanelState, SectionCard, SegmentedControl } from '~/components/design/surfaces';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useTasksList } from '~/hooks/use-tasks';
@@ -11,10 +16,17 @@ import { CreateTaskDialog } from './create-task-dialog';
 
 type StatusFilter = 'all' | 'pending' | 'completed';
 
+const FILTER_OPTIONS = [
+  { value: 'pending', label: 'Open' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'all', label: 'All' },
+] as const;
+
 export function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const { data, error, isPending, refetch } = useTasksList();
   const tasks = data?.tasks ?? [];
+  const openCount = tasks.filter((task) => task.status === 'pending').length;
   const filteredTasks =
     statusFilter === 'all' ? tasks : tasks.filter((task) => task.status === statusFilter);
 
@@ -24,91 +36,124 @@ export function TasksPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-          <p className="text-sm text-muted-foreground">Things to do, scheduled or not.</p>
+    <main className="h-full overflow-auto">
+      <Container size="sm">
+        <PageHeader
+          actions={<CreateTaskDialog trigger={<NewTaskButton />} />}
+          description={
+            openCount === 0
+              ? 'A clean slate. Enjoy the quiet.'
+              : `${openCount} open ${openCount === 1 ? 'thing' : 'things'} on your plate.`
+          }
+          eyebrow="Tasks"
+          title="What needs doing"
+        />
+
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <SegmentedControl
+            ariaLabel="Filter tasks by status"
+            onChange={setStatusFilter}
+            options={FILTER_OPTIONS}
+            value={statusFilter}
+          />
+          <p className="hidden font-mono text-[11px] tracking-[0.12em] text-[#5e6678] uppercase sm:block">
+            {filteredTasks.length} shown
+          </p>
         </div>
-        <CreateTaskDialog />
-      </div>
 
-      <div className="mb-4 flex gap-1">
-        {(['pending', 'completed', 'all'] as const).map((filter) => (
-          <Button
-            key={filter}
-            onClick={() => setStatusFilter(filter)}
-            size="sm"
-            variant={statusFilter === filter ? 'default' : 'ghost'}
-          >
-            {filter === 'pending' ? 'Open' : filter === 'completed' ? 'Completed' : 'All'}
-          </Button>
-        ))}
-      </div>
-
-      <section className="overflow-hidden rounded-xl border border-border bg-card">
-        {isPending ? <p className="p-5 text-sm text-muted-foreground">Loading tasks…</p> : null}
-        {error ? (
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-destructive">Tasks unavailable.</p>
-            <Button onClick={handleRetry} variant="secondary">
-              Try again
-            </Button>
-          </div>
-        ) : null}
-        {!isPending && !error && filteredTasks.length === 0 ? (
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-muted-foreground">
-              {statusFilter === 'completed' ? 'No completed tasks yet.' : 'No tasks here.'}
-            </p>
-            <CreateTaskDialog />
-          </div>
-        ) : null}
-        {!isPending && !error && filteredTasks.length > 0 ? (
-          <div className="divide-y divide-border">
-            {filteredTasks.map((task) => (
-              <Link
-                className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted"
-                key={task.id}
-                to={`/tasks/${task.id}`}
-                viewTransition
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        task.status === 'completed'
-                          ? 'truncate font-medium text-muted-foreground line-through'
-                          : 'truncate font-medium'
-                      }
-                    >
-                      {task.title}
-                    </span>
-                    {task.priority ? (
-                      <Badge variant={taskPriorityVariant[task.priority] ?? 'outline'}>
-                        {task.priority}
-                      </Badge>
-                    ) : null}
-                    {task.childCount > 0 ? (
-                      <Badge variant="outline">{task.childCount} sub-tasks</Badge>
-                    ) : null}
-                  </div>
-                  {task.description ? (
-                    <p className="truncate text-sm text-muted-foreground">{task.description}</p>
-                  ) : null}
-                </div>
-                <div className="flex shrink-0 items-center gap-4 text-sm text-muted-foreground">
-                  {task.dueAt ? <span>Due {formatTaskDate(task.dueAt)}</span> : null}
-                  {task.scheduledStartAt ? (
-                    <span>{formatTaskDate(task.scheduledStartAt)}</span>
-                  ) : null}
-                  <ChevronRight className="size-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </section>
+        <SectionCard>
+          {isPending ? <ListSkeleton rows={4} /> : null}
+          {error ? (
+            <PanelState
+              action={
+                <Button onClick={handleRetry} variant="secondary">
+                  Try again
+                </Button>
+              }
+              description="We couldn't reach your list. Check your connection and retry."
+              icon={<TriangleAlert />}
+              title="Tasks unavailable"
+            />
+          ) : null}
+          {!isPending && !error && filteredTasks.length === 0 ? (
+            <PanelState
+              action={<CreateTaskDialog />}
+              description={
+                statusFilter === 'completed'
+                  ? 'Nothing finished yet — open tasks are waiting above.'
+                  : 'Capture the first thing on your mind. It takes two seconds.'
+              }
+              icon={<Inbox />}
+              title={statusFilter === 'completed' ? 'No completed tasks yet' : 'Nothing here yet'}
+            />
+          ) : null}
+          {!isPending && !error && filteredTasks.length > 0 ? (
+            <List ariaLabel="Tasks">
+              {filteredTasks.map((task, i) => (
+                <motion.li
+                  key={task.id}
+                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  transition={{
+                    delay: Math.min(i * 0.03, 0.3),
+                    type: 'spring',
+                    stiffness: 380,
+                    damping: 32,
+                  }}
+                >
+                  <RowLink
+                    to={`/tasks/${task.id}`}
+                    title={
+                      <span
+                        className={
+                          task.status === 'completed'
+                            ? 'truncate text-[#5e6678] line-through'
+                            : 'truncate'
+                        }
+                      >
+                        {task.title}
+                      </span>
+                    }
+                    subtitle={task.description ?? undefined}
+                    badges={
+                      <>
+                        {task.priority ? (
+                          <Badge variant={taskPriorityVariant[task.priority] ?? 'outline'}>
+                            {task.priority}
+                          </Badge>
+                        ) : null}
+                        {task.childCount > 0 ? (
+                          <Badge variant="outline">{task.childCount} sub-tasks</Badge>
+                        ) : null}
+                      </>
+                    }
+                    meta={
+                      <>
+                        {task.dueAt ? <span>Due {formatTaskDate(task.dueAt)}</span> : null}
+                        {task.scheduledStartAt ? (
+                          <span>{formatTaskDate(task.scheduledStartAt)}</span>
+                        ) : null}
+                      </>
+                    }
+                  />
+                </motion.li>
+              ))}
+            </List>
+          ) : null}
+        </SectionCard>
+      </Container>
     </main>
+  );
+}
+
+function NewTaskButton() {
+  return (
+    <span
+      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#d7ff3e] px-4 text-sm font-semibold text-[#101300] transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+      style={{ boxShadow: '0 8px 32px -8px rgb(215 255 62 / 0.55)' }}
+    >
+      <Plus aria-hidden className="size-4" />
+      New task
+    </span>
   );
 }

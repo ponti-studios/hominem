@@ -1,10 +1,6 @@
 import { CHART_COLORS } from '@ponti-studios/ui';
-import { Input } from '@ponti-studios/ui/forms';
-import { Badge } from '@ponti-studios/ui/primitives';
-import { Button } from '@ponti-studios/ui/primitives';
-import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { AlertTriangle, Calendar, DollarSign, TrendingDown } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { data, useFetcher } from 'react-router';
 import {
   CartesianGrid,
@@ -17,6 +13,19 @@ import {
   YAxis,
 } from 'recharts';
 
+import {
+  ChartCard,
+  DataTable,
+  Field,
+  PageHeader,
+  PanelState,
+  SectionCard,
+  SelectField,
+  Stat,
+} from '~/components/design';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { BudgetCapForm } from '~/modules/finance/components/finance/budget-cap-form';
 import { useCalculateRunway } from '~/modules/finance/hooks/use-runway';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 import { createFinanceServerClient } from '~/modules/finance/lib/server-client';
@@ -69,11 +78,6 @@ interface PlannedPurchase {
 export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   const { live, settings } = loaderData;
   const settingsFetcher = useFetcher();
-  const initialBalanceId = useId();
-  const monthlyExpensesId = useId();
-  const descriptionId = useId();
-  const amountId = useId();
-  const dateId = useId();
 
   const [initialBalance, setInitialBalance] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
@@ -186,484 +190,467 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
     }
   };
 
+  const currency = live?.currencyCode ?? 'USD';
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Financial Runway Calculator</h1>
-        {runwayMetrics.isRunwayDangerous && (
-          <Badge variant="destructive">
-            <AlertTriangle className="size-4" />
-            Short Runway
-          </Badge>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Finance · Runway"
+        title="Financial Runway Calculator"
+        description={
+          live
+            ? `Forecast currency: ${live.currencyCode ?? 'Not selected'}`
+            : 'Live ledger forecast plus manual scenarios.'
+        }
+        accent="#9d7bff"
+        actions={
+          runwayMetrics.isRunwayDangerous ? (
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#ff6b6b]/15 px-3 text-[13px] font-medium text-[#ff9d9d]">
+              <AlertTriangle aria-hidden className="size-3.5" />
+              Short Runway
+            </span>
+          ) : undefined
+        }
+      />
 
       {live ? (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Forecast currency: {live.currencyCode ?? 'Not selected'}
-          </p>
-          <div className="grid gap-6 md:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ledger Cash</CardTitle>
-                <DollarSign className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(live.startingCash, live.currencyCode ?? 'USD')}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Across {live.liquidAccounts.length} liquid accounts, as of {live.asOfDate}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Weekly Burn</CardTitle>
-                <TrendingDown className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 md:grid-cols-4">
+            <SectionCard index={0}>
+              <div className="p-5">
+                <Stat
+                  label="Ledger Cash"
+                  value={formatCurrency(live.startingCash, currency)}
+                  sub={`Across ${live.liquidAccounts.length} liquid accounts, as of ${live.asOfDate}`}
+                />
+                <DollarSign aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              </div>
+            </SectionCard>
+            <SectionCard index={1}>
+              <div className="p-5">
+                <Stat
+                  label="Weekly Burn"
+                  value={formatCurrency(
                     live.weeklyRecurringOutflow + live.weeklyVariableAllowance,
-                    live.currencyCode ?? 'USD',
+                    currency,
                   )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatCurrency(live.weeklyRecurringOutflow, live.currencyCode ?? 'USD')}{' '}
-                  recurring ·{' '}
-                  {formatCurrency(live.weeklyVariableAllowance, live.currencyCode ?? 'USD')}{' '}
-                  allowance
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Projected Ending</CardTitle>
-                <Calendar className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(
+                  sub={`${formatCurrency(live.weeklyRecurringOutflow, currency)} recurring · ${formatCurrency(live.weeklyVariableAllowance, currency)} allowance`}
+                />
+                <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              </div>
+            </SectionCard>
+            <SectionCard index={2}>
+              <div className="p-5">
+                <Stat
+                  label="Projected Ending"
+                  value={formatCurrency(
                     live.weeks[live.weeks.length - 1]?.endingCash ?? live.startingCash,
-                    live.currencyCode ?? 'USD',
+                    currency,
                   )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  After {live.weeks.length} weeks at the current burn
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Recurring Basis</CardTitle>
-                <TrendingDown className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{live.recurringTxnCount}</div>
-                <p className="text-xs text-muted-foreground">
-                  Recurring debits in the trailing {live.recurringLookbackMonths} months
-                </p>
-              </CardContent>
-            </Card>
+                  sub={`After ${live.weeks.length} weeks at the current burn`}
+                />
+                <Calendar aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              </div>
+            </SectionCard>
+            <SectionCard index={3}>
+              <div className="p-5">
+                <Stat
+                  label="Recurring Basis"
+                  value={String(live.recurringTxnCount)}
+                  sub={`Recurring debits in the trailing ${live.recurringLookbackMonths} months`}
+                />
+                <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              </div>
+            </SectionCard>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Live trajectory</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Week</th>
-                    <th className="pb-2 font-medium">Starting</th>
-                    <th className="pb-2 text-right font-medium">Net change</th>
-                    <th className="pb-2 text-right font-medium">Ending</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {live.weeks.slice(0, 8).map((week) => (
-                    <tr key={week.week} className="border-t border-border">
-                      <td className="py-2 tabular-nums">
-                        {week.week} · {week.weekStart}
-                      </td>
-                      <td className="py-2 tabular-nums">
-                        {formatCurrency(week.beginningCash, live.currencyCode ?? 'USD')}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
-                        {formatCurrency(week.netChange, live.currencyCode ?? 'USD')}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
-                        {formatCurrency(week.endingCash, live.currencyCode ?? 'USD')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+          <SectionCard index={4}>
+            <div className="p-5 sm:p-6">
+              <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Live trajectory</h2>
+              <div className="mt-3">
+                <DataTable
+                  ariaLabel="Weekly runway trajectory"
+                  columns={[
+                    {
+                      key: 'week',
+                      header: 'Week',
+                      render: (week) => (
+                        <span>
+                          {week.week} · {week.weekStart}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'starting',
+                      header: 'Starting',
+                      render: (week) => formatCurrency(week.beginningCash, currency),
+                    },
+                    {
+                      key: 'net',
+                      header: 'Net change',
+                      align: 'right',
+                      render: (week) => formatCurrency(week.netChange, currency),
+                    },
+                    {
+                      key: 'ending',
+                      header: 'Ending',
+                      align: 'right',
+                      render: (week) => formatCurrency(week.endingCash, currency),
+                    },
+                  ]}
+                  rows={live.weeks.slice(0, 8)}
+                  keyOf={(week) => `week-${week.week}`}
+                />
+              </div>
               {live.weeklyVariableAllowance === 0 ? (
-                <p className="pt-2 text-xs text-muted-foreground">
+                <p className="pt-3 text-[13px] text-[#9ba3b4]">
                   No monthly budgets configured yet, so the variable allowance is{' '}
-                  {formatCurrency(0, live.currencyCode ?? 'USD')} — this shows recurring burn only.
+                  {formatCurrency(0, currency)} — this shows recurring burn only.
                 </p>
               ) : null}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Forecast settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <settingsFetcher.Form method="post" className="flex flex-wrap items-end gap-3">
-                <input type="hidden" name="intent" value="currency" />
-                <label className="grid gap-1 text-sm">
-                  Forecast currency
-                  <select
+            </div>
+          </SectionCard>
+
+          <SectionCard index={5}>
+            <div className="p-5 sm:p-6">
+              <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Forecast settings</h2>
+              <div className="mt-4 flex flex-col gap-5">
+                <settingsFetcher.Form method="post" className="flex flex-wrap items-end gap-3">
+                  <input type="hidden" name="intent" value="currency" />
+                  <SelectField
+                    label="Forecast currency"
                     name="currencyCode"
                     required
                     defaultValue={settings?.currencyCode ?? ''}
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    aria-label="Forecast currency"
-                  >
-                    <option value="" disabled>
-                      Choose currency
-                    </option>
-                    {settings?.currencies.map((currency) => (
-                      <option key={currency} value={currency}>
-                        {currency}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Button type="submit" disabled={settingsFetcher.state !== 'idle'}>
-                  Save currency
-                </Button>
-              </settingsFetcher.Form>
-              {live.warnings.map((warning) => (
-                <p key={warning} className="text-sm text-amber-600">
-                  {warning}
-                </p>
-              ))}
-              <div className="space-y-2">
-                <h3 className="font-medium">Monthly category caps</h3>
-                {settings?.budgets
-                  .filter((budget) => budget.currencyCode === settings.currencyCode)
-                  .map((budget) => (
-                    <div
-                      key={budget.id}
-                      className="flex items-center justify-between gap-3 border-t border-border py-2 text-sm"
-                    >
-                      <span>
-                        {budget.category} · {budget.currencyCode}
-                      </span>
-                      <settingsFetcher.Form method="post" className="flex items-center gap-2">
-                        <input type="hidden" name="intent" value="budget" />
-                        <input type="hidden" name="categoryId" value={budget.categoryId} />
-                        <input type="hidden" name="currencyCode" value={budget.currencyCode} />
-                        <Input
-                          className="max-w-32"
-                          aria-label={`${budget.category} monthly cap`}
-                          name="amount"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          defaultValue={budget.amount}
-                          required
-                        />
-                        <Button type="submit" variant="outline" size="sm">
-                          Save
-                        </Button>
-                      </settingsFetcher.Form>
-                      <settingsFetcher.Form method="post">
-                        <input type="hidden" name="intent" value="remove-budget" />
-                        <input type="hidden" name="budgetId" value={budget.id} />
-                        <Button type="submit" variant="outline" size="sm">
-                          Remove
-                        </Button>
-                      </settingsFetcher.Form>
-                    </div>
-                  ))}
-                <settingsFetcher.Form
-                  method="post"
-                  className="flex flex-wrap items-end gap-3 border-t border-border pt-3"
-                >
-                  <input type="hidden" name="intent" value="budget" />
-                  <label className="grid gap-1 text-sm">
-                    Category
-                    <select
-                      name="categoryId"
-                      required
-                      defaultValue=""
-                      className="h-10 rounded-md border border-input bg-background px-3"
-                    >
-                      <option value="" disabled>
-                        Choose category
-                      </option>
-                      {settings?.categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    Monthly cap
-                    <Input name="amount" type="number" min="0" step="0.01" required />
-                  </label>
-                  <input type="hidden" name="currencyCode" value={settings?.currencyCode ?? ''} />
-                  <Button
-                    type="submit"
-                    disabled={!settings?.currencyCode || settingsFetcher.state !== 'idle'}
-                  >
-                    Save cap
+                    placeholder="Choose currency"
+                    options={(settings?.currencies ?? []).map((code) => ({
+                      value: code,
+                      label: code,
+                    }))}
+                  />
+                  <Button type="submit" disabled={settingsFetcher.state !== 'idle'}>
+                    Save currency
                   </Button>
                 </settingsFetcher.Form>
-                {settingsFetcher.data && 'error' in settingsFetcher.data && (
-                  <p role="alert" className="text-sm text-destructive">
-                    {settingsFetcher.data.error}
+                {live.warnings.map((warning) => (
+                  <p key={warning} className="text-sm text-[#ffc53d]">
+                    {warning}
                   </p>
-                )}
+                ))}
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-sm font-medium text-[#f2f4f8]">Monthly category caps</h3>
+                  {settings?.budgets
+                    .filter((budget) => budget.currencyCode === settings.currencyCode)
+                    .map((budget) => (
+                      <div
+                        key={budget.id}
+                        className="flex items-center justify-between gap-3 border-t border-white/[0.06] py-2 text-sm"
+                      >
+                        <span className="text-[#f2f4f8]">
+                          {budget.category} · {budget.currencyCode}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <BudgetCapForm
+                            layout="inline"
+                            hiddenFields={{
+                              categoryId: budget.categoryId,
+                              currencyCode: budget.currencyCode,
+                            }}
+                            defaultAmount={budget.amount}
+                            submitLabel="Save"
+                          />
+                          <settingsFetcher.Form method="post">
+                            <input type="hidden" name="intent" value="remove-budget" />
+                            <input type="hidden" name="budgetId" value={budget.id} />
+                            <Button type="submit" variant="outline" size="sm">
+                              Remove
+                            </Button>
+                          </settingsFetcher.Form>
+                        </div>
+                      </div>
+                    ))}
+                  <div className="border-t border-white/[0.06] pt-3">
+                    <BudgetCapForm
+                      hiddenFields={{ currencyCode: settings?.currencyCode ?? '' }}
+                      submitLabel="Save cap"
+                      disabled={!settings?.currencyCode}
+                      leading={
+                        <SelectField
+                          label="Category"
+                          name="categoryId"
+                          required
+                          placeholder="Choose category"
+                          options={(settings?.categories ?? []).map((category) => ({
+                            value: category.id,
+                            label: category.name,
+                          }))}
+                        />
+                      }
+                    />
+                  </div>
+                  {settingsFetcher.data && 'error' in settingsFetcher.data && (
+                    <p role="alert" className="text-sm text-[#ff9d9d]">
+                      {settingsFetcher.data.error}
+                    </p>
+                  )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         </div>
       ) : null}
 
       {runwayMutation.isError && (
-        <p role="alert" className="text-sm text-destructive">
-          {runwayMutation.error.message || 'Unable to calculate the scenario. Please try again.'}
-        </p>
+        <PanelState
+          title="Unable to calculate the scenario"
+          description={runwayMutation.error.message || 'Please try again.'}
+        />
       )}
 
       {chartData.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Balance</CardTitle>
-              <DollarSign className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(initialBalance)}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Burn Rate</CardTitle>
-              <TrendingDown className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(monthlyExpenses)}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Runway (Months)</CardTitle>
-              <Calendar className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`text-2xl font-bold ${runwayMetrics.isRunwayDangerous ? 'text-destructive' : 'text-foreground'}`}
-              >
-                {runwayMetrics.monthsUntilZero === null
-                  ? 'No depletion in 12 months'
-                  : runwayMetrics.monthsUntilZero}
-              </div>
-              {runwayMetrics.zeroDate !== null && (
-                <p className="text-xs text-muted-foreground">
-                  Until {runwayMetrics.zeroDate.toLocaleDateString()}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Minimum Balance</CardTitle>
-              <TrendingDown className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`text-2xl font-bold ${runwayMetrics.minimumBalance < 0 ? 'text-destructive' : 'text-foreground'}`}
-              >
-                {formatCurrency(runwayMetrics.minimumBalance)}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-4">
+          <SectionCard>
+            <div className="p-5">
+              <Stat label="Current Balance" value={formatCurrency(initialBalance)} />
+              <DollarSign aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+            </div>
+          </SectionCard>
+          <SectionCard>
+            <div className="p-5">
+              <Stat label="Monthly Burn Rate" value={formatCurrency(monthlyExpenses)} />
+              <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+            </div>
+          </SectionCard>
+          <SectionCard>
+            <div className="p-5">
+              <Stat
+                label="Runway (Months)"
+                value={
+                  runwayMetrics.monthsUntilZero === null
+                    ? 'No depletion in 12 months'
+                    : String(runwayMetrics.monthsUntilZero)
+                }
+                sub={
+                  runwayMetrics.zeroDate !== null
+                    ? `Until ${runwayMetrics.zeroDate.toLocaleDateString()}`
+                    : undefined
+                }
+                accent={runwayMetrics.isRunwayDangerous ? '#ff6b6b' : undefined}
+              />
+              <Calendar aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+            </div>
+          </SectionCard>
+          <SectionCard>
+            <div className="p-5">
+              <Stat
+                label="Minimum Balance"
+                value={formatCurrency(runwayMetrics.minimumBalance)}
+                accent={runwayMetrics.minimumBalance < 0 ? '#ff6b6b' : undefined}
+              />
+              <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+            </div>
+          </SectionCard>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Manual Scenario</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-muted-foreground">
+      <div className="grid gap-4 md:grid-cols-2">
+        <SectionCard>
+          <div className="p-5 sm:p-6">
+            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Manual Scenario</h2>
+            <p className="mt-1 text-sm text-[#9ba3b4]">
               These inputs are independent of your ledger forecast.
             </p>
-            <div>
-              <label htmlFor={initialBalanceId}>Manually entered starting balance ($)</label>
-              <Input
-                type="number"
-                id={initialBalanceId}
-                value={initialBalance}
-                onChange={(e) => handleInputChange('initialBalance', Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label htmlFor={monthlyExpensesId}>Manually entered monthly expenses ($)</label>
-              <Input
-                type="number"
-                id={monthlyExpensesId}
-                value={monthlyExpenses}
-                onChange={(e) => handleInputChange('monthlyExpenses', Number(e.target.value))}
-              />
-            </div>
-            <Button
-              onClick={handleCalculateRunway}
-              disabled={initialBalance < 0 || monthlyExpenses < 0 || runwayMutation.isPending}
-            >
-              {runwayMutation.isPending ? 'Calculating...' : 'Calculate Runway'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Planned Purchase</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor={descriptionId}>Description</label>
-                <Input
-                  id={descriptionId}
-                  placeholder="e.g., New laptop"
-                  value={newPurchase.description}
-                  onChange={(e) => setNewPurchase({ ...newPurchase, description: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor={amountId}>Amount ($)</label>
+            <div className="mt-4 flex flex-col gap-4">
+              <Field label="Manually entered starting balance ($)">
+                {(id) => (
                   <Input
                     type="number"
-                    id={amountId}
-                    placeholder="0"
-                    value={newPurchase.amount}
+                    id={id}
+                    value={initialBalance}
+                    onChange={(e) => handleInputChange('initialBalance', Number(e.target.value))}
+                  />
+                )}
+              </Field>
+              <Field label="Manually entered monthly expenses ($)">
+                {(id) => (
+                  <Input
+                    type="number"
+                    id={id}
+                    value={monthlyExpenses}
+                    onChange={(e) => handleInputChange('monthlyExpenses', Number(e.target.value))}
+                  />
+                )}
+              </Field>
+              <div>
+                <Button
+                  onClick={handleCalculateRunway}
+                  disabled={initialBalance < 0 || monthlyExpenses < 0 || runwayMutation.isPending}
+                >
+                  {runwayMutation.isPending ? 'Calculating...' : 'Calculate Runway'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard>
+          <div className="p-5 sm:p-6">
+            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Add Planned Purchase</h2>
+            <div className="mt-4 flex flex-col gap-4">
+              <Field label="Description">
+                {(id) => (
+                  <Input
+                    id={id}
+                    placeholder="e.g., New laptop"
+                    value={newPurchase.description}
                     onChange={(e) =>
-                      setNewPurchase({ ...newPurchase, amount: Number(e.target.value) })
+                      setNewPurchase({ ...newPurchase, description: e.target.value })
                     }
                   />
-                </div>
-                <div>
-                  <label htmlFor={dateId}>Date</label>
-                  <Input
-                    type="date"
-                    id={dateId}
-                    value={newPurchase.date}
-                    onChange={(e) => setNewPurchase({ ...newPurchase, date: e.target.value })}
-                  />
-                </div>
+                )}
+              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Amount ($)">
+                  {(id) => (
+                    <Input
+                      type="number"
+                      id={id}
+                      placeholder="0"
+                      value={newPurchase.amount}
+                      onChange={(e) =>
+                        setNewPurchase({ ...newPurchase, amount: Number(e.target.value) })
+                      }
+                    />
+                  )}
+                </Field>
+                <Field label="Date">
+                  {(id) => (
+                    <Input
+                      type="date"
+                      id={id}
+                      value={newPurchase.date}
+                      onChange={(e) => setNewPurchase({ ...newPurchase, date: e.target.value })}
+                    />
+                  )}
+                </Field>
               </div>
-              <Button
-                onClick={handleAddPurchase}
-                disabled={!newPurchase.description || newPurchase.amount <= 0 || !newPurchase.date}
-              >
-                Add Purchase
-              </Button>
+              <div>
+                <Button
+                  onClick={handleAddPurchase}
+                  disabled={
+                    !newPurchase.description || newPurchase.amount <= 0 || !newPurchase.date
+                  }
+                >
+                  Add Purchase
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       </div>
 
       {plannedPurchases.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Planned Purchases</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {plannedPurchases.map((purchase, index) => (
-                <div
-                  key={`${purchase.description}-${purchase.date}-${index}`}
-                  className="flex justify-between items-center p-3 border border-border"
-                >
-                  <div>
-                    <span className="font-medium">{purchase.description}</span>
-                    <span className="text-sm text-muted-foreground ml-2">
-                      on {new Date(purchase.date).toLocaleDateString()}
+        <SectionCard>
+          <div className="p-5 sm:p-6">
+            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Planned Purchases</h2>
+            <DataTable
+              ariaLabel="Planned purchases"
+              columns={[
+                {
+                  key: 'purchase',
+                  header: 'Purchase',
+                  render: (purchase) => (
+                    <span>
+                      <span className="font-medium">{purchase.description}</span>{' '}
+                      <span className="text-sm text-[#9ba3b4]">
+                        on {new Date(purchase.date).toLocaleDateString()}
+                      </span>
                     </span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  ),
+                },
+                {
+                  key: 'amount',
+                  header: 'Amount',
+                  align: 'right',
+                  render: (purchase) => (
                     <span className="font-semibold">{formatCurrency(purchase.amount)}</span>
+                  ),
+                },
+                {
+                  key: 'actions',
+                  header: '',
+                  align: 'right',
+                  tabular: false,
+                  render: (_purchase, index) => (
                     <Button variant="outline" size="sm" onClick={() => handleRemovePurchase(index)}>
                       Remove
                     </Button>
-                  </div>
-                </div>
-              ))}
-              <div className="pt-2 border-t">
-                <div className="flex justify-between items-center font-semibold">
-                  <span>Total Planned Expenses:</span>
-                  <span>{formatCurrency(runwayMetrics.totalPlannedExpenses)}</span>
-                </div>
-              </div>
+                  ),
+                },
+              ]}
+              rows={plannedPurchases}
+              keyOf={(purchase, index) => `${purchase.description}-${purchase.date}-${index}`}
+            />
+            <div className="flex items-center justify-between border-t border-white/[0.06] pt-3 font-semibold text-[#f2f4f8]">
+              <span>Total Planned Expenses:</span>
+              <span>{formatCurrency(runwayMetrics.totalPlannedExpenses)}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       )}
 
       {chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>12-Month Scenario Projection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-100">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip
-                    formatter={(value) => [formatCurrency(Number(value)), 'Projected Balance']}
-                    labelStyle={{ color: CHART_COLORS.neutral }}
-                    contentStyle={{
-                      backgroundColor: CHART_COLORS.tooltip.background,
-                      border: `1px solid ${CHART_COLORS.tooltip.border}`,
-                      borderRadius: '6px',
-                    }}
-                  />
-                  <ReferenceLine y={0} stroke={CHART_COLORS.negative} strokeDasharray="2 2" />
-                  <Line
-                    type="monotone"
-                    dataKey="balance"
-                    stroke={CHART_COLORS.positive}
-                    strokeWidth={2}
-                    dot={(props) => {
-                      const { cx, cy, payload } = props;
-                      const isNegative = payload?.balance < 0;
-                      return (
-                        <circle
-                          cx={cx}
-                          cy={cy}
-                          r={4}
-                          fill={isNegative ? CHART_COLORS.negative : CHART_COLORS.positive}
-                          stroke={isNegative ? CHART_COLORS.negative : CHART_COLORS.positive}
-                          strokeWidth={2}
-                        />
-                      );
-                    }}
-                    activeDot={{ r: 6, stroke: CHART_COLORS.positive, strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="12-Month Scenario Projection" height="lg" state="ready">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9ba3b4', fontSize: 11 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9ba3b4', fontSize: 11 }}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip
+                formatter={(value) => [formatCurrency(Number(value)), 'Projected Balance']}
+                labelStyle={{ color: CHART_COLORS.neutral }}
+                contentStyle={{
+                  backgroundColor: '#12161d',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  color: '#f2f4f8',
+                }}
+              />
+              <ReferenceLine y={0} stroke={CHART_COLORS.negative} strokeDasharray="2 2" />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke="#d7ff3e"
+                strokeWidth={2.5}
+                dot={(props) => {
+                  const { cx, cy, payload } = props;
+                  const isNegative = payload?.balance < 0;
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill={isNegative ? CHART_COLORS.negative : '#d7ff3e'}
+                      stroke={isNegative ? CHART_COLORS.negative : '#d7ff3e'}
+                      strokeWidth={2}
+                    />
+                  );
+                }}
+                activeDot={{ r: 6, stroke: '#d7ff3e', strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       )}
     </div>
   );

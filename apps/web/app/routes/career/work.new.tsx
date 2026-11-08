@@ -1,6 +1,7 @@
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import { redirect } from 'react-router';
 
+import { DetailSection, PageHeader } from '~/components/design';
+import { Container } from '~/components/design/container';
 import { PositionEditor } from '~/modules/career/components/career/work/PositionEditor';
 import { ENGAGEMENT_KINDS } from '~/modules/career/lib/career-options';
 import { formChoice, formText } from '~/modules/career/lib/route-utils';
@@ -54,13 +55,15 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function NewPositionPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <SectionIntro title="New Engagement" description="Add a work history engagement." />
-      </div>
-      <div className="rounded-lg border border-border p-6">
+    <Container size="xs">
+      <PageHeader
+        eyebrow="Career · Work"
+        title="New Engagement"
+        description="Add a work history engagement."
+      />
+      <DetailSection title="Engagement">
         <PositionEditor submitLabel="Create engagement" />
-      </div>
-    </div>
+      </DetailSection>
+    </Container>
   );
 }

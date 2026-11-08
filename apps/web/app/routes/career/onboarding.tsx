@@ -2,6 +2,8 @@ import { Button } from '@ponti-studios/ui/primitives';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
+import { DetailSection, PageHeader } from '~/components/design';
+import { Container } from '~/components/design/container';
 import { UploadResumeForm } from '~/modules/career/components/UploadResumeForm';
 import type { UploadResumeApiResponse } from '~/modules/career/lib/api-contracts';
 
@@ -28,17 +30,14 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-      <header className="space-y-2 text-center sm:text-left">
-        <p className="ui-eyebrow">Import</p>
-        <h1 className="heading-2 text-foreground">Fill your profile from a resume</h1>
-        <p className="body-2 text-muted-foreground">
-          We’ll replace your current profile details with what we extract from the PDF. You can
-          always edit afterward.
-        </p>
-      </header>
+    <Container size="sm">
+      <PageHeader
+        eyebrow="Career · Import"
+        title="Fill your profile from a resume"
+        description="We’ll replace your current profile details with what we extract from the PDF. You can always edit afterward."
+      />
 
-      <div className="mx-auto w-full max-w-md">
+      <DetailSection title="Resume PDF">
         <UploadResumeForm
           mode="create"
           onUploadStart={() => setIsUploading(true)}
@@ -48,9 +47,9 @@ export default function Onboarding() {
           }}
           onUploadError={() => setIsUploading(false)}
         />
-      </div>
+      </DetailSection>
 
-      <div className="flex justify-center">
+      <div className="mt-4 flex justify-center">
         <Button
           type="button"
           variant="ghost"
@@ -61,6 +60,6 @@ export default function Onboarding() {
           <Link to="/career/work">Skip for now</Link>
         </Button>
       </div>
-    </div>
+    </Container>
   );
 }

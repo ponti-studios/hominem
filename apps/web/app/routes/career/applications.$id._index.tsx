@@ -1,36 +1,15 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@ponti-studios/ui/primitives';
 import { ExternalLinkIcon, PencilIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import { useOutletContext } from 'react-router';
 
+import { DetailField, DetailSection } from '~/components/design';
+import { Button } from '~/components/ui/button';
 import { ApplicationEditor } from '~/modules/career/components/career/applications/ApplicationEditor';
 import type { CareerApplicationWithRelations } from '~/modules/career/lib/types/records';
 import {
   formatApplicationDate,
   formatApplicationSalary,
 } from '~/modules/career/lib/utils/applicationUtils';
-
-interface DetailItemProps {
-  label: string;
-  children: ReactNode;
-}
-
-function DetailItem({ label, children }: DetailItemProps) {
-  return (
-    <div className="space-y-1">
-      <dt className="footnote text-muted-foreground">{label}</dt>
-      <dd className="body-3">{children}</dd>
-    </div>
-  );
-}
 
 export default function ApplicationOverviewRoute() {
   const application = useOutletContext<CareerApplicationWithRelations>();
@@ -41,88 +20,80 @@ export default function ApplicationOverviewRoute() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Details</CardTitle>
-            <CardDescription>Application information.</CardDescription>
-          </div>
+    <div className="flex flex-col gap-4">
+      <DetailSection title="Application information">
+        <div className="mb-4 flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(true)}>
             <PencilIcon className="mr-2 size-4" />
             Edit
           </Button>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-            {application.source && <DetailItem label="Source">{application.source}</DetailItem>}
-            {application.appliedAt && (
-              <DetailItem label="Applied">
-                {formatApplicationDate(application.appliedAt)}
-              </DetailItem>
-            )}
-            {application.location && (
-              <DetailItem label="Location">{application.location}</DetailItem>
-            )}
-            {application.salaryExpectation != null && (
-              <DetailItem label="Salary Expectation">
-                {formatApplicationSalary(application.salaryExpectation)}
-              </DetailItem>
-            )}
-            {application.jobPostingUrl && (
-              <DetailItem label="Job Posting">
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
+          {application.source && <DetailField label="Source" value={application.source} />}
+          {application.appliedAt && (
+            <DetailField
+              label="Applied"
+              value={formatApplicationDate(application.appliedAt)}
+              mono
+            />
+          )}
+          {application.location && <DetailField label="Location" value={application.location} />}
+          {application.salaryExpectation != null && (
+            <DetailField
+              label="Salary Expectation"
+              value={formatApplicationSalary(application.salaryExpectation)}
+              mono
+            />
+          )}
+          {application.jobPostingUrl && (
+            <DetailField
+              label="Job Posting"
+              value={
                 <a
                   href={application.jobPostingUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-accent hover:underline"
+                  className="inline-flex items-center gap-1 text-[#d7ff3e] hover:underline"
                 >
                   View posting
                   <ExternalLinkIcon className="size-3.5" />
                 </a>
-              </DetailItem>
-            )}
-          </dl>
-        </CardContent>
-      </Card>
+              }
+            />
+          )}
+        </div>
+      </DetailSection>
 
       {application.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="body-2 text-muted-foreground whitespace-pre-wrap">{application.notes}</p>
-          </CardContent>
-        </Card>
+        <DetailSection title="Notes">
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-[#9ba3b4]">
+            {application.notes}
+          </p>
+        </DetailSection>
       )}
 
       {application.offers.map((offer) => {
         const stage = application.stages.find((candidate) => candidate.id === offer.stageId);
         return (
-          <Card key={offer.id}>
-            <CardHeader>
-              <CardTitle>{stage?.stage ?? 'Offer'}</CardTitle>
-              <CardDescription>Compensation details.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                {offer.baseSalary != null && (
-                  <DetailItem label="Base">{formatApplicationSalary(offer.baseSalary)}</DetailItem>
-                )}
-                {offer.equity && <DetailItem label="Equity">{offer.equity}</DetailItem>}
-                {offer.bonus != null && (
-                  <DetailItem label="Bonus">{formatApplicationSalary(offer.bonus)}</DetailItem>
-                )}
-                {offer.totalComp != null && (
-                  <DetailItem label="Total Comp">
-                    {formatApplicationSalary(offer.totalComp)}
-                  </DetailItem>
-                )}
-                <DetailItem label="Decision">{offer.decision}</DetailItem>
-              </dl>
-            </CardContent>
-          </Card>
+          <DetailSection key={offer.id} title={stage?.stage ?? 'Offer'}>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+              {offer.baseSalary != null && (
+                <DetailField label="Base" value={formatApplicationSalary(offer.baseSalary)} mono />
+              )}
+              {offer.equity && <DetailField label="Equity" value={offer.equity} />}
+              {offer.bonus != null && (
+                <DetailField label="Bonus" value={formatApplicationSalary(offer.bonus)} mono />
+              )}
+              {offer.totalComp != null && (
+                <DetailField
+                  label="Total Comp"
+                  value={formatApplicationSalary(offer.totalComp)}
+                  mono
+                />
+              )}
+              <DetailField label="Decision" value={offer.decision} />
+            </div>
+          </DetailSection>
         );
       })}
     </div>

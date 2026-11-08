@@ -1,8 +1,8 @@
-import { TextField, Textarea } from '@ponti-studios/ui/forms';
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import { Form, redirect } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
+import { DetailSection, PageHeader } from '~/components/design';
+import { Container } from '~/components/design/container';
+import { FormActions, TextAreaInput, TextInput } from '~/components/design/forms';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 
@@ -32,30 +32,29 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function NewTestimonialRoute({ actionData }: Route.ComponentProps) {
   return (
-    <div className="max-w-2xl">
-      <SectionIntro
+    <Container size="xs">
+      <PageHeader
+        eyebrow="Career · Testimonials"
         title="Add testimonial"
         description="Add a testimonial from a colleague, manager, or client."
       />
-
-      <Form method="post" className="mt-6 flex flex-col gap-4">
-        <TextField label="Name" name="name" required placeholder="Jane Doe" />
-        <div className="grid grid-cols-2 gap-4">
-          <TextField label="Title" name="title" placeholder="Engineering Manager" />
-          <TextField label="Company" name="company" placeholder="Acme Inc." />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="content" className="text-foreground text-sm font-medium">
-            Testimonial
-          </label>
-          <Textarea id="content" name="content" rows={4} required />
-        </div>
-        <TextField label="LinkedIn URL" name="linkedinUrl" placeholder="https://" />
-        {actionData?.error && <p className="body-3 text-destructive-text">{actionData.error}</p>}
-        <div className="flex justify-end">
-          <AddButton type="submit" label="Add testimonial" />
-        </div>
-      </Form>
-    </div>
+      <DetailSection title="Testimonial">
+        <Form method="post" className="flex flex-col gap-4">
+          <TextInput label="Name" name="name" required placeholder="Jane Doe" />
+          <div className="grid grid-cols-2 gap-4">
+            <TextInput label="Title" name="title" placeholder="Engineering Manager" />
+            <TextInput label="Company" name="company" placeholder="Acme Inc." />
+          </div>
+          <TextAreaInput label="Testimonial" name="content" rows={4} required />
+          <TextInput label="LinkedIn URL" name="linkedinUrl" placeholder="https://" />
+          {actionData?.error && (
+            <p role="alert" className="text-sm text-[#ff9d9d]">
+              {actionData.error}
+            </p>
+          )}
+          <FormActions submitLabel="Add testimonial" />
+        </Form>
+      </DetailSection>
+    </Container>
   );
 }

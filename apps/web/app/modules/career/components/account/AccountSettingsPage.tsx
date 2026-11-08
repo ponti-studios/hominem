@@ -1,8 +1,11 @@
+import { LogOut, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { AccountActions } from '~/modules/career/components/account/AccountActions';
-import { EmailField } from '~/modules/career/components/EmailField';
+import { DeleteButton, DetailSection, PageHeader } from '~/components/design';
+import { Container } from '~/components/design/container';
+import { IconField } from '~/components/design/forms';
+import { Button } from '~/components/ui/button';
 import type {
   AccountActionResult,
   AccountSettingsLoaderData,
@@ -52,10 +55,6 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
   };
 
   const handleDeleteProfile = async () => {
-    if (!confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
-      return;
-    }
-
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('profileId', currentProfile.id);
@@ -65,28 +64,35 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-      <div>
-        <h2 className="heading-2 text-foreground">Account</h2>
-        <p className="body-3 text-muted-foreground">
-          Sign-in, visibility, and administration for your career account.
-        </p>
-      </div>
+    <Container size="sm">
+      <PageHeader
+        eyebrow="Career · Account"
+        title="Account"
+        description="Sign-in, visibility, and administration for your career account."
+      />
 
-      <div className="space-y-8 rounded-xl border border-border bg-card p-6">
-        <section className="space-y-4">
-          <h3 className="heading-4">Identity</h3>
-          <EmailField id="account-email" value={user.email ?? ''} disabled readOnly />
-        </section>
+      <DetailSection title="Identity">
+        <IconField
+          label="Email"
+          icon={<Mail className="size-4" aria-hidden />}
+          name="email"
+          value={user.email ?? ''}
+          disabled
+          readOnly
+        />
+      </DetailSection>
 
-        <section className="space-y-4 border-t border-border pt-6">
-          <AccountActions
-            isSigningOut={isSigningOut}
-            onDeleteProfile={handleDeleteProfile}
-            onSignOut={handleSignOut}
-          />
-        </section>
-      </div>
-    </div>
+      <DetailSection title="Danger zone">
+        <div className="flex flex-col gap-3">
+          <DeleteButton itemName="profile" label="Delete profile" onConfirm={handleDeleteProfile} />
+          <div>
+            <Button type="button" onClick={handleSignOut} disabled={isSigningOut} className="gap-2">
+              <LogOut className="size-4" />
+              {isSigningOut ? 'Signing out…' : 'Sign out'}
+            </Button>
+          </div>
+        </div>
+      </DetailSection>
+    </Container>
   );
 }

@@ -1,6 +1,7 @@
 import { Activity, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
+import { InitialsAvatar } from '~/components/design/avatar';
 import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
@@ -13,14 +14,6 @@ import {
 import { useCollaborationInvites } from '~/hooks/use-collaboration-invites';
 import type { User } from '~/lib/auth.server';
 
-function getInitials(user: User) {
-  const source = user.name.trim() || user.email;
-  const parts = source.split(/\s+/).filter(Boolean);
-  return parts.length > 1
-    ? `${parts[0]?.[0] ?? ''}${parts.at(-1)?.[0] ?? ''}`.toUpperCase()
-    : (parts[0]?.slice(0, 2).toUpperCase() ?? '?');
-}
-
 export function AccountMenu({ user }: { user: User }) {
   const navigate = useNavigate();
   const { count } = useCollaborationInvites();
@@ -29,9 +22,7 @@ export function AccountMenu({ user }: { user: User }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button aria-label="Open account menu" className="relative" size="icon-sm" variant="ghost">
-          <span className="flex size-6 items-center justify-center rounded-full bg-secondary text-xs font-semibold">
-            {getInitials(user)}
-          </span>
+          <InitialsAvatar name={user.name.trim() || user.email} />
           {count > 0 ? (
             <span
               aria-label="Unread notifications"

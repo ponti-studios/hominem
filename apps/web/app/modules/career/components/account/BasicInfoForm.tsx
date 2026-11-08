@@ -1,7 +1,9 @@
 import { Input, Switch, Textarea } from '@ponti-studios/ui/forms';
+import { Phone } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { PhoneField } from '~/modules/career/components/PhoneField';
+import { Field } from '~/components/design/form-field';
+import { FormGrid, IconField } from '~/components/design/forms';
 import { ProfileImageUpload } from '~/modules/career/components/ProfileImageUpload';
 import type { ProfileDetailsFormValues } from '~/modules/career/lib/account/types';
 import type { CareerProfileRecord } from '~/modules/career/lib/types/records';
@@ -22,70 +24,86 @@ export function BasicInfoForm({
   } = useFormContext<ProfileDetailsFormValues>();
 
   return (
-    <section className="space-y-4 border rounded-2xl p-4">
-      <section className="space-y-5">
-        <ProfileImageUpload
-          compact
-          currentImageUrl={profile.profileImageUrl || undefined}
-          onUpload={onImageUpload}
-        />
+    <div className="flex flex-col gap-5">
+      <ProfileImageUpload
+        compact
+        currentImageUrl={profile.profileImageUrl || undefined}
+        onUpload={onImageUpload}
+      />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-1 md:col-span-2">
-            <label htmlFor="name">Full Name</label>
-            <Input id="name" {...register('name', { required: 'Name is required' })} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="initials">Initials</label>
-            <Input id="initials" {...register('initials')} maxLength={10} />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="jobTitle">Job Title</label>
-            <Input id="jobTitle" {...register('jobTitle', { required: 'Job title is required' })} />
-            {errors.jobTitle && (
-              <p className="text-sm text-destructive">{errors.jobTitle.message}</p>
-            )}
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <label htmlFor="tagline">Tagline</label>
-            <Input
-              id="tagline"
-              {...register('tagline', { required: 'Tagline is required' })}
-              maxLength={500}
-            />
-            {errors.tagline && <p className="text-sm text-destructive">{errors.tagline.message}</p>}
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <label htmlFor="bio">Bio</label>
-            <Textarea
-              id="bio"
-              {...register('bio', { required: 'Bio is required' })}
-              rows={4}
-              className="resize-none"
-            />
-            {errors.bio && <p className="text-sm text-destructive">{errors.bio.message}</p>}
-          </div>
+      <FormGrid>
+        <div className="md:col-span-2">
+          <Field label="Full Name" error={errors.name?.message}>
+            {(id) => <Input id={id} {...register('name', { required: 'Name is required' })} />}
+          </Field>
         </div>
-      </section>
-
-      <PhoneField {...register('phone')} maxLength={50} />
-
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="currentLocation">Location</label>
-          <Input
-            id="currentLocation"
-            {...register('currentLocation', { required: 'Location is required' })}
-            maxLength={255}
-          />
-          {errors.currentLocation && (
-            <p className="text-sm text-destructive">{errors.currentLocation.message}</p>
+        <Field label="Initials">
+          {(id) => <Input id={id} {...register('initials')} maxLength={10} />}
+        </Field>
+        <Field label="Job Title" error={errors.jobTitle?.message}>
+          {(id) => (
+            <Input id={id} {...register('jobTitle', { required: 'Job title is required' })} />
           )}
+        </Field>
+        <div className="md:col-span-2">
+          <Field label="Tagline" error={errors.tagline?.message}>
+            {(id) => (
+              <Input
+                id={id}
+                {...register('tagline', { required: 'Tagline is required' })}
+                maxLength={500}
+              />
+            )}
+          </Field>
         </div>
+        <div className="md:col-span-2">
+          <Field label="Bio" error={errors.bio?.message}>
+            {(id) => (
+              <Textarea
+                id={id}
+                {...register('bio', { required: 'Bio is required' })}
+                rows={4}
+                className="resize-none"
+              />
+            )}
+          </Field>
+        </div>
+      </FormGrid>
 
-        <div className="flex items-center justify-between border rounded-2xl bg-muted/40 px-4 py-2 max-w-fit gap-4">
-          <p className="subheading-4 text-foreground">Open to remote</p>
+      <Controller
+        name="phone"
+        control={control}
+        render={({ field }) => (
+          <IconField
+            label="Phone"
+            icon={<Phone className="size-4" aria-hidden />}
+            name="phone"
+            field={{
+              value: field.value ?? '',
+              name: field.name,
+              onChange: (value: string) => field.onChange(value),
+              onBlur: () => {
+                field.onBlur();
+              },
+            }}
+            maxLength={50}
+          />
+        )}
+      />
+
+      <div className="flex flex-col gap-4">
+        <Field label="Location" error={errors.currentLocation?.message}>
+          {(id) => (
+            <Input
+              id={id}
+              {...register('currentLocation', { required: 'Location is required' })}
+              maxLength={255}
+            />
+          )}
+        </Field>
+
+        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2">
+          <p className="text-sm font-medium text-[#f2f4f8]">Open to remote</p>
           <Controller
             name="openToRemote"
             control={control}
@@ -94,11 +112,9 @@ export function BasicInfoForm({
             )}
           />
         </div>
-      </div>
 
-      <section>
-        <div className="flex items-center justify-between border rounded-2xl bg-muted/40 px-4 py-2 max-w-fit gap-4">
-          <p className="subheading-4 text-foreground">Open to opportunities</p>
+        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2">
+          <p className="text-sm font-medium text-[#f2f4f8]">Open to opportunities</p>
           <Controller
             name="availabilityStatus"
             control={control}
@@ -111,8 +127,8 @@ export function BasicInfoForm({
             )}
           />
         </div>
-      </section>
-    </section>
+      </div>
+    </div>
   );
 }
 

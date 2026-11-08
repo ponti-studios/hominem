@@ -1,9 +1,8 @@
-import { SectionIntro } from '@ponti-studios/ui/layout';
-import { PlusIcon, QuoteIcon, Trash2Icon } from 'lucide-react';
-import { Form, Link } from 'react-router';
+import { Trash2Icon } from 'lucide-react';
+import { Form } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
 import { CareerCollection } from '~/modules/career/components/career/career-list';
+import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 
 import { Route } from './+types/testimonials';
@@ -35,53 +34,45 @@ export default function TestimonialsRoute({ loaderData }: Route.ComponentProps) 
   const { testimonials } = loaderData;
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-4">
-        <SectionIntro
-          title="Testimonials"
-          description="Testimonials from colleagues, managers, and clients."
-        />
-        <AddButton asChild label="Add testimonial">
-          <Link to="/career/testimonials/new">
-            <PlusIcon aria-hidden />
-          </Link>
-        </AddButton>
-      </div>
-
-      <div className="mt-6">
-        <CareerCollection
-          items={testimonials}
-          keyFor={(t) => t.id}
-          hrefFor={(t) => `/career/testimonials/${t.id}`}
-          title={(t) => t.name}
-          subtitle={(t) => [t.title, t.company].filter(Boolean).join(' at ')}
-          meta={(t) => t.content}
-          trailing={(t) => (
-            <Form
-              method="post"
-              navigate={false}
-              onClick={(e) => e.stopPropagation()}
-              onSubmit={(e) => {
-                if (!confirm(`Delete testimonial from "${t.name}"?`)) e.preventDefault();
-              }}
+    <CollectionIndex
+      eyebrow="Career · Testimonials"
+      title="Testimonials"
+      description="Testimonials from colleagues, managers, and clients."
+      addTo="/career/testimonials/new"
+      addLabel="Add testimonial"
+    >
+      <CareerCollection
+        items={testimonials}
+        keyFor={(t) => t.id}
+        hrefFor={(t) => `/career/testimonials/${t.id}`}
+        title={(t) => t.name}
+        subtitle={(t) => [t.title, t.company].filter(Boolean).join(' at ')}
+        meta={(t) => t.content}
+        trailing={(t) => (
+          <Form
+            method="post"
+            navigate={false}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              if (!confirm(`Delete testimonial from "${t.name}"?`)) e.preventDefault();
+            }}
+          >
+            <input type="hidden" name="intent" value="delete" />
+            <input type="hidden" name="id" value={t.id} />
+            <button
+              type="submit"
+              aria-label={`Delete testimonial from ${t.name}`}
+              className="text-[#5e6678] transition-colors hover:text-[#ff9d9d]"
             >
-              <input type="hidden" name="intent" value="delete" />
-              <input type="hidden" name="id" value={t.id} />
-              <button
-                type="submit"
-                className="footnote text-muted-foreground hover:text-destructive-text"
-              >
-                <Trash2Icon className="size-4" />
-              </button>
-            </Form>
-          )}
-          empty={{
-            icon: <QuoteIcon className="size-6" />,
-            title: 'No testimonials yet',
-            description: 'Add a testimonial to showcase your work.',
-          }}
-        />
-      </div>
-    </div>
+              <Trash2Icon className="size-4" />
+            </button>
+          </Form>
+        )}
+        empty={{
+          title: 'No testimonials yet',
+          description: 'Add a testimonial to showcase your work.',
+        }}
+      />
+    </CollectionIndex>
   );
 }

@@ -15,7 +15,7 @@ import { useCreateTask } from '~/hooks/use-tasks';
 import { TaskForm } from './task-form';
 import { TaskPreviewCard } from './task-preview-card';
 
-export function CreateTaskDialog() {
+export function CreateTaskDialog({ trigger }: { trigger?: React.ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const createTask = useCreateTask();
@@ -28,9 +28,11 @@ export function CreateTaskDialog() {
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Plus /> New task
-        </Button>
+        {trigger ?? (
+          <Button size="sm" variant="outline">
+            <Plus /> New task
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

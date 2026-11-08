@@ -1,16 +1,9 @@
 import { humanizeIdentifier } from '@hominem/utils/text';
-import {
-  ArrowLeftIcon,
-  Briefcase,
-  Calendar,
-  FileText,
-  MapPin,
-  PaperclipIcon,
-  StickyNoteIcon,
-} from 'lucide-react';
-import { data, Link, NavLink, Outlet, redirect } from 'react-router';
+import { Briefcase, Calendar, FileText, PaperclipIcon, StickyNoteIcon } from 'lucide-react';
+import { data, Outlet, redirect } from 'react-router';
 
-import { cn } from '~/lib/utils';
+import { BackLink, DeleteButton, DetailHero } from '~/components/design';
+import { AppNavLink } from '~/components/shell/app-nav-link';
 import { QuickActions } from '~/modules/career/components/career/applications/QuickActions';
 import { StatusBadge } from '~/modules/career/components/status-badge';
 import { formText } from '~/modules/career/lib/route-utils';
@@ -112,61 +105,52 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        to="/career/applications"
-        className="footnote inline-flex w-fit items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-3.5" />
-        Applications
-      </Link>
+      <BackLink to="/career/applications" label="Applications" />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="min-w-0 space-y-1">
-          <h1 className="heading-2 truncate text-foreground">{application.title}</h1>
-          <p className="body-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-muted-foreground">
-            <span className="font-medium text-foreground">{application.company}</span>
-            {application.location && (
-              <>
-                <span aria-hidden className="text-muted-foreground/50">
-                  ·
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-3.5" />
-                  {application.location}
-                </span>
-              </>
+      <DetailHero
+        title={application.title}
+        subtitle={
+          application.location
+            ? `${application.company} · ${application.location}`
+            : application.company
+        }
+        badges={
+          <>
+            {application.status && statusLabel && (
+              <StatusBadge
+                tone={getApplicationStatusTone(application.status)}
+                label={statusLabel}
+              />
             )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {application.status && statusLabel && (
-            <StatusBadge tone={getApplicationStatusTone(application.status)} label={statusLabel} />
-          )}
-          {showCurrentStage && <StatusBadge tone="info" label={application.currentStage} />}
-          <QuickActions currentStatus={application.status} />
-        </div>
-      </div>
+            {showCurrentStage && <StatusBadge tone="info" label={application.currentStage} />}
+          </>
+        }
+        actions={
+          <>
+            <QuickActions currentStatus={application.status} />
+            <DeleteButton itemName={`${application.title} at ${application.company}`} />
+          </>
+        }
+      />
 
-      <nav className="bg-surface border flex h-auto w-full items-center gap-1 rounded-full p-1">
+      <nav
+        aria-label="Application"
+        className="glass flex shrink-0 items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] p-1.5"
+      >
         {tabItems.map((tab) => (
-          <NavLink
+          <AppNavLink
             key={tab.to}
             to={tab.to}
             end={tab.end}
-            className={({ isActive }) =>
-              cn(
-                'text-text-primary flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-all',
-                isActive && 'bg-background text-card-foreground ring-border ring-1 ring-inset',
-              )
-            }
-          >
-            <tab.icon className="size-4 shrink-0" />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </NavLink>
+            variant="pill"
+            label={tab.label}
+            icon={<tab.icon />}
+            accent="#5eead4"
+          />
         ))}
       </nav>
 
-      <div className="pt-6">
+      <div className="pt-2">
         <Outlet context={application} />
       </div>
     </div>

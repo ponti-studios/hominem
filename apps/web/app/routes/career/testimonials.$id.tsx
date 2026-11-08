@@ -1,7 +1,7 @@
-import { TextField, Textarea } from '@ponti-studios/ui/forms';
-import { Button } from '@ponti-studios/ui/primitives';
 import { Form, redirect } from 'react-router';
 
+import { BackLink, DeleteButton, DetailHero, DetailSection } from '~/components/design';
+import { FormActions, TextAreaInput, TextInput } from '~/components/design/forms';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 
@@ -56,38 +56,42 @@ export default function TestimonialDetailRoute({ loaderData, actionData }: Route
   const { testimonial } = loaderData;
 
   return (
-    <div className="max-w-2xl">
-      <Form method="post" className="flex flex-col gap-4">
-        <TextField label="Name" name="name" required defaultValue={testimonial.name} />
-        <div className="grid grid-cols-2 gap-4">
-          <TextField label="Title" name="title" defaultValue={testimonial.title ?? ''} />
-          <TextField label="Company" name="company" defaultValue={testimonial.company ?? ''} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="content" className="text-foreground text-sm font-medium">
-            Testimonial
-          </label>
-          <Textarea
-            id="content"
+    <div className="mx-auto w-full max-w-2xl">
+      <BackLink to="/career/testimonials" label="Testimonials" />
+      <DetailHero
+        title={testimonial.name}
+        subtitle={
+          [testimonial.title, testimonial.company].filter(Boolean).join(' at ') || undefined
+        }
+        actions={<DeleteButton itemName={testimonial.name} />}
+      />
+      <DetailSection title="Testimonial">
+        <Form method="post" className="flex flex-col gap-4">
+          <TextInput label="Name" name="name" required defaultValue={testimonial.name} />
+          <div className="grid grid-cols-2 gap-4">
+            <TextInput label="Title" name="title" defaultValue={testimonial.title ?? ''} />
+            <TextInput label="Company" name="company" defaultValue={testimonial.company ?? ''} />
+          </div>
+          <TextAreaInput
+            label="Testimonial"
             name="content"
             rows={4}
             required
             defaultValue={testimonial.content}
           />
-        </div>
-        <TextField
-          label="LinkedIn URL"
-          name="linkedinUrl"
-          defaultValue={testimonial.linkedinUrl ?? ''}
-        />
-        {actionData?.error && <p className="body-3 text-destructive-text">{actionData.error}</p>}
-        <div className="flex justify-between">
-          <Button type="submit" name="intent" value="delete" variant="ghost">
-            Delete
-          </Button>
-          <Button type="submit">Save changes</Button>
-        </div>
-      </Form>
+          <TextInput
+            label="LinkedIn URL"
+            name="linkedinUrl"
+            defaultValue={testimonial.linkedinUrl ?? ''}
+          />
+          {actionData?.error && (
+            <p role="alert" className="text-sm text-[#ff9d9d]">
+              {actionData.error}
+            </p>
+          )}
+          <FormActions submitLabel="Save changes" />
+        </Form>
+      </DetailSection>
     </div>
   );
 }
