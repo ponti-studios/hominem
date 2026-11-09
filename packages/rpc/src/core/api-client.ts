@@ -65,6 +65,13 @@ export function createCustomFetch(
       for (const [key, value] of new Headers(extraHeaders)) headers.set(key, value);
     }
 
+    // Ensure Content-Length is set for request bodies. Some server-side HTTP
+    // clients (e.g. undici with a dispatcher) do not set it automatically,
+    // which causes the API's body parser to fail with a 500.
+    if (init?.body && typeof init.body === 'string' && !headers.has('content-length')) {
+      headers.set('content-length', String(Buffer.byteLength(init.body)));
+    }
+
     const timeoutMs = init?.timeoutMs ?? defaultTimeoutMs;
     const requestSignal = createRequestSignal(init?.signal, timeoutMs);
     const requestInit = {
