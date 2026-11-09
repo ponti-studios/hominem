@@ -32,10 +32,19 @@ import { createFinanceServerClient } from '~/modules/finance/lib/server-client';
 
 import type { Route } from './+types/runway';
 
+function getErrorMessage(body: unknown, fallback: string): string {
+  if (typeof body !== 'object' || body === null) return fallback;
+  if (!('error' in body)) return fallback;
+  const error = Reflect.get(body, 'error');
+  return typeof error === 'string' ? error : fallback;
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
-  const { settings, runway } = await createFinanceServerClient(request)
-    .ledger.runway.$get()
-    .then((response) => response.json());
+  const response = await createFinanceServerClient(request).ledger.runway.$get();
+  if (!response.ok) {
+    throw new Response('Unable to load runway data', { status: response.status });
+  }
+  const { settings, runway } = await response.json();
   return { live: runway, settings };
 }
 
@@ -49,7 +58,14 @@ export async function action({ request }: Route.ActionArgs) {
     if (!/^[A-Z]{3}$/.test(currencyCode)) {
       return data({ error: 'Choose a valid currency.' }, { status: 400 });
     }
-    await finance.runway.settings.currency.$post({ json: { currencyCode } });
+    const response = await finance.runway.settings.currency.$post({ json: { currencyCode } });
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => ({}));
+      return data(
+        { error: getErrorMessage(body, 'Unable to save currency.') },
+        { status: response.status },
+      );
+    }
   } else if (actionName === 'budget') {
     const amount = Number(form.get('amount'));
     const categoryId = String(form.get('categoryId') ?? '');
@@ -57,18 +73,48 @@ export async function action({ request }: Route.ActionArgs) {
     if (!Number.isFinite(amount) || amount < 0 || !/^[A-Z]{3}$/.test(currencyCode)) {
       return data({ error: 'Enter a valid amount and currency.' }, { status: 400 });
     }
-    await finance.runway.settings.budget.$post({
+    const response = await finance.runway.settings.budget.$post({
       json: { categoryId, amount, currencyCode },
     });
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => ({}));
+      return data(
+        { error: getErrorMessage(body, 'Unable to save budget.') },
+        { status: response.status },
+      );
+    }
   } else if (actionName === 'remove-budget') {
-    await finance.runway.settings.budget.delete.$post({
+    const response = await finance.runway.settings.budget.delete.$post({
       json: { budgetId: String(form.get('budgetId') ?? '') },
     });
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => ({}));
+      return data(
+        { error: getErrorMessage(body, 'Unable to remove budget.') },
+        { status: response.status },
+      );
+    }
   }
 
   return data({ ok: true });
 }
 
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const message = error instanceof Error ? error.message : 'Something went wrong';
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Finance · Runway"
+        title="Financial Runway Calculator"
+        description="Unable to load runway data."
+        accent="#9d7bff"
+      />
+      <div className="rounded-xl border border-[#ff6b6b]/30 bg-[#ff6b6b]/10 p-4 text-sm text-[#ff9d9d]">
+        {message}
+      </div>
+    </div>
+  );
+}
 interface PlannedPurchase {
   description: string;
   amount: number;
@@ -78,6 +124,21 @@ interface PlannedPurchase {
 export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   const { live, settings } = loaderData;
   const settingsFetcher = useFetcher();
+  const settingsError = getErrorMessage(settingsFetcher.data, '');
+  const settingsErrorMessage = settingsError || null;
+
+  if (!live || !settings) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          eyebrow="Finance · Runway"
+          title="Financial Runway Calculator"
+          description="Unable to load runway data."
+          accent="#9d7bff"
+        />
+      </div>
+    );
+  }
 
   const [initialBalance, setInitialBalance] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
@@ -388,9 +449,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                       }
                     />
                   </div>
-                  {settingsFetcher.data && 'error' in settingsFetcher.data && (
+                  {settingsErrorMessage && (
                     <p role="alert" className="text-sm text-[#ff9d9d]">
-                      {settingsFetcher.data.error}
+                      {settingsErrorMessage}
                     </p>
                   )}
                 </div>
