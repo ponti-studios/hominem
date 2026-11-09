@@ -54,9 +54,13 @@ export function createCustomFetch(
   return async (input, init) => {
     const headers = new Headers(init?.headers);
     const cookie = config.request?.headers.get('cookie');
+    const origin = config.request?.headers.get('origin');
+    const referer = config.request?.headers.get('referer');
     const extraHeaders = await config.getHeaders?.();
 
     if (cookie) headers.set('cookie', cookie);
+    if (origin) headers.set('origin', origin);
+    if (referer && !origin) headers.set('referer', referer);
     if (extraHeaders) {
       for (const [key, value] of new Headers(extraHeaders)) headers.set(key, value);
     }
