@@ -180,6 +180,7 @@ export function MonthlyBreakdown({
   groupBy = 'month',
   title,
 }: MonthlyBreakdownProps) {
+  const navigate = useNavigate();
   const { data, isLoading, error, formatDateLabel } = useTimeSeriesData({
     dateFrom,
     dateTo,
@@ -222,7 +223,6 @@ export function MonthlyBreakdown({
     selectedTag
       ? `/finance/analytics/monthly/${date}?tag=${encodeURIComponent(selectedTag)}`
       : `/finance/analytics/monthly/${date}`;
-  const navigate = useNavigate();
 
   return (
     <SectionCard>

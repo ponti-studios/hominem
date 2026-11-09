@@ -127,19 +127,6 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   const settingsError = getErrorMessage(settingsFetcher.data, '');
   const settingsErrorMessage = settingsError || null;
 
-  if (!live || !settings) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          eyebrow="Finance · Runway"
-          title="Financial Runway Calculator"
-          description="Unable to load runway data."
-          accent="#9d7bff"
-        />
-      </div>
-    );
-  }
-
   const [initialBalance, setInitialBalance] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
   const [plannedPurchases, setPlannedPurchases] = useState<PlannedPurchase[]>([]);
@@ -152,14 +139,24 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   const runwayMutation = useCalculateRunway();
 
   const chartData = useMemo(() => {
+    if (!live) return [];
     const response = runwayMutation.data;
     if (!response?.projectionData) {
       return [];
     }
     return response.projectionData;
-  }, [runwayMutation.data]);
+  }, [runwayMutation.data, live]);
 
   const runwayMetrics = useMemo(() => {
+    if (!live) {
+      return {
+        monthsUntilZero: 0,
+        zeroDate: new Date(),
+        minimumBalance: 0,
+        isRunwayDangerous: false,
+        totalPlannedExpenses: 0,
+      };
+    }
     const response = runwayMutation.data;
     if (!response) {
       return {
@@ -190,7 +187,20 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       isRunwayDangerous: data.isRunwayDangerous,
       totalPlannedExpenses: data.totalPlannedExpenses,
     };
-  }, [runwayMutation.data, chartData]);
+  }, [runwayMutation.data, chartData, live]);
+
+  if (!live || !settings) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          eyebrow="Finance · Runway"
+          title="Financial Runway Calculator"
+          description="Unable to load runway data."
+          accent="#9d7bff"
+        />
+      </div>
+    );
+  }
 
   const handleAddPurchase = () => {
     if (newPurchase.description && newPurchase.amount > 0 && newPurchase.date) {

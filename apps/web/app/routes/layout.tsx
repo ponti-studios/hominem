@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, data, useLocation, useNavigate } from 'react-router';
 
 import { AppSidebar } from '~/components/shell/app-sidebar';
@@ -52,11 +52,12 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const crumbs = useCrumbs(location.pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let pendingG = false;
-    let timer: ReturnType<typeof setTimeout>;
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target;
       const typing =
@@ -70,7 +71,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
       if (typing || paletteOpen) return;
       if (pendingG) {
         pendingG = false;
-        clearTimeout(timer);
+        if (timerRef.current) clearTimeout(timerRef.current);
         const path = GO_SEQUENCES[event.key.toLowerCase()];
         if (path) {
           event.preventDefault();
@@ -80,13 +81,16 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
       }
       if (event.key.toLowerCase() === 'g' && !event.metaKey && !event.ctrlKey && !event.altKey) {
         pendingG = true;
-        timer = setTimeout(() => {
+        timerRef.current = setTimeout(() => {
           pendingG = false;
         }, 800);
       }
     }
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [paletteOpen]);
 
   return (
