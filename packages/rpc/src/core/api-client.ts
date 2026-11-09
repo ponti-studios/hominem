@@ -69,7 +69,7 @@ export function createCustomFetch(
     // clients (e.g. undici with a dispatcher) do not set it automatically,
     // which causes the API's body parser to fail with a 500.
     if (init?.body && typeof init.body === 'string' && !headers.has('content-length')) {
-      headers.set('content-length', String(Buffer.byteLength(init.body)));
+      headers.set('content-length', String(new TextEncoder().encode(init.body).length));
     }
 
     const timeoutMs = init?.timeoutMs ?? defaultTimeoutMs;
@@ -77,7 +77,7 @@ export function createCustomFetch(
     const requestInit = {
       ...init,
       headers,
-      credentials: 'include',
+      credentials: config.request ? 'omit' : 'include',
       signal: requestSignal.signal,
       ...(dispatcher ? { dispatcher } : {}),
     } as RequestInit;
