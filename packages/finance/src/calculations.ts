@@ -186,7 +186,7 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
   const monthsOfRunwayAfterPurchase =
     balanceAfterPurchase <= 0
       ? 0
-      : monthlySurplus >= 0
+      : monthlySurplus >= 0 || !Number.isFinite(monthlySurplus)
         ? null
         : balanceAfterPurchase / -monthlySurplus;
   const percentOfMonthlyIncome = monthlyIncome > 0 ? (purchaseAmount / monthlyIncome) * 100 : null;
@@ -267,8 +267,12 @@ export function simulateRunway(input: z.infer<typeof runwayScenarioInputSchema>)
       (date.getUTCFullYear() - asOf.getUTCFullYear()) * 12 +
       date.getUTCMonth() -
       asOf.getUTCMonth();
+    // Purchases in the current (in-progress) month or outside the 12-month
+    // projection window do not belong to any calendar-month bucket, so they
+    // neither shift a future balance nor count as planned expenses here.
     if (purchase.date < asOfDate) continue;
-    const index = Math.max(0, monthOffset - 1);
+    if (monthOffset < 1 || monthOffset > input.projectionMonths) continue;
+    const index = monthOffset - 1;
     purchases.set(index, (purchases.get(index) ?? 0) + purchase.amount);
     totalPlannedExpenses += purchase.amount;
   }
