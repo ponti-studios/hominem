@@ -52,7 +52,6 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const crumbs = useCrumbs(location.pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
