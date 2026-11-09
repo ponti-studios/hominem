@@ -10,5 +10,6 @@ export function createFinanceServerClient(request: Request) {
     baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
     request,
     throwOnError: false,
+    getHeaders: () => ({ Origin: serverEnv.PUBLIC_APP_URL }),
   }).api.finance;
 }
