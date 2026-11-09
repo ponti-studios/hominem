@@ -1,6 +1,5 @@
 import { isAIUsageMetrics, type AIUsageMetrics } from '@hominem/ai';
 import {
-  chatMessageJsonObjectSchema,
   chatMessageSnapshotSchema,
   type ChatMessageJsonObject,
   type GenerationDeltaEventPayload,
@@ -10,7 +9,11 @@ import {
   type ToolResult,
 } from '@hominem/chat';
 import type { GenerationRunnerOptions } from '@hominem/chat/server';
-import { createGenerationRunner } from '@hominem/chat/server';
+import {
+  createGenerationRunner,
+  parseArguments as parseStrictArguments,
+  parseArgumentsLenient,
+} from '@hominem/chat/server';
 import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 import { logger } from '@hominem/telemetry';
 import { ZodError } from 'zod';
@@ -19,14 +22,8 @@ import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
 import type { GenerationEngineInput, GenerationEngineResult } from './chat-generation-types';
 
-export class ToolInputError extends Error {
-  readonly category = 'tool_input';
-
-  constructor(toolName: string) {
-    super(`Tool arguments are invalid for ${toolName}`);
-    this.name = 'ToolInputError';
-  }
-}
+// Re-exported from @hominem/chat so existing callers (and tests) keep working.
+export { ToolInputError } from '@hominem/chat/server';
 
 const generationRunner = createGenerationRunner<ChatGenerationEventRecord>();
 
@@ -69,32 +66,14 @@ export function isExecuteOwnedEvent(event: { type: string; phase?: string }): bo
   );
 }
 
-function parseArguments(call: GenerationToolCall): ChatMessageJsonObject {
-  // If there are no arguments, return an empty object.
-  if (!call.arguments) return {};
-
-  let value: unknown;
-  try {
-    value = JSON.parse(call.arguments);
-  } catch {
-    throw new ToolInputError(call.name);
-  }
-
-  const parsed = chatMessageJsonObjectSchema.safeParse(value);
-  if (!parsed.success) {
-    throw new ToolInputError(call.name);
-  }
-
-  return parsed.data;
-}
+const parseArguments = parseStrictArguments;
 
 function toToolRecord(call: GenerationToolCall, result?: ToolResult): ChatMessageToolCallRecord {
   let args: ChatMessageJsonObject = {};
   try {
-    args = parseArguments(call);
+    args = parseArgumentsLenient(call);
   } catch {
-    // swallow it — the bad argument string is still visible in the model transcript,
-    // and the tool result will carry the validation error
+    // parseArgumentsLenient never throws; kept for symmetry with the strict path.
   }
   return {
     toolName: call.name,
@@ -415,7 +394,7 @@ export async function executeGenerationTurn(
       ? {
           toolCallId: pending.id,
           toolName: pending.name,
-          args: parseArguments(pending),
+          args: parseArgumentsLenient(pending),
           preview: result.pendingPreview ? JSON.parse(result.pendingPreview.content) : null,
         }
       : null,

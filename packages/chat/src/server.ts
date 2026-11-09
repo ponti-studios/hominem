@@ -1,5 +1,3 @@
-import { isObject } from '@hominem/utils';
-
 import type { GenerationStartContext } from './generation-events';
 import type { GenerationAdapters } from './generation-interpreter';
 import { generate as runGeneration } from './generation-interpreter';
@@ -13,7 +11,11 @@ import type {
   GenerationToolCall,
   ToolResult,
 } from './generation-machine';
-import type { ChatMessageSnapshot } from './generation-schemas';
+import {
+  chatMessageJsonObjectSchema,
+  type ChatMessageJsonObject,
+  type ChatMessageSnapshot,
+} from './generation-schemas';
 import { GENERATION_TIMING } from './generation-timing';
 
 // Recovery helpers remain server-private to consumers; applications should
@@ -141,12 +143,40 @@ export type ChatServerGenerationResult = {
   pendingPreview: ToolResult | null;
 };
 
-function parseArguments(call: GenerationToolCall): Record<string, unknown> {
+export class ToolInputError extends Error {
+  readonly category = 'tool_input';
+
+  constructor(toolName: string) {
+    super(`Tool arguments are invalid for ${toolName}`);
+    this.name = 'ToolInputError';
+  }
+}
+
+export function parseArguments(call: GenerationToolCall): ChatMessageJsonObject {
+  if (!call.arguments) return {};
+  let value: unknown;
+  try {
+    value = JSON.parse(call.arguments);
+  } catch {
+    throw new ToolInputError(call.name);
+  }
+  const parsed = chatMessageJsonObjectSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new ToolInputError(call.name);
+  }
+  return parsed.data;
+}
+
+// Lenient variant retained for record-keeping paths (toToolRecord, pendingToolCall
+// args) where a malformed argument string should not abort the whole generation;
+// the bad string is still visible in the model transcript. Not the default.
+export function parseArgumentsLenient(call: GenerationToolCall): ChatMessageJsonObject {
   if (!call.arguments) return {};
   try {
     const value: unknown = JSON.parse(call.arguments);
-    if (!isObject(value)) return {};
-    return Object.fromEntries(Object.entries(value));
+    const parsed = chatMessageJsonObjectSchema.safeParse(value);
+    if (!parsed.success) return {};
+    return parsed.data;
   } catch {
     return {};
   }
@@ -212,11 +242,21 @@ export function createGenerationRunner<
                 toolResults.set(call.id, stored);
                 return stored;
               }
-              const result = await tools.execute({
-                call,
-                arguments: parseArguments(call),
-                context: { ...context, idempotencyKey },
-              });
+              let result: ToolResult;
+              try {
+                result = await tools.execute({
+                  call,
+                  arguments: parseArguments(call),
+                  context: { ...context, idempotencyKey },
+                });
+              } catch (error) {
+                result = {
+                  callId: call.id,
+                  toolName: call.name,
+                  content: JSON.stringify({ error: 'Tool call failed' }),
+                  error: true,
+                };
+              }
               toolResults.set(call.id, result);
               return store.saveEffect
                 ? store.saveEffect({
