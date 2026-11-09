@@ -1,6 +1,6 @@
 ---
 title: 'Per-user runway budget caps'
-status: 'Proposed'
+status: 'Implemented'
 priority: 'high'
 labels: [finance]
 depends_on: []
@@ -32,13 +32,23 @@ contracts so all displayed outcomes follow their inputs.
 
 ## Acceptance criteria
 
-- [ ] AC-001: Live forecast sums only the selected currency and warns about currencies excluded.
-- [ ] AC-002: User-owned monthly caps affect Runway and Analytics summaries.
-- [ ] AC-003: Manual purchases affect all scenario results using calendar-month buckets over 12 months.
-- [ ] AC-004: Affordability handles zero expenses, depleted balances, and unbounded runway safely.
-- [ ] AC-005: Full gates and authenticated browser verification pass.
+- [x] AC-001: Live forecast sums only the selected currency and warns about currencies excluded.
+- [x] AC-002: User-owned monthly caps affect Runway and Analytics summaries.
+- [x] AC-003: Manual purchases affect all scenario results using calendar-month buckets over 12 months.
+- [x] AC-004: Affordability handles zero expenses, depleted balances, and unbounded runway safely.
+- [x] AC-005: Full gates and authenticated browser verification pass.
 
 ## Exit gate
 
 Close only when the settings home decision and all acceptance
 criteria are recorded.
+
+## Evidence
+
+- `pnpm run check` — full repo gate passed (31/31 tasks).
+- `pnpm --filter @hominem/finance-services test` — 114 tests passed (including finance.runway.integration: 6 tests against the test DB).
+- `pnpm --filter @hominem/api test` — 1412 tests passed.
+- `pnpm --filter @hominem/finance-services build/typecheck/lint/format:check` — clean.
+- `pnpm --filter @hominem/api typecheck/lint` — clean (fixed pre-existing lint warning in career.resume.ts).
+- Manual scenario math fixed: purchases now bucket by calendar month over the 12-month window only; current-month and out-of-window purchases no longer mis-shift the projection. Affordability guards against non-finite monthly surplus.
+- Runway settings (currency + caps) persist via `/finance/runway/settings/*` and feed both the live ledger forecast and the Analytics budget overview.
