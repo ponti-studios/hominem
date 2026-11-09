@@ -88,7 +88,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimeout(timerRef.current);
     };
   }, [paletteOpen]);
 
