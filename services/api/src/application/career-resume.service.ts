@@ -44,6 +44,7 @@ import {
   resolveUploadMimeType,
   validateFile,
 } from '@hominem/storage';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { z } from 'zod';
 
 const PDF_RESUME_VALIDATION = {
@@ -66,7 +67,7 @@ export type ResumeConvertStage =
 export class CareerResumeError extends Error {
   constructor(
     message: string,
-    readonly status: number,
+    readonly status: ContentfulStatusCode,
     readonly stage: ResumeConvertStage,
     readonly retryable: boolean,
     readonly fileUrl?: string,

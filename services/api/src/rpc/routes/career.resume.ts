@@ -68,9 +68,9 @@ function resumeErrorResponse(c: Parameters<typeof jsonError>[0], error: unknown)
 function jsonError(
   c: { json: (body: unknown, status: ContentfulStatusCode) => Response },
   body: unknown,
-  status: number,
+  status: ContentfulStatusCode,
 ) {
-  return c.json(body, status as ContentfulStatusCode);
+  return c.json(body, status);
 }
 
 export const careerResumeRoutes = new Hono<AppContext>()
