@@ -241,15 +241,6 @@ export async function executeGenerationTurn(
           };
         }
         const idempotencyKey = toolContext.idempotencyKey;
-        const stored = await input.effectStore?.get({
-          generationId: input.generationId,
-          idempotencyKey,
-          toolName: call.name,
-        });
-        if (stored) {
-          if (!stored.error) completedPlannedTools.add(call.name);
-          return stored;
-        }
         try {
           const value = await runtime.callTool(input.userId, call.name, parseArguments(call), {
             idempotencyKey,
@@ -265,14 +256,7 @@ export async function executeGenerationTurn(
             error: false,
           };
           if (!result.error) completedPlannedTools.add(call.name);
-          return input.effectStore
-            ? await input.effectStore.save({
-                generationId: input.generationId,
-                idempotencyKey,
-                toolName: call.name,
-                result,
-              })
-            : result;
+          return result;
         } catch (error) {
           // The model's own bad arguments: it gets the paths and messages (never values) so it
           // can correct the call. Telemetry gets a bounded category and the tool name, never
@@ -299,14 +283,7 @@ export async function executeGenerationTurn(
             ),
             error: true,
           };
-          return input.effectStore
-            ? await input.effectStore.save({
-                generationId: input.generationId,
-                idempotencyKey,
-                toolName: call.name,
-                result,
-              })
-            : result;
+          return result;
         }
       },
     },

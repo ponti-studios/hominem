@@ -1,6 +1,6 @@
 ---
 title: 'Remove duplicated effect persistence from engine tools.execute (F3)'
-status: 'Proposed'
+status: 'Implemented'
 priority: 'medium'
 labels: [chat, cleanup, refactor]
 depends_on: [chat-generation-event-ownership.md, chat-generation-tool-args.md]
@@ -34,11 +34,25 @@ task assumes both are settled); `commitGeneration` extraction (next task).
 
 ## Acceptance criteria
 
-- [ ] AC-001: Engine `tools.execute` contains no `effectStore.get`/`save` calls.
-- [ ] AC-002: A replay-with-stored-effect test passes with the runner layer alone (~30 lines deleted).
-- [ ] AC-003: Replay + engine suites green; no behavior change on fresh (non-replay) turns.
+- [x] AC-001: Engine `tools.execute` contains no `effectStore.get`/`save` calls.
+- [x] AC-002: A replay-with-stored-effect test passes with the runner layer alone (~30 lines deleted).
+- [x] AC-003: Replay + engine suites green; no behavior change on fresh (non-replay) turns.
 
 ## Exit gate
 
 Close when AC-001–AC-003 hold. Depends on the event-ownership and
 tool-args tasks — treat as locked until both are `Implemented`.
+
+## Evidence
+
+- Engine `tools.execute` no longer calls `input.effectStore.get`/`save`; persistence is owned
+  solely by the runner's store adapters (`getEffect`/`saveEffect`), which the engine wires from
+  the same `input.effectStore`.
+- Replay proven at the runner layer: `packages/chat/src/server.test.ts` adds a
+  `stored-effect replay` describe with two cases — stored effect short-circuits (`execute` never
+  called, `getEffect` consulted) and fresh result saves through the store (`saveEffect` called
+  once). The fake provider emits the tool call on turn 1 only, then a final text turn.
+- `pnpm --filter @hominem/chat test` — 107 tests passed (13 files).
+- `pnpm --filter @hominem/api test` — 1412 tests passed (157 files).
+- `pnpm run check` — full repo gate passed (31/31 tasks).
+- Net engine diff: −30 lines of duplicated persistence.

@@ -50,20 +50,50 @@ const startContext = {
   requestContext: {},
 };
 
+function createToolProvider() {
+  let turn = 0;
+  return () => ({
+    open: () =>
+      (async function* () {
+        if (turn++ === 0) {
+          yield {
+            type: 'provider-chunk' as const,
+            chunk: {
+              content: '',
+              toolCalls: [
+                { index: 0, id: 'call-1', function: { name: 'lookup', arguments: '{}' } },
+              ],
+            },
+          };
+        }
+        yield {
+          type: 'provider-turn-completed' as const,
+          requiredToolCall: turn === 1,
+          confirmationCallIds: [],
+        };
+      })(),
+    retry: async () => ({
+      type: 'provider-turn-completed' as const,
+      requiredToolCall: false,
+      confirmationCallIds: [],
+    }),
+  });
+}
+
 describe('generation runner', () => {
   it('owns persistence and publication around a provider turn', async () => {
     const store = createStore();
     const published: ChatServerPersistedEvent[] = [];
     const onUsage = vi.fn();
     const runner = createGenerationRunner({
-      provider: ({ onUsage }) => ({
+      provider: () => ({
         open: () =>
           (async function* () {
             yield { type: 'provider-chunk', chunk: { content: 'Hello' } };
             onUsage?.({ promptTokens: 1, outputTokens: 1, totalTokens: 2, costUsd: null });
             yield {
               type: 'provider-turn-completed',
-              requiredToolCall: false,
+              requiredToolCall: true,
               confirmationCallIds: [],
             };
           })(),
@@ -103,6 +133,78 @@ describe('generation runner', () => {
       outputTokens: 1,
       totalTokens: 2,
       costUsd: null,
+    });
+  });
+
+  describe('stored-effect replay', () => {
+    it('short-circuits when an effect is already stored', async () => {
+      const store = createStore();
+      const toolResult: ToolResult = {
+        callId: 'call-1',
+        toolName: 'lookup',
+        content: '{"cached":true}',
+        error: false,
+      };
+      store.effects.set('generation-1:generation-1:0:call-1', toolResult);
+
+      const execute = vi.fn(async () => ({
+        callId: 'call-1',
+        toolName: 'lookup',
+        content: '{"fresh":true}',
+        error: false,
+      }));
+
+      const runner = createGenerationRunner({
+        provider: createToolProvider(),
+        tools: {
+          getDefinition: () => undefined,
+          execute,
+        },
+        store,
+      });
+
+      const result = await runner.generate({
+        generationId: 'generation-1',
+        chatId: 'chat-1',
+        userId: 'user-1',
+        model: { model: 'test', messages: [], tools: [], onUsage: vi.fn() },
+        startContext,
+      });
+
+      expect(execute).not.toHaveBeenCalled();
+      expect(store.getEffect).toHaveBeenCalled();
+      expect(result.toolResults.get('call-1')).toEqual(toolResult);
+    });
+
+    it('saves a fresh result through the store when no effect is stored', async () => {
+      const store = createStore();
+      const execute = vi.fn(async () => ({
+        callId: 'call-1',
+        toolName: 'lookup',
+        content: '{"fresh":true}',
+        error: false,
+      }));
+
+      const runner = createGenerationRunner({
+        provider: createToolProvider(),
+        tools: {
+          getDefinition: () => undefined,
+          execute,
+        },
+        store,
+      });
+
+      const result = await runner.generate({
+        generationId: 'generation-1',
+        chatId: 'chat-1',
+        userId: 'user-1',
+        model: { model: 'test', messages: [], tools: [], onUsage: vi.fn() },
+        startContext,
+      });
+
+      expect(execute).toHaveBeenCalledTimes(1);
+      expect(store.saveEffect).toHaveBeenCalled();
+      expect(result.toolResults.get('call-1')).toMatchObject({ content: '{"fresh":true}' });
     });
   });
 });
