@@ -1,8 +1,9 @@
 import type { Merchant } from '@hominem/rpc/finance';
 import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
-import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { Card, CardContent } from '@ponti-studios/ui/primitives';
 
+import { CardHeader } from '~/components/design';
 import { useFinanceTopMerchants } from '~/modules/finance/hooks/use-finance-top-merchants';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
@@ -34,11 +35,9 @@ export function TopMerchants({
   const skeletonItems = Array.from({ length: 5 }, (_, i) => i);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Top Merchants</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="gap-0">
+      <CardHeader title="Top Merchants" />
+      <CardContent className="pt-0">
         {isLoading ? (
           <div className="space-y-3">
             {skeletonItems.map((item) => (

@@ -82,11 +82,7 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        eyebrow="Finance · Reconcile"
-        title="Reconcile"
-        description="True-up ledger balances to real readings and inspect the books for sign bugs."
-      />
+      <PageHeader eyebrow="Finance · Reconcile" title="Reconcile" />
 
       {actionData && !actionData.ok ? (
         <Alert variant="destructive">

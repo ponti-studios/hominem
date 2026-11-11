@@ -54,11 +54,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function NewProjectRoute({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <Container size="xs">
-      <PageHeader
-        eyebrow="Career · Projects"
-        title="Add project"
-        description="Add a side project or portfolio piece."
-      />
+      <PageHeader eyebrow="Career · Projects" title="Add project" />
       <DetailSection title="Project">
         <ProjectEditor engagements={loaderData.engagements} submitLabel="Add project" />
         {actionData?.error && (

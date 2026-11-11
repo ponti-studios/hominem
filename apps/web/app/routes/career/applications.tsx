@@ -108,7 +108,6 @@ export default function ApplicationsRoute({
     <CollectionIndex
       eyebrow="Career · Applications"
       title="Applications"
-      description="Track and manage your job applications in one place."
       addTo="/career/applications/new"
       addLabel="Add application"
     >

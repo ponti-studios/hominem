@@ -25,7 +25,7 @@ export default function FinanceAnalyticsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionIntro title="Analytics" description="Income, spending, trends." />
+      <SectionIntro title="Analytics" />
 
       <AnalyticsFilters
         dateFrom={dateFrom}
@@ -44,7 +44,7 @@ export default function FinanceAnalyticsPage() {
         setCompareToPrevious={setCompareToPrevious}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="flex flex-col gap-4 lg:flex-row [&>*]:min-w-0 [&>*]:flex-1">
         <AnalyticsStatisticsSummary
           dateFrom={dateFrom}
           dateTo={dateTo}

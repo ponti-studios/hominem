@@ -64,11 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function CreateJobApplication() {
   return (
     <Container size="xs">
-      <PageHeader
-        eyebrow="Career · Applications"
-        title="New Application"
-        description="Add a new job application to track your search progress."
-      />
+      <PageHeader eyebrow="Career · Applications" title="New Application" />
       <DetailSection title="Application">
         <Form method="post" className="flex flex-col gap-4">
           <FormGrid>

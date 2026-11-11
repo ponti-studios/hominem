@@ -1,18 +1,16 @@
 import { motion } from 'motion/react';
 
 /**
- * Shared page hero. Every domain page gets the same editorial composition:
- * mono eyebrow, display title, supporting line, optional actions.
+ * Shared page heading. Every domain page gets the same mono eyebrow,
+ * display title, and optional actions.
  */
 export function PageHeader({
   eyebrow,
   title,
-  description,
   actions,
 }: {
   eyebrow: string;
   title: React.ReactNode;
-  description?: string;
   actions?: React.ReactNode;
 }) {
   return (
@@ -36,11 +34,6 @@ export function PageHeader({
         >
           {title}
         </h1>
-        {description ? (
-          <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
       </div>
     </motion.div>
   );

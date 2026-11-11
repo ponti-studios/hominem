@@ -55,11 +55,7 @@ export default function AffordabilityPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Finance · Affordability"
-        title="Can I afford this?"
-        description="Enter a purchase and your current finances to see whether it protects your runway and emergency fund."
-      />
+      <PageHeader eyebrow="Finance · Affordability" title="Can I afford this?" />
 
       <Card>
         <CardHeader>

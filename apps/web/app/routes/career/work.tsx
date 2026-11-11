@@ -42,7 +42,6 @@ export default function WorkPage({ loaderData }: Route.ComponentProps) {
     <CollectionIndex
       eyebrow="Career · Work"
       title="Work history"
-      description="Your work history and engagements."
       addTo="/career/work/new"
       addLabel="Add engagement"
       showSearch={positions.length > 0}

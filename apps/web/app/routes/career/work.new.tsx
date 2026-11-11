@@ -56,11 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function NewPositionPage() {
   return (
     <Container size="xs">
-      <PageHeader
-        eyebrow="Career · Work"
-        title="New Engagement"
-        description="Add a work history engagement."
-      />
+      <PageHeader eyebrow="Career · Work" title="New Engagement" />
       <DetailSection title="Engagement">
         <PositionEditor submitLabel="Create engagement" />
       </DetailSection>

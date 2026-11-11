@@ -16,7 +16,6 @@ type CollectionSearch = {
 type CollectionIndexProps = {
   eyebrow: string;
   title: string;
-  description: string;
   addTo?: string;
   addLabel?: string;
   actions?: React.ReactNode;
@@ -33,7 +32,6 @@ type CollectionIndexProps = {
 export function CollectionIndex({
   eyebrow,
   title,
-  description,
   addTo,
   addLabel,
   actions,
@@ -46,7 +44,6 @@ export function CollectionIndex({
       <PageHeader
         eyebrow={eyebrow}
         title={title}
-        description={description}
         actions={
           actions ??
           (addTo && addLabel ? (

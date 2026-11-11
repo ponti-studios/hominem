@@ -27,7 +27,6 @@ export const Foundation: StoryObj = {
         <PageHeader
           eyebrow="Design system"
           title="One monochrome language"
-          description="Type, spacing, alignment, and neutral rules carry hierarchy."
           actions={<Button>Save changes</Button>}
         />
         <div className="grid gap-4 border-t border-border py-6 sm:grid-cols-3">

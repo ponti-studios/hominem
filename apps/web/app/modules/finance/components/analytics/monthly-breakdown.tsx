@@ -2,12 +2,14 @@ import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
 import { Link, useNavigate } from 'react-router';
 
 import { BlockSkeleton, PanelState } from '~/components/design';
+import { CardHeader } from '~/components/design';
 import { DataTable } from '~/components/design/data-table';
-import { SectionHeader } from '~/components/design/section-header';
 import { SectionCard } from '~/components/design/surfaces';
 import { cn } from '~/lib/utils';
 import { useTimeSeriesData } from '~/modules/finance/hooks/use-time-series';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
+
+import { findLargestCompleteSpendingChange } from './monthly-breakdown-trends';
 
 interface MonthlyBreakdownProps {
   dateFrom?: Date | undefined;
@@ -215,9 +217,9 @@ export function MonthlyBreakdown({
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
-  const showTrends = compareToPrevious && sortedData.length >= 2;
-  const prevMonth = showTrends ? sortedData[1] : null;
-  const currMonth = showTrends ? sortedData[0] : null;
+  const largestChange = compareToPrevious
+    ? findLargestCompleteSpendingChange({ data: sortedData, dateFrom, dateTo, groupBy })
+    : null;
 
   const monthlyUrl = (date: string) =>
     selectedTag
@@ -226,17 +228,13 @@ export function MonthlyBreakdown({
 
   return (
     <SectionCard>
-      <div className="p-5 sm:p-6">
-        <SectionHeader
-          title={title}
-          description={selectedTag ? `Filtered by: ${selectedTag}` : undefined}
-        />
-
-        {showTrends && prevMonth && currMonth && (
+      <CardHeader title={title} />
+      <div className="p-4 pt-0">
+        {largestChange && (
           <div className="mt-4">
             <TrendsContent
-              prevMonth={prevMonth}
-              currMonth={currMonth}
+              prevMonth={largestChange.previous}
+              currMonth={largestChange.current}
               formatDateLabel={formatDateLabel}
               formatCurrency={formatCurrency}
             />
@@ -271,27 +269,6 @@ export function MonthlyBreakdown({
                 align: 'right',
                 render: (item) => formatCurrency(Math.abs(item.average)),
               },
-              ...(compareToPrevious
-                ? [
-                    {
-                      key: 'trend',
-                      header: 'Trend',
-                      align: 'right' as const,
-                      render: (item: TimeSeriesDataPoint) => (
-                        <span
-                          className={cn({
-                            'text-destructive-text': item.trend?.directionExpenses === 'up',
-                            'text-foreground': item.trend?.directionExpenses === 'down',
-                          })}
-                        >
-                          {item.trend
-                            ? `${item.trend.directionExpenses === 'up' ? '+' : '-'}${item.trend.percentChangeExpenses}%`
-                            : '-'}
-                        </span>
-                      ),
-                    },
-                  ]
-                : []),
             ]}
           />
         </div>

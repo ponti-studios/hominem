@@ -1,15 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { Card, CardContent } from '@ponti-studios/ui/primitives';
 
+import { CardHeader } from '~/components/design';
 import type { MonthlyStatsContract } from '~/modules/finance/hooks/use-monthly-stats';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
 export function MonthlySummaryCard({ stats }: { stats: MonthlyStatsContract }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Summary</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="gap-0">
+      <CardHeader title="Summary" />
+      <CardContent className="pt-0">
         <div className="flex flex-col gap-2">
           {stats.currencyBreakdown.length > 1 ? (
             stats.currencyBreakdown.map((currency) => (

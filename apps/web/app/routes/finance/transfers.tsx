@@ -41,10 +41,7 @@ export default function TransfersPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="space-y-6">
-      <SectionIntro
-        title="Transfer pairs"
-        description="Same-amount entries on two accounts a few days apart are usually one real transfer recorded twice — not duplicates. Verify each leg before touching either side."
-      />
+      <SectionIntro title="Transfer pairs" />
 
       <Card>
         <CardHeader>

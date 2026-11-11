@@ -71,7 +71,6 @@ export default function SkillsRoute({ loaderData }: Route.ComponentProps) {
     <CollectionIndex
       eyebrow="Career · Skills"
       title="Skills"
-      description="Skills and areas of expertise."
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

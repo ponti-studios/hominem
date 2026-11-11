@@ -47,7 +47,6 @@ export default function ProjectsRoute({ loaderData }: Route.ComponentProps) {
     <CollectionIndex
       eyebrow="Career · Projects"
       title="Projects"
-      description="Side projects and portfolio work."
       addTo="/career/projects/new"
       addLabel="Add project"
       showSearch={projects.length > 0}

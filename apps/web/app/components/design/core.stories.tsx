@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import {
   AddButton,
+  CardHeader,
   FilterTabs,
   PageHeader,
   PanelState,
@@ -30,7 +31,6 @@ export const PageHeaderDefault: StoryObj = {
       <PageHeader
         eyebrow="Finance · Runway"
         title="Financial Runway Calculator"
-        description="Live ledger forecast plus manual scenarios."
         actions={<Button size="sm">Save settings</Button>}
       />
     </Shell>
@@ -78,6 +78,18 @@ export const SectionCardGrid: StoryObj = {
           </div>
         </SectionCard>
       </div>
+    </Shell>
+  ),
+};
+
+export const LockedCardHeader: StoryObj = {
+  name: 'CardHeader',
+  render: () => (
+    <Shell>
+      <SectionCard className="max-w-xl">
+        <CardHeader title="Monthly Breakdown" action={<Button size="sm">Export</Button>} />
+        <div className="p-4 pt-0">Card body begins directly below the shared header.</div>
+      </SectionCard>
     </Shell>
   ),
 };

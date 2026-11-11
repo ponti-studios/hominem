@@ -37,7 +37,6 @@ export default function TestimonialsRoute({ loaderData }: Route.ComponentProps) 
     <CollectionIndex
       eyebrow="Career · Testimonials"
       title="Testimonials"
-      description="Testimonials from colleagues, managers, and clients."
       addTo="/career/testimonials/new"
       addLabel="Add testimonial"
     >

@@ -275,11 +275,6 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
       <PageHeader
         eyebrow="Career · Profile"
         title="Profile"
-        description={
-          currentProfile.updatedAt
-            ? `Last updated ${new Date(currentProfile.updatedAt).toLocaleDateString('en-US')}`
-            : undefined
-        }
         actions={
           <div>
             <Button

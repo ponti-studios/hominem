@@ -65,11 +65,7 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
 
   return (
     <Container size="sm">
-      <PageHeader
-        eyebrow="Career · Account"
-        title="Account"
-        description="Sign-in, visibility, and administration for your career account."
-      />
+      <PageHeader eyebrow="Career · Account" title="Account" />
 
       <DetailSection title="Identity">
         <IconField

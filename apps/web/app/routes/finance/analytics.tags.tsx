@@ -202,11 +202,7 @@ export default function TagsAnalyticsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        eyebrow="Finance · Analytics"
-        title="Tags Breakdown"
-        description="Spending by tag for the selected period."
-      />
+      <PageHeader eyebrow="Finance · Analytics" title="Tags Breakdown" />
 
       <List variant="plain">
         <TransactionFilters

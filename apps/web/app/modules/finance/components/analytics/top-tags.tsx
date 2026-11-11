@@ -1,7 +1,8 @@
 import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
-import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { Card, CardContent } from '@ponti-studios/ui/primitives';
 
+import { CardHeader } from '~/components/design';
 import { useTagBreakdown } from '~/modules/finance/hooks/use-analytics';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
@@ -31,11 +32,9 @@ export function TopTags({ dateFrom, dateTo, selectedAccount }: TopTagsProps) {
   const skeletonItems = Array.from({ length: 5 }, (_, i) => i);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Top Tags</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="gap-0">
+      <CardHeader title="Top Tags" />
+      <CardContent className="pt-0">
         {isLoading ? (
           <div className="space-y-3">
             {skeletonItems.map((item) => (

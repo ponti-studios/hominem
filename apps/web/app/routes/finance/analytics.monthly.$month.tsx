@@ -25,20 +25,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { stats };
 }
 
-// turns "2024-05" into "May 2024"
-function formatMonthDisplay(monthStr: string | undefined) {
-  if (!monthStr) return '';
-  const [year, month] = monthStr.split('-');
-  const date = new Date(Number(year), Number(month) - 1);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
 export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProps) {
   const { month } = useParams<{ month: string }>();
   const { stats: initialStats } = loaderData;
   const { stats, isLoading, error } = useMonthlyStats(month, { initialData: initialStats });
 
-  const formattedMonth = formatMonthDisplay(month);
   const spendingByTag =
     stats?.currencyBreakdown.length && stats.currencyBreakdown.length > 1
       ? stats.currencyBreakdown.flatMap((currency) =>
@@ -48,11 +39,7 @@ export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProp
 
   return (
     <div className="p-4 md:p-8">
-      <PageHeader
-        eyebrow="Finance · Analytics"
-        title="Monthly Analytics"
-        description={formattedMonth}
-      />
+      <PageHeader eyebrow="Finance · Analytics" title="Monthly Analytics" />
 
       {isLoading && (
         <div className="flex flex-col gap-4">

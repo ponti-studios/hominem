@@ -31,11 +31,7 @@ export default function Onboarding() {
 
   return (
     <Container size="sm">
-      <PageHeader
-        eyebrow="Career · Import"
-        title="Fill your profile from a resume"
-        description="We’ll replace your current profile details with what we extract from the PDF. You can always edit afterward."
-      />
+      <PageHeader eyebrow="Career · Import" title="Fill your profile from a resume" />
 
       <DetailSection title="Resume PDF">
         <UploadResumeForm

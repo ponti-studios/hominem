@@ -4,6 +4,7 @@
 export { PageHeader } from './page-header';
 export { AddButton } from './add-button';
 export { FilterTabs, PanelState, SectionCard, Stat } from './surfaces';
+export { CardHeader } from './card-header';
 export { DataTable, type DataTableColumn } from './data-table';
 export { ChartCard } from './chart-card';
 export { Field, SelectField } from './form-field';

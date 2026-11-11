@@ -33,11 +33,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function NewTestimonialRoute({ actionData }: Route.ComponentProps) {
   return (
     <Container size="xs">
-      <PageHeader
-        eyebrow="Career · Testimonials"
-        title="Add testimonial"
-        description="Add a testimonial from a colleague, manager, or client."
-      />
+      <PageHeader eyebrow="Career · Testimonials" title="Add testimonial" />
       <DetailSection title="Testimonial">
         <Form method="post" className="flex flex-col gap-4">
           <TextInput label="Name" name="name" required placeholder="Jane Doe" />

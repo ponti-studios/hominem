@@ -1,8 +1,8 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
-import { adjustDateRange, formatMonthYear } from '@hominem/utils/dates';
+import { formatMonthYear } from '@hominem/utils/dates';
 import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Button } from '@ponti-studios/ui/primitives';
-import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo } from 'react';
 import {
@@ -18,6 +18,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { CardHeader } from '~/components/design';
 import { useTimeSeriesData } from '~/modules/finance/hooks/use-time-series';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
@@ -42,16 +43,13 @@ export function AnalyticsChartDisplay({
   groupBy = 'month',
   compareToPrevious = false,
 }: AnalyticsChartDisplayProps) {
-  // snap the range to full months so we don't cut a month short
-  const { adjustedDateFrom, adjustedDateTo } = adjustDateRange(dateFrom, dateTo);
-
   const {
     data: timeSeriesData,
     isLoading,
     error,
   } = useTimeSeriesData({
-    dateFrom: adjustedDateFrom,
-    dateTo: adjustedDateTo,
+    dateFrom,
+    dateTo,
     account: selectedAccount !== 'all' ? selectedAccount : undefined,
     tag: selectedTag || undefined,
     includeStats: false,
@@ -72,19 +70,17 @@ export function AnalyticsChartDisplay({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-              <span>Trends</span>
-              <div className="flex items-center space-x-2">
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-8 w-16" />
-              </div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="gap-0">
+        <CardHeader
+          title="Trends"
+          action={
+            <>
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-16" />
+            </>
+          }
+        />
+        <CardContent className="pt-0">
           <div className="h-80 w-full max-w-full">
             <Skeleton className="h-full w-full" />
           </div>
@@ -95,11 +91,9 @@ export function AnalyticsChartDisplay({
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="gap-0">
+        <CardHeader title="Trends" />
+        <CardContent className="pt-0">
           <div className="h-80 w-full max-w-full flex items-center justify-center">
             <div className="text-center text-destructive">
               {error.message || 'Unable to load chart data. Retry later.'}
@@ -112,11 +106,9 @@ export function AnalyticsChartDisplay({
 
   if (!incomeExpensesChartData.length) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="gap-0">
+        <CardHeader title="Trends" />
+        <CardContent className="pt-0">
           <div className="h-80 w-full max-w-full flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               No data available for the selected period
@@ -129,31 +121,29 @@ export function AnalyticsChartDisplay({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-              <span>Trends</span>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={chartType === 'area' ? 'default' : 'outline'}
-                  onClick={() => setChartType('area')}
-                  size="sm"
-                >
-                  Area
-                </Button>
-                <Button
-                  variant={chartType === 'bar' ? 'default' : 'outline'}
-                  onClick={() => setChartType('bar')}
-                  size="sm"
-                >
-                  Bar
-                </Button>
-              </div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="gap-0">
+        <CardHeader
+          title="Trends"
+          action={
+            <>
+              <Button
+                variant={chartType === 'area' ? 'default' : 'outline'}
+                onClick={() => setChartType('area')}
+                size="sm"
+              >
+                Area
+              </Button>
+              <Button
+                variant={chartType === 'bar' ? 'default' : 'outline'}
+                onClick={() => setChartType('bar')}
+                size="sm"
+              >
+                Bar
+              </Button>
+            </>
+          }
+        />
+        <CardContent className="pt-0">
           <div className="h-80 w-full max-w-full">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'area' ? (

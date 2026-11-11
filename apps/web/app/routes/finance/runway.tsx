@@ -103,11 +103,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const message = error instanceof Error ? error.message : 'Something went wrong';
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="Finance · Runway"
-        title="Financial Runway Calculator"
-        description="Unable to load runway data."
-      />
+      <PageHeader eyebrow="Finance · Runway" title="Financial Runway Calculator" />
       <div className="rounded-sm border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive-text">
         {message}
       </div>
@@ -191,11 +187,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   if (!live || !settings) {
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader
-          eyebrow="Finance · Runway"
-          title="Financial Runway Calculator"
-          description="Unable to load runway data."
-        />
+        <PageHeader eyebrow="Finance · Runway" title="Financial Runway Calculator" />
       </div>
     );
   }
@@ -266,11 +258,6 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       <PageHeader
         eyebrow="Finance · Runway"
         title="Financial Runway Calculator"
-        description={
-          live
-            ? `Forecast currency: ${live.currencyCode ?? 'Not selected'}`
-            : 'Live ledger forecast plus manual scenarios.'
-        }
         actions={
           runwayMetrics.isRunwayDangerous ? (
             <span className="inline-flex h-7 items-center gap-1.5 rounded-sm bg-destructive/10 px-3 text-[13px] font-medium text-destructive-text">
