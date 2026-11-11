@@ -2,7 +2,7 @@ import { PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-import { AddButton } from '~/modules/career/components/AddButton';
+import { AddButton } from '~/components/design';
 import { CareerCollection } from '~/modules/career/components/career/career-list';
 import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';

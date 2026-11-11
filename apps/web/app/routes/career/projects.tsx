@@ -64,7 +64,7 @@ export default function ProjectsRoute({ loaderData }: Route.ComponentProps) {
         keyFor={(p) => p.id}
         hrefFor={(p) => `/career/projects/${p.id}`}
         leading={() => (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#d7ff3e]/10 text-[#d7ff3e]">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-foreground">
             <FolderKanbanIcon className="size-4" aria-hidden />
           </span>
         )}

@@ -94,8 +94,9 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
   if (isEditing) {
     return (
       <div>
-        <BackLink to="/career/projects" label="Projects" />
         <DetailHero
+          eyebrow="Projects"
+          back={<BackLink to="/career/projects" label="Projects" variant="icon" />}
           title="Edit project"
           actions={
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
@@ -116,8 +117,9 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
 
   return (
     <div>
-      <BackLink to="/career/projects" label="Projects" />
       <DetailHero
+        eyebrow="Projects"
+        back={<BackLink to="/career/projects" label="Projects" variant="icon" />}
         title={project.title}
         subtitle={project.organization ?? undefined}
         badges={
@@ -157,7 +159,7 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
 
         {project.description && (
           <DetailSection title="Description">
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-[#f2f4f8]">
+            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
               {project.description}
             </p>
           </DetailSection>
@@ -175,7 +177,7 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
 
         {project.engagements.length > 0 && (
           <DetailSection title="Related work">
-            <List ariaLabel="Related work">
+            <List.Items ariaLabel="Related work">
               {project.engagements.map((engagement) => (
                 <li key={engagement.id}>
                   <RowLink
@@ -185,7 +187,7 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
                   />
                 </li>
               ))}
-            </List>
+            </List.Items>
           </DetailSection>
         )}
 
@@ -197,7 +199,7 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
                   href={project.liveUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#d7ff3e] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-foreground hover:underline"
                 >
                   <ExternalLinkIcon className="size-3.5" />
                   {project.liveUrl}
@@ -208,7 +210,7 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
                   href={project.githubUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#d7ff3e] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-foreground hover:underline"
                 >
                   <CodeIcon className="size-3.5" />
                   {project.githubUrl}

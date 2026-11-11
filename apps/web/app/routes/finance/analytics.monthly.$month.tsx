@@ -2,6 +2,7 @@ import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { redirect, useParams } from 'react-router';
 
+import { PageHeader } from '~/components/design';
 import { MonthlySummaryCard } from '~/modules/finance/components/analytics/monthly-summary-card';
 import { useMonthlyStats } from '~/modules/finance/hooks/use-monthly-stats';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
@@ -47,10 +48,11 @@ export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProp
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-xl font-bold mb-6 flex flex-col">
-        Monthly Analytics
-        <span className="text-lg text-primary/40">{formattedMonth}</span>
-      </h1>
+      <PageHeader
+        eyebrow="Finance · Analytics"
+        title="Monthly Analytics"
+        description={formattedMonth}
+      />
 
       {isLoading && (
         <div className="flex flex-col gap-4">

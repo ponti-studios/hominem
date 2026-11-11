@@ -61,7 +61,7 @@ export function DataTable<T>({
                     : undefined
                 }
                 className={cn(
-                  'pb-2 font-mono text-[11px] font-medium tracking-[0.12em] text-[#5e6678] uppercase',
+                  'pb-2 font-mono text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase',
                   column.align === 'right' ? 'text-right' : 'text-left',
                 )}
               >
@@ -71,7 +71,7 @@ export function DataTable<T>({
                     onClick={column.sort.onSort}
                     aria-label={column.sort.label}
                     className={cn(
-                      'inline-flex items-center gap-1 transition-colors hover:text-[#f2f4f8]',
+                      'inline-flex items-center gap-1 transition-colors hover:text-foreground',
                       column.align === 'right' && 'ml-auto flex-row-reverse',
                     )}
                   >
@@ -107,7 +107,7 @@ export function DataTable<T>({
               tabIndex={onRowClick ? 0 : undefined}
               aria-label={onRowClick && rowLabel ? rowLabel(row, index) : undefined}
               className={cn(
-                'border-t border-white/[0.06] transition-colors hover:bg-white/[0.02]',
+                'border-t border-border transition-colors hover:bg-muted/50',
                 onRowClick && 'cursor-pointer',
               )}
             >
@@ -118,7 +118,7 @@ export function DataTable<T>({
                     dense ? 'py-1.5' : 'py-2.5',
                     column.align === 'right' && 'text-right',
                     column.tabular !== false && 'tabular-nums',
-                    'text-[#f2f4f8]',
+                    'text-foreground',
                   )}
                 >
                   {column.render(row, index)}

@@ -57,8 +57,9 @@ export default function TestimonialDetailRoute({ loaderData, actionData }: Route
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <BackLink to="/career/testimonials" label="Testimonials" />
       <DetailHero
+        eyebrow="Testimonials"
+        back={<BackLink to="/career/testimonials" label="Testimonials" variant="icon" />}
         title={testimonial.name}
         subtitle={
           [testimonial.title, testimonial.company].filter(Boolean).join(' at ') || undefined
@@ -85,7 +86,7 @@ export default function TestimonialDetailRoute({ loaderData, actionData }: Route
             defaultValue={testimonial.linkedinUrl ?? ''}
           />
           {actionData?.error && (
-            <p role="alert" className="text-sm text-[#ff9d9d]">
+            <p role="alert" className="text-sm text-destructive-text">
               {actionData.error}
             </p>
           )}

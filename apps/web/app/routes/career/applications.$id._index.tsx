@@ -53,7 +53,7 @@ export default function ApplicationOverviewRoute() {
                   href={application.jobPostingUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[#d7ff3e] hover:underline"
+                  className="inline-flex items-center gap-1 text-foreground hover:underline"
                 >
                   View posting
                   <ExternalLinkIcon className="size-3.5" />
@@ -66,7 +66,7 @@ export default function ApplicationOverviewRoute() {
 
       {application.notes && (
         <DetailSection title="Notes">
-          <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-[#9ba3b4]">
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
             {application.notes}
           </p>
         </DetailSection>

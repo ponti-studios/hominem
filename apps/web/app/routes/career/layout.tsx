@@ -26,13 +26,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function CareerLayout() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="glass flex shrink-0 items-center gap-3 border-b border-white/[0.06] px-4 sm:px-6">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
         <nav aria-label="Career" className="min-w-0 flex-1 overflow-x-auto">
           <ul className="flex items-center gap-1 py-2">
             {CAREER?.subNav.map((link) => (
               <li key={link.path} className="shrink-0">
                 <AppNavLink
-                  accent={CAREER.accent}
                   end={link.end}
                   label={link.label}
                   prefetch="intent"

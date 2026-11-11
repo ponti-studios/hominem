@@ -48,7 +48,7 @@ export default function NewTestimonialRoute({ actionData }: Route.ComponentProps
           <TextAreaInput label="Testimonial" name="content" rows={4} required />
           <TextInput label="LinkedIn URL" name="linkedinUrl" placeholder="https://" />
           {actionData?.error && (
-            <p role="alert" className="text-sm text-[#ff9d9d]">
+            <p role="alert" className="text-sm text-destructive-text">
               {actionData.error}
             </p>
           )}

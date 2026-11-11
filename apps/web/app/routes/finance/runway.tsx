@@ -107,9 +107,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         eyebrow="Finance · Runway"
         title="Financial Runway Calculator"
         description="Unable to load runway data."
-        accent="#9d7bff"
       />
-      <div className="rounded-xl border border-[#ff6b6b]/30 bg-[#ff6b6b]/10 p-4 text-sm text-[#ff9d9d]">
+      <div className="rounded-sm border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive-text">
         {message}
       </div>
     </div>
@@ -196,7 +195,6 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
           eyebrow="Finance · Runway"
           title="Financial Runway Calculator"
           description="Unable to load runway data."
-          accent="#9d7bff"
         />
       </div>
     );
@@ -273,10 +271,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
             ? `Forecast currency: ${live.currencyCode ?? 'Not selected'}`
             : 'Live ledger forecast plus manual scenarios.'
         }
-        accent="#9d7bff"
         actions={
           runwayMetrics.isRunwayDangerous ? (
-            <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#ff6b6b]/15 px-3 text-[13px] font-medium text-[#ff9d9d]">
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-sm bg-destructive/10 px-3 text-[13px] font-medium text-destructive-text">
               <AlertTriangle aria-hidden className="size-3.5" />
               Short Runway
             </span>
@@ -294,7 +291,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   value={formatCurrency(live.startingCash, currency)}
                   sub={`Across ${live.liquidAccounts.length} liquid accounts, as of ${live.asOfDate}`}
                 />
-                <DollarSign aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+                <DollarSign aria-hidden className="mt-3 size-4 text-muted-foreground" />
               </div>
             </SectionCard>
             <SectionCard index={1}>
@@ -307,7 +304,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   )}
                   sub={`${formatCurrency(live.weeklyRecurringOutflow, currency)} recurring · ${formatCurrency(live.weeklyVariableAllowance, currency)} allowance`}
                 />
-                <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+                <TrendingDown aria-hidden className="mt-3 size-4 text-muted-foreground" />
               </div>
             </SectionCard>
             <SectionCard index={2}>
@@ -320,7 +317,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   )}
                   sub={`After ${live.weeks.length} weeks at the current burn`}
                 />
-                <Calendar aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+                <Calendar aria-hidden className="mt-3 size-4 text-muted-foreground" />
               </div>
             </SectionCard>
             <SectionCard index={3}>
@@ -330,14 +327,14 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   value={String(live.recurringTxnCount)}
                   sub={`Recurring debits in the trailing ${live.recurringLookbackMonths} months`}
                 />
-                <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+                <TrendingDown aria-hidden className="mt-3 size-4 text-muted-foreground" />
               </div>
             </SectionCard>
           </div>
 
           <SectionCard index={4}>
             <div className="p-5 sm:p-6">
-              <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Live trajectory</h2>
+              <h2 className="text-[15px] font-semibold text-foreground">Live trajectory</h2>
               <div className="mt-3">
                 <DataTable
                   ariaLabel="Weekly runway trajectory"
@@ -374,7 +371,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                 />
               </div>
               {live.weeklyVariableAllowance === 0 ? (
-                <p className="pt-3 text-[13px] text-[#9ba3b4]">
+                <p className="pt-3 text-[13px] text-muted-foreground">
                   No monthly budgets configured yet, so the variable allowance is{' '}
                   {formatCurrency(0, currency)} — this shows recurring burn only.
                 </p>
@@ -384,7 +381,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
 
           <SectionCard index={5}>
             <div className="p-5 sm:p-6">
-              <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Forecast settings</h2>
+              <h2 className="text-[15px] font-semibold text-foreground">Forecast settings</h2>
               <div className="mt-4 flex flex-col gap-5">
                 <settingsFetcher.Form method="post" className="flex flex-wrap items-end gap-3">
                   <input type="hidden" name="intent" value="currency" />
@@ -404,20 +401,20 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   </Button>
                 </settingsFetcher.Form>
                 {live.warnings.map((warning) => (
-                  <p key={warning} className="text-sm text-[#ffc53d]">
+                  <p key={warning} className="text-sm text-warning-text">
                     {warning}
                   </p>
                 ))}
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-medium text-[#f2f4f8]">Monthly category caps</h3>
+                  <h3 className="text-sm font-medium text-foreground">Monthly category caps</h3>
                   {settings?.budgets
                     .filter((budget) => budget.currencyCode === settings.currencyCode)
                     .map((budget) => (
                       <div
                         key={budget.id}
-                        className="flex items-center justify-between gap-3 border-t border-white/[0.06] py-2 text-sm"
+                        className="flex items-center justify-between gap-3 border-t border-border py-2 text-sm"
                       >
-                        <span className="text-[#f2f4f8]">
+                        <span className="text-foreground">
                           {budget.category} · {budget.currencyCode}
                         </span>
                         <div className="flex items-center gap-2">
@@ -440,7 +437,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                         </div>
                       </div>
                     ))}
-                  <div className="border-t border-white/[0.06] pt-3">
+                  <div className="border-t border-border pt-3">
                     <BudgetCapForm
                       hiddenFields={{ currencyCode: settings?.currencyCode ?? '' }}
                       submitLabel="Save cap"
@@ -460,7 +457,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   {settingsErrorMessage && (
-                    <p role="alert" className="text-sm text-[#ff9d9d]">
+                    <p role="alert" className="text-sm text-destructive-text">
                       {settingsErrorMessage}
                     </p>
                   )}
@@ -483,13 +480,13 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
           <SectionCard>
             <div className="p-5">
               <Stat label="Current Balance" value={formatCurrency(initialBalance)} />
-              <DollarSign aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              <DollarSign aria-hidden className="mt-3 size-4 text-muted-foreground" />
             </div>
           </SectionCard>
           <SectionCard>
             <div className="p-5">
               <Stat label="Monthly Burn Rate" value={formatCurrency(monthlyExpenses)} />
-              <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              <TrendingDown aria-hidden className="mt-3 size-4 text-muted-foreground" />
             </div>
           </SectionCard>
           <SectionCard>
@@ -506,9 +503,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                     ? `Until ${runwayMetrics.zeroDate.toLocaleDateString()}`
                     : undefined
                 }
-                accent={runwayMetrics.isRunwayDangerous ? '#ff6b6b' : undefined}
+                tone={runwayMetrics.isRunwayDangerous ? 'danger' : 'default'}
               />
-              <Calendar aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              <Calendar aria-hidden className="mt-3 size-4 text-muted-foreground" />
             </div>
           </SectionCard>
           <SectionCard>
@@ -516,9 +513,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               <Stat
                 label="Minimum Balance"
                 value={formatCurrency(runwayMetrics.minimumBalance)}
-                accent={runwayMetrics.minimumBalance < 0 ? '#ff6b6b' : undefined}
+                tone={runwayMetrics.minimumBalance < 0 ? 'danger' : 'default'}
               />
-              <TrendingDown aria-hidden className="mt-3 size-4 text-[#5e6678]" />
+              <TrendingDown aria-hidden className="mt-3 size-4 text-muted-foreground" />
             </div>
           </SectionCard>
         </div>
@@ -527,8 +524,8 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       <div className="grid gap-4 md:grid-cols-2">
         <SectionCard>
           <div className="p-5 sm:p-6">
-            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Manual Scenario</h2>
-            <p className="mt-1 text-sm text-[#9ba3b4]">
+            <h2 className="text-[15px] font-semibold text-foreground">Manual Scenario</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               These inputs are independent of your ledger forecast.
             </p>
             <div className="mt-4 flex flex-col gap-4">
@@ -566,7 +563,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
 
         <SectionCard>
           <div className="p-5 sm:p-6">
-            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Add Planned Purchase</h2>
+            <h2 className="text-[15px] font-semibold text-foreground">Add Planned Purchase</h2>
             <div className="mt-4 flex flex-col gap-4">
               <Field label="Description">
                 {(id) => (
@@ -623,7 +620,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       {plannedPurchases.length > 0 && (
         <SectionCard>
           <div className="p-5 sm:p-6">
-            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Planned Purchases</h2>
+            <h2 className="text-[15px] font-semibold text-foreground">Planned Purchases</h2>
             <DataTable
               ariaLabel="Planned purchases"
               columns={[
@@ -633,7 +630,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                   render: (purchase) => (
                     <span>
                       <span className="font-medium">{purchase.description}</span>{' '}
-                      <span className="text-sm text-[#9ba3b4]">
+                      <span className="text-sm text-muted-foreground">
                         on {new Date(purchase.date).toLocaleDateString()}
                       </span>
                     </span>
@@ -662,7 +659,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               rows={plannedPurchases}
               keyOf={(purchase, index) => `${purchase.description}-${purchase.date}-${index}`}
             />
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-3 font-semibold text-[#f2f4f8]">
+            <div className="flex items-center justify-between border-t border-border pt-3 font-semibold text-foreground">
               <span>Total Planned Expenses:</span>
               <span>{formatCurrency(runwayMetrics.totalPlannedExpenses)}</span>
             </div>
@@ -674,34 +671,34 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
         <ChartCard title="12-Month Scenario Projection" height="lg" state="ready">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" />
               <XAxis
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#9ba3b4', fontSize: 11 }}
+                tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#9ba3b4', fontSize: 11 }}
+                tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value)), 'Projected Balance']}
                 labelStyle={{ color: CHART_COLORS.neutral }}
                 contentStyle={{
-                  backgroundColor: '#12161d',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'var(--popover)',
+                  border: '1px solid var(--border-default)',
                   borderRadius: '12px',
-                  color: '#f2f4f8',
+                  color: 'var(--text-primary)',
                 }}
               />
               <ReferenceLine y={0} stroke={CHART_COLORS.negative} strokeDasharray="2 2" />
               <Line
                 type="monotone"
                 dataKey="balance"
-                stroke="#d7ff3e"
+                stroke="var(--primary)"
                 strokeWidth={2.5}
                 dot={(props) => {
                   const { cx, cy, payload } = props;
@@ -711,13 +708,13 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                       cx={cx}
                       cy={cy}
                       r={4}
-                      fill={isNegative ? CHART_COLORS.negative : '#d7ff3e'}
-                      stroke={isNegative ? CHART_COLORS.negative : '#d7ff3e'}
+                      fill={isNegative ? CHART_COLORS.negative : 'var(--primary)'}
+                      stroke={isNegative ? CHART_COLORS.negative : 'var(--primary)'}
                       strokeWidth={2}
                     />
                   );
                 }}
-                activeDot={{ r: 6, stroke: '#d7ff3e', strokeWidth: 2 }}
+                activeDot={{ r: 6, stroke: 'var(--primary)', strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>

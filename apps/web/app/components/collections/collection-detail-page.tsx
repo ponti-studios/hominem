@@ -106,11 +106,11 @@ function EditCollectionDialog({
             onChange={(e) => setDescriptionValue(e.target.value)}
           />
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#f2f4f8]">Visibility</span>
+            <span className="text-sm font-medium text-foreground">Visibility</span>
             <VisibilitySelect onChange={setVisibilityValue} value={visibilityValue} />
           </div>
           {updateCollection.isError ? (
-            <p className="text-sm text-[#ff9d9d]">Could not save changes.</p>
+            <p className="text-sm text-destructive-text">Could not save changes.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -195,10 +195,10 @@ function InviteMemberDialog({
             ]}
           />
           {isSelfInvite ? (
-            <p className="text-sm text-[#ff9d9d]">You can't invite yourself.</p>
+            <p className="text-sm text-destructive-text">You can't invite yourself.</p>
           ) : null}
           {inviteMember.isError ? (
-            <p className="text-sm text-[#ff9d9d]">Could not send invite.</p>
+            <p className="text-sm text-destructive-text">Could not send invite.</p>
           ) : null}
         </div>
         <DialogFooter>
@@ -252,45 +252,42 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
   return (
     <main className="h-full overflow-auto">
       <Container size="sm">
-        <div className="mb-6 flex items-center gap-3">
-          <BackLink to="/collections" label="Back to collections" variant="icon" />
-          <div className="min-w-0 flex-1">
-            <DetailHero
-              title={collection?.name ?? (isPending ? 'Loading…' : 'Collection')}
-              subtitle={collection?.description ?? undefined}
-              actions={
+        <DetailHero
+          eyebrow="Collections"
+          back={<BackLink to="/collections" label="Back to collections" variant="icon" />}
+          title={collection?.name ?? (isPending ? 'Loading…' : 'Collection')}
+          subtitle={collection?.description ?? undefined}
+          actions={
+            <>
+              {collection && isOwner ? (
                 <>
-                  {collection && isOwner ? (
-                    <>
-                      <EditCollectionDialog
-                        collectionId={collectionId}
-                        description={collection.description}
-                        name={collection.name}
-                        visibility={collection.visibility}
-                      />
-                      <DeleteButton
-                        itemName={collection.name}
-                        onConfirm={() =>
-                          deleteCollection.mutate(undefined, { onSuccess: goToCollectionsList })
-                        }
-                      />
-                    </>
-                  ) : null}
-                  {collection && canLeave ? (
-                    <Button
-                      disabled={leaveCollection.isPending}
-                      onClick={handleLeave}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <LogOut className="size-4" /> Leave
-                    </Button>
-                  ) : null}
+                  <EditCollectionDialog
+                    collectionId={collectionId}
+                    description={collection.description}
+                    name={collection.name}
+                    visibility={collection.visibility}
+                  />
+                  <DeleteButton
+                    itemName={collection.name}
+                    onConfirm={() =>
+                      deleteCollection.mutate(undefined, { onSuccess: goToCollectionsList })
+                    }
+                  />
                 </>
-              }
-            />
-          </div>
-        </div>
+              ) : null}
+              {collection && canLeave ? (
+                <Button
+                  disabled={leaveCollection.isPending}
+                  onClick={handleLeave}
+                  size="sm"
+                  variant="outline"
+                >
+                  <LogOut className="size-4" /> Leave
+                </Button>
+              ) : null}
+            </>
+          }
+        />
 
         {error ? (
           <PanelState
@@ -321,7 +318,7 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                   {items.length === 0 ? (
                     <PanelState title="Nothing in this collection yet" />
                   ) : (
-                    <List ariaLabel="Collection items">
+                    <List.Items ariaLabel="Collection items">
                       {items.map((item) => (
                         <li
                           key={item.id}
@@ -329,16 +326,18 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-medium text-[#f2f4f8]">
+                              <span className="truncate text-sm font-medium text-foreground">
                                 {item.entityName ?? '(unnamed)'}
                               </span>
                               <Badge variant="secondary">{item.entityType}</Badge>
                             </div>
                             {item.note ? (
-                              <p className="truncate text-[13px] text-[#9ba3b4]">{item.note}</p>
+                              <p className="truncate text-[13px] text-muted-foreground">
+                                {item.note}
+                              </p>
                             ) : null}
                           </div>
-                          <span className="shrink-0 font-mono text-[11px] text-[#5e6678] tabular-nums">
+                          <span className="shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
                             {dateFormatter.format(new Date(item.addedAt))}
                           </span>
                           {canManageItems ? (
@@ -356,7 +355,7 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                           ) : null}
                         </li>
                       ))}
-                    </List>
+                    </List.Items>
                   )}
                 </div>
               </div>
@@ -373,7 +372,7 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                   }
                 />
                 <div className="mt-3">
-                  <List ariaLabel="Collaborators">
+                  <List.Items ariaLabel="Collaborators">
                     {members.map((member) => {
                       const isSelf = member.userId === currentUserId;
                       const isPendingInvite = !member.acceptedAt;
@@ -384,7 +383,7 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                           className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5"
                         >
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate text-sm text-[#f2f4f8]">
+                            <span className="truncate text-sm text-foreground">
                               {memberDisplayName(member)}
                             </span>
                             {isOwner && !isSelf && member.role !== 'owner' ? (
@@ -419,7 +418,7 @@ export function CollectionDetailPage({ collectionId }: { collectionId: string })
                         </li>
                       );
                     })}
-                  </List>
+                  </List.Items>
                 </div>
               </div>
             </SectionCard>

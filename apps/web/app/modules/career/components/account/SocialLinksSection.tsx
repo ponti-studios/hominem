@@ -11,7 +11,12 @@ const linkedinPath =
 
 function BrandIcon({ path, viewBox = '0 0 24 24' }: { path: string; viewBox?: string }) {
   return (
-    <svg aria-hidden="true" className="size-4 text-[#9ba3b4]" fill="currentColor" viewBox={viewBox}>
+    <svg
+      aria-hidden="true"
+      className="size-4 text-muted-foreground"
+      fill="currentColor"
+      viewBox={viewBox}
+    >
       <path d={path} />
     </svg>
   );
@@ -67,7 +72,7 @@ const FIELDS = [
     name: 'website' as const,
     label: (
       <>
-        <Globe className="size-4 text-[#9ba3b4]" />
+        <Globe className="size-4 text-muted-foreground" />
         Website
       </>
     ),

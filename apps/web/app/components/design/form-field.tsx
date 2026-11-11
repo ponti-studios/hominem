@@ -26,18 +26,18 @@ export function Field({ label, hint, error, labelHidden, children, className }: 
     <div className={cn('grid gap-1.5', className)}>
       <label
         htmlFor={id}
-        className={labelHidden ? 'sr-only' : 'text-sm font-medium text-[#f2f4f8]'}
+        className={labelHidden ? 'sr-only' : 'text-sm font-medium text-foreground'}
       >
         {label}
       </label>
       {children(id)}
       {hint && !error ? (
-        <p id={hintId} className="text-[13px] text-[#9ba3b4]">
+        <p id={hintId} className="text-[13px] text-muted-foreground">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} role="alert" className="text-[13px] text-[#ff9d9d]">
+        <p id={errorId} role="alert" className="text-[13px] text-destructive-text">
           {error}
         </p>
       ) : null}
@@ -87,7 +87,7 @@ export function SelectField({
             defaultValue={value === undefined ? defaultValue : undefined}
             onChange={onChange ? (e) => onChange(e.target.value) : undefined}
             aria-label={label}
-            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] pr-10 pl-3 text-sm text-[#f2f4f8] outline-none transition-colors focus:border-[#d7ff3e]/60 [&>option]:bg-[#12161d]"
+            className="h-10 w-full appearance-none rounded-sm border border-border bg-muted pr-10 pl-3 text-sm text-foreground outline-none transition-colors focus:border-ring [&>option]:bg-popover"
           >
             <option value="" disabled>
               {placeholder}
@@ -100,7 +100,7 @@ export function SelectField({
           </select>
           <ChevronDown
             aria-hidden
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[#9ba3b4]"
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
           />
         </span>
       )}

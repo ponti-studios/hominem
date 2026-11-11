@@ -17,7 +17,7 @@ import { useCreateCollection } from '~/hooks/use-collections';
 
 import { VisibilitySelect } from './visibility-select';
 
-export function CreateCollectionDialog() {
+export function CreateCollectionDialog({ trigger }: { trigger?: React.ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -46,9 +46,11 @@ export function CreateCollectionDialog() {
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Plus /> New collection
-        </Button>
+        {trigger ?? (
+          <Button size="sm" variant="outline">
+            <Plus /> New collection
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

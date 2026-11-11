@@ -1,8 +1,12 @@
 import { Form } from 'react-router';
 
-import { DeleteButton, PanelState, TextAreaInput } from '~/components/design';
-import { SectionCard } from '~/components/design/surfaces';
-import { AddButton } from '~/modules/career/components/AddButton';
+import {
+  AddButton,
+  DeleteButton,
+  PanelState,
+  SectionCard,
+  TextAreaInput,
+} from '~/components/design';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 import { formatApplicationDate } from '~/modules/career/lib/utils/applicationUtils';
@@ -73,9 +77,9 @@ export default function ApplicationNotesRoute({ loaderData }: Route.ComponentPro
         <SectionCard>
           <div className="flex flex-col gap-3 p-5">
             {notes.map((note) => (
-              <div key={note.id} className="hairline rounded-xl bg-white/[0.02] p-4">
+              <div key={note.id} className="hairline rounded-xl bg-muted/50 p-4">
                 <div className="flex items-start justify-between gap-4">
-                  <p className="text-sm whitespace-pre-wrap text-[#f2f4f8]">{note.content}</p>
+                  <p className="text-sm whitespace-pre-wrap text-foreground">{note.content}</p>
                   <DeleteButton
                     itemName="note"
                     label="Remove"
@@ -83,7 +87,7 @@ export default function ApplicationNotesRoute({ loaderData }: Route.ComponentPro
                     hiddenFields={{ id: note.id }}
                   />
                 </div>
-                <p className="mt-2 font-mono text-[11px] text-[#5e6678]">
+                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
                   {formatApplicationDate(note.createdAt)}
                 </p>
               </div>

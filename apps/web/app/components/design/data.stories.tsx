@@ -14,7 +14,7 @@ import {
 import { Input } from '~/components/ui/input';
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-full bg-[#060709] p-6 text-[#f2f4f8]">{children}</div>;
+  return <div className="min-h-full bg-background p-6 text-foreground">{children}</div>;
 }
 
 const meta = {
@@ -42,7 +42,7 @@ export const Table: StoryObj = {
   name: 'DataTable',
   render: () => (
     <Shell>
-      <div className="max-w-3xl rounded-2xl border border-white/10 bg-[#0e1116]/90 p-5">
+      <div className="max-w-3xl rounded-sm border border-border bg-card p-5">
         <DataTable<Week>
           ariaLabel="Weekly runway trajectory"
           rows={WEEKS}
@@ -111,7 +111,7 @@ export const FormFields: StoryObj = {
   name: 'Field + SelectField',
   render: () => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-2xl border border-white/10 bg-[#0e1116]/90 p-6">
+      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
         <SelectField
           label="Forecast currency"
           name="currencyCode"
@@ -139,7 +139,7 @@ export const TextInputs: StoryObj = {
   name: 'TextInput + TextAreaInput + FormGrid',
   render: () => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-2xl border border-white/10 bg-[#0e1116]/90 p-6">
+      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
         <TextInput label="Job Title" name="title" required placeholder="e.g. Senior Engineer" />
         <FormGrid>
           <TextInput label="Location" name="location" placeholder="Remote" />
@@ -160,7 +160,7 @@ export const PrefixInputs: StoryObj = {
   name: 'PrefixInput + IconField',
   render: () => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-2xl border border-white/10 bg-[#0e1116]/90 p-6">
+      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
         <PrefixInput
           label="Profile URL"
           name="slug"

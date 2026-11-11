@@ -9,10 +9,11 @@ import { describe, expect, it } from 'vitest';
 // NOT on the list that matches a pattern fails the build.
 //
 // New UI must compose from `~/components/design` (SectionCard, Stat,
-// PanelState, SegmentedControl, PageHeader, DataTable, ChartCard,
+// PanelState, FilterTabs, PageHeader, DataTable, ChartCard,
 // Field, SelectField) instead of re-inventing these shapes.
 
 const APP_DIR = join(process.cwd(), 'app');
+const DESIGN_DIR = join(APP_DIR, 'components/design');
 
 const PRIMITIVE_FILES = new Set([
   'app/components/design/data-table.tsx',
@@ -50,6 +51,45 @@ function allTsx(dir: string, out: string[] = []): string[] {
 
 describe('design system boundary', () => {
   const files = allTsx(APP_DIR);
+
+  it('does not reintroduce the retired neon palette into route UI', () => {
+    const retired = ['#d7ff3e', '#9d7bff', '#5eead4'];
+    const offenders = files.filter((full) => {
+      const source = readFileSync(full, 'utf8').toLowerCase();
+      return retired.some((value) => source.includes(value));
+    });
+    expect(offenders.map((full) => full.replace(`${APP_DIR}/`, ''))).toEqual([]);
+  });
+
+  it('keeps Storybook aligned with the monochrome contract', () => {
+    const stories = readdirSync(DESIGN_DIR).filter((name) => name.endsWith('.stories.tsx'));
+    expect(stories).toContain('monochrome.stories.tsx');
+
+    const retired = ['#d7ff3e', '#9d7bff', '#5eead4', 'aurora-stage', 'glass'];
+    const violations = stories.flatMap((name) => {
+      const source = readFileSync(join(DESIGN_DIR, name), 'utf8').toLowerCase();
+      return retired.filter((value) => source.includes(value)).map((value) => `${name}: ${value}`);
+    });
+    expect(violations).toEqual([]);
+  });
+
+  it('keeps the web theme monochrome and free of decorative chrome', () => {
+    const css = readFileSync(join(APP_DIR, 'app.css'), 'utf8').toLowerCase();
+    const retired = [
+      '--volt',
+      '--violet',
+      '--cyan',
+      'aurora-stage',
+      '.glass',
+      'linear-gradient',
+      'text-shadow',
+      'backdrop-filter',
+    ];
+    expect(retired.filter((value) => css.includes(value))).toEqual([]);
+    expect(css).toContain('--background: #ffffff');
+    expect(css).toContain('--primary: #0a0a0a');
+    expect(css).toContain('--border-default: #e0e0e0');
+  });
 
   for (const [pattern, allowed] of Object.entries(GRANDFATHERED)) {
     it(`no new '${pattern}' outside the migration backlog`, () => {

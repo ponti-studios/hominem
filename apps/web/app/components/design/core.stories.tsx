@@ -1,13 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
-import { PageHeader } from '~/components/design/page-header';
-import { PanelState, SectionCard, SegmentedControl, Stat } from '~/components/design/surfaces';
+import {
+  AddButton,
+  FilterTabs,
+  PageHeader,
+  PanelState,
+  SectionCard,
+  Stat,
+} from '~/components/design';
 import { AppNavLink } from '~/components/shell/app-nav-link';
 import { Button } from '~/components/ui/button';
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-full bg-[#060709] p-6 text-[#f2f4f8] dark">{children}</div>;
+  return <div className="min-h-full bg-background p-6 text-foreground">{children}</div>;
 }
 
 const meta = {
@@ -25,9 +31,28 @@ export const PageHeaderDefault: StoryObj = {
         eyebrow="Finance · Runway"
         title="Financial Runway Calculator"
         description="Live ledger forecast plus manual scenarios."
-        accent="#9d7bff"
         actions={<Button size="sm">Save settings</Button>}
       />
+    </Shell>
+  ),
+};
+
+export const CompactRouteHeaders: StoryObj = {
+  name: 'Compact route headers',
+  render: () => (
+    <Shell>
+      <div className="grid gap-10">
+        <PageHeader
+          eyebrow="Tasks"
+          title={<span className="sr-only">Tasks</span>}
+          actions={<AddButton label="New task" />}
+        />
+        <PageHeader
+          eyebrow="Collections"
+          title={<span className="sr-only">Collections</span>}
+          actions={<AddButton label="New collection" />}
+        />
+      </div>
     </Shell>
   ),
 };
@@ -49,12 +74,7 @@ export const SectionCardGrid: StoryObj = {
         </SectionCard>
         <SectionCard index={2}>
           <div className="p-5">
-            <Stat
-              label="Runway"
-              value="143 mo"
-              accent="#ff6b6b"
-              sub="Minimum balance drops below zero"
-            />
+            <Stat label="Runway" value="143 mo" sub="Minimum balance drops below zero" />
           </div>
         </SectionCard>
       </div>
@@ -90,25 +110,39 @@ export const PanelStates: StoryObj = {
   ),
 };
 
-export const Segmented: StoryObj = {
-  name: 'SegmentedControl',
+export const TaskStatusFilters: StoryObj = {
+  name: 'FilterTabs',
   render: () => {
     const [value, setValue] = useState<'open' | 'done' | 'all'>('open');
     return (
       <Shell>
-        <SegmentedControl
-          ariaLabel="Filter tasks"
-          value={value}
-          onChange={setValue}
-          options={[
-            { value: 'open', label: 'Open' },
-            { value: 'done', label: 'Completed' },
-            { value: 'all', label: 'All' },
-          ]}
-        />
+        <div className="flex justify-center">
+          <FilterTabs
+            ariaLabel="Filter tasks"
+            value={value}
+            onChange={setValue}
+            options={[
+              { value: 'open', label: 'Open' },
+              { value: 'done', label: 'Completed' },
+              { value: 'all', label: 'All' },
+            ]}
+          />
+        </div>
       </Shell>
     );
   },
+};
+
+export const AddAction: StoryObj = {
+  name: 'AddButton',
+  render: () => (
+    <Shell>
+      <div className="flex items-center gap-3">
+        <AddButton label="New task" />
+        <AddButton label="New collection" />
+      </div>
+    </Shell>
+  ),
 };
 
 export const NavLinks: StoryObj = {
@@ -116,14 +150,14 @@ export const NavLinks: StoryObj = {
   render: () => (
     <Shell>
       <div className="grid max-w-xs gap-1">
-        <AppNavLink to="/tasks" label="Tasks" accent="#d7ff3e" variant="sidebar" />
-        <AppNavLink to="/finance" label="Finance" accent="#9d7bff" variant="sidebar" />
+        <AppNavLink to="/tasks" label="Tasks" variant="sidebar" />
+        <AppNavLink to="/finance" label="Finance" variant="sidebar" />
       </div>
       <div className="mt-6 flex gap-1">
-        <AppNavLink to="/finance" label="Overview" accent="#9d7bff" variant="pill" />
-        <AppNavLink to="/finance/runway" label="Runway" accent="#9d7bff" variant="pill" />
+        <AppNavLink to="/finance" label="Overview" variant="pill" />
+        <AppNavLink to="/finance/runway" label="Runway" variant="pill" />
       </div>
-      <p className="mt-4 font-mono text-[11px] text-[#5e6678] uppercase">
+      <p className="mt-4 font-mono text-[11px] text-muted-foreground uppercase">
         Active state follows the router location
       </p>
     </Shell>

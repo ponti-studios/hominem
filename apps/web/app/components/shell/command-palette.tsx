@@ -73,15 +73,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         >
           <div
             aria-hidden
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="glass relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10"
-            style={{
-              boxShadow: '0 32px 96px -16px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(215 255 62 / 0.08)',
-            }}
+            className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-background shadow-2xl"
             exit={{ opacity: 0, scale: 0.97, y: -8 }}
             initial={{ opacity: 0, scale: 0.97, y: -8 }}
             role="dialog"
@@ -89,12 +86,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             aria-label="Jump anywhere"
             transition={{ type: 'spring', stiffness: 480, damping: 36 }}
           >
-            <div className="gradient-hairline-top">
+            <div className="hairline">
               <input
                 ref={inputRef}
                 aria-label="Search pages and actions"
                 autoComplete="off"
-                className="w-full bg-transparent px-5 py-4 text-[15px] text-[#f2f4f8] outline-none placeholder:text-[#5e6678]"
+                className="w-full bg-transparent px-5 py-4 text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="Jump to tasks, runway, applications…"
@@ -110,10 +107,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               ref={listRef}
               id="palette-list"
               role="listbox"
-              className="max-h-[46vh] overflow-y-auto border-t border-white/[0.06] p-2"
+              className="max-h-[46vh] overflow-y-auto border-t border-border p-2"
             >
               {results.length === 0 ? (
-                <p className="px-3 py-8 text-center text-sm text-[#5e6678]">
+                <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                   No matches for “{query}”.
                 </p>
               ) : null}
@@ -122,7 +119,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   item.kind !== lastKind ? (
                     <p
                       key={`header-${item.kind}`}
-                      className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-[0.16em] text-[#5e6678] uppercase"
+                      className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase"
                     >
                       {KIND_LABEL[item.kind]}
                     </p>
@@ -134,8 +131,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     <button
                       aria-selected={i === active}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
-                        i === active ? 'bg-white/[0.07]' : 'bg-transparent',
+                        'flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left transition-colors',
+                        i === active ? 'bg-muted' : 'bg-transparent',
                       )}
                       data-index={i}
                       id={`palette-item-${i}`}
@@ -144,33 +141,26 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       role="option"
                       type="button"
                     >
-                      <span
-                        aria-hidden
-                        className="size-2 shrink-0 rounded-full"
-                        style={{
-                          background: item.accent,
-                          boxShadow: i === active ? `0 0 10px ${item.accent}` : undefined,
-                        }}
-                      />
+                      <span aria-hidden className="size-2 shrink-0 rounded-full bg-primary" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-[#f2f4f8]">
+                        <span className="block truncate text-sm font-medium text-foreground">
                           {item.label}
-                        </span>
-                        <span className="block truncate font-mono text-[11px] text-[#5e6678]">
-                          {item.hint}
                         </span>
                       </span>
                       {i === active ? (
-                        <CornerDownLeft aria-hidden className="size-4 shrink-0 text-[#d7ff3e]" />
+                        <CornerDownLeft aria-hidden className="size-4 shrink-0 text-foreground" />
                       ) : (
-                        <ArrowUpRight aria-hidden className="size-4 shrink-0 text-[#5e6678]" />
+                        <ArrowUpRight
+                          aria-hidden
+                          className="size-4 shrink-0 text-muted-foreground"
+                        />
                       )}
                     </button>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center gap-4 border-t border-white/[0.06] px-5 py-2.5 font-mono text-[10px] tracking-wider text-[#5e6678] uppercase">
+            <div className="flex items-center gap-4 border-t border-border px-5 py-2.5 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
               <span>↑↓ navigate</span>
               <span>↵ open</span>
               <span>esc close</span>

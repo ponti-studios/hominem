@@ -1,13 +1,17 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router';
 
 import { CollaborationNotifications } from '~/components/collaboration-notifications';
-import { Container } from '~/components/design/container';
-import { List, RowLink } from '~/components/design/lists';
-import { PageHeader } from '~/components/design/page-header';
+import {
+  AddButton,
+  Container,
+  List,
+  PageHeader,
+  PanelState,
+  RowLink,
+  SectionCard,
+} from '~/components/design';
 import { ListSkeleton } from '~/components/design/skeleton';
-import { PanelState, SectionCard } from '~/components/design/surfaces';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useCollectionsList } from '~/hooks/use-collections';
@@ -39,18 +43,8 @@ export function CollectionsPage() {
       <Container size="sm">
         <PageHeader
           eyebrow="Collections"
-          title="Collections"
-          description="Everything you've grouped together, owned or shared with you."
-          actions={
-            <div className="flex items-center gap-2">
-              <Button aria-label="Back to tasks" asChild size="icon-sm" variant="ghost">
-                <Link to="/tasks" viewTransition>
-                  <ArrowLeft />
-                </Link>
-              </Button>
-              <CreateCollectionDialog />
-            </div>
-          }
+          title={<span className="sr-only">Collections</span>}
+          actions={<CreateCollectionDialog trigger={<AddButton label="New collection" />} />}
         />
 
         <div className="flex flex-col gap-4">
@@ -80,7 +74,7 @@ export function CollectionsPage() {
               />
             ) : null}
             {!isPending && !error && pageCollections.length > 0 ? (
-              <List ariaLabel="Collections">
+              <List.Items ariaLabel="Collections">
                 {pageCollections.map((collection) => (
                   <li key={collection.id}>
                     <RowLink
@@ -107,7 +101,7 @@ export function CollectionsPage() {
                     />
                   </li>
                 ))}
-              </List>
+              </List.Items>
             ) : null}
           </SectionCard>
         </div>
@@ -121,7 +115,7 @@ export function CollectionsPage() {
             >
               <ChevronLeft /> Previous
             </Button>
-            <span className="text-sm text-[#9ba3b4] tabular-nums">
+            <span className="text-sm text-muted-foreground tabular-nums">
               Page {page + 1} of {pageCount}
             </span>
             <Button

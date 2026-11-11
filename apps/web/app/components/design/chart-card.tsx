@@ -49,25 +49,22 @@ export function ChartCard({
     <section
       aria-labelledby={state === 'ready' ? titleId : undefined}
       aria-label={state === 'ready' ? undefined : title}
-      className={cn('hairline card-lift rounded-2xl bg-[#0e1116]/90 p-5 sm:p-6', className)}
+      className={cn('hairline rounded-sm bg-card p-5 sm:p-6', className)}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 id={titleId} className="text-[15px] font-semibold text-[#f2f4f8]">
+          <h2 id={titleId} className="text-[15px] font-semibold text-foreground">
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-0.5 truncate text-[13px] text-[#9ba3b4]">{subtitle}</p>
+            <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       <div className={cn('mt-3', HEIGHTS[height])} role={state === 'ready' ? 'img' : undefined}>
         {state === 'loading' ? (
-          <div
-            className="h-full animate-pulse rounded-xl bg-white/[0.04]"
-            aria-label="Loading chart"
-          />
+          <div className="h-full animate-pulse rounded-sm bg-muted" aria-label="Loading chart" />
         ) : null}
         {state === 'error' ? (
           <div className="flex h-full items-center justify-center">

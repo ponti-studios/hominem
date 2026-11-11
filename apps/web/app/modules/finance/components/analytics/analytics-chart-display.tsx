@@ -161,16 +161,6 @@ export function AnalyticsChartDisplay({
                   data={incomeExpensesChartData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
-                  <defs>
-                    <linearGradient id="analytics-income-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--success)" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="analytics-expenses-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.24} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
                   <XAxis
                     dataKey="name"
                     axisLine={false}
@@ -205,14 +195,16 @@ export function AnalyticsChartDisplay({
                     dataKey="Income"
                     stroke="var(--success)"
                     strokeWidth={2}
-                    fill="url(#analytics-income-fill)"
+                    fill="var(--success)"
+                    fillOpacity={0.1}
                   />
                   <Area
                     type="monotone"
                     dataKey="Expenses"
                     stroke="var(--primary)"
                     strokeWidth={2}
-                    fill="url(#analytics-expenses-fill)"
+                    fill="var(--primary)"
+                    fillOpacity={0.1}
                   />
                 </AreaChart>
               ) : (

@@ -58,13 +58,9 @@ const ShimmerComponent = ({
 
   return (
     <MotionComponent
-      animate={{ backgroundPosition: '0% center' }}
-      className={cn(
-        styles.shimmerText,
-        'relative inline-block bg-clip-text text-transparent',
-        className,
-      )}
-      initial={{ backgroundPosition: '100% center' }}
+      animate={{ opacity: [0.65, 1, 0.65] }}
+      className={cn(styles.shimmerText, 'relative inline-block', className)}
+      initial={{ opacity: 0.65 }}
       style={spreadStyle}
       transition={{
         duration,

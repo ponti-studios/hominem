@@ -78,7 +78,7 @@ export function ProjectEditor({
 
       <FormGrid cols={3}>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="status" className="text-sm font-medium text-[#f2f4f8]">
+          <label htmlFor="status" className="text-sm font-medium text-foreground">
             Status
           </label>
           <Select
@@ -112,7 +112,9 @@ export function ProjectEditor({
 
       {engagements.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="block text-sm font-medium text-[#f2f4f8]">Related work engagements</span>
+          <span className="block text-sm font-medium text-foreground">
+            Related work engagements
+          </span>
           {selectedIds.map((id) => (
             <input key={id} type="hidden" name="engagementIds" value={id} />
           ))}
@@ -157,22 +159,22 @@ export function ProjectEditor({
                 {visible.map((engagement) => (
                   <label
                     key={engagement.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-white/[0.04]"
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-muted"
                   >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(engagement.id)}
                       onChange={() => toggle(engagement.id)}
-                      className="size-4 accent-[#d7ff3e]"
+                      className="size-4 accent-primary"
                     />
-                    <span className="text-[#f2f4f8]">
+                    <span className="text-foreground">
                       {engagement.title}{' '}
-                      <span className="text-[#9ba3b4]">at {engagement.company}</span>
+                      <span className="text-muted-foreground">at {engagement.company}</span>
                     </span>
                   </label>
                 ))}
                 {visible.length === 0 && (
-                  <p className="px-2 py-4 text-sm text-[#9ba3b4]">
+                  <p className="px-2 py-4 text-sm text-muted-foreground">
                     No engagements match “{query.trim()}”.
                   </p>
                 )}

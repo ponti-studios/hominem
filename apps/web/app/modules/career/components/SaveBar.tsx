@@ -37,7 +37,7 @@ export function SaveBar({
     <div className="sticky bottom-4 z-40 flex justify-end pt-4" aria-live="polite">
       <div
         className={cn(
-          'flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 shadow-lg',
+          'flex items-center gap-3 rounded-sm border border-border bg-card px-4 py-2',
           exiting ? 'animate-save-bar-out' : 'animate-save-bar-in',
         )}
         onAnimationEnd={() => {

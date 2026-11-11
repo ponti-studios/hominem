@@ -283,7 +283,7 @@ export function ResumeImportSection({
 
   return (
     <DetailSection title="Resume">
-      <p className="-mt-2 mb-4 text-[13px] text-[#9ba3b4]">
+      <p className="-mt-2 mb-4 text-[13px] text-muted-foreground">
         Upload a resume PDF to fill out or update your profile with AI-parsed details.
       </p>
 
@@ -333,10 +333,10 @@ export function ResumeImportSection({
       ) : null}
 
       {phase === 'uploading' || phase === 'analyzing' ? (
-        <div className="rounded-2xl bg-white/[0.03] p-4">
+        <div className="rounded-2xl bg-muted p-4">
           <div className="flex items-center gap-2">
-            <Loader2Icon className="size-4 animate-spin text-[#d7ff3e]" />
-            <p className="text-[13px] text-[#f2f4f8]">{stageInfo.label}</p>
+            <Loader2Icon className="size-4 animate-spin text-foreground" />
+            <p className="text-[13px] text-foreground">{stageInfo.label}</p>
           </div>
           <Meter
             label="Analysis progress"
@@ -359,29 +359,29 @@ export function ResumeImportSection({
       ) : null}
 
       {(phase === 'reviewing' || phase === 'applying') && diff ? (
-        <div className="hairline rounded-2xl bg-white/[0.02] p-5">
+        <div className="hairline rounded-2xl bg-muted/50 p-5">
           <div className="mb-4">
-            <h3 className="text-[15px] font-semibold text-[#f2f4f8]">Review changes</h3>
-            <p className="mt-1 text-[13px] text-[#9ba3b4]">
+            <h3 className="text-[15px] font-semibold text-foreground">Review changes</h3>
+            <p className="mt-1 text-[13px] text-muted-foreground">
               Choose which updates from your resume to apply. Nothing changes until you apply.
             </p>
           </div>
 
           {applyError ? (
-            <p className="text-sm text-[#ff9d9d]" role="alert">
+            <p className="text-sm text-destructive-text" role="alert">
               {applyError}
             </p>
           ) : null}
 
           {diff.scalarChanges.length === 0 && diff.listChanges.length === 0 ? (
-            <p className="text-sm text-[#9ba3b4]">
+            <p className="text-sm text-muted-foreground">
               Nothing new was found — your profile already matches this resume.
             </p>
           ) : null}
 
           {Array.from(groupedScalarChanges.entries()).map(([group, changes]) => (
             <div key={group} className="mt-4">
-              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
                 {SCALAR_GROUP_LABELS[group]}
               </p>
               <ul className="flex flex-col gap-2">
@@ -392,17 +392,17 @@ export function ResumeImportSection({
                       <input
                         type="checkbox"
                         id={`scalar-${key}`}
-                        className="mt-1 size-4 accent-[#d7ff3e]"
+                        className="mt-1 size-4 accent-primary"
                         checked={selectedScalarKeys.has(key)}
                         disabled={phase === 'applying'}
                         onChange={(event) => toggleScalar(key, event.target.checked)}
                       />
                       <label htmlFor={`scalar-${key}`} className="flex-1 text-sm">
-                        <span className="font-medium text-[#f2f4f8]">{change.label}: </span>
-                        <span className="text-[#5e6678] line-through">
+                        <span className="font-medium text-foreground">{change.label}: </span>
+                        <span className="text-muted-foreground line-through">
                           {String(change.current ?? '—')}
                         </span>{' '}
-                        <span className="text-[#f2f4f8]">→ {String(change.proposed ?? '—')}</span>
+                        <span className="text-foreground">→ {String(change.proposed ?? '—')}</span>
                       </label>
                     </li>
                   );
@@ -413,7 +413,7 @@ export function ResumeImportSection({
 
           {Array.from(groupedListChanges.entries()).map(([group, items]) => (
             <div key={group} className="mt-4">
-              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+              <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
                 {GROUP_LABELS[group]}
               </p>
               <ul className="flex flex-col gap-2">
@@ -422,12 +422,12 @@ export function ResumeImportSection({
                     <input
                       type="checkbox"
                       id={`list-${item.key}`}
-                      className="mt-1 size-4 accent-[#d7ff3e]"
+                      className="mt-1 size-4 accent-primary"
                       checked={selectedListKeys.has(item.key)}
                       disabled={phase === 'applying'}
                       onChange={(event) => toggleListKey(item.key, event.target.checked)}
                     />
-                    <label htmlFor={`list-${item.key}`} className="flex-1 text-sm text-[#f2f4f8]">
+                    <label htmlFor={`list-${item.key}`} className="flex-1 text-sm text-foreground">
                       {item.summary}
                     </label>
                   </li>
@@ -462,16 +462,16 @@ export function ResumeImportSection({
 
       {documents.length > 0 ? (
         <div className="mt-4">
-          <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+          <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
             Uploaded resumes
           </p>
           {docError ? (
-            <p className="text-sm text-[#ff9d9d]" role="alert">
+            <p className="text-sm text-destructive-text" role="alert">
               {docError}
             </p>
           ) : null}
           <SectionCard>
-            <List ariaLabel="Uploaded resumes">
+            <List.Items ariaLabel="Uploaded resumes">
               {documents.map((doc) => {
                 const isBusy = busyDocId === doc.id;
                 return (
@@ -480,12 +480,15 @@ export function ResumeImportSection({
                     className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                   >
                     <div className="flex min-w-0 items-start gap-3">
-                      <FileTextIcon className="mt-0.5 size-4 shrink-0 text-[#9ba3b4]" aria-hidden />
+                      <FileTextIcon
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[#f2f4f8]">
+                        <p className="truncate text-sm font-medium text-foreground">
                           {doc.displayName}
                         </p>
-                        <p className="font-mono text-[11px] text-[#5e6678]">
+                        <p className="font-mono text-[11px] text-muted-foreground">
                           {formatBytes(doc.size)}
                         </p>
                       </div>
@@ -512,7 +515,7 @@ export function ResumeImportSection({
                   </li>
                 );
               })}
-            </List>
+            </List.Items>
           </SectionCard>
         </div>
       ) : null}

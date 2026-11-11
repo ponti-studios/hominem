@@ -75,16 +75,16 @@ export const links: Route.LinksFunction = () => [...NOTES_ICON_LINKS];
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     // Single dark mode: locked, no light variant. Overrides any OS preference.
-    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#060709" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="color-scheme" content="light" />
         <Meta />
         <Links />
       </head>
-      <body className="aurora-stage">
+      <body>
         {children}
         <ScrollRestoration />
         <Scripts />

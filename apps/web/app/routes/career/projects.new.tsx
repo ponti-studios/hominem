@@ -62,7 +62,7 @@ export default function NewProjectRoute({ loaderData, actionData }: Route.Compon
       <DetailSection title="Project">
         <ProjectEditor engagements={loaderData.engagements} submitLabel="Add project" />
         {actionData?.error && (
-          <p role="alert" className="mt-4 text-sm text-[#ff9d9d]">
+          <p role="alert" className="mt-4 text-sm text-destructive-text">
             {actionData.error}
           </p>
         )}

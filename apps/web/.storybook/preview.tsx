@@ -37,7 +37,7 @@ const preview: Preview = {
   ],
   parameters: {
     layout: 'fullscreen',
-    backgrounds: { default: 'dark' },
+    backgrounds: { default: 'light' },
     msw: {
       handlers: [http.get('/rive/mana-2.0.riv', () => passthrough())],
     },

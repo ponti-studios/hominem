@@ -121,14 +121,14 @@ export default function ApplicationFilesRoute({ loaderData }: Route.ComponentPro
       />
 
       <SectionCard>
-        <List ariaLabel="Attached files">
+        <List.Items ariaLabel="Attached files">
           {files.map((file) => (
             <li key={file.id} className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
               <a
                 href={file.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex min-w-0 items-center gap-2 text-sm text-[#d7ff3e] hover:underline"
+                className="flex min-w-0 items-center gap-2 text-sm text-foreground hover:underline"
               >
                 <span className="truncate">{file.fileName}</span>
               </a>
@@ -140,7 +140,7 @@ export default function ApplicationFilesRoute({ loaderData }: Route.ComponentPro
               />
             </li>
           ))}
-        </List>
+        </List.Items>
       </SectionCard>
     </div>
   );

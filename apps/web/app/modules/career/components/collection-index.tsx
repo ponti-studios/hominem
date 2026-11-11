@@ -1,8 +1,8 @@
 import { PlusIcon } from 'lucide-react';
 import { Link } from 'react-router';
 
+import { AddButton } from '~/components/design';
 import { PageHeader } from '~/components/design/page-header';
-import { AddButton } from '~/modules/career/components/AddButton';
 import { ExpandableSearch } from '~/modules/career/components/career/ExpandableSearch';
 
 type CollectionSearch = {
@@ -47,7 +47,6 @@ export function CollectionIndex({
         eyebrow={eyebrow}
         title={title}
         description={description}
-        accent="#ff9d6b"
         actions={
           actions ??
           (addTo && addLabel ? (

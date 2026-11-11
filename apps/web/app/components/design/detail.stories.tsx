@@ -14,7 +14,7 @@ export default meta;
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-full bg-[#060709] p-6 text-[#f2f4f8]">
+    <div className="min-h-full bg-background p-6 text-foreground">
       <div className="mx-auto grid max-w-3xl gap-4">{children}</div>
     </div>
   );
@@ -25,8 +25,9 @@ export const Hero: StoryObj = {
   render: () => (
     <Shell>
       <div>
-        <BackLink to="/career/work" label="Work history" />
         <DetailHero
+          eyebrow="Work history"
+          back={<BackLink to="/career/work" label="Work history" variant="icon" />}
           title="Senior Engineer"
           subtitle="Acme Inc"
           badges={
@@ -55,7 +56,7 @@ export const Sections: StoryObj = {
         </div>
       </DetailSection>
       <DetailSection title="Description">
-        <p className="text-[15px] leading-relaxed text-[#f2f4f8]">
+        <p className="text-[15px] leading-relaxed text-foreground">
           Led the platform team through a full rewrite.
         </p>
       </DetailSection>
@@ -67,7 +68,7 @@ export const DeleteVariants: StoryObj = {
   name: 'DeleteButton',
   render: () => (
     <Shell>
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0e1116]/90 p-5">
+      <div className="flex items-center gap-3 rounded-sm border border-border bg-card p-5">
         <DeleteButton itemName="Q3 invoice" />
         <DeleteButton itemName="Q3 invoice" label="Remove" variant="ghost" />
         <DeleteButton
@@ -84,9 +85,9 @@ export const Chips: StoryObj = {
   name: 'Chip',
   render: () => (
     <Shell>
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-[#0e1116]/90 p-5">
+      <div className="flex flex-wrap gap-2 rounded-sm border border-border bg-card p-5">
         <Chip>TypeScript</Chip>
-        <Chip tone="volt">React</Chip>
+        <Chip>React</Chip>
         <Chip onRemove={() => window.alert('removed')} removeLabel="Remove Go">
           Go
         </Chip>

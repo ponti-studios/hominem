@@ -1,10 +1,7 @@
-import { EmptyState } from '@ponti-studios/ui/feedback';
-import { Skeleton } from '@ponti-studios/ui/feedback';
-import { PaginationControls } from '@ponti-studios/ui/navigation';
-import { Receipt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
+import { List } from '~/components/design';
 import { FinanceOverview } from '~/modules/finance/components/finance/finance-overview';
 import { TransactionFilters } from '~/modules/finance/components/finance/transaction-filters';
 import { TransactionsList } from '~/modules/finance/components/transactions/transactions-list';
@@ -129,8 +126,9 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
       <h1 className="sr-only">Finance</h1>
       <FinanceOverview accounts={[...accountsMap.values()]} />
 
-      <div id="transaction-filters" className="scroll-mt-20">
+      <List>
         <TransactionFilters
+          id="transaction-filters"
           accountsMap={accountsMap}
           accountsLoading={accountsLoading}
           filters={currentFilters}
@@ -145,52 +143,22 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
           onRefresh={refreshData}
           loading={loading}
         />
-      </div>
-
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={`page-skeleton-${i}`} className="h-16 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : errorMessage ? (
-        <EmptyState
-          variant="dashed"
-          title="Couldn’t load transactions"
-          description={errorMessage}
-          icon={<Receipt className="size-5" aria-hidden />}
+        <TransactionsList
+          loading={loading}
+          error={errorMessage}
+          transactions={transactions}
+          accountsMap={accountsMap}
+          variant="divided"
         />
-      ) : transactions.length === 0 ? (
-        <EmptyState
-          variant="search"
-          title="No transactions found"
-          description="Try adjusting your filters or search terms."
-          icon={<Receipt className="size-5" aria-hidden />}
-        />
-      ) : (
-        <>
-          <div className="body-3 flex items-center justify-between text-muted-foreground">
-            <span>
-              {totalTransactions.toLocaleString()} transaction
-              {totalTransactions === 1 ? '' : 's'}
-            </span>
-            {totalPages > 1 ? (
-              <span>
-                Page {page + 1} of {totalPages}
-              </span>
-            ) : null}
-          </div>
-
-          <TransactionsList
-            loading={false}
-            error={null}
-            transactions={transactions}
-            accountsMap={accountsMap}
+        {!loading && !errorMessage && transactions.length > 0 ? (
+          <List.Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            summary={`${totalTransactions.toLocaleString()} transaction${totalTransactions === 1 ? '' : 's'}`}
           />
-
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        </>
-      )}
+        ) : null}
+      </List>
     </div>
   );
 }

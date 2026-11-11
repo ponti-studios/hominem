@@ -3,13 +3,12 @@ import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { CreditCard, Receipt } from 'lucide-react';
 
+import { List } from '~/components/design';
 import { cn } from '~/lib/utils';
 import type {
   useFinanceAccounts,
   useFinanceTransactions,
 } from '~/modules/finance/hooks/use-finance-data';
-
-const listShellClass = 'overflow-hidden rounded-3xl border border-border bg-surface shadow-xs';
 
 type TransactionFromAPI = ReturnType<typeof useFinanceTransactions>['transactions'][number];
 type AccountsMap = ReturnType<typeof useFinanceAccounts>['accountsMap'];
@@ -20,6 +19,7 @@ type TransactionsListProps = {
   error: string | null;
   transactions: TransactionFromAPI[];
   accountsMap: AccountsMap;
+  variant?: 'card' | 'divided';
 };
 
 function formatPostedOn(value: string | Date | null | undefined) {
@@ -57,7 +57,10 @@ function TransactionListItem({
   const isExpense = Number(transaction.amount) < 0;
 
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5">
+    <div
+      role="listitem"
+      className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5"
+    >
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="heading-4 truncate text-foreground">
@@ -85,13 +88,15 @@ export function TransactionsList({
   error,
   transactions,
   accountsMap,
+  variant = 'card',
 }: TransactionsListProps) {
   if (loading) {
     return (
-      <div className={listShellClass}>
+      <List.Items as="div" ariaLabel="Transactions" variant={variant}>
         {Array.from({ length: 5 }, (_, i) => (
           <div
             key={`tx-skeleton-${i}`}
+            role="listitem"
             className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5"
           >
             <div className="flex-1 space-y-2">
@@ -101,7 +106,7 @@ export function TransactionsList({
             <Skeleton className="h-4 w-16" />
           </div>
         ))}
-      </div>
+      </List.Items>
     );
   }
 
@@ -128,7 +133,7 @@ export function TransactionsList({
   }
 
   return (
-    <div className={listShellClass}>
+    <List.Items as="div" ariaLabel="Transactions" variant={variant}>
       {transactions.map((transaction) => (
         <TransactionListItem
           key={transaction.id}
@@ -136,6 +141,6 @@ export function TransactionsList({
           account={accountsMap.get(transaction.accountId)}
         />
       ))}
-    </div>
+    </List.Items>
   );
 }

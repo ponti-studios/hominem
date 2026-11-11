@@ -3,10 +3,8 @@ import { DOMAINS, type Domain } from '~/domains';
 export type PaletteItem = {
   key: string;
   label: string;
-  hint: string;
   path: string;
   keywords: string;
-  accent: string;
   kind: 'domain' | 'page' | 'action';
 };
 
@@ -17,20 +15,16 @@ export function buildPaletteIndex(): PaletteItem[] {
     items.push({
       key: domain.id,
       label: domain.label,
-      hint: domain.tagline,
       path: domain.path,
       keywords: [domain.label, domain.tagline, ...domain.keywords].join(' ').toLowerCase(),
-      accent: domain.accent,
       kind: 'domain',
     });
     for (const sub of domain.subNav) {
       items.push({
         key: `${domain.id}:${sub.path}`,
         label: `${domain.label} — ${sub.label}`,
-        hint: sub.path,
         path: sub.path,
         keywords: [domain.label, sub.label, ...(sub.keywords ?? [])].join(' ').toLowerCase(),
-        accent: domain.accent,
         kind: 'page',
       });
     }
@@ -39,19 +33,15 @@ export function buildPaletteIndex(): PaletteItem[] {
     {
       key: 'action:usage',
       label: 'Usage',
-      hint: 'AI allowance and MCP calls',
       path: '/usage',
       keywords: 'usage allowance limits billing ai',
-      accent: '#5eead4',
       kind: 'action',
     },
     {
       key: 'action:settings',
       label: 'Settings',
-      hint: 'Account and workspace',
       path: '/settings',
       keywords: 'settings account preferences',
-      accent: '#9ba3b4',
       kind: 'action',
     },
   );

@@ -52,7 +52,7 @@ export function CareerCollection<T>({
 
   return (
     <SectionCard className={className}>
-      <List ariaLabel="Items">
+      <List.Items ariaLabel="Items">
         {items.map((item) => (
           <li key={keyFor(item)}>
             <RowLink
@@ -65,7 +65,7 @@ export function CareerCollection<T>({
             />
           </li>
         ))}
-      </List>
+      </List.Items>
     </SectionCard>
   );
 }

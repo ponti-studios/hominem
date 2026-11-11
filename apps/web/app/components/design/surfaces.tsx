@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 
 import { cn } from '~/lib/utils';
 
-/** Raised surface every domain builds on. Replaces ad-hoc rounded-xl borders. */
+/** Raised surface every domain builds on. Replaces ad-hoc rounded-sm borders. */
 export function SectionCard({
   children,
   className,
@@ -15,7 +15,7 @@ export function SectionCard({
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
-      className={cn('hairline card-lift overflow-hidden rounded-2xl bg-[#0e1116]/90', className)}
+      className={cn('hairline overflow-hidden rounded-sm bg-card', className)}
       initial={{ opacity: 0, y: 16 }}
       transition={{
         delay: Math.min(index * 0.06, 0.3),
@@ -34,29 +34,27 @@ export function Stat({
   label,
   value,
   sub,
-  accent,
+  tone = 'default',
 }: {
   label: string;
   value: string;
   sub?: string;
-  accent?: string;
+  tone?: 'default' | 'danger';
 }) {
   return (
     <div className="min-w-0">
-      <p className="truncate font-mono text-[10px] tracking-[0.16em] text-[#5e6678] uppercase">
+      <p className="truncate font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
         {label}
       </p>
       <p
-        className="mt-1 truncate text-2xl font-semibold text-[#f2f4f8] tabular-nums"
-        style={{ letterSpacing: '-0.02em' }}
-      >
-        {accent ? (
-          <span style={{ color: accent, textShadow: `0 0 20px ${accent}55` }}>{value}</span>
-        ) : (
-          value
+        className={cn(
+          'mt-1 truncate text-2xl font-semibold tabular-nums',
+          tone === 'danger' ? 'text-destructive-text' : 'text-foreground',
         )}
+      >
+        {value}
       </p>
-      {sub ? <p className="mt-0.5 truncate text-[13px] text-[#9ba3b4]">{sub}</p> : null}
+      {sub ? <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{sub}</p> : null}
     </div>
   );
 }
@@ -76,21 +74,21 @@ export function PanelState({
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
       {icon ? (
-        <span className="hairline flex size-12 items-center justify-center rounded-2xl bg-white/[0.03] text-[#9ba3b4] [&_svg]:size-5">
+        <span className="hairline flex size-12 items-center justify-center rounded-sm bg-muted text-muted-foreground [&_svg]:size-5">
           {icon}
         </span>
       ) : null}
-      <p className="text-[15px] font-medium text-[#f2f4f8]">{title}</p>
+      <p className="text-[15px] font-medium text-foreground">{title}</p>
       {description ? (
-        <p className="max-w-sm text-sm leading-relaxed text-[#9ba3b4]">{description}</p>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
 }
 
-/** Segmented filter control (Open / Completed / All …). */
-export function SegmentedControl<T extends string>({
+/** Shared tab-like filter control (Open / Completed / All …). */
+export function FilterTabs<T extends string>({
   options,
   value,
   onChange,
@@ -104,7 +102,7 @@ export function SegmentedControl<T extends string>({
   return (
     <div
       aria-label={ariaLabel}
-      className="hairline inline-flex items-center gap-0.5 rounded-full bg-white/[0.03] p-1"
+      className="hairline inline-flex items-center gap-0.5 rounded-full bg-muted p-1"
       role="group"
     >
       {options.map((option) => {
@@ -115,16 +113,15 @@ export function SegmentedControl<T extends string>({
             aria-pressed={selected}
             className={cn(
               'relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors',
-              selected ? 'text-[#101300]' : 'text-[#9ba3b4] hover:text-[#f2f4f8]',
+              selected ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
             onClick={() => onChange(option.value)}
             type="button"
           >
             {selected ? (
               <motion.span
-                className="absolute inset-0 rounded-full bg-[#d7ff3e]"
+                className="absolute inset-0 rounded-full bg-primary"
                 layoutId="segmented-active"
-                style={{ boxShadow: '0 4px 20px -4px rgb(215 255 62 / 0.5)' }}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             ) : null}

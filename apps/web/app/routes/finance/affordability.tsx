@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/prim
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 
+import { PageHeader } from '~/components/design';
 import { useCheckAffordability } from '~/modules/finance/hooks/use-affordability';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
@@ -54,11 +55,11 @@ export default function AffordabilityPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Can I Afford This?</h1>
-      <p className="text-muted-foreground">
-        Enter a purchase and your current finances to get a straight answer — not just a balance
-        check, but whether it protects your runway and emergency fund.
-      </p>
+      <PageHeader
+        eyebrow="Finance · Affordability"
+        title="Can I afford this?"
+        description="Enter a purchase and your current finances to see whether it protects your runway and emergency fund."
+      />
 
       <Card>
         <CardHeader>

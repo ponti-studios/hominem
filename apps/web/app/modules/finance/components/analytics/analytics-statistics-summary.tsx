@@ -8,7 +8,7 @@ import { useTimeSeriesData } from '~/modules/finance/hooks/use-time-series';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
 
 function StatsShell({ children }: { children: ReactNode }) {
-  return <SurfacePanel>{children}</SurfacePanel>;
+  return <SurfacePanel className="rounded-sm">{children}</SurfacePanel>;
 }
 
 interface AnalyticsStatisticsSummaryProps {
@@ -60,7 +60,7 @@ export function AnalyticsStatisticsSummary({
           <Skeleton className="h-5 w-40" />
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 4 }, (_, i) => (
-              <Skeleton key={`stat-skeleton-${i}`} className="h-24 rounded-xl" />
+              <Skeleton key={`stat-skeleton-${i}`} className="h-24 rounded-sm" />
             ))}
           </div>
         </div>

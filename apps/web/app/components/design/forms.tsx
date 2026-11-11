@@ -59,7 +59,7 @@ export function IconField({
     <Field label={label} hint={hint} error={error} className={className}>
       {(id) => (
         <span className="flex">
-          <span className="inline-flex h-10 shrink-0 items-center rounded-l-xl border border-r-0 border-white/10 bg-white/[0.03] px-3 text-[#9ba3b4]">
+          <span className="inline-flex h-10 shrink-0 items-center rounded-l-xl border border-r-0 border-border bg-muted px-3 text-muted-foreground">
             {icon}
           </span>
           <Input
@@ -210,7 +210,7 @@ export function TextAreaInput({
           required={required}
           placeholder={placeholder}
           defaultValue={defaultValue}
-          className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-[#f2f4f8] outline-none transition-colors placeholder:text-[#5e6678] focus:border-[#d7ff3e]/60"
+          className="w-full resize-none rounded-sm border border-border bg-muted px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring"
           {...rest}
         />
       )}
@@ -268,13 +268,13 @@ export function PrefixInput({
       <label
         htmlFor={id}
         className={
-          labelHidden ? 'sr-only' : 'flex items-center gap-2 text-sm font-medium text-[#f2f4f8]'
+          labelHidden ? 'sr-only' : 'flex items-center gap-2 text-sm font-medium text-foreground'
         }
       >
         {label}
       </label>
       <span className="flex">
-        <span className="inline-flex shrink-0 items-center rounded-l-xl border border-r-0 border-white/10 bg-white/[0.03] px-3 text-[13px] text-[#9ba3b4]">
+        <span className="inline-flex shrink-0 items-center rounded-l-xl border border-r-0 border-border bg-muted px-3 text-[13px] text-muted-foreground">
           {prefix}
         </span>
         <span className="relative min-w-0 flex-1">
@@ -306,12 +306,12 @@ export function PrefixInput({
         </span>
       </span>
       {hint && !error ? (
-        <p id={`${id}-note`} className="text-[13px] text-[#9ba3b4]">
+        <p id={`${id}-note`} className="text-[13px] text-muted-foreground">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-note`} role="alert" className="text-[13px] text-[#ff9d9d]">
+        <p id={`${id}-note`} role="alert" className="text-[13px] text-destructive-text">
           {error}
         </p>
       ) : null}

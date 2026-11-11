@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useLocation, useNavigation } from 'react-router';
 
 /**
- * Choreographed route changes: a volt progress hairline while the next
+ * Route changes show a progress line while the next
  * route loads, then a fade/slide/blur entrance for the new page.
  */
 export function RouteTransition({ children }: { children: React.ReactNode }) {

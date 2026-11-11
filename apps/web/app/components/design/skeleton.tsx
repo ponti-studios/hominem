@@ -16,8 +16,8 @@ export function ListSkeleton({ rows = 4, className, label = 'Loading' }: ListSke
           className="animate-pulse px-4 py-4 sm:px-5"
           style={{ animationDelay: `${i * 120}ms` }}
         >
-          <div className="h-4 w-2/3 rounded-full bg-white/[0.07]" />
-          <div className="mt-2 h-3 w-1/3 rounded-full bg-white/[0.04]" />
+          <div className="h-4 w-2/3 rounded-full bg-muted" />
+          <div className="mt-2 h-3 w-1/3 rounded-full bg-muted" />
         </div>
       ))}
     </div>
@@ -33,7 +33,7 @@ type BlockSkeletonProps = {
 export function BlockSkeleton({ className, label = 'Loading' }: BlockSkeletonProps) {
   return (
     <div
-      className={cn('h-24 animate-pulse rounded-2xl bg-white/[0.04]', className)}
+      className={cn('h-24 animate-pulse rounded-sm bg-muted', className)}
       aria-label={label}
       role="status"
     />

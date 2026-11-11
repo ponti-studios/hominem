@@ -86,7 +86,6 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
         eyebrow="Finance · Reconcile"
         title="Reconcile"
         description="True-up ledger balances to real readings and inspect the books for sign bugs."
-        accent="#9d7bff"
       />
 
       {actionData && !actionData.ok ? (
@@ -108,8 +107,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
 
       <SectionCard>
         <div className="p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Reconciliation staleness</h2>
-          <p className="mt-1 text-[13px] text-[#9ba3b4]">
+          <h2 className="text-[15px] font-semibold text-foreground">Reconciliation staleness</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             Last reconciling entry per account, stalest first. Balances are plain ledger sums.
           </p>
           <div className="mt-4">
@@ -148,7 +147,7 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
                   render: (entry) => (
                     <Link
                       to={`/finance/reconcile?accountId=${entry.accountId}`}
-                      className="text-[#d7ff3e] hover:underline"
+                      className="text-foreground hover:underline"
                     >
                       Ledger
                     </Link>
@@ -162,8 +161,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
 
       <SectionCard>
         <div className="p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-[#f2f4f8]">True-up an account</h2>
-          <p className="mt-1 text-[13px] text-[#9ba3b4]">
+          <h2 className="text-[15px] font-semibold text-foreground">True-up an account</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             Post a dated adjustment entry that closes the gap to a real balance reading. Uses
             money-out-negative signs: a debt owed is negative.
           </p>
@@ -192,8 +191,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
               <TextInput label="As-of date" name="date" type="date" defaultValue={todayIso()} />
               <TextInput label="Note" name="note" type="text" placeholder="Copilot reading" />
             </FormGrid>
-            <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-[#f2f4f8]">
-              <input type="checkbox" name="force" className="size-4 accent-[#d7ff3e]" />
+            <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" name="force" className="size-4 accent-primary" />
               Post even if an adjustment already exists for that date
             </label>
             <div className="mt-4">
@@ -208,8 +207,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
       {accountId ? (
         <SectionCard>
           <div className="p-5 sm:p-6">
-            <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Ledger breakdown</h2>
-            <p className="mt-1 text-[13px] text-[#9ba3b4]">
+            <h2 className="text-[15px] font-semibold text-foreground">Ledger breakdown</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">
               {breakdown
                 ? `${breakdown.accountName} · ledger ${formatCurrency(breakdown.balance)} · per-description signs`
                 : 'Unknown account.'}
@@ -234,7 +233,7 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
                       header: 'Signed',
                       align: 'right',
                       render: (row) => (
-                        <span className={row.signedSum < 0 ? 'text-[#ff9d9d]' : undefined}>
+                        <span className={row.signedSum < 0 ? 'text-destructive-text' : undefined}>
                           {formatCurrency(row.signedSum)}
                         </span>
                       ),
@@ -248,7 +247,7 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
                   ]}
                 />
                 {breakdown.rows.length > BREAKDOWN_ROW_LIMIT ? (
-                  <p className="pt-3 font-mono text-[11px] text-[#5e6678]">
+                  <p className="pt-3 font-mono text-[11px] text-muted-foreground">
                     Showing {BREAKDOWN_ROW_LIMIT} of {breakdown.rows.length} descriptions.
                   </p>
                 ) : null}
@@ -260,8 +259,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
 
       <SectionCard>
         <div className="p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-[#f2f4f8]">Ledger health</h2>
-          <p className="mt-1 text-[13px] text-[#9ba3b4]">
+          <h2 className="text-[15px] font-semibold text-foreground">Ledger health</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {gates.totalTransactions} transactions · {gates.uncategorizedTransactions} uncategorized
             · {gates.accountsWithNoTransactions.length} empty accounts
           </p>
@@ -301,8 +300,8 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
           ) : null}
           {gates.duplicateGroups.length > 0 ? (
             <div className="mt-4">
-              <p className="mb-1 text-sm font-medium text-[#f2f4f8]">Duplicate candidates</p>
-              <ul className="flex flex-col gap-1 text-sm text-[#9ba3b4]">
+              <p className="mb-1 text-sm font-medium text-foreground">Duplicate candidates</p>
+              <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
                 {gates.duplicateGroups.slice(0, 10).map((group, index) => (
                   <li key={`${group.accountId}-${group.postedOn}-${group.absoluteAmount}-${index}`}>
                     {group.count}× {formatCurrency(group.absoluteAmount)} ·{' '}
@@ -314,7 +313,7 @@ export default function ReconcilePage({ loaderData }: Route.ComponentProps) {
             </div>
           ) : null}
           {gates.accountsWithNoTransactions.length > 0 ? (
-            <p className="mt-4 text-sm text-[#9ba3b4]">
+            <p className="mt-4 text-sm text-muted-foreground">
               Empty: {gates.accountsWithNoTransactions.map((entry) => entry.accountName).join(', ')}
             </p>
           ) : null}

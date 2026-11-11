@@ -280,8 +280,8 @@ export function MonthlyBreakdown({
                       render: (item: TimeSeriesDataPoint) => (
                         <span
                           className={cn({
-                            'text-[#ff9d9d]': item.trend?.directionExpenses === 'up',
-                            'text-[#f2f4f8]': item.trend?.directionExpenses === 'down',
+                            'text-destructive-text': item.trend?.directionExpenses === 'up',
+                            'text-foreground': item.trend?.directionExpenses === 'down',
                           })}
                         >
                           {item.trend

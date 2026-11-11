@@ -12,13 +12,12 @@ export const meta = () => [{ title: 'Finance' }];
 export default function FinanceLayout() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="glass flex shrink-0 items-center gap-3 border-b border-white/[0.06] px-4 sm:px-6">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
         <nav aria-label="Finance" className="min-w-0 flex-1 overflow-x-auto">
           <ul className="flex items-center gap-1 py-2">
             {FINANCE?.subNav.map((link) => (
               <li key={link.path} className="shrink-0">
                 <AppNavLink
-                  accent={FINANCE.accent}
                   end={link.end}
                   label={link.label}
                   prefetch="intent"

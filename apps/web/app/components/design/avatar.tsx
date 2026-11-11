@@ -6,7 +6,7 @@ type InitialsAvatarProps = {
   className?: string;
 };
 
-/** Signature gradient avatar. One identity mark across menus and lists. */
+/** Initials avatar with the shared monochrome identity treatment. */
 export function InitialsAvatar({ name, size = 'sm', className }: InitialsAvatarProps) {
   const source = name.trim();
   const parts = source.split(/\s+/).filter(Boolean);
@@ -18,14 +18,10 @@ export function InitialsAvatar({ name, size = 'sm', className }: InitialsAvatarP
     <span
       aria-hidden
       className={cn(
-        'flex items-center justify-center rounded-full font-semibold text-[#101300]',
+        'flex items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground',
         size === 'sm' ? 'size-6 text-xs' : 'size-9 text-sm',
         className,
       )}
-      style={{
-        background: 'linear-gradient(135deg, #d7ff3e, #5eead4)',
-        boxShadow: '0 0 16px -2px rgb(215 255 62 / 0.5)',
-      }}
     >
       {initials}
     </span>

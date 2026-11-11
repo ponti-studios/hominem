@@ -2,6 +2,7 @@ import { subMonths } from 'date-fns';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 
+import { PageHeader } from '~/components/design';
 import { AccountSelect } from '~/modules/finance/components/account-select';
 import { AnalyticsChartDisplay } from '~/modules/finance/components/analytics/analytics-chart-display';
 import { MonthlyBreakdown } from '~/modules/finance/components/analytics/monthly-breakdown';
@@ -15,16 +16,16 @@ export default function TagAnalyticsPage() {
 
   return (
     <div className="container">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold">Tag Analysis: {tag}</h1>
-
-        <div className="mt-4 md:mt-0">
+      <PageHeader
+        eyebrow="Finance · Analytics"
+        title={`Tag analysis: ${tag}`}
+        actions={
           <AccountSelect
             selectedAccount={selectedAccount}
             setSelectedAccount={setSelectedAccount}
           />
-        </div>
-      </div>
+        }
+      />
 
       <div className="space-y-6">
         <AnalyticsChartDisplay

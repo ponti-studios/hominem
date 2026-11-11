@@ -9,10 +9,9 @@ import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
-import { DetailSection } from '~/components/design';
+import { AddButton, DetailSection } from '~/components/design';
 import { Chip } from '~/components/design/chip';
 import { FormActions, FormGrid, TextInput } from '~/components/design/forms';
-import { AddButton } from '~/modules/career/components/AddButton';
 import { CollectionIndex } from '~/modules/career/components/collection-index';
 import { formText } from '~/modules/career/lib/route-utils';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
@@ -108,14 +107,16 @@ export default function SkillsRoute({ loaderData }: Route.ComponentProps) {
     >
       <DetailSection title="Your skills">
         {skills.length === 0 ? (
-          <p className="text-sm text-[#9ba3b4]">No skills yet — add your first above.</p>
+          <p className="text-sm text-muted-foreground">No skills yet — add your first above.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {skills.map((skill) => (
               <Chip key={skill.id}>
                 <span className="font-medium">{skill.name}</span>
                 {skill.category && (
-                  <span className="font-mono text-[11px] text-[#5e6678]">{skill.category}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {skill.category}
+                  </span>
                 )}
                 <Form method="post" navigate={false} className="inline-flex">
                   <input type="hidden" name="intent" value="delete" />
@@ -123,7 +124,7 @@ export default function SkillsRoute({ loaderData }: Route.ComponentProps) {
                   <button
                     type="submit"
                     aria-label={`Remove ${skill.name}`}
-                    className="-mr-1 text-[#5e6678] transition-colors hover:text-[#f2f4f8]"
+                    className="-mr-1 text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <XIcon className="size-3.5" />
                   </button>

@@ -81,7 +81,7 @@ export function BudgetCapForm({
         {pending ? 'Saving…' : submitLabel}
       </Button>
       {errorMessage ? (
-        <p role="alert" className="w-full text-sm text-[#ff9d9d]">
+        <p role="alert" className="w-full text-sm text-destructive-text">
           {errorMessage}
         </p>
       ) : null}

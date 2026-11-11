@@ -1,10 +1,18 @@
 import { Check, RotateCcw, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { BackLink, DetailHero, DetailSection, SectionHeader } from '~/components/design';
-import { BlockSkeleton, PanelState, SectionCard } from '~/components/design';
-import { Container } from '~/components/design/container';
-import { List, RowLink } from '~/components/design/lists';
+import {
+  BackLink,
+  BlockSkeleton,
+  Container,
+  DetailHero,
+  DetailSection,
+  List,
+  PanelState,
+  RowLink,
+  SectionCard,
+  SectionHeader,
+} from '~/components/design';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useCompleteTask, useDeleteTask, useTaskDetail, useUpdateTask } from '~/hooks/use-tasks';
@@ -80,52 +88,49 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
   return (
     <main className="h-full overflow-auto">
       <Container size="xs">
-        <div className="mb-6 flex items-center gap-3">
-          <BackLink to="/tasks" label="Back to tasks" variant="icon" />
-          <div className="min-w-0 flex-1">
-            <DetailHero
-              title={task.title}
-              badges={
-                isCompleted ? (
-                  <span className="text-sm text-[#9ba3b4]">Completed</span>
-                ) : task.priority ? (
-                  <Badge variant={taskPriorityVariant[task.priority] ?? 'outline'}>
-                    {task.priority}
-                  </Badge>
-                ) : undefined
-              }
-              actions={
-                <>
-                  <Button
-                    disabled={completeTask.isPending}
-                    onClick={handleToggleComplete}
-                    size="sm"
-                    variant={isCompleted ? 'outline' : 'default'}
-                  >
-                    {isCompleted ? (
-                      <>
-                        <RotateCcw className="size-4" /> Reopen
-                      </>
-                    ) : (
-                      <>
-                        <Check className="size-4" /> Complete
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    aria-label="Delete task"
-                    disabled={deleteTask.isPending}
-                    onClick={handleDelete}
-                    size="icon-sm"
-                    variant="ghost"
-                  >
-                    <Trash2 className="size-4 text-[#ff9d9d]" />
-                  </Button>
-                </>
-              }
-            />
-          </div>
-        </div>
+        <DetailHero
+          eyebrow="Tasks"
+          back={<BackLink to="/tasks" label="Back to tasks" variant="icon" />}
+          title={task.title}
+          badges={
+            isCompleted ? (
+              <span className="text-sm text-muted-foreground">Completed</span>
+            ) : task.priority ? (
+              <Badge variant={taskPriorityVariant[task.priority] ?? 'outline'}>
+                {task.priority}
+              </Badge>
+            ) : undefined
+          }
+          actions={
+            <>
+              <Button
+                disabled={completeTask.isPending}
+                onClick={handleToggleComplete}
+                size="sm"
+                variant={isCompleted ? 'outline' : 'default'}
+              >
+                {isCompleted ? (
+                  <>
+                    <RotateCcw className="size-4" /> Reopen
+                  </>
+                ) : (
+                  <>
+                    <Check className="size-4" /> Complete
+                  </>
+                )}
+              </Button>
+              <Button
+                aria-label="Delete task"
+                disabled={deleteTask.isPending}
+                onClick={handleDelete}
+                size="icon-sm"
+                variant="ghost"
+              >
+                <Trash2 className="size-4 text-destructive-text" />
+              </Button>
+            </>
+          }
+        />
 
         <DetailSection title="Task">
           <TaskForm
@@ -150,7 +155,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
               {children.length === 0 ? (
                 <PanelState title="No sub-tasks yet" />
               ) : (
-                <List ariaLabel="Sub-tasks">
+                <List.Items ariaLabel="Sub-tasks">
                   {children.map((child) => (
                     <li key={child.id}>
                       <RowLink
@@ -159,7 +164,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
                           <span
                             className={
                               child.status === 'completed'
-                                ? 'truncate text-sm text-[#5e6678] line-through'
+                                ? 'truncate text-sm text-muted-foreground line-through'
                                 : 'truncate text-sm'
                             }
                           >
@@ -169,7 +174,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
                       />
                     </li>
                   ))}
-                </List>
+                </List.Items>
               )}
             </div>
           </SectionCard>

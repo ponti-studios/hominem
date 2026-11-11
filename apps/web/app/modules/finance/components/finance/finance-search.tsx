@@ -191,7 +191,7 @@ export function FinanceSearch({ className }: FinanceSearchProps) {
         <span className="sr-only">Search transactions and accounts</span>
       </Button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
-        <DialogContent className="top-[18vh] max-w-2xl translate-y-0 gap-0 overflow-hidden rounded-xl border-border bg-popover p-0 shadow-2xl">
+        <DialogContent className="top-[18vh] max-w-2xl translate-y-0 gap-0 overflow-hidden rounded-sm border-border bg-popover p-0 shadow-2xl">
           <DialogTitle className="sr-only">Search finance</DialogTitle>
           <div className="flex items-center gap-3 border-b border-border px-5">
             <Search className="size-5 shrink-0 text-primary" aria-hidden="true" />

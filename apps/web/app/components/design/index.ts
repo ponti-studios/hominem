@@ -2,7 +2,8 @@
 // here — never `@ponti-studios/ui` or `~/components/ui` directly.
 // Enforced by `app/lib/design-boundary.test.ts`.
 export { PageHeader } from './page-header';
-export { PanelState, SectionCard, SegmentedControl, Stat } from './surfaces';
+export { AddButton } from './add-button';
+export { FilterTabs, PanelState, SectionCard, Stat } from './surfaces';
 export { DataTable, type DataTableColumn } from './data-table';
 export { ChartCard } from './chart-card';
 export { Field, SelectField } from './form-field';

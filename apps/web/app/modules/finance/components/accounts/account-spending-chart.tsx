@@ -143,12 +143,6 @@ export function AccountSpendingChart({ accountId, accountName }: AccountSpending
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'area' ? (
               <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSpending" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={SPENDING_COLOR} stopOpacity={0.8} />
-                    <stop offset="95%" stopColor={SPENDING_COLOR} stopOpacity={0.2} />
-                  </linearGradient>
-                </defs>
                 <XAxis dataKey="name" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} width={80} />
                 <CartesianGrid strokeDasharray="3 3" />
@@ -160,8 +154,8 @@ export function AccountSpendingChart({ accountId, accountName }: AccountSpending
                   type="monotone"
                   dataKey="Spending"
                   stroke={SPENDING_COLOR}
-                  fillOpacity={1}
-                  fill="url(#colorSpending)"
+                  fillOpacity={0.1}
+                  fill={SPENDING_COLOR}
                 />
               </AreaChart>
             ) : (

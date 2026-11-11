@@ -97,8 +97,9 @@ export default function WorkDetailPage({ loaderData }: Route.ComponentProps) {
   if (isEditing) {
     return (
       <div>
-        <BackLink to="/career/work" label="Work history" />
         <DetailHero
+          eyebrow="Work history"
+          back={<BackLink to="/career/work" label="Work history" variant="icon" />}
           title="Edit engagement"
           actions={
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
@@ -115,8 +116,9 @@ export default function WorkDetailPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div>
-      <BackLink to="/career/work" label="Work history" />
       <DetailHero
+        eyebrow="Work history"
+        back={<BackLink to="/career/work" label="Work history" variant="icon" />}
         title={position.title}
         subtitle={position.company}
         badges={
@@ -154,7 +156,7 @@ export default function WorkDetailPage({ loaderData }: Route.ComponentProps) {
 
         {position.description && (
           <DetailSection title="Description">
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-[#f2f4f8]">
+            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
               {position.description}
             </p>
           </DetailSection>
@@ -162,7 +164,7 @@ export default function WorkDetailPage({ loaderData }: Route.ComponentProps) {
 
         {position.reasonForLeaving && (
           <DetailSection title="Reason for leaving">
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-[#f2f4f8]">
+            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
               {position.reasonForLeaving}
             </p>
           </DetailSection>
@@ -181,13 +183,15 @@ export default function WorkDetailPage({ loaderData }: Route.ComponentProps) {
         {(position.source || position.url) && (
           <DetailSection title="Source">
             <div className="flex flex-col gap-2">
-              {position.source && <p className="text-sm text-[#9ba3b4]">via {position.source}</p>}
+              {position.source && (
+                <p className="text-sm text-muted-foreground">via {position.source}</p>
+              )}
               {position.url && (
                 <a
                   href={position.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#d7ff3e] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-foreground hover:underline"
                 >
                   {position.url}
                 </a>

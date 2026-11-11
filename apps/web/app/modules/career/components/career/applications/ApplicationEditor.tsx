@@ -14,8 +14,8 @@ interface ApplicationEditorProps {
 
 export function ApplicationEditor({ application, onCancel }: ApplicationEditorProps) {
   return (
-    <div className="hairline rounded-2xl bg-[#0e1116]/90 p-5">
-      <h3 className="mb-4 text-[15px] font-semibold text-[#f2f4f8]">Edit application</h3>
+    <div className="hairline rounded-2xl bg-card p-5">
+      <h3 className="mb-4 text-[15px] font-semibold text-foreground">Edit application</h3>
       <Form method="post" className="flex flex-col gap-4">
         <input type="hidden" name="intent" value="update-application" />
         <FormGrid>

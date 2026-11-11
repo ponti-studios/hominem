@@ -3,7 +3,7 @@ import { format, subMonths } from 'date-fns';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { PageHeader, PanelState } from '~/components/design';
+import { List, PageHeader, PanelState } from '~/components/design';
 import { Chip } from '~/components/design/chip';
 import { DataTable } from '~/components/design/data-table';
 import { ListSkeleton } from '~/components/design/skeleton';
@@ -206,145 +206,152 @@ export default function TagsAnalyticsPage() {
         eyebrow="Finance · Analytics"
         title="Tags Breakdown"
         description="Spending by tag for the selected period."
-        accent="#9d7bff"
       />
 
-      <TransactionFilters
-        accountsMap={accountsMap}
-        accountsLoading={accountsLoading}
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        searchValue={searchValue}
-        onSearchChange={handleSearchChange}
-        sortOptions={sortOptions}
-        isDefaultSort={isDefaultSort}
-        addSortOption={addSortOption}
-        updateSortOption={updateSortOption}
-        removeSortOption={removeSortOption}
-        onRefresh={handleRefresh}
-        loading={loading}
-      />
-
-      {(activeFilters.length > 0 || searchValue.trim()) && (
-        <div className="flex flex-wrap items-center gap-2">
-          {activeFilters.map((filter) => (
-            <Chip key={filter.id} onRemove={filter.onRemove} removeLabel={`Remove ${filter.label}`}>
-              {filter.label}
-            </Chip>
-          ))}
-          {searchValue.trim() && (
-            <Chip onRemove={() => setSearchValue('')} removeLabel="Clear search">
-              Search: {searchValue}
-            </Chip>
-          )}
-          {(activeFilters.length > 0 || searchValue.trim()) && (
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex h-7 items-center rounded-full px-3 text-[13px] font-medium text-[#9ba3b4] transition-colors hover:text-[#f2f4f8]"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading ? (
-        <SectionCard>
-          <ListSkeleton rows={5} label="Loading tags" />
-        </SectionCard>
-      ) : error ? (
-        /* Error State */
-        <PanelState
-          title="Tags unavailable"
-          description={
-            typeof error === 'string'
-              ? error
-              : error instanceof Error
-                ? error.message
-                : 'An unknown error occurred'
-          }
-          action={
-            <Button onClick={() => refetchBreakdown()} variant="outline">
-              Retry
-            </Button>
-          }
+      <List variant="plain">
+        <TransactionFilters
+          accountsMap={accountsMap}
+          accountsLoading={accountsLoading}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+          sortOptions={sortOptions}
+          isDefaultSort={isDefaultSort}
+          addSortOption={addSortOption}
+          updateSortOption={updateSortOption}
+          removeSortOption={removeSortOption}
+          onRefresh={handleRefresh}
+          loading={loading}
         />
-      ) : filteredAndSortedData.length === 0 ? (
-        /* Empty State */
-        <PanelState
-          title={
-            searchValue.trim() || activeFilters.length > 0
-              ? 'No tags found matching your filters'
-              : 'No tag data available for the selected period'
-          }
-        />
-      ) : (
-        /* Table with Data */
-        <SectionCard>
-          <div className="relative p-2 sm:p-4">
-            {isFetching && !isLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">
-                <Spinner size="md" />
-              </div>
+
+        {(activeFilters.length > 0 || searchValue.trim()) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilters.map((filter) => (
+              <Chip
+                key={filter.id}
+                onRemove={filter.onRemove}
+                removeLabel={`Remove ${filter.label}`}
+              >
+                {filter.label}
+              </Chip>
+            ))}
+            {searchValue.trim() && (
+              <Chip onRemove={() => setSearchValue('')} removeLabel="Clear search">
+                Search: {searchValue}
+              </Chip>
             )}
-            <DataTable
-              ariaLabel="Tags breakdown"
-              rows={filteredAndSortedData}
-              keyOf={(item) => `${item.currencyCode}-${item.tag}`}
-              onRowClick={(item) =>
-                navigate(`/finance/analytics/tag/${encodeURIComponent(item.tag)}`)
-              }
-              rowLabel={(item) => `View details for ${item.tag}`}
-              columns={[
-                {
-                  key: 'tag',
-                  header: 'Tag',
-                  sort: {
-                    direction: getSortDirection('tag') ?? null,
-                    onSort: () => handleSortHeaderClick('tag'),
-                    label: 'Sort by tag',
-                  },
-                  render: (item) => (
-                    <span className="inline-flex items-center gap-2">
-                      <Badge variant="secondary">{item.transactionCount}x</Badge>
-                      <span className="font-medium">{item.tag}</span>
-                    </span>
-                  ),
-                },
-                {
-                  key: 'total',
-                  header: 'Total',
-                  align: 'right',
-                  sort: {
-                    direction: getSortDirection('amount') ?? null,
-                    onSort: () => handleSortHeaderClick('amount'),
-                    label: 'Sort by total',
-                  },
-                  render: (item) => (
-                    <span className="inline-flex flex-col items-end gap-1">
-                      <span className="font-mono font-semibold">
-                        {formatCurrency(item.amount, item.currencyCode)}
-                      </span>
-                      <span className="text-xs text-[#9ba3b4]">{item.percentage.toFixed(1)}%</span>
-                      <span
-                        className="block h-1 w-24 overflow-hidden rounded-full bg-white/[0.08]"
-                        aria-hidden
-                      >
-                        <span
-                          className="block h-full bg-[#d7ff3e]"
-                          style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                        />
-                      </span>
-                    </span>
-                  ),
-                },
-              ]}
-            />
+            {(activeFilters.length > 0 || searchValue.trim()) && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex h-7 items-center rounded-full px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Clear all
+              </button>
+            )}
           </div>
-        </SectionCard>
-      )}
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <SectionCard>
+            <ListSkeleton rows={5} label="Loading tags" />
+          </SectionCard>
+        ) : error ? (
+          /* Error State */
+          <PanelState
+            title="Tags unavailable"
+            description={
+              typeof error === 'string'
+                ? error
+                : error instanceof Error
+                  ? error.message
+                  : 'An unknown error occurred'
+            }
+            action={
+              <Button onClick={() => refetchBreakdown()} variant="outline">
+                Retry
+              </Button>
+            }
+          />
+        ) : filteredAndSortedData.length === 0 ? (
+          /* Empty State */
+          <PanelState
+            title={
+              searchValue.trim() || activeFilters.length > 0
+                ? 'No tags found matching your filters'
+                : 'No tag data available for the selected period'
+            }
+          />
+        ) : (
+          /* Table with Data */
+          <SectionCard>
+            <div className="relative p-2 sm:p-4">
+              {isFetching && !isLoading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">
+                  <Spinner size="md" />
+                </div>
+              )}
+              <DataTable
+                ariaLabel="Tags breakdown"
+                rows={filteredAndSortedData}
+                keyOf={(item) => `${item.currencyCode}-${item.tag}`}
+                onRowClick={(item) =>
+                  navigate(`/finance/analytics/tag/${encodeURIComponent(item.tag)}`)
+                }
+                rowLabel={(item) => `View details for ${item.tag}`}
+                columns={[
+                  {
+                    key: 'tag',
+                    header: 'Tag',
+                    sort: {
+                      direction: getSortDirection('tag') ?? null,
+                      onSort: () => handleSortHeaderClick('tag'),
+                      label: 'Sort by tag',
+                    },
+                    render: (item) => (
+                      <span className="inline-flex items-center gap-2">
+                        <Badge variant="secondary">{item.transactionCount}x</Badge>
+                        <span className="font-medium">{item.tag}</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'total',
+                    header: 'Total',
+                    align: 'right',
+                    sort: {
+                      direction: getSortDirection('amount') ?? null,
+                      onSort: () => handleSortHeaderClick('amount'),
+                      label: 'Sort by total',
+                    },
+                    render: (item) => (
+                      <span className="inline-flex flex-col items-end gap-1">
+                        <span className="font-mono font-semibold">
+                          {formatCurrency(item.amount, item.currencyCode)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                        <span
+                          className="block h-1 w-24 overflow-hidden rounded-full bg-muted"
+                          aria-hidden
+                        >
+                          <span
+                            className="block h-full bg-primary"
+                            style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                          />
+                        </span>
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          </SectionCard>
+        )}
+      </List>
     </div>
   );
 }

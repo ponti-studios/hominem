@@ -9,7 +9,6 @@ type AppNavLinkProps = {
   end?: boolean;
   variant?: 'sidebar' | 'pill';
   icon?: React.ReactNode;
-  accent?: string;
   prefetch?: 'intent' | 'viewport' | 'none';
   onNavigate?: () => void;
 };
@@ -25,7 +24,6 @@ export function AppNavLink({
   end,
   variant = 'sidebar',
   icon,
-  accent = '#d7ff3e',
   prefetch = 'intent',
   onNavigate,
 }: AppNavLinkProps) {
@@ -34,8 +32,10 @@ export function AppNavLink({
       <NavLink
         className={({ isActive }) =>
           cn(
-            'relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors duration-200',
-            isActive ? 'text-[#101300]' : 'text-[#9ba3b4] hover:text-[#f2f4f8]',
+            'relative inline-flex h-8 shrink-0 items-center gap-1.5 border-b px-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors duration-200',
+            isActive
+              ? 'border-primary text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground',
           )
         }
         end={end}
@@ -49,9 +49,8 @@ export function AppNavLink({
               <motion.span
                 aria-hidden
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 rounded-full"
+                className="absolute inset-0 border-b border-primary"
                 initial={{ opacity: 0, scale: 0.92 }}
-                style={{ background: accent, boxShadow: `0 4px 20px -4px ${accent}66` }}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             ) : null}
@@ -67,8 +66,10 @@ export function AppNavLink({
     <NavLink
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200',
-          isActive ? 'text-[#f2f4f8]' : 'text-[#9ba3b4] hover:bg-white/[0.04] hover:text-[#f2f4f8]',
+          'group relative flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors duration-200',
+          isActive
+            ? 'text-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )
       }
       end={end}
@@ -81,20 +82,15 @@ export function AppNavLink({
           {isActive ? (
             <motion.span
               aria-hidden
-              className="absolute inset-0 rounded-xl border border-white/10 bg-white/[0.06]"
+              className="absolute inset-0 rounded-sm border border-border bg-muted"
               layoutId="sidebar-active"
               transition={{ type: 'spring', stiffness: 420, damping: 36 }}
             />
           ) : null}
           <span
             aria-hidden
-            className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-full"
-            style={{
-              background: accent,
-              opacity: isActive ? 1 : 0,
-              boxShadow: isActive ? `0 0 12px ${accent}` : undefined,
-              transition: 'opacity 200ms',
-            }}
+            className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 bg-primary"
+            style={{ opacity: isActive ? 1 : 0, transition: 'opacity 200ms' }}
           />
           {icon ? <span className="relative shrink-0 [&_svg]:size-4">{icon}</span> : null}
           <span className="relative min-w-0 flex-1 truncate font-medium">{label}</span>

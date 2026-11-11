@@ -1,10 +1,9 @@
 import { AwardIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
-import { DetailSection } from '~/components/design';
+import { AddButton, DetailSection } from '~/components/design';
 import { FormGrid, TextInput } from '~/components/design/forms';
 import { Button } from '~/components/ui/button';
-import { AddButton } from '~/modules/career/components/AddButton';
 import { FormErrorAlert } from '~/modules/career/components/FormErrorAlert';
 import type {
   AccountActionResult,
@@ -62,7 +61,7 @@ export function CertificationsSection({
 
   return (
     <DetailSection title="Certifications">
-      <p className="-mt-2 mb-4 text-[13px] text-[#9ba3b4]">
+      <p className="-mt-2 mb-4 text-[13px] text-muted-foreground">
         Licenses and certifications that back up your experience.
       </p>
 
@@ -73,12 +72,12 @@ export function CertificationsSection({
           {certifications.map((certification) => (
             <li
               key={certification.id}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3"
+              className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3"
             >
-              <AwardIcon className="size-4 shrink-0 text-[#9ba3b4]" aria-hidden />
+              <AwardIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-[#f2f4f8]">{certification.name}</p>
-                <p className="truncate font-mono text-[11px] text-[#5e6678]">
+                <p className="truncate text-sm text-foreground">{certification.name}</p>
+                <p className="truncate font-mono text-[11px] text-muted-foreground">
                   {certification.issuingOrganization}
                   {certification.issueDate && ` · ${certification.issueDate}`}
                 </p>

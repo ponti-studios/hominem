@@ -1,12 +1,18 @@
-import { Inbox, Plus, TriangleAlert } from 'lucide-react';
+import { Inbox, TriangleAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 
-import { Container } from '~/components/design/container';
-import { List, RowLink } from '~/components/design/lists';
-import { PageHeader } from '~/components/design/page-header';
-import { ListSkeleton } from '~/components/design/skeleton';
-import { PanelState, SectionCard, SegmentedControl } from '~/components/design/surfaces';
+import {
+  AddButton,
+  Container,
+  FilterTabs,
+  List,
+  ListSkeleton,
+  PageHeader,
+  PanelState,
+  RowLink,
+  SectionCard,
+} from '~/components/design';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useTasksList } from '~/hooks/use-tasks';
@@ -26,7 +32,6 @@ export function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const { data, error, isPending, refetch } = useTasksList();
   const tasks = data?.tasks ?? [];
-  const openCount = tasks.filter((task) => task.status === 'pending').length;
   const filteredTasks =
     statusFilter === 'all' ? tasks : tasks.filter((task) => task.status === statusFilter);
 
@@ -39,26 +44,18 @@ export function TasksPage() {
     <main className="h-full overflow-auto">
       <Container size="sm">
         <PageHeader
-          actions={<CreateTaskDialog trigger={<NewTaskButton />} />}
-          description={
-            openCount === 0
-              ? 'A clean slate. Enjoy the quiet.'
-              : `${openCount} open ${openCount === 1 ? 'thing' : 'things'} on your plate.`
-          }
+          actions={<CreateTaskDialog trigger={<AddButton label="New task" />} />}
           eyebrow="Tasks"
-          title="What needs doing"
+          title={<span className="sr-only">Tasks</span>}
         />
 
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <SegmentedControl
+        <div className="mb-4 flex justify-center">
+          <FilterTabs
             ariaLabel="Filter tasks by status"
             onChange={setStatusFilter}
             options={FILTER_OPTIONS}
             value={statusFilter}
           />
-          <p className="hidden font-mono text-[11px] tracking-[0.12em] text-[#5e6678] uppercase sm:block">
-            {filteredTasks.length} shown
-          </p>
         </div>
 
         <SectionCard>
@@ -88,7 +85,7 @@ export function TasksPage() {
             />
           ) : null}
           {!isPending && !error && filteredTasks.length > 0 ? (
-            <List ariaLabel="Tasks">
+            <List.Items ariaLabel="Tasks">
               {filteredTasks.map((task, i) => (
                 <motion.li
                   key={task.id}
@@ -107,7 +104,7 @@ export function TasksPage() {
                       <span
                         className={
                           task.status === 'completed'
-                            ? 'truncate text-[#5e6678] line-through'
+                            ? 'truncate text-muted-foreground line-through'
                             : 'truncate'
                         }
                       >
@@ -138,22 +135,10 @@ export function TasksPage() {
                   />
                 </motion.li>
               ))}
-            </List>
+            </List.Items>
           ) : null}
         </SectionCard>
       </Container>
     </main>
-  );
-}
-
-function NewTaskButton() {
-  return (
-    <span
-      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#d7ff3e] px-4 text-sm font-semibold text-[#101300] transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
-      style={{ boxShadow: '0 8px 32px -8px rgb(215 255 62 / 0.55)' }}
-    >
-      <Plus aria-hidden className="size-4" />
-      New task
-    </span>
   );
 }

@@ -77,29 +77,11 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
   }
 
   if (!settings || settings.budgets.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-center py-6">
-          <h3 className="text-sm font-semibold text-foreground mb-1">No Budget Categories</h3>
-          <p className="text-xs text-muted-foreground">
-            Set monthly category caps on the Runway page.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   if (totalBudgeted === 0) {
-    return (
-      <Card>
-        <CardContent className="text-center py-6">
-          <h3 className="text-sm font-semibold text-foreground mb-1">No Budget Set</h3>
-          <p className="text-xs text-muted-foreground">
-            Set budget amounts for your categories to track performance.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (

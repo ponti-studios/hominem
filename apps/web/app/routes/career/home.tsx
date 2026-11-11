@@ -1,8 +1,8 @@
 import { BriefcaseIcon, FolderIcon, PlusIcon } from 'lucide-react';
 import { Link } from 'react-router';
 
+import { AddButton } from '~/components/design';
 import { SectionHeader } from '~/components/design/section-header';
-import { AddButton } from '~/modules/career/components/AddButton';
 import { CareerCollection } from '~/modules/career/components/career/career-list';
 import { createCareerServerClient } from '~/modules/career/lib/server-client';
 import { formatDateRange } from '~/modules/career/lib/utils/dateRange';

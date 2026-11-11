@@ -16,8 +16,6 @@ export type Domain = {
   tagline: string;
   path: string;
   icon: LucideIcon;
-  /** Signature glow color for the active state (hex). */
-  accent: string;
   keywords: string[];
   subNav: SubNavItem[];
   enabled: boolean;
@@ -30,7 +28,6 @@ export const DOMAINS: readonly Domain[] = [
     tagline: 'Things to do, scheduled or not',
     path: '/tasks',
     icon: ListTodo,
-    accent: '#d7ff3e',
     keywords: ['todo', 'do', 'schedule', 'today', 'plan'],
     subNav: [],
     enabled: true,
@@ -41,7 +38,6 @@ export const DOMAINS: readonly Domain[] = [
     tagline: 'Notes and sets worth keeping',
     path: '/collections',
     icon: Library,
-    accent: '#5eead4',
     keywords: ['notes', 'sets', 'library', 'saved'],
     subNav: [],
     enabled: true,
@@ -52,7 +48,6 @@ export const DOMAINS: readonly Domain[] = [
     tagline: 'Money in, money out, runway ahead',
     path: '/finance',
     icon: Wallet,
-    accent: '#9d7bff',
     keywords: ['money', 'spending', 'accounts', 'runway', 'reconcile', 'transfers', 'budget'],
     subNav: [
       { label: 'Overview', path: '/finance', end: true, keywords: ['home', 'summary'] },
@@ -71,7 +66,6 @@ export const DOMAINS: readonly Domain[] = [
     tagline: 'Work, proof, and what comes next',
     path: '/career',
     icon: Briefcase,
-    accent: '#ff9d6b',
     keywords: ['work', 'job', 'resume', 'applications', 'profile', 'skills'],
     subNav: [
       { label: 'Overview', path: '/career', end: true, keywords: ['home', 'summary'] },

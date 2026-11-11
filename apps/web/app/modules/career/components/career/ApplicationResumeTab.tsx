@@ -187,7 +187,7 @@ export function ApplicationResumeTab({
               )}
             </div>
           </div>
-          <pre className="max-h-64 overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap text-[#9ba3b4]">
+          <pre className="max-h-64 overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
             {application.resumeUrl.slice(0, 800)}
             {application.resumeUrl.length > 800 ? '\n\n…' : ''}
           </pre>
@@ -232,7 +232,7 @@ export function ApplicationResumeTab({
             />
 
             {error && (
-              <p role="alert" className="flex items-start gap-2 text-sm text-[#ff9d9d]">
+              <p role="alert" className="flex items-start gap-2 text-sm text-destructive-text">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>{error}</span>
               </p>
@@ -290,22 +290,20 @@ export function ApplicationResumeTab({
             </div>
           </div>
           {jobAnalysis && (
-            <div className="mb-4 grid grid-cols-1 gap-4 rounded-xl bg-white/[0.03] p-3 sm:grid-cols-2">
+            <div className="mb-4 grid grid-cols-1 gap-4 rounded-xl bg-muted p-3 sm:grid-cols-2">
               {jobAnalysis.requiredSkills.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[13px] font-medium text-[#f2f4f8]">Matched Skills</p>
+                  <p className="mb-1 text-[13px] font-medium text-foreground">Matched Skills</p>
                   <div className="flex flex-wrap gap-1">
                     {jobAnalysis.requiredSkills.map((skill) => (
-                      <Chip key={skill} tone="volt">
-                        {skill}
-                      </Chip>
+                      <Chip key={skill}>{skill}</Chip>
                     ))}
                   </div>
                 </div>
               )}
               {jobAnalysis.recommendedKeywords.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[13px] font-medium text-[#f2f4f8]">ATS Keywords</p>
+                  <p className="mb-1 text-[13px] font-medium text-foreground">ATS Keywords</p>
                   <div className="flex flex-wrap gap-1">
                     {jobAnalysis.recommendedKeywords.slice(0, 6).map((kw) => (
                       <Chip key={kw}>{kw}</Chip>
@@ -315,7 +313,7 @@ export function ApplicationResumeTab({
               )}
             </div>
           )}
-          <pre className="max-h-[32rem] overflow-y-auto rounded-xl border border-white/10 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-[#f2f4f8]">
+          <pre className="max-h-[32rem] overflow-y-auto rounded-xl border border-border p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground">
             {generatedResume}
           </pre>
         </DetailSection>

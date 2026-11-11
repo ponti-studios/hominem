@@ -93,7 +93,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   }, [paletteOpen]);
 
   return (
-    <div className="flex h-[100svh] min-h-[100svh] w-full flex-col overflow-hidden bg-transparent text-[#f2f4f8]">
+    <div className="flex h-[100svh] min-h-[100svh] w-full flex-col overflow-hidden bg-transparent text-foreground">
       {user ? (
         <AppTopbar
           crumbs={crumbs}
@@ -122,7 +122,7 @@ function MobileTabBar({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Domains"
-      className="glass flex shrink-0 items-stretch justify-around border-t border-white/[0.06] px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+      className="flex shrink-0 items-stretch justify-around border-t border-border px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
     >
       {ENABLED_DOMAINS.map((d) => {
         const Icon = d.icon;
@@ -135,25 +135,15 @@ function MobileTabBar({ pathname }: { pathname: string }) {
             href={d.path}
           >
             <span
-              className="flex size-8 items-center justify-center rounded-full transition-all"
-              style={
+              className={
                 active
-                  ? {
-                      background: `${d.accent}26`,
-                      color: d.accent,
-                      boxShadow: `0 0 16px -2px ${d.accent}66`,
-                    }
-                  : { color: '#5e6678' }
+                  ? 'flex size-8 items-center justify-center rounded-sm bg-primary text-primary-foreground'
+                  : 'flex size-8 items-center justify-center rounded-sm text-muted-foreground'
               }
             >
               <Icon aria-hidden className="size-[18px]" />
             </span>
-            <span
-              className="font-mono text-[9px] tracking-[0.12em] uppercase"
-              style={{ color: active ? '#f2f4f8' : '#5e6678' }}
-            >
-              {d.label}
-            </span>
+            <span className="font-mono text-[9px] tracking-[0.12em] uppercase">{d.label}</span>
           </a>
         );
       })}

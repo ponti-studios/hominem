@@ -73,7 +73,7 @@ export function Toaster() {
         <div
           key={item.id}
           className={cn(
-            'pointer-events-auto rounded-lg border px-4 py-3 shadow-lg',
+            'pointer-events-auto rounded-sm border border-border bg-card px-4 py-3',
             item.variant === 'destructive'
               ? 'border-destructive/40 bg-destructive text-destructive-foreground'
               : 'border-border bg-card text-card-foreground',

@@ -17,7 +17,7 @@ export function CollaborationNotifications() {
   return (
     <div className="space-y-3">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-semibold text-sm">Notifications</h2>
+        <h2 className="font-semibold text-sm">Collection invitations</h2>
         {invites.count > 0 ? (
           <span className="text-muted-foreground text-xs">{invites.count} pending</span>
         ) : null}
@@ -27,7 +27,9 @@ export function CollaborationNotifications() {
         <p className="text-destructive text-sm">Could not load notifications.</p>
       ) : null}
       {!invites.isLoading && !invites.isError && invites.invites.length === 0 ? (
-        <p className="text-muted-foreground text-sm">You’re all caught up.</p>
+        <p className="text-muted-foreground text-sm">
+          Invitations to collaborate on a collection will appear here.
+        </p>
       ) : null}
       <ul className="space-y-2">
         {invites.invites.map((invite) => {

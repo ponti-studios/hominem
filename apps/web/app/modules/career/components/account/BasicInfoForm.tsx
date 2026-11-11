@@ -102,8 +102,8 @@ export function BasicInfoForm({
           )}
         </Field>
 
-        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2">
-          <p className="text-sm font-medium text-[#f2f4f8]">Open to remote</p>
+        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-border bg-muted px-4 py-2">
+          <p className="text-sm font-medium text-foreground">Open to remote</p>
           <Controller
             name="openToRemote"
             control={control}
@@ -113,8 +113,8 @@ export function BasicInfoForm({
           />
         </div>
 
-        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2">
-          <p className="text-sm font-medium text-[#f2f4f8]">Open to opportunities</p>
+        <div className="flex max-w-fit items-center justify-between gap-4 rounded-2xl border border-border bg-muted px-4 py-2">
+          <p className="text-sm font-medium text-foreground">Open to opportunities</p>
           <Controller
             name="availabilityStatus"
             control={control}

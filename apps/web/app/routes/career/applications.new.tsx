@@ -94,7 +94,7 @@ export default function CreateJobApplication() {
               defaultValue={todayDateInput()}
             />
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="status" className="text-sm font-medium text-[#f2f4f8]">
+              <label htmlFor="status" className="text-sm font-medium text-foreground">
                 Status
               </label>
               <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
@@ -132,7 +132,7 @@ export default function CreateJobApplication() {
           />
 
           <div>
-            <p className="mb-4 font-mono text-[11px] tracking-[0.16em] text-[#9ba3b4] uppercase">
+            <p className="mb-4 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
               Recruiter Information
             </p>
             <FormGrid>

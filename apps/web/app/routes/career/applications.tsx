@@ -137,7 +137,7 @@ export default function ApplicationsRoute({
         keyFor={(app) => app.id}
         hrefFor={(app) => `/career/applications/${app.id}`}
         leading={() => (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5eead4]/10 text-[#5eead4]">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-muted text-foreground">
             <BriefcaseBusinessIcon className="size-4" aria-hidden />
           </span>
         )}
@@ -168,7 +168,7 @@ export default function ApplicationsRoute({
                   <button
                     type="button"
                     onClick={() => clearParams(['status', 'query', 'sort'])}
-                    className="inline-flex h-7 items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-[13px] font-medium text-[#f2f4f8] transition-colors hover:border-white/20"
+                    className="inline-flex h-7 items-center rounded-full border border-border bg-muted px-3.5 text-[13px] font-medium text-foreground transition-colors hover:border-primary"
                   >
                     Clear filters
                   </button>
@@ -178,7 +178,7 @@ export default function ApplicationsRoute({
       />
 
       {applications.length > 0 && (
-        <p className="mt-4 font-mono text-[11px] tracking-[0.12em] text-[#5e6678] uppercase tabular-nums">
+        <p className="mt-4 font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase tabular-nums">
           Showing {pageStart}–{pageEnd} of {total}
         </p>
       )}

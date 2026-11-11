@@ -1,7 +1,9 @@
 import { PlusIcon } from 'lucide-react';
+import { forwardRef } from 'react';
 import type { ComponentProps, ReactElement } from 'react';
 
 import { Button } from '~/components/ui/button';
+import { cn } from '~/lib/utils';
 
 type AddButtonProps = Omit<
   ComponentProps<typeof Button>,
@@ -11,24 +13,23 @@ type AddButtonProps = Omit<
   children?: ReactElement;
 };
 
-export function AddButton({
-  label,
-  children,
-  asChild,
-  className,
-  ...props
-}: AddButtonProps & { className?: string }) {
+/** Icon-only add action for route headers and compact actions. */
+export const AddButton = forwardRef<HTMLButtonElement, AddButtonProps>(function AddButton(
+  { label, children, asChild, className, ...props },
+  ref,
+) {
   return (
     <Button
       {...props}
+      ref={ref}
       asChild={asChild}
-      variant="outline"
+      variant="default"
       size="icon"
       aria-label={label}
       title={label}
-      className={`rounded-full border-white/10 bg-white/[0.04] text-[#f2f4f8] transition-all hover:border-[#d7ff3e]/50 hover:text-[#d7ff3e] hover:shadow-[0_0_16px_-4px_rgb(215_255_62/0.5)] ${className ?? ''}`}
+      className={cn('rounded-sm', className)}
     >
       {asChild ? children : <PlusIcon aria-hidden />}
     </Button>
   );
-}
+});

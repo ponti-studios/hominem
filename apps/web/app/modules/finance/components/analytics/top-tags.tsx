@@ -20,8 +20,13 @@ export function TopTags({ dateFrom, dateTo, selectedAccount }: TopTagsProps) {
     from: dateFrom,
     to: dateTo,
     account: selectedAccount,
-    limit: 5,
+    limit: 50,
   });
+  const topTags = categoryBreakdown?.breakdown
+    .filter((item) => item.tag !== '(untagged)')
+    .slice(0, 5);
+
+  if (!isLoading && !error && !topTags?.length) return null;
 
   const skeletonItems = Array.from({ length: 5 }, (_, i) => i);
 
@@ -49,37 +54,25 @@ export function TopTags({ dateFrom, dateTo, selectedAccount }: TopTagsProps) {
           </div>
         ) : error ? (
           <div className="text-destructive">An unknown error occurred while fetching tags.</div>
-        ) : Array.isArray(categoryBreakdown?.breakdown) &&
-          categoryBreakdown.breakdown.length > 0 ? (
+        ) : topTags ? (
           <div className="space-y-3">
-            {categoryBreakdown.breakdown.map(
-              (cat: {
-                tag: string;
-                amount: number;
-                transactionCount: number;
-                currencyCode: string;
-              }) => {
-                const tagLabel = cat.tag;
-                return (
-                  <div
-                    key={`${cat.currencyCode}-${tagLabel}`}
-                    className="grid grid-cols-[auto_1fr_auto] gap-3 items-center"
-                  >
-                    <Badge variant="secondary">{cat.transactionCount}x</Badge>
-                    <span className="text-sm">{tagLabel}</span>
-                    <span className="text-sm font-mono text-right">
-                      {formatCurrency(cat.amount, cat.currencyCode)}
-                    </span>
-                  </div>
-                );
-              },
-            )}
+            {topTags.map((cat) => {
+              const tagLabel = cat.tag;
+              return (
+                <div
+                  key={`${cat.currencyCode}-${tagLabel}`}
+                  className="grid grid-cols-[auto_1fr_auto] gap-3 items-center"
+                >
+                  <Badge variant="secondary">{cat.transactionCount}x</Badge>
+                  <span className="text-sm">{tagLabel}</span>
+                  <span className="text-sm font-mono text-right">
+                    {formatCurrency(cat.amount, cat.currencyCode)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-4">
-            No tag data available for the selected period
-          </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

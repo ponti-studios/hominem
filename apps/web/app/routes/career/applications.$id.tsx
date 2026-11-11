@@ -105,9 +105,9 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
 
   return (
     <div className="flex flex-col gap-6">
-      <BackLink to="/career/applications" label="Applications" />
-
       <DetailHero
+        eyebrow="Applications"
+        back={<BackLink to="/career/applications" label="Applications" variant="icon" />}
         title={application.title}
         subtitle={
           application.location
@@ -135,7 +135,7 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
 
       <nav
         aria-label="Application"
-        className="glass flex shrink-0 items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] p-1.5"
+        className="flex shrink-0 items-center gap-1 overflow-x-auto rounded-2xl border border-border p-1.5"
       >
         {tabItems.map((tab) => (
           <AppNavLink
@@ -145,7 +145,6 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
             variant="pill"
             label={tab.label}
             icon={<tab.icon />}
-            accent="#5eead4"
           />
         ))}
       </nav>

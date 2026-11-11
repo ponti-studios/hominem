@@ -14,6 +14,7 @@ import { Button } from '@ponti-studios/ui/primitives';
 import { ListFilter, RefreshCcw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { List } from '~/components/design';
 import { SearchInput } from '~/components/design/search-input';
 import { AccountSelect } from '~/modules/finance/components/account-select';
 import type { FilterArgs, useFinanceAccounts } from '~/modules/finance/hooks/use-finance-data';
@@ -27,6 +28,7 @@ interface ActiveSortOption extends SortOption {
 }
 
 interface TransactionFiltersProps {
+  id?: string;
   accountsMap: ReturnType<typeof useFinanceAccounts>['accountsMap'];
   accountsLoading: boolean;
   filters: FilterArgs;
@@ -43,6 +45,7 @@ interface TransactionFiltersProps {
 }
 
 export function TransactionFilters({
+  id,
   accountsMap,
   accountsLoading,
   filters,
@@ -212,7 +215,7 @@ export function TransactionFilters({
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <List.Search id={id} className="scroll-mt-20">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchInput
           ref={searchInputRef}
@@ -299,6 +302,6 @@ export function TransactionFilters({
           ))}
         </div>
       )}
-    </div>
+    </List.Search>
   );
 }

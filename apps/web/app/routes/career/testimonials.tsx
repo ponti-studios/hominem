@@ -62,7 +62,7 @@ export default function TestimonialsRoute({ loaderData }: Route.ComponentProps) 
             <button
               type="submit"
               aria-label={`Delete testimonial from ${t.name}`}
-              className="text-[#5e6678] transition-colors hover:text-[#ff9d9d]"
+              className="text-muted-foreground transition-colors hover:text-destructive-text"
             >
               <Trash2Icon className="size-4" />
             </button>

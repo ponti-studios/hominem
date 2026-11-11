@@ -292,7 +292,7 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
               {pdfGenerating ? 'Generating PDF…' : 'Download PDF'}
             </Button>
             {!isPublic ? (
-              <p className="mt-1 px-1 text-[13px] text-[#9ba3b4]">
+              <p className="mt-1 px-1 text-[13px] text-muted-foreground">
                 Make your profile public to generate a PDF.
               </p>
             ) : null}
@@ -303,13 +303,15 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
       <div className="flex flex-col gap-4">
         <DetailSection title="Visibility">
           <div className="mb-4 flex items-start justify-between gap-4">
-            <p className="text-sm text-[#9ba3b4]">
+            <p className="text-sm text-muted-foreground">
               {isPublic
                 ? 'Anyone with the link can view your profile at this URL.'
                 : 'Private — only you can see this. Turn it on to share it.'}
             </p>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-sm text-[#9ba3b4]">{isPublic ? 'Public' : 'Private'}</span>
+              <span className="text-sm text-muted-foreground">
+                {isPublic ? 'Public' : 'Private'}
+              </span>
               <Switch
                 checked={isPublic}
                 disabled={isTogglingVisibility}
