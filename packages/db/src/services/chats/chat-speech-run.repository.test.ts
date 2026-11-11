@@ -43,6 +43,7 @@ describe('ChatSpeechRunRepository', () => {
   }
 
   it('stores multiple runs for one message and reconciles their state', async () => {
+    const baseline = await ChatSpeechRunRepository.getUsageHealth(db);
     const fixture = await createFixture();
     const first = await ChatSpeechRunRepository.create(db, {
       id: randomUUID(),
@@ -79,9 +80,9 @@ describe('ChatSpeechRunRepository', () => {
     const pending = await ChatSpeechRunRepository.listPending(db);
     expect(pending).toEqual([]);
     await expect(ChatSpeechRunRepository.getUsageHealth(db)).resolves.toMatchObject({
-      pendingCount: 1,
-      missingUsageEventCount: 1,
-      succeededCount: 1,
+      pendingCount: baseline.pendingCount + 1,
+      missingUsageEventCount: baseline.missingUsageEventCount + 1,
+      succeededCount: baseline.succeededCount + 1,
     });
     expect(await ChatSpeechRunRepository.getById(db, first.id, fixture.userId)).toMatchObject({
       providerGenerationId: 'gen-tts-1',
