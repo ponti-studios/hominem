@@ -41,8 +41,8 @@ catalogs:
       specifier: 2.1.1
       version: 2.1.1
     dotenv:
-      specifier: 17.4.2
-      version: 17.4.2
+      specifier: 18.0.9
+      version: 18.0.9
     hono:
       specifier: 4.13.13
       version: 4.13.13
@@ -434,7 +434,7 @@ importers:
         version: 4.4.0
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.9
       isbot:
         specifier: ^5
         version: 5.2.2
@@ -655,7 +655,7 @@ importers:
         version: 5.0.5(vitest@5.0.5)
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.9
       kysely-codegen:
         specifier: ^0.20.0
         version: 0.20.0(kysely@0.29.7)(pg@8.23.1)(typescript@7.0.2)
@@ -775,7 +775,7 @@ importers:
         version: link:../utils
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.9
       ioredis:
         specifier: 'catalog:'
         version: 6.0.0(supports-color@8.1.1)
@@ -956,7 +956,7 @@ importers:
         version: 7.0.3
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.9
       hono:
         specifier: 'catalog:'
         version: 4.13.13
@@ -6025,12 +6025,16 @@ packages:
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
     engines: {node: '>=18.0.0'}
-    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/core@3.36.0':
     resolution: {integrity: sha512-3hJiwG1F5t1SoXqp/yOCmYXziyx7ZVqF63S5W6YU201e/qwVaHPex+E/3vvyY9a3ORq/b+BydeNZpP2saQ9X2g==}
     engines: {node: '>=18.0.0'}
-    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -7690,6 +7694,11 @@ packages:
   dotenv@17.4.2:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
+
+  dotenv@18.0.9:
+    resolution: {integrity: sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==}
+    engines: {node: '>=12'}
+    hasBin: true
 
   drizzle-orm@0.45.4:
     resolution: {integrity: sha512-NiM1YZpJ2UxyeE67DpDDZ+Tsw4YLX3trSlkNT7Tm9eKoUNb1LvaAaQzXgYQsWs+AQ9TUmmwMmBOCXuqqxUWKKQ==}
@@ -14761,7 +14770,7 @@ snapshots:
       better-auth: 1.7.12(@opentelemetry/api@1.10.0)(drizzle-orm@0.45.4(@libsql/client@0.18.0)(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(expo-sqlite@58.0.14(expo@58.0.19)(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8))(kysely@0.29.7)(pg@8.23.1))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1154.0)(socks@2.8.10))(pg@8.23.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.5)
       bullmq: 6.3.19(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)(redis@5.12.1(@opentelemetry/api@1.10.0))
       csv-parse: 7.0.3
-      dotenv: 17.4.2
+      dotenv: 18.0.9
       hono: 4.13.13
       pg: 8.23.1
       posthog-node: 5.56.2(@opentelemetry/api@1.10.0)
@@ -14837,7 +14846,7 @@ snapshots:
       better-auth: 1.7.12(@opentelemetry/api@1.10.0)(drizzle-orm@0.45.4(@libsql/client@0.18.0)(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(expo-sqlite@58.0.14(expo@58.0.19)(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8))(kysely@0.29.7)(pg@8.23.1))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1154.0)(socks@2.8.10))(pg@8.23.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.5)
       bullmq: 6.3.19(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)(redis@5.12.1(@opentelemetry/api@1.10.0))
       csv-parse: 7.0.3
-      dotenv: 17.4.2
+      dotenv: 18.0.9
       hono: 4.13.13
       pg: 8.23.1
       posthog-node: 5.56.2(@opentelemetry/api@1.10.0)
@@ -15048,7 +15057,7 @@ snapshots:
       '@hominem/env': file:packages/env(react@19.2.8)
       '@hominem/telemetry': file:packages/telemetry(react@19.2.8)
       '@hominem/utils': file:packages/utils(react@19.2.8)
-      dotenv: 17.4.2
+      dotenv: 18.0.9
       ioredis: 6.0.0(supports-color@8.1.1)
       mammoth: 1.13.0
       pdf2json: 4.1.0
@@ -19380,6 +19389,8 @@ snapshots:
   dotenv@16.6.1: {}
 
   dotenv@17.4.2: {}
+
+  dotenv@18.0.9: {}
 
   drizzle-orm@0.45.4(@libsql/client@0.18.0)(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(expo-sqlite@58.0.14(expo@58.0.19)(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8))(kysely@0.29.7)(pg@8.23.1):
     optionalDependencies:
