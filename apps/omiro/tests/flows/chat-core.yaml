@@ -64,14 +64,12 @@ tags:
 - takeScreenshot: omiro-send03-new-chat
 
 # SEND-04: return from the new chat detail to the inbox, then open the chat again.
-# The header back chevron is a native SwiftUI Stack.Toolbar.Button
-# (ExpoRouterToolbarModule) whose accessibilityLabel doesn't surface as an
-# XCUITest identifier, so Maestro's `id` selector never matches it — tap by
-# `text` instead (safe here: no focused input to merge this node with).
+# Use the actual testID, not the accessibility label `BackButton`; the app
+# exposes `chat-back-button` as the XCTest identifier.
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn:
-    text: 'BackButton'
+    id: 'chat-back-button'
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
