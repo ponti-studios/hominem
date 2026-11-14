@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateAffordability, runwayScenarioInputSchema, simulateRunway } from './calculations';
+import {
+  affordabilityCheckInputSchema,
+  calculateAffordability,
+  runwayScenarioInputSchema,
+  simulateRunway,
+} from './calculations';
 
 describe('runway scenario simulation', () => {
   it('includes scheduled purchases in depletion and the projection', () => {
@@ -51,27 +56,77 @@ describe('runway scenario simulation', () => {
 });
 
 describe('affordability', () => {
-  it('returns a JSON-safe unbounded runway for zero or positive surplus', () => {
-    const result = calculateAffordability({
-      purchaseAmount: 100,
-      currentBalance: 1000,
-      monthlyIncome: 1000,
-      monthlyExpenses: 0,
-    });
+  const baseInput = {
+    currencyCode: 'GBP',
+    purchaseAmount: 100,
+    currentBalance: 1000,
+    monthlyIncome: 1000,
+    monthlyExpenses: 500,
+    reserveTarget: 1500,
+  };
 
-    expect(result.monthsOfRunwayAfterPurchase).toBeNull();
-    expect(result.percentOfMonthlyIncome).toBe(10);
+  it('returns remaining cash and a reserve shortfall without a verdict', () => {
+    const result = calculateAffordability(baseInput);
+
+    expect(result).toMatchObject({
+      currencyCode: 'GBP',
+      balanceAfterPurchase: 900,
+      reserveTarget: 1500,
+      reserveShortfall: 600,
+      monthlySurplus: 500,
+      monthsUntilDepletion: null,
+      explanation: 'Remaining cash is below the GBP reserve target.',
+    });
     expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+    expect(result).not.toHaveProperty('verdict');
   });
 
-  it('reports zero runway after a purchase depletes the balance', () => {
+  it('reports no depletion when cash flow is zero or positive', () => {
+    for (const monthlyIncome of [500, 1000]) {
+      expect(
+        calculateAffordability({ ...baseInput, monthlyIncome }).monthsUntilDepletion,
+      ).toBeNull();
+    }
+  });
+
+  it('calculates depletion only when expenses exceed income', () => {
+    expect(calculateAffordability({ ...baseInput, monthlyIncome: 400 }).monthsUntilDepletion).toBe(
+      9,
+    );
+  });
+
+  it('reports zero months until depletion when a purchase leaves no cash and there is a deficit', () => {
     const result = calculateAffordability({
-      purchaseAmount: 1200,
-      currentBalance: 1000,
-      monthlyIncome: 0,
+      ...baseInput,
+      purchaseAmount: 1000,
+      monthlyIncome: 400,
+      reserveTarget: null,
+    });
+
+    expect(result.monthsUntilDepletion).toBe(0);
+    expect(result.reserveShortfall).toBeNull();
+    expect(result.explanation).toBe('Reserve comparison is turned off.');
+  });
+
+  it('does not report depletion or a false deficit reason at zero balance with positive cash flow', () => {
+    const result = calculateAffordability({
+      ...baseInput,
+      purchaseAmount: 1000,
+      monthlyIncome: 1000,
       monthlyExpenses: 500,
     });
 
-    expect(result.monthsOfRunwayAfterPurchase).toBe(0);
+    expect(result.balanceAfterPurchase).toBe(0);
+    expect(result.monthsUntilDepletion).toBeNull();
+    expect(result.monthlySurplus).toBe(500);
+  });
+
+  it('validates ISO currency and reserve inputs', () => {
+    expect(() =>
+      affordabilityCheckInputSchema.parse({ ...baseInput, currencyCode: 'usd' }),
+    ).toThrow();
+    expect(() =>
+      affordabilityCheckInputSchema.parse({ ...baseInput, reserveTarget: -1 }),
+    ).toThrow();
   });
 });

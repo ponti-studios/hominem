@@ -164,50 +164,46 @@ export async function replaceTransactionTags(
   userId: string,
   tagIds: string[],
 ): Promise<string[]> {
-  const ownershipResult = await db
-    .selectFrom('app.financeTransactions')
-    .select('id')
-    .where('id', '=', transactionId)
-    .where('userId', '=', userId)
-    .limit(1)
-    .executeTakeFirst();
-  if (!ownershipResult) {
-    return [];
-  }
-
   const uniqueTagIds = [...new Set(tagIds)];
-  if (uniqueTagIds.length > 0) {
-    const validTagResult = await db
-      .selectFrom('app.tags')
+  return db.transaction().execute(async (trx) => {
+    const ownershipResult = await trx
+      .selectFrom('app.financeTransactions')
       .select('id')
-      .where('ownerUserid', '=', userId)
-      .where(sql<SqlBool>`id in (${sqlValueList(uniqueTagIds)})`)
-      .execute();
-    const validIds = new Set(validTagResult.map((row) => row.id));
-    if (validIds.size !== uniqueTagIds.length) {
-      throw new Error('One or more tags are invalid for this user');
+      .where('id', '=', transactionId)
+      .where('userId', '=', userId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!ownershipResult) return [];
+    if (uniqueTagIds.length > 0) {
+      const validTagResult = await trx
+        .selectFrom('app.tags')
+        .select('id')
+        .where('ownerUserid', '=', userId)
+        .where(sql<SqlBool>`id in (${sqlValueList(uniqueTagIds)})`)
+        .execute();
+      const validIds = new Set(validTagResult.map((row) => row.id));
+      if (validIds.size !== uniqueTagIds.length) {
+        throw new Error('One or more tags are invalid for this user');
+      }
     }
-  }
-
-  await db
-    .deleteFrom('app.tagAssignments')
-    .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
-    .where('entityId', '=', transactionId)
-    .execute();
-
-  for (const tagId of uniqueTagIds) {
-    await db
-      .insertInto('app.tagAssignments')
-      .values({
-        id: crypto.randomUUID(),
-        tagId,
-        entityTable: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entityId: transactionId,
-      })
+    await trx
+      .deleteFrom('app.tagAssignments')
+      .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+      .where('entityId', '=', transactionId)
       .execute();
-  }
-
-  return uniqueTagIds;
+    for (const tagId of uniqueTagIds) {
+      await trx
+        .insertInto('app.tagAssignments')
+        .values({
+          id: crypto.randomUUID(),
+          tagId,
+          entityTable: FINANCE_TRANSACTION_ENTITY_TYPE,
+          entityId: transactionId,
+        })
+        .execute();
+    }
+    return uniqueTagIds;
+  });
 }
 
 export async function getTransactionTagIds(

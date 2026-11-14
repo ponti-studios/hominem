@@ -12,6 +12,19 @@ const parentTable = `zz_parent_${testTableSuffix}`;
 const childTable = `zz_child_${testTableSuffix}`;
 const itemsTable = `zz_items_${testTableSuffix}`;
 
+async function dropTestTable(table: string) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await pool.query(`DROP TABLE IF EXISTS public.${table}`);
+      return;
+    } catch (error) {
+      const isDeadlock = error instanceof Error && 'code' in error && error.code === '40P01';
+      if (!isDeadlock || attempt === 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+    }
+  }
+}
+
 async function clean() {
   for (const id of [userId, otherId]) {
     await pool.query(`DELETE FROM "oauthRefreshToken" WHERE "userId" = $1`, [id]);
@@ -72,8 +85,8 @@ describe('account download and delete', () => {
       const result = await exportAccount(userId);
       expect(result.data[childTable]).toEqual([{ id: 10, parent_id: 1, note: 'mine' }]);
     } finally {
-      await pool.query(`DROP TABLE IF EXISTS public.${childTable}`);
-      await pool.query(`DROP TABLE IF EXISTS public.${parentTable}`);
+      await dropTestTable(childTable);
+      await dropTestTable(parentTable);
     }
   });
 
@@ -89,7 +102,7 @@ describe('account download and delete', () => {
       const result = await exportAccount(userId);
       expect(result.data[itemsTable]).toEqual([{ id: 1, user_id: userId }]);
     } finally {
-      await pool.query(`DROP TABLE IF EXISTS public.${itemsTable}`);
+      await dropTestTable(itemsTable);
     }
   });
 

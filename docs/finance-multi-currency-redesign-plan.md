@@ -1,6 +1,8 @@
 # Finance multi-currency redesign plan
 
-**Status:** Product direction approved; implementation plan ready
+**Status:** Product direction approved. Stage 7 review findings are resolved in
+this revision for lines 1-395. The spec has not been re-reviewed yet. Current
+behavior is described only where stated. Target behavior uses "must".
 
 **Scope:** Hominem Finance reporting surfaces, finance API contracts, data model,
 exchange-rate ingestion, and user experience.
@@ -19,30 +21,67 @@ The interface should make every amount answer five questions:
 4. Was it converted for display?
 5. Which rate and date produced the conversion?
 
-The product should feel calm and intelligent: users should see the truth of
-their statements first, while Hominem handles the complexity of comparison,
+Users see their statement amounts first. Hominem handles the comparison,
 historical rates, and explanation.
+
+## Definitions
+
+- **Account currency:** the one currency an account holds. Set at creation and
+  immutable through ordinary editing. Ordinary editing means any account update
+  through the account API or UI.
+- **Original amount:** the amount in the currency the merchant or source document
+  used.
+- **Account amount:** the amount recorded against the account, in the account's
+  currency.
+- **Presentation currency:** the currency a report declares for comparison. This
+  spec does not use "home currency," "preferred reporting currency," or "primary
+  currency" for it.
+- **Presentation amount:** a derived, estimated value in the presentation
+  currency. It is never an accounting fact.
+- **Transaction date:** the `date` the source records for the activity. Settlement
+  date is stored separately and never re-rates a row.
+- **Transaction-date rate:** the rate for the transaction date, or the latest prior
+  valid working day when that date has no observation.
+- **Valuation-date rate:** the rate used to value a holding as of a valuation date.
+  Used for net worth.
+- **Conversion snapshot:** the stored record of one converted figure. See
+  "FX uses transaction-date rates."
+- **Rate age:** days between the rate date and the date the figure was shown.
+- **Calculation policy:** the named rule that turns snapshot inputs into a
+  presentation amount: rounding mode, precision, and cross-rate route. Stored with
+  each snapshot.
+- **Rate policy:** the named rule for which observation a conversion uses:
+  transaction-date or valuation-date, plus the maximum lookback.
+- **Unrealized valuation movement:** the change in a holding's presentation value
+  between two valuation dates. This is the only FX movement term the spec uses.
 
 ## Approved product decisions
 
 ### Accounts are single-currency
 
 Each account has exactly one currency. The account currency is immutable through
-ordinary editing because changing it would reinterpret every stored amount.
+ordinary editing because changing it would reinterpret every account amount.
 Changing an account's currency requires an explicit correction or migration
 flow.
 
-An account's currency is not the same thing as a user's preferred reporting
-currency. Account balances remain native to the account.
+An account's currency is not the same thing as the presentation currency of a
+report. Account balances remain native to the account.
 
 ### Initial currency coverage is data-driven
 
-USD, GBP, and EUR are the initial supported currencies. The implementation must
-not contain currency-specific branches such as `if GBP`, `if USD`, or custom
-formatting paths.
+Every active currency in the catalogue accepts original and account amounts.
+USD, GBP, and EUR are the launch currencies with a rate backfill. Other currencies
+are enabled as rate coverage is confirmed. A currency with no local observation
+shows the data-quality state described under Availability policy. The
+implementation must not contain currency-specific branches such as `if GBP`,
+`if USD`, or custom formatting paths.
 
-Currency behavior must come from a versioned currency catalogue containing at
-least:
+Currency behavior must come from a versioned currency catalogue, stored as a
+database table (`app.currency_catalogue`, proposed name) and seeded by migration.
+Validation reads that table. It does not use `Intl.supportedValuesOf`, which
+depends on the runtime and carries no scale or status. Codes are normalized to
+uppercase on parse. `XXX` (ISO "no currency") is rejected. The catalogue contains
+at least:
 
 - ISO 4217 alphabetic and numeric codes
 - Display name
@@ -56,7 +95,7 @@ not a feature rewrite.
 
 ### Presentation is contextual
 
-There is no mandatory global “home currency” that rewrites the product.
+There is no mandatory global presentation currency that rewrites the product.
 
 - Account surfaces present balances in the account's native currency.
 - Transaction surfaces present the original transaction amount and the account
@@ -67,20 +106,29 @@ There is no mandatory global “home currency” that rewrites the product.
 
 ### FX uses transaction-date rates
 
-Reporting conversions use the applicable rate for the transaction date. The
-conversion snapshot must preserve the exact rate, direction, date, source,
-precision, and calculation policy used by the report.
+Reporting conversions use the transaction-date rate: the rate for the
+transaction's `date`. If that day has no observation, use the latest prior valid
+working day. Settlement date is stored separately and never re-rates a row.
 
-Historical reports must remain reproducible after rates are corrected or new
-rates are ingested.
+Every converted figure is stored as a conversion snapshot. A snapshot records the
+exact rate, direction, rate date, source, precision, calculation policy, and
+rate-set version used. Reports read the snapshot, not the live rate table. A
+historical report therefore does not change after rates are corrected or new rates
+are ingested. A new snapshot is created only when a user recalculates.
+
+Two rate roles exist. Transaction-date rates are used for activity and budgets.
+Valuation-date rates are used for holdings and net worth. Each report names the
+role it uses.
 
 ### FX impact appears in both reporting dimensions
 
 Hominem reports FX impact in both:
 
-- **Net worth:** including valuation movement where applicable.
-- **Cash flow and activity analysis:** clearly separating actual spending,
-  income, realized FX impact, and unrealized valuation movement.
+- **Net worth:** at valuation-date rates, including unrealized valuation movement.
+- **Cash flow and activity analysis:** clearly separating actual spending and
+  income from unrealized valuation movement. Realized FX impact is out of scope
+  for the first release. It needs a cost-basis method, which the schema does not
+  have.
 
 FX movement must never be presented as ordinary spending or income without an
 explanation.
@@ -131,25 +179,50 @@ Original:       JPY 8,400
 Account charged: GBP 43.12
 Displayed in:   EUR 50.31 estimated
 Rate date:      2026-11-07
+Rate used:      1 GBP = 1.16667 EUR (illustrative)
 Rate source:    Hominem historical reference rates
 ```
 
-### Transfers and exchange records
+### Storage model
 
-Because accounts are single-currency, a cross-currency movement must not be
-represented as an ordinary same-currency transfer. Since Hominem does not
-execute financial actions, imported data should represent the observed facts:
+Each transaction stores these fields. Names are snake_case in the database and
+the value object, and camelCase in API DTOs.
+
+```text
+original_amount_minor    signed integer, in original_currency's minor units
+original_currency        ISO 4217 code
+account_amount_minor     signed integer, in the account's currency
+account_currency         ISO 4217 code, must equal the account's currency
+```
+
+- Balances and account totals sum `account_amount_minor` only.
+- Presentation amounts are computed from snapshots when a report runs. They are not
+  stored on the transaction.
+- The existing `amount` maps to `account_amount_minor` in the migration (see
+  Additive migration). The existing `settled*` fields are mapped in the Phase 0
+  inventory. Until then, balances do not use them.
+
+### Cross-currency legs
+
+Because accounts are single-currency, a cross-currency movement is two
+transactions, one in each account. Each leg keeps its own account, currency, and
+amount. The two legs are linked with the existing `counterpartId` field.
+`findTransferPairs` already finds them. No new exchange entity is created.
+
+Hominem does not execute financial actions, so imported data records only the
+observed facts:
 
 - Source account and currency
 - Destination account and currency, when known
 - Original/source amount
 - Destination/settled amount
-- Observed exchange rate
+- Observed exchange rate, stored on the link, with `rate_origin` set to the bank,
+  card, or provider, or to `hominem` when Hominem calculated it for reporting
 - Fees or spread, when supplied by the source
 - Import/source provenance
 
-If the source does not provide both sides, preserve the known amount and mark
-the other side as unavailable rather than inventing a 1:1 conversion.
+If the source provides only one side, store the known leg and set
+`destination_amount_status` to `unavailable`. Do not invent a 1:1 conversion.
 
 ## Local FX historical-rate system
 
@@ -158,17 +231,23 @@ are ingestion sources, not runtime dependencies.
 
 ### Ingestion principles
 
-- Pull daily reference rates on a scheduled job.
-- Backfill the supported historical range.
+- Pull daily reference rates on a scheduled job in the existing API worker
+  (`services/api/worker`). A failed run does not affect API requests.
+- Backfill the range set in the catalogue. Start date: TBD before Phase 3.
+- Sizing (expected rows, rate volume, and the lookup index on `base_currency`,
+  `quote_currency`, `effective_date`): TBD before Phase 3.
 - Store immutable observations in Hominem's database.
-- Resolve transaction-date rates locally during reads and report generation.
+- Resolve transaction-date rates locally when a conversion snapshot is created.
+  Reads use the snapshot.
 - Never call an FX provider during a user request.
-- Store the raw or normalized provider payload for auditability.
+- Store the raw provider payload for auditability.
 - Keep superseded observations rather than overwriting history.
 
-The initial provider strategy should use open daily reference data, with EUR as
-the source base where necessary and exact cross-rate/inverse calculations for
-USD, GBP, EUR, and future currencies. Provider choice and licensing must be
+The initial provider strategy should use open daily reference data. When a pair
+has no direct published rate, it is derived through EUR. A derived cross rate is a
+computed value, not an observation. It is computed exactly from the rounded
+published inputs and labeled `derived` in its snapshot. Provider choice and
+licensing must be
 verified before implementation, but the application must depend on the local
 rate table rather than the provider's uptime.
 
@@ -190,8 +269,20 @@ status
 supersedes_observation_id
 ```
 
-Use exact decimal arithmetic or a rational representation for rates. Store the
-quote convention explicitly so `GBP → EUR` and `EUR → GBP` cannot be confused.
+Field notes:
+
+- `rate`: an exact decimal string, in storage and on the wire. It is units of
+  `quote_currency` per one unit of `base_currency`. Example: base GBP, quote EUR,
+  rate `1.16667` means 1 GBP = 1.16667 EUR. The inverse (`EUR → GBP`) is a separate
+  observation or a derived value, never a silent flip.
+- `precision`: the number of decimal places the provider publishes for this rate.
+  It is stored, not computed.
+- `status`: `published` (valid, used for lookup), `superseded` (replaced by a later
+  correction, kept for history), or `rejected` (failed validation, kept for audit,
+  never used for lookup).
+- Provenance fields: `source`, `source_reference` (the provider's dataset and
+  release identifier), `retrieved_at`, `payload_checksum` (when the provider
+  supplies one), and `payload_ref` (a pointer to the stored raw payload).
 
 ### Import validation
 
@@ -201,27 +292,34 @@ The ingestion job must validate:
 - Positive, finite rates
 - Duplicate effective dates
 - Missing expected currencies
-- Unexpected rate movements
+- Unexpected rate movements (threshold TBD)
 - Provider schema changes
-- Publication lateness
+- Publication lateness (threshold TBD)
 - Checksum or payload integrity, where available
 
 Failed ingestion should retry with backoff and alert. It must not delete the
-last valid local dataset.
+last valid local dataset. The alert channel and owner are TBD before Phase 3.
 
 ### Availability policy
 
-The product should always provide a rate for supported currencies through local
-data:
+Rates resolve from local data only. For each conversion, the resolver applies the
+first rule that matches:
 
-1. Exact transaction-date rate when available.
-2. Latest prior valid working-day rate for weekends and holidays.
-3. Most recent locally stored observation during a provider outage.
+1. An exact transaction-date observation with status `published`.
+2. The latest prior `published` observation within the currency's maximum
+   lookback, which is set in the catalogue (TBD before Phase 3). This covers
+   weekends and holidays.
+3. None. The figure is not converted. The product shows a data-quality state and
+   hides the presentation amount for that figure. The API returns
+   `fx_rate_unavailable` for requests that ask for a conversion.
 
-The UI must show the rate date and age. “Always available” means “resolved from
-our retained data,” not “fabricated when no observation exists.” If the local
-dataset has no valid observation for a currency/date, preserve native amounts
-and show an explicit data-quality state.
+During a provider outage, rules 1 and 2 still work from retained data. Existing
+snapshots never change. New conversions use the same rules, so their rate date
+gets older, but the rules do not change.
+
+The UI shows the rate date and rate age for every converted figure. "Always
+available" means "resolved from retained data, within the lookback." It never means
+"fabricated."
 
 ## Interface redesign
 
@@ -263,7 +361,7 @@ USD 3,100.00
 EUR 850.00
 ```
 
-A converted consolidated value must include presentation currency, rate policy,
+A converted presentation value must include the presentation currency, rate policy,
 and valuation date. Never show one converted number without that context.
 
 ### Transaction list
@@ -277,8 +375,12 @@ Account amount £43.12 GBP
 7 Nov · Card · Settled
 ```
 
-Support filters for currency, account, original/settled state, pending/settled
-state, conversion status, and FX fees.
+Support filters for currency, account, settlement state (pending or settled),
+conversion status, and FX fees. "Original/settled" is not a separate filter.
+
+Pending rows are stored with `status = pending` and a `settled_at` value once they
+settle. Balances and reports count settled rows by default. Pending rows appear
+with a pending label.
 
 ### Transaction detail
 
@@ -293,16 +395,20 @@ Add a dedicated Money details section containing:
 - Rate age
 - Fees and spread, when imported
 - Pending-to-settled history
-- Import/source provenance
+- Import/source provenance: source system, source reference, retrieved time, and a
+  link to the stored raw payload.
 
-### Transfers and imported exchanges
+Until Phase 3 ships the local FX dataset, the rate fields show "not converted," and
+presentation amounts are hidden. The overview FX modules are hidden until then too.
+
+### Imported exchange display
 
 Same-currency transfers can be shown simply. Cross-currency imported activity
 must make both currencies visible and explain whether the rate was supplied by
 the bank/card/provider or calculated by Hominem for reporting.
 
 Hominem must not include buttons or flows that imply it can initiate an
-exchange, transfer, or payment.
+exchange, transfer, or payment. The Transfers screen is read-only.
 
 ### Overview
 
@@ -315,33 +421,42 @@ The overview should answer:
 
 Recommended modules:
 
-1. Net worth with valuation date and rate policy.
+1. Net worth at valuation-date rates, showing the valuation date and rate policy.
 2. Balances grouped by currency.
 3. Recent activity with native and account amounts.
-4. Realized and unrealized FX movement.
-5. A data-quality attention queue.
+4. Unrealized valuation movement. Realized FX is out of scope for the first release.
+5. A repair queue for records that need attention.
 
 ### Budgets and runway
 
-Budgets have an explicit currency and period. Foreign activity must not silently
+Budgets must store an explicit `currency_code` and period. Budgets that exist today
+have no currency column. Their currency comes from the profile's primary currency,
+and the migration copies that value into `currency_code` (see Additive migration).
+Foreign activity must not silently
 disappear or become overspending due only to rate movement.
 
 Show:
 
 ```text
-Travel budget · EUR 2,000
-Native EUR spending: EUR 1,420
-Foreign account activity: GBP 210
-Converted reporting value: EUR 1,665
-FX movement: +EUR 34
+Travel budget · EUR 2,000 (currency_code EUR, period Nov 2026)
+Native EUR spending:                 EUR 1,420.00
+Foreign account activity:            GBP 210.00
+Converted at transaction-date rates: EUR 245.00  (1 GBP = 1.16667 EUR)
+Presentation value:                  EUR 1,665.00  (1,420.00 + 245.00)
+Planning baseline:                   EUR 241.50  (210.00 × 1 GBP = 1.15000 EUR)
+FX movement vs baseline:             +EUR 3.50  (245.00 − 241.50)
 ```
 
 Runway must declare currency, rate date, included accounts, and assumptions in
-the result itself.
+the result itself. Runway paths in scope are the runway calculator input and the
+per-budget ledger runway. The calculator input must take `currencyCode` and map it
+to the stored per-budget currency. The assumptions field lists the included account
+IDs, the rate date, the rate policy, and the opening-balance source.
 
 ### Formatting and accessibility
 
-Use currency codes and full names where ambiguity matters. Do not rely on `$`,
+Show the currency code on every amount in reports and transaction detail. Show the
+full currency name in tooltips and in grouped totals. Do not rely on `$`,
 `£`, `¥`, color, hover, or chart position alone.
 
 Test zero-decimal, three-decimal, negative, refund, cash-rounding, and obsolete
@@ -352,46 +467,112 @@ currency cases. Every amount must be accessible with its currency identity.
 ### P0 contract changes
 
 - Require `currencyCode` on all transaction create, update, and import writes.
-- Return account `currencyCode` in every account DTO.
-- Remove silent USD defaults from write paths and formatting helpers.
-- Enforce transaction/account currency compatibility.
-- Block incompatible account moves.
+  Enforcement follows the compatibility window (see Additive migration).
+- Return account `currencyCode` in every account DTO. The critic report says the
+  shared `AccountData` type omits it. This was not re-verified, so check each
+  account route.
+- Remove silent USD defaults from write paths and from the `toCurrency` helper in
+  `services/api/src/application/finance.service.ts`, which hard-codes `$` and two
+  decimals.
+- Name the affected routes and their defects. `/transactions/create` and
+  `/transactions/update` have no `currencyCode` in their schemas, so Zod drops a
+  client-sent value with no error. The database defaults `currency_code` to `'USD'`
+  on transactions and accounts, so a currency-less write becomes USD. Each route
+  gets a test that an unknown or missing currency returns 400 after the window.
+- Enforce that a transaction's `currency_code` equals its account's currency.
+- Define "account move" as changing a transaction's `accountId`. A move between
+  accounts with different currencies is blocked with `currency_mismatch`.
 - Group all balances and aggregates by currency.
-- Route legacy RPC mutations through the shared finance service/repository.
-- Add stable errors:
-  - `invalid_currency`
-  - `currency_mismatch`
-  - `mixed_currency_aggregate`
-  - `fx_rate_unavailable`
+- Route legacy RPC mutations through `FinanceService`
+  (`services/api/src/application/finance.service.ts`).
+- Error codes. "Stable" means the code string is versioned and documented, and
+  changing it is a breaking change.
+  - `invalid_currency`: already exists (`services/api/src/schemas/finance.schema.ts`).
+    Keep it.
+  - `currency_mismatch`: new.
+  - `mixed_currency_aggregate`: new. Used only on endpoints that need one scalar.
+    Grouping is the default. Named endpoints: runway starting cash.
+  - `fx_rate_unavailable`: new. Used when the availability policy finds no
+    observation.
+
+### Wire format
+
+- Money in DTOs is `{ amountMinor, currencyCode }`.
+- `*Cents` and `formatted*` fields are deprecated for one release, then removed.
+- Rates serialize as strings.
+- These are breaking changes for web and MCP clients. They are listed in Phase 1.
 
 ### Additive migration
 
 Existing rows that rely on a historical USD default must not be silently
 reinterpreted. Classify them as `needs_currency_review` where their currency is
-ambiguous. Backfill only when the source is trustworthy and record the reason
-and provenance.
+ambiguous. A row is ambiguous when neither its import file nor its source record
+states a currency. Backfill only when the source states the currency explicitly.
+Record the reason and provenance.
 
-During the compatibility window:
+The compatibility window starts when Phase 1 is released and lasts 90 days. During
+it:
 
-- Reject new currency-less writes.
-- Instrument old-client calls.
+- Accept currency-less writes, log a warning, and set `needs_currency_review` on
+  the row. The storage column and its type are proposed here and confirmed at
+  Phase 1 design.
+- After the window, reject currency-less writes with 400.
+- Instrument old-client calls. Identify a client by its API credential or
+  user-agent. Log every request that has no `currencyCode`.
 - Provide a repair queue for ambiguous historical data.
 - Preserve existing original amounts and currency codes.
 
 ### Existing specifications to reconcile
 
-The following existing documents describe currency behavior that must be
-reviewed against this plan before implementation:
+The following documents and records describe currency behavior that must be
+reconciled before Phase 1. Owners and due dates are TBD.
 
-- `docs/finance-account-update-spec.md`
-- `docs/hominem-finance-tools-spec.md`
-- `docs/finance-budgets.md`
-- `docs/decisions/finance.pfin-merge.md`
-- `docs/tasks/finance-runway-budgets.md`
+| Document | Topic to check against this plan | Owner | Due |
+| --- | --- | --- | --- |
+| `docs/finance-account-update-spec.md` | Account update rules for currency changes | TBD | TBD |
+| `docs/hominem-finance-tools-spec.md` | Tool contracts that may omit currency | TBD | TBD |
+| `docs/finance-budgets.md` | Profile-primary-currency budgets | TBD | TBD |
+| `docs/decisions/finance.pfin-merge.md` | Merge decisions that touch currency | TBD | TBD |
+| `docs/tasks/finance-runway-budgets.md` | Runway currency input | TBD | TBD |
+| `packages/db/migrations/20261014120000_finance_account_allowed_currencies.sql` | Changes an account's currency. Add to the Phase 0 inventory as a documented repair. | TBD | TBD |
 
-In particular, existing `allowedCurrencies` behavior and profile-primary-
-currency budget behavior should not remain as hidden alternatives to the
-single-currency-account and transaction-date-rate model.
+`allowedCurrencies` is removed (decision B5). Phase 0 defines its API removal and
+migration path. Profile-primary-currency budget behavior is replaced by the budget
+`currency_code`. Neither remains as an alternative to the single-currency account
+and transaction-date-rate model.
+
+## Alternatives considered
+
+| Decision | Chosen | Rejected | Why rejected |
+| --- | --- | --- | --- |
+| Account currency model | One currency per account | `allowedCurrencies` side-buckets (current code) | Balances and reports need per-bucket rules. A currency change silently reinterprets stored amounts. |
+| Runtime rate source | Local rate table | Provider call per request | Depends on provider uptime and rate limits. Reports change when the provider changes. |
+| Report reproducibility | Snapshot per converted figure | Pinned rate-set version with an as-of cutoff | Version sets must be kept forever, and each correction creates a new set. Snapshots cost more storage but are simpler to check. |
+| Cross-currency transfers | Two legs linked by `counterpartId` | New exchange entity | Duplicates existing counterpart logic. Needs a new API and screen. |
+| Pending rows | Stored with status and settled timestamp | Keep rejecting pending rows | Loses pending-to-settled history. Imports drop information. |
+| Realized FX | Deferred | Cost-basis model now | Needs lot tracking the schema lacks. Blocks the first release. |
+| FX job host | Existing API worker | External scheduler | Adds a deployment and a new thing to monitor. |
+| Currency coverage | Every active catalogue currency accepts entries | USD, GBP, EUR only | Product decision. Cost: rate gaps for some currencies, shown as data-quality states. |
+| Stored amounts | Original and account pairs | Original amount plus rate only | A rate correction would need a data migration. |
+
+## Risks and mitigations
+
+| Risk | Trigger | Impact | Mitigation | Owner |
+| --- | --- | --- | --- | --- |
+| Provider outage | Ingestion run fails | No new rates | Retain the last valid dataset. Retry with backoff. Alert (channel TBD). Snapshots do not change. | TBD |
+| Bad or corrupt rate | Provider error or payload change | Wrong reports | Validation rules under Import validation. Keep superseded observations. Snapshots record source. | TBD |
+| Partial backfill | Job stops mid-range | Missing history | Resumable backfill. Coverage check per currency. | TBD |
+| Migration misclassifies currency | USD default on old rows | Wrong balances | `needs_currency_review`. Backfill only from explicit sources. Repair queue. | TBD |
+| Client breakage | Currency-less writes after the window | Failing integrations | 90-day warning window. Old-client logs. | TBD |
+| Stored provider payloads | Raw payload kept for audit | Unexpected data stored | Payloads come from public reference-rate feeds. The app sends no user data to providers. Retention period TBD. | TBD |
+| Unscoped report or FX access | Missing `userId` filter | Data exposure | Filter every report route by `userId`. Reference-rate tables are read-only to app users. | TBD |
+
+### Scale limits
+
+- Backfill range: TBD before Phase 3.
+- Lookups: indexed on (`base_currency`, `quote_currency`, `effective_date`). Volumes
+  TBD (see Local FX ingestion principles).
+- Snapshot storage grows with every converted figure. Volume TBD.
 
 ## Phased delivery plan
 

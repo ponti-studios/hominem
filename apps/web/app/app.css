@@ -118,6 +118,9 @@
 :root {
   color-scheme: light;
 
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
   /* Hominem monochrome theme. These values map the billing page's semantic roles. */
   --background: #ffffff;
   --card: #ffffff;
@@ -190,6 +193,46 @@ body {
   background: var(--text-primary);
 }
 
+.finance-transaction-enter {
+  animation: finance-transaction-enter 180ms var(--motion-ease-out) both;
+}
+
+.finance-transaction-enter[data-ledger-enter='1'] {
+  animation-delay: 24ms;
+}
+
+.finance-transaction-enter[data-ledger-enter='2'] {
+  animation-delay: 48ms;
+}
+
+.finance-transaction-enter[data-ledger-enter='3'] {
+  animation-delay: 72ms;
+}
+
+.finance-transaction-enter[data-ledger-enter='4'] {
+  animation-delay: 96ms;
+}
+
+@keyframes finance-transaction-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes finance-transaction-enter-reduced {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes route-bar {
   0% {
     transform: translateX(-40%) scaleX(0.4);
@@ -227,6 +270,36 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .route-bar {
     animation: none;
+  }
+
+  [data-slot='dialog-content'],
+  [data-slot='dialog-overlay'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='finance-transactions-page'],
+  [data-slot='finance-transactions-controls'],
+  [data-slot='finance-selection-toolbar'],
+  [data-slot='finance-selection-count'] {
+    --tw-enter-translate-x: 0px !important;
+    --tw-enter-translate-y: 0px !important;
+    --tw-enter-scale: 1 !important;
+    --tw-exit-translate-x: 0px !important;
+    --tw-exit-translate-y: 0px !important;
+    --tw-exit-scale: 1 !important;
+    --tw-animation-duration: 80ms !important;
+    transition-duration: 80ms !important;
+  }
+
+  [data-slot='finance-transactions-page'],
+  [data-slot='finance-transactions-controls'],
+  [data-slot='finance-selection-toolbar'],
+  [data-slot='finance-selection-count'] {
+    transform: none !important;
+  }
+
+  .finance-transaction-enter {
+    animation-name: finance-transaction-enter-reduced;
+    animation-delay: 0ms !important;
+    animation-duration: 80ms;
   }
 }
 

@@ -3,15 +3,14 @@ import { Phone } from 'lucide-react';
 
 import { ChartCard } from '~/components/design/chart-card';
 import { DataTable } from '~/components/design/data-table';
-import { Field, SelectField } from '~/components/design/form-field';
+import { SelectField } from '~/components/design/form-field';
 import {
-  FormGrid,
+  CurrencyField,
   IconField,
   PrefixInput,
   TextAreaInput,
   TextInput,
 } from '~/components/design/forms';
-import { Input } from '~/components/ui/input';
 
 function Shell({ children }: { children: React.ReactNode }) {
   return <div className="min-h-full bg-background p-6 text-foreground">{children}</div>;
@@ -107,80 +106,188 @@ export const ChartStates: StoryObj = {
   ),
 };
 
-export const FormFields: StoryObj = {
-  name: 'Field + SelectField',
-  render: () => (
+type SelectFieldStoryType = StoryObj<Meta<typeof SelectField>>;
+
+export const SelectFieldStory: SelectFieldStoryType = {
+  name: 'SelectField',
+  args: {
+    label: 'Forecast currency',
+    name: 'currencyCode',
+    placeholder: 'Choose currency',
+    options: [
+      { value: 'USD', label: 'USD' },
+      { value: 'EUR', label: 'EUR' },
+      { value: 'GBP', label: 'GBP' },
+    ],
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    placeholder: { control: 'text' },
+    options: { control: 'object' },
+    required: { control: 'boolean' },
+    hint: { control: 'text' },
+    error: { control: 'text' },
+  },
+  render: (args) => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
-        <SelectField
-          label="Forecast currency"
-          name="currencyCode"
-          placeholder="Choose currency"
-          options={[
-            { value: 'USD', label: 'USD' },
-            { value: 'EUR', label: 'EUR' },
-            { value: 'GBP', label: 'GBP' },
-          ]}
-        />
-        <Field label="Monthly cap" hint="Applies to the selected currency.">
-          {(id) => (
-            <Input id={id} name="amount" type="number" min="0" step="0.01" placeholder="0" />
-          )}
-        </Field>
-        <Field label="Monthly cap" error="Enter a valid amount.">
-          {(id) => <Input id={id} name="amount" type="number" aria-invalid="true" />}
-        </Field>
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <SelectField {...args} />
       </div>
     </Shell>
   ),
 };
 
-export const TextInputs: StoryObj = {
-  name: 'TextInput + TextAreaInput + FormGrid',
-  render: () => (
+type TextInputStoryType = StoryObj<Meta<typeof TextInput>>;
+
+export const TextInputStory: TextInputStoryType = {
+  name: 'TextInput',
+  args: {
+    label: 'Job title',
+    name: 'title',
+    required: true,
+    placeholder: 'e.g. Senior Engineer',
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    type: { control: 'select', options: ['text', 'email', 'number', 'tel', 'url'] },
+    required: { control: 'boolean' },
+    placeholder: { control: 'text' },
+    hint: { control: 'text' },
+    disabled: { control: 'boolean' },
+    readOnly: { control: 'boolean' },
+  },
+  render: (args) => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
-        <TextInput label="Job Title" name="title" required placeholder="e.g. Senior Engineer" />
-        <FormGrid>
-          <TextInput label="Location" name="location" placeholder="Remote" />
-          <TextInput label="Salary ($/yr)" name="salary" type="number" />
-        </FormGrid>
-        <TextAreaInput
-          label="Description"
-          name="description"
-          rows={3}
-          placeholder="What did you actually do?"
-        />
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <TextInput {...args} />
       </div>
     </Shell>
   ),
 };
 
-export const PrefixInputs: StoryObj = {
-  name: 'PrefixInput + IconField',
-  render: () => (
+type CurrencyFieldStoryType = StoryObj<Meta<typeof CurrencyField>>;
+
+export const CurrencyFieldStory: CurrencyFieldStoryType = {
+  name: 'CurrencyField',
+  args: {
+    label: 'Purchase amount',
+    name: 'purchase',
+    currency: 'GBP',
+    defaultValue: '400',
+    min: 0,
+    step: 0.01,
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    currency: { control: 'select', options: ['GBP', 'USD', 'EUR', 'CAD', 'AUD'] },
+    defaultValue: { control: 'text' },
+    placeholder: { control: 'text' },
+    required: { control: 'boolean' },
+    min: { control: 'number' },
+    max: { control: 'number' },
+    step: { control: 'number' },
+    hint: { control: 'text' },
+    disabled: { control: 'boolean' },
+    readOnly: { control: 'boolean' },
+  },
+  render: (args) => (
     <Shell>
-      <div className="grid max-w-md gap-5 rounded-sm border border-border bg-card p-6">
-        <PrefixInput
-          label="Profile URL"
-          name="slug"
-          prefix="career.dev/p/"
-          placeholder="your-profile-name"
-          hint="Lowercase letters, numbers, and hyphens only."
-        />
-        <PrefixInput
-          label="GitHub"
-          name="github"
-          prefix="github.com/"
-          placeholder="username"
-          error="Enter a valid GitHub username"
-        />
-        <IconField
-          label="Phone"
-          name="phone"
-          icon={<Phone className="size-4" aria-hidden />}
-          placeholder="+1 555 0100"
-        />
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <CurrencyField {...args} />
+      </div>
+    </Shell>
+  ),
+};
+
+type TextAreaInputStoryType = StoryObj<Meta<typeof TextAreaInput>>;
+
+export const TextAreaInputStory: TextAreaInputStoryType = {
+  name: 'TextAreaInput',
+  args: {
+    label: 'Description',
+    name: 'description',
+    rows: 3,
+    placeholder: 'What did you actually do?',
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    rows: { control: { type: 'range', min: 2, max: 10, step: 1 } },
+    placeholder: { control: 'text' },
+    required: { control: 'boolean' },
+    hint: { control: 'text' },
+    disabled: { control: 'boolean' },
+    readOnly: { control: 'boolean' },
+  },
+  render: (args) => (
+    <Shell>
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <TextAreaInput {...args} />
+      </div>
+    </Shell>
+  ),
+};
+
+type PrefixInputStoryType = StoryObj<Meta<typeof PrefixInput>>;
+
+export const PrefixInputStory: PrefixInputStoryType = {
+  name: 'PrefixInput',
+  args: {
+    label: 'Profile URL',
+    name: 'slug',
+    prefix: 'career.dev/p/',
+    placeholder: 'your-profile-name',
+    hint: 'Lowercase letters, numbers, and hyphens only.',
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    prefix: { control: 'text' },
+    placeholder: { control: 'text' },
+    required: { control: 'boolean' },
+    hint: { control: 'text' },
+    error: { control: 'text' },
+    disabled: { control: 'boolean' },
+    readOnly: { control: 'boolean' },
+  },
+  render: (args) => (
+    <Shell>
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <PrefixInput {...args} />
+      </div>
+    </Shell>
+  ),
+};
+
+type IconFieldStoryType = StoryObj<Meta<typeof IconField>>;
+
+export const IconFieldStory: IconFieldStoryType = {
+  name: 'IconField',
+  args: {
+    label: 'Phone',
+    name: 'phone',
+    placeholder: '+1 555 0100',
+    type: 'tel',
+  },
+  argTypes: {
+    label: { control: 'text' },
+    name: { control: 'text' },
+    placeholder: { control: 'text' },
+    type: { control: 'select', options: ['text', 'email', 'number', 'tel', 'url'] },
+    required: { control: 'boolean' },
+    disabled: { control: 'boolean' },
+    readOnly: { control: 'boolean' },
+    hint: { control: 'text' },
+    error: { control: 'text' },
+    icon: { control: false },
+  },
+  render: (args) => (
+    <Shell>
+      <div className="max-w-md rounded-sm border border-border bg-card p-6">
+        <IconField {...args} icon={<Phone className="size-4" aria-hidden />} />
       </div>
     </Shell>
   ),

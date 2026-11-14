@@ -136,6 +136,7 @@ export function TextInput({
   name,
   field,
   defaultValue = '',
+  value,
   type,
   required,
   placeholder,
@@ -148,27 +149,108 @@ export function TextInput({
   className,
   ...rest
 }: TextInputProps) {
+  const id = useId();
   return (
-    <Field label={label} hint={hint} labelHidden={labelHidden} className={className}>
-      {(id) => (
+    <div className={cn('grid gap-0', className)}>
+      <label
+        htmlFor={id}
+        className={
+          labelHidden
+            ? 'sr-only'
+            : 'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 py-1 text-xs font-normal text-foreground'
+        }
+      >
+        {label}
+      </label>
+      <Input
+        id={id}
+        name={field?.name ?? name}
+        value={field?.value ?? value}
+        defaultValue={field || value !== undefined ? undefined : defaultValue}
+        onChange={field ? (e) => field.onChange(e.target.value) : undefined}
+        onBlur={field?.onBlur}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+        className={cn('h-10 rounded-tl-none', inputClassName)}
+        {...rest}
+      />
+      {hint ? <p className="mt-1.5 truncate text-[13px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+type CurrencyFieldProps = Omit<TextInputProps, 'type'> & {
+  currency?: string;
+};
+
+export function CurrencyField({
+  label,
+  name,
+  field,
+  defaultValue = '',
+  value,
+  currency,
+  required,
+  placeholder,
+  hint,
+  min,
+  max,
+  step,
+  inputClassName,
+  labelHidden,
+  className,
+  ...rest
+}: CurrencyFieldProps) {
+  const id = useId();
+  const currencySymbol = currency
+    ? new Intl.NumberFormat(undefined, { style: 'currency', currency })
+        .formatToParts(0)
+        .find((part) => part.type === 'currency')?.value
+    : null;
+  return (
+    <div className={cn('grid gap-0', className)}>
+      <label
+        htmlFor={id}
+        className={
+          labelHidden
+            ? 'sr-only'
+            : 'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 py-1 text-xs font-normal text-foreground'
+        }
+      >
+        {label}
+      </label>
+      <div className="relative">
+        {currencySymbol ? (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+          >
+            {currencySymbol}
+          </span>
+        ) : null}
         <Input
           id={id}
           name={field?.name ?? name}
-          value={field?.value}
-          defaultValue={field ? undefined : defaultValue}
-          onChange={field ? (e) => field.onChange(e.target.value) : undefined}
+          value={field?.value ?? value}
+          defaultValue={field || value !== undefined ? undefined : defaultValue}
+          onChange={field ? (event) => field.onChange(event.target.value) : undefined}
           onBlur={field?.onBlur}
-          type={type}
+          type={rest.readOnly ? 'text' : 'number'}
           required={required}
           placeholder={placeholder}
           min={min}
           max={max}
           step={step}
-          className={inputClassName}
+          className={cn('h-10 rounded-tl-none', currencySymbol && 'pl-14', inputClassName)}
           {...rest}
         />
-      )}
-    </Field>
+      </div>
+      {hint ? <p className="mt-1.5 truncate text-[13px] text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }
 

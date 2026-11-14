@@ -161,9 +161,13 @@ export const NavLinks: StoryObj = {
   name: 'AppNavLink',
   render: () => (
     <Shell>
-      <div className="grid max-w-xs gap-1">
+      <div className="max-w-xs">
         <AppNavLink to="/tasks" label="Tasks" variant="sidebar" />
         <AppNavLink to="/finance" label="Finance" variant="sidebar" />
+        <div className="mt-1 mb-2 flex flex-col gap-0.5">
+          <AppNavLink to="/finance/analytics" label="Analytics" variant="nested" />
+          <AppNavLink to="/finance/affordability" label="Afford it?" variant="nested" />
+        </div>
       </div>
       <div className="mt-6 flex gap-1">
         <AppNavLink to="/finance" label="Overview" variant="pill" />

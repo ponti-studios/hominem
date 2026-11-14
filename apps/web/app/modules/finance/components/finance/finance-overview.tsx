@@ -16,6 +16,7 @@ import { ChartCard, List, PanelState, SectionCard } from '~/components/design';
 import { KeyValue, KeyValueList } from '~/components/design/key-value';
 import { RowLink } from '~/components/design/lists';
 import { SectionHeader } from '~/components/design/section-header';
+import { AccountName } from '~/modules/finance/components/accounts/account-name';
 import { useMonthlyStats } from '~/modules/finance/hooks/use-monthly-stats';
 import { useTimeSeriesData } from '~/modules/finance/hooks/use-time-series';
 import { formatCurrency } from '~/modules/finance/lib/number.utils';
@@ -29,6 +30,16 @@ function formatDay(value: string) {
   return Number.isNaN(day.getTime())
     ? value
     : day.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+function formatAccountBalance(amount: number, currency: string) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export function FinanceOverview({ accounts }: FinanceOverviewProps) {
@@ -200,7 +211,7 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
 
       {accounts.length > 0 ? (
         <SectionCard index={2}>
-          <div className="p-5 sm:p-6">
+          <div>
             <SectionHeader
               title="Accounts"
               actionLabel="All accounts"
@@ -212,21 +223,10 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
                   <li key={account.id}>
                     <RowLink
                       to={`/finance/accounts/${account.id}`}
-                      title={account.name}
-                      leading={
-                        <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden />
-                      }
-                      meta={
-                        <span
-                          className="w-24 shrink-0 truncate text-right whitespace-nowrap sm:w-40"
-                          title={`${account.name} · ${account.accountType}`}
-                        >
-                          {account.name} · {account.accountType}
-                        </span>
-                      }
+                      title={<AccountName name={account.name} type={account.accountType} />}
                       trailing={
                         <span className="w-28 shrink-0 text-right text-foreground">
-                          {formatCurrency(account.balanceCents / 100, account.currencyCode)}
+                          {formatAccountBalance(account.balanceCents / 100, account.currencyCode)}
                         </span>
                       }
                     />

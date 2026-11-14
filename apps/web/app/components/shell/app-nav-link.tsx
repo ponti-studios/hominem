@@ -7,21 +7,21 @@ type AppNavLinkProps = {
   to: string;
   label: string;
   end?: boolean;
-  variant?: 'sidebar' | 'pill';
+  activeContext?: boolean;
+  variant?: 'sidebar' | 'nested' | 'pill';
   icon?: React.ReactNode;
   prefetch?: 'intent' | 'viewport' | 'none';
   onNavigate?: () => void;
 };
 
 /**
- * The single navigation link primitive. Sidebar rows get a choreographed
- * `layoutId` active indicator; pills serve second-level domain nav.
- * Replaces the three copy-pasted NavLink class strings.
+ * The single navigation link primitive for domain, nested, and compact navigation.
  */
 export function AppNavLink({
   to,
   label,
   end,
+  activeContext = false,
   variant = 'sidebar',
   icon,
   prefetch = 'intent',
@@ -62,40 +62,49 @@ export function AppNavLink({
     );
   }
 
+  if (variant === 'nested') {
+    return (
+      <NavLink
+        className={({ isActive }) =>
+          cn(
+            'ml-4 flex min-h-10 items-center rounded-sm px-3 pl-11 text-sm transition-colors duration-150',
+            isActive
+              ? 'bg-muted font-medium text-foreground'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )
+        }
+        end={end}
+        onClick={onNavigate}
+        prefetch={prefetch}
+        to={to}
+      >
+        {label}
+      </NavLink>
+    );
+  }
+
   return (
     <NavLink
-      className={({ isActive }) =>
-        cn(
-          'group relative flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors duration-200',
-          isActive
-            ? 'text-foreground'
+      className={({ isActive }) => {
+        const selected = isActive || activeContext;
+        return cn(
+          'group relative flex min-h-10 items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors duration-150',
+          selected
+            ? 'bg-primary text-primary-foreground'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-        )
-      }
+        );
+      }}
       end={end}
       onClick={onNavigate}
       prefetch={prefetch}
       to={to}
     >
-      {({ isActive }) => (
+      {
         <>
-          {isActive ? (
-            <motion.span
-              aria-hidden
-              className="absolute inset-0 rounded-sm border border-border bg-muted"
-              layoutId="sidebar-active"
-              transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-            />
-          ) : null}
-          <span
-            aria-hidden
-            className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 bg-primary"
-            style={{ opacity: isActive ? 1 : 0, transition: 'opacity 200ms' }}
-          />
           {icon ? <span className="relative shrink-0 [&_svg]:size-4">{icon}</span> : null}
           <span className="relative min-w-0 flex-1 truncate font-medium">{label}</span>
         </>
-      )}
+      }
     </NavLink>
   );
 }

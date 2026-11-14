@@ -188,8 +188,12 @@ Rules that keep sub-apps from leaking into the platform:
   them, and only `routes.ts` decides where they mount.
 - Cross-domain imports are forbidden (lint rule or import-boundary check). Shared UI is promoted to
   `app/components/` deliberately, one component at a time.
-- A sub-app's layout (`routes/<domain>.tsx`) owns its own sub-navigation. The platform shell owns
-  global navigation, identity, and notifications. No sub-app renders a `<html>` document, a
+- The platform shell owns navigation, identity, and notifications. Domain route destinations are
+  registered in `domains.ts` and appear nested under the active domain in the shared sidebar. On
+  desktop, the sidebar also owns the Hominem link, Jump to control, and account menu; there is no
+  full-width app header. On narrow screens, the hierarchy opens in a modal navigation drawer from
+  a compact header with the menu trigger and current page label. A sub-app layout must not render a
+  second primary or section navigation row. No sub-app renders a `<html>` document, a
   `QueryClientProvider`, or a Toaster — those become platform-owned.
 - No sub-app defines `/auth/*`. Web's `routes/auth/index.tsx` and `/logout` are the only auth
   surfaces; hosted login returns through Web's `allowedPrefixes` allowlist.
@@ -274,10 +278,13 @@ file.
 Build the shell the sub-apps will mount into, using the existing Tasks and Collections screens as the
 first tenants so the shell is proven before new code arrives.
 
-- `routes/layout.tsx` grows global navigation driven by `domains.ts`, keeping `RouteHeader` as the
-  top bar (account menu, notifications, domain switcher).
-- Decide the shell's responsive shape (sidebar vs. top nav) with the user — this is information
-  architecture, not a styling detail.
+- `routes/layout.tsx` owns the single navigation hierarchy driven by `domains.ts`. The desktop
+  sidebar contains the brand link, navigation, Jump to control, and account menu; the full-width app
+  header is absent.
+- The four root domains remain visible in the desktop sidebar. The active domain's registered child
+  routes appear directly beneath it; the root route is represented by the domain link itself. On
+  narrow screens, this hierarchy is shown in a drawer opened from a compact page header. Sub-app
+  layouts do not add a second navigation surface.
 - Move `QueryClientProvider` to the root provider stack so sub-apps stop creating their own; keep
   `getQueryClient()` SSR-safe.
 - Unify telemetry (`@hominem/telemetry` is already in web) and PWA policy (section 6.3).

@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { financeRoutes } from '@hominem/api/finance';
-import type { InferResponseType } from 'hono/client';
+import type { InferRequestType, InferResponseType } from 'hono/client';
 import { hc } from 'hono/client';
 
 import type { ClientConfig } from './core/api-client';
@@ -318,22 +318,19 @@ type _RunwayCalculateEndpoint = HonoClient['api']['finance']['runway']['calculat
 export type RunwayCalculateOutput = InferResponseType<_RunwayCalculateEndpoint, 200>;
 type _RunwaySettingsEndpoint = HonoClient['api']['finance']['runway']['settings']['$get'];
 export type RunwaySettingsOutput = InferResponseType<_RunwaySettingsEndpoint, 200>;
+type _RunwayCurrencyEndpoint =
+  HonoClient['api']['finance']['runway']['settings']['currency']['$post'];
+export type RunwayCurrencyInput = InferRequestType<_RunwayCurrencyEndpoint>['json'];
 
 // ---------------------------------------------------------------------------
 // Affordability
 // ---------------------------------------------------------------------------
 
-export type AffordabilityCheckInput = {
-  purchaseAmount: number;
-  currentBalance: number;
-  monthlyIncome: number;
-  monthlyExpenses: number;
-  emergencyFundTarget?: number;
-};
-
-export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable';
-
+type _AffordabilityContextEndpoint =
+  HonoClient['api']['finance']['affordability']['context']['$get'];
+export type AffordabilityContextOutput = InferResponseType<_AffordabilityContextEndpoint, 200>;
 type _AffordabilityCheckEndpoint = HonoClient['api']['finance']['affordability']['check']['$post'];
+export type AffordabilityCheckInput = InferRequestType<_AffordabilityCheckEndpoint>['json'];
 export type AffordabilityCheckOutput = InferResponseType<_AffordabilityCheckEndpoint, 200>;
 
 // ---------------------------------------------------------------------------

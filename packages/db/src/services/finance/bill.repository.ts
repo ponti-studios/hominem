@@ -7,6 +7,16 @@ import type { AppFinanceBillBalanceEntries, AppFinanceBills } from '../../types/
 type FinanceBillRow = Selectable<AppFinanceBills>;
 type FinanceBillBalanceRow = Selectable<AppFinanceBillBalanceEntries>;
 
+function parseBillEnum<const Values extends readonly string[]>(
+  value: string,
+  values: Values,
+  field: string,
+): Values[number] {
+  const parsed = values.find((candidate) => candidate === value);
+  if (!parsed) throw new ValidationError(`Invalid ${field} value in finance bill storage.`);
+  return parsed;
+}
+
 export const FINANCE_BILL_KINDS = [
   'electricity',
   'heating',
@@ -172,24 +182,24 @@ export type FinanceBillClaim = {
 };
 
 function toBill(row: FinanceBillRow): FinanceBillRecord {
-  // The check constraints on app.finance_bills admit only the enum members these cast to.
   return {
     id: row.id,
     userId: row.userId,
     name: row.name,
     providerName: row.providerName,
-    kind: row.kind as FinanceBillKind,
+    kind: parseBillEnum(row.kind, FINANCE_BILL_KINDS, 'kind'),
     accountNumber: row.accountNumber,
-    paymentMethod: row.paymentMethod as FinanceBillPaymentMethod,
-    amountModel: row.amountModel as FinanceBillAmountModel,
+    paymentMethod: parseBillEnum(row.paymentMethod, FINANCE_BILL_PAYMENT_METHODS, 'payment method'),
+    amountModel: parseBillEnum(row.amountModel, FINANCE_BILL_AMOUNT_MODELS, 'amount model'),
     expectedAmountCents: row.expectedAmountCents,
     currencyCode: row.currencyCode,
-    cadence: row.cadence as FinanceBillCadence | null,
+    cadence:
+      row.cadence === null ? null : parseBillEnum(row.cadence, FINANCE_BILL_CADENCES, 'cadence'),
     dueDay: row.dueDay,
     dueDate: row.dueDate === null ? null : String(row.dueDate).slice(0, 10),
     anchorDate: row.anchorDate === null ? null : String(row.anchorDate).slice(0, 10),
-    status: row.status as FinanceBillStatus,
-    type: row.type as FinanceBillType,
+    status: parseBillEnum(row.status, FINANCE_BILL_STATUSES, 'status'),
+    type: parseBillEnum(row.type, FINANCE_BILL_TYPES, 'type'),
     isDismissed: row.isDismissed,
     lastDismissedAt: row.lastDismissedAt === null ? null : String(row.lastDismissedAt),
     merchantMatch: [...row.merchantMatch],
@@ -266,10 +276,9 @@ function toBalanceEntry(row: FinanceBillBalanceRow): FinanceBillBalanceEntryReco
     checkedAt: String(row.checkedAt),
     createdAt: String(row.createdAt),
     balanceCents: row.balanceCents,
-    meterReadingKwh:
-      row.meterReadingKwh === null ? null : Number(row.meterReadingKwh as unknown as number),
-    supplyStatus: row.supplyStatus as FinanceBillSupplyStatus,
-    source: row.source as FinanceBillBalanceSource,
+    meterReadingKwh: row.meterReadingKwh === null ? null : Number(row.meterReadingKwh),
+    supplyStatus: parseBillEnum(row.supplyStatus, FINANCE_BILL_SUPPLY_STATUSES, 'supply status'),
+    source: parseBillEnum(row.source, FINANCE_BILL_BALANCE_SOURCES, 'balance source'),
     note: row.note,
   };
 }

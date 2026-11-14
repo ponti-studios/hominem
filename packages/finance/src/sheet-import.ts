@@ -5,6 +5,7 @@ import type { DbHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
+import { replaceTransactionTags } from './transactions';
 import { toNumber } from './utils';
 
 export const SHEET_SOURCE_VALUES = ['plaid', 'starling', 'manual'] as const;
@@ -615,30 +616,7 @@ async function setTransactionTags(
   userId: string,
   tagIds: string[],
 ): Promise<void> {
-  const owned = await db
-    .selectFrom('app.financeTransactions')
-    .select('id')
-    .where('id', '=', transactionId)
-    .where('userId', '=', userId)
-    .limit(1)
-    .executeTakeFirst();
-  if (!owned) return;
-  await db
-    .deleteFrom('app.tagAssignments')
-    .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
-    .where('entityId', '=', transactionId)
-    .execute();
-  for (const tagId of new Set(tagIds)) {
-    await db
-      .insertInto('app.tagAssignments')
-      .values({
-        id: randomUUID(),
-        tagId,
-        entityTable: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entityId: transactionId,
-      })
-      .execute();
-  }
+  await replaceTransactionTags(transactionId, userId, tagIds);
 }
 
 async function resolveAccount(

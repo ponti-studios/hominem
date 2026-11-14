@@ -6,7 +6,7 @@ status: active
 owner: charlesponti
 tags: [design, web, interface]
 related: [authentication.md, billing.md]
-updated: 2026-11-10
+updated: 2026-11-14
 ---
 
 # Web design direction
@@ -20,6 +20,16 @@ This contract governs presentation only. Preserve each page's routes,
 navigation, content, permissions, and behavior unless the product owner
 explicitly changes them. Match the visual language, not the billing page's
 information architecture.
+
+Navigation uses one shared hierarchy: root domains in the desktop sidebar,
+with the active domain's destinations nested directly below it. On narrow
+screens, the same hierarchy opens from the app header in a navigation drawer.
+On desktop, the sidebar also holds the Hominem link, Jump to control, and
+account menu; do not render a full-width app header. On narrow screens, retain
+only the menu trigger and current page label above the content. Sub-app layouts
+must not add a second primary or section navigation strip.
+
+Selected navigation links use the primary ink surface with inverse text.
 
 ## Non-negotiable visual rules
 
@@ -70,6 +80,13 @@ The following are prohibited throughout `apps/web`, including Storybook:
 Motion is limited to feedback that explains an interaction or state change.
 Keep it brief, preserve reduced-motion behavior, and do not animate ambient
 decoration.
+
+The Transactions ledger uses a more expressive, layered motion sequence:
+the page settles in over 240 ms, its controls follow 60 ms later, and only the
+first five rows stagger in at 24 ms intervals. Selection feedback and the
+details drawer animate their state changes. Keep transaction values still
+after entry, and reduce motion to a short opacity fade without positional
+movement.
 
 ## Theme tokens
 

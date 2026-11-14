@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createAccount } from './index';
 import {
   computeLedgerRunway,
+  getAffordabilityContext,
   getRunwaySettings,
   saveRunwayBudget,
   saveRunwayCurrency,
@@ -31,12 +32,13 @@ describeIntegration('finance runway integration', () => {
     description: string;
     postedOn: string;
     recurring?: boolean;
+    pending?: boolean;
     excluded?: boolean;
     currencyCode?: string;
   }): Promise<void> {
     await sql`
       insert into app.finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, posted_on, recurring, excluded, currency_code
+        id, user_id, account_id, amount, transaction_type, description, posted_on, recurring, pending, excluded, currency_code
       )
       values (
         ${crypto.randomUUID()},
@@ -47,6 +49,7 @@ describeIntegration('finance runway integration', () => {
         ${input.description},
         ${input.postedOn},
         ${input.recurring ?? false},
+        ${input.pending ?? false},
         ${input.excluded ?? false},
         ${input.currencyCode ?? 'USD'}
       )
@@ -367,5 +370,104 @@ describeIntegration('finance runway integration', () => {
     expect(result.startingCash).toBe(240);
     expect(result.recurringTxnCount).toBe(1);
     expect(result.weeklyVariableAllowance).toBe(23);
+  });
+
+  it('builds a six-complete-month affordability context from one currency and the current user', async () => {
+    const otherChecking = await createAccount({
+      userId: otherUserId,
+      name: 'Other checking',
+      accountType: 'checking',
+    });
+    const euroChecking = await createAccount({
+      userId: ownerId,
+      name: 'Euro checking',
+      accountType: 'checking',
+      currencyCode: 'EUR',
+    });
+    await sql`update app.finance_accounts set currency_code = 'EUR' where id = ${euroChecking.id}`.execute(
+      db,
+    );
+    await saveRunwayCurrency(ownerId, 'USD');
+    await seedTransaction({
+      accountId: euroChecking.id,
+      amount: 1000,
+      transactionType: 'credit',
+      description: 'Euro balance',
+      postedOn: '2026-03-10',
+      currencyCode: 'EUR',
+    });
+    await seedTransaction({
+      accountId: checkingId,
+      amount: -60,
+      transactionType: 'debit',
+      description: 'Excluded expense',
+      postedOn: '2026-03-10',
+      excluded: true,
+    });
+    await seedTransaction({
+      accountId: checkingId,
+      amount: -30,
+      transactionType: 'debit',
+      description: 'Pending expense',
+      postedOn: '2026-03-11',
+      pending: true,
+    });
+    await seedTransaction({
+      accountId: checkingId,
+      amount: -40,
+      transactionType: 'debit',
+      description: 'Current partial month',
+      postedOn: '2026-04-01',
+    });
+    await seedTransaction({
+      accountId: otherChecking.id,
+      amount: -90,
+      transactionType: 'debit',
+      description: 'Other user expense',
+      postedOn: '2026-03-10',
+      userId: otherUserId,
+    });
+
+    const result = await getAffordabilityContext(ownerId, '2026-04-15');
+
+    expect(result).toMatchObject({
+      currencyCode: 'USD',
+      startingCash: 2190,
+      monthlyIncome: 416.67,
+      monthlyExpenses: 90,
+      historyStartDate: '2025-10-01',
+      historyEndDate: '2026-03-31',
+      historyMonthCount: 6,
+      transactionCount: 6,
+    });
+    expect(result.availableCurrencies).toContain('USD');
+    expect(result.availableCurrencies).toContain('EUR');
+    expect(result.warnings).toContain('Only USD is included. Other currencies excluded: EUR.');
+    expect(result.warnings).not.toContain(
+      'No posted transaction history is available in USD for this period.',
+    );
+  });
+
+  it('returns missing-source signals for an unconfigured currency, balance, or history', async () => {
+    const emptyChecking = await createAccount({
+      userId: otherUserId,
+      name: 'Empty checking',
+      accountType: 'checking',
+    });
+    expect(emptyChecking).toBeDefined();
+
+    const unconfigured = await getAffordabilityContext(otherUserId, '2026-04-15');
+    expect(unconfigured.currencyCode).toBeNull();
+    expect(unconfigured.startingCash).toBeNull();
+    expect(unconfigured.warnings[0]).toContain('Choose a Finance currency');
+
+    await saveRunwayCurrency(otherUserId, 'USD');
+    const configured = await getAffordabilityContext(otherUserId, '2026-04-15');
+    expect(configured.startingCash).toBe(0);
+    expect(configured.monthlyIncome).toBeNull();
+    expect(configured.monthlyExpenses).toBeNull();
+    expect(configured.warnings).toContain(
+      'No posted transaction history is available in USD for this period.',
+    );
   });
 });

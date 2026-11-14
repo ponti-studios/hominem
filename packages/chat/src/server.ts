@@ -249,7 +249,7 @@ export function createGenerationRunner<
                   arguments: parseArguments(call),
                   context: { ...context, idempotencyKey },
                 });
-              } catch (error) {
+              } catch {
                 result = {
                   callId: call.id,
                   toolName: call.name,

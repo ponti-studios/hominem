@@ -56,6 +56,21 @@ export interface LedgerRunway {
   warnings: string[];
 }
 
+export interface AffordabilityContext {
+  asOfDate: string;
+  currencyCode: string | null;
+  availableCurrencies: string[];
+  liquidAccounts: Array<{ accountName: string; balance: number }>;
+  startingCash: number | null;
+  monthlyIncome: number | null;
+  monthlyExpenses: number | null;
+  historyStartDate: string;
+  historyEndDate: string;
+  historyMonthCount: number;
+  transactionCount: number;
+  warnings: string[];
+}
+
 export async function getRunwaySettings(userId: string) {
   const [preference, currencies, budgets, categories] = await Promise.all([
     db
@@ -109,6 +124,127 @@ export async function getRunwaySettings(userId: string) {
       currencyCode: budget.currencyCode,
       amount: toNumber(budget.monthlyAmount),
     })),
+  };
+}
+
+export async function getAffordabilityContext(
+  userId: string,
+  asOf?: string,
+): Promise<AffordabilityContext> {
+  const asOfDate = checkedDate(asOf);
+  const currentMonthStart = `${asOfDate.slice(0, 7)}-01`;
+  const historyEndDate = addDays(currentMonthStart, -1);
+  const currentMonth = new Date(`${currentMonthStart}T00:00:00.000Z`);
+  currentMonth.setUTCMonth(currentMonth.getUTCMonth() - 6);
+  const historyStartDate = currentMonth.toISOString().slice(0, 10);
+  const settings = await getRunwaySettings(userId);
+  const warnings: string[] = [];
+
+  if (!settings.currencyCode) {
+    warnings.push('Choose a Finance currency to load your cash and transaction history.');
+    return {
+      asOfDate,
+      currencyCode: null,
+      availableCurrencies: settings.currencies,
+      liquidAccounts: [],
+      startingCash: null,
+      monthlyIncome: null,
+      monthlyExpenses: null,
+      historyStartDate,
+      historyEndDate,
+      historyMonthCount: 6,
+      transactionCount: 0,
+      warnings,
+    };
+  }
+
+  const currencyCode = settings.currencyCode;
+  const accounts = await db
+    .selectFrom('app.financeAccounts')
+    .select(['id', 'name', 'currencyCode', 'allowedCurrencies'])
+    .where('userId', '=', userId)
+    .where('accountType', 'in', DEFAULT_LIQUID_TYPES)
+    .orderBy('name', 'asc')
+    .execute();
+  const selectedAccounts = accounts.filter(
+    (account) =>
+      account.currencyCode === currencyCode ||
+      (account.allowedCurrencies ?? []).includes(currencyCode),
+  );
+  const balances = selectedAccounts.length
+    ? await db
+        .selectFrom('app.financeTransactions')
+        .select((eb) => ['accountId', eb.fn.sum<number>('amount').as('balance')])
+        .where('userId', '=', userId)
+        .where('currencyCode', '=', currencyCode)
+        .where(
+          'accountId',
+          'in',
+          selectedAccounts.map(({ id }) => id),
+        )
+        .where('excluded', '=', false)
+        .groupBy('accountId')
+        .execute()
+    : [];
+  const balanceByAccountId = new Map(
+    balances.map(({ accountId, balance }) => [accountId, roundMoney(toNumber(balance))]),
+  );
+  const liquidAccounts = selectedAccounts.map(({ id, name }) => ({
+    accountName: name,
+    balance: balanceByAccountId.get(id) ?? 0,
+  }));
+  const activity = await db
+    .selectFrom('app.financeTransactions')
+    .select((eb) => [
+      eb.fn.countAll<number>().as('transactionCount'),
+      sql<number>`coalesce(sum(case when amount >= 0 then amount else 0 end), 0)`.as('income'),
+      sql<number>`coalesce(sum(case when amount < 0 then abs(amount) else 0 end), 0)`.as(
+        'expenses',
+      ),
+    ])
+    .where('userId', '=', userId)
+    .where('currencyCode', '=', currencyCode)
+    .where('postedOn', '>=', historyStartDate)
+    .where('postedOn', '<=', historyEndDate)
+    .where('pending', '=', false)
+    .where('excluded', '=', false)
+    .executeTakeFirst();
+  const transactionCount = Number(activity?.transactionCount ?? 0);
+  const startingCash =
+    selectedAccounts.length > 0
+      ? roundMoney(liquidAccounts.reduce((sum, account) => sum + account.balance, 0))
+      : null;
+  const monthlyIncome =
+    transactionCount > 0 ? roundMoney(toNumber(activity?.income ?? 0) / 6) : null;
+  const monthlyExpenses =
+    transactionCount > 0 ? roundMoney(toNumber(activity?.expenses ?? 0) / 6) : null;
+
+  if (startingCash === null) {
+    warnings.push(`No eligible liquid accounts are available in ${currencyCode}.`);
+  }
+  if (transactionCount === 0) {
+    warnings.push(`No posted transaction history is available in ${currencyCode} for this period.`);
+  }
+  const excludedCurrencies = settings.currencies.filter((currency) => currency !== currencyCode);
+  if (excludedCurrencies.length > 0) {
+    warnings.push(
+      `Only ${currencyCode} is included. Other currencies excluded: ${excludedCurrencies.join(', ')}.`,
+    );
+  }
+
+  return {
+    asOfDate,
+    currencyCode,
+    availableCurrencies: settings.currencies,
+    liquidAccounts,
+    startingCash,
+    monthlyIncome,
+    monthlyExpenses,
+    historyStartDate,
+    historyEndDate,
+    historyMonthCount: 6,
+    transactionCount,
+    warnings,
   };
 }
 

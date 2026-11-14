@@ -96,19 +96,28 @@ test('Maya’s Monday money review', async ({ page }) => {
   // 08:17 — The chair.
   await test.step('Afford it?: the £2,400 studio chair', async () => {
     await page.getByRole('link', { name: 'Afford it?', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Can I Afford This?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Can I afford this?' })).toBeVisible();
 
-    await page.getByLabel('Purchase amount ($)').fill('2400');
-    await page.getByLabel('Current balance ($)').fill('6105');
-    await page.getByLabel('Monthly income ($)').fill('15717');
-    await page.getByLabel('Monthly expenses ($)').fill('6638');
+    const currency = page.getByRole('combobox', { name: 'Finance currency' });
+    if (await currency.count()) {
+      await currency.click();
+      await page.getByRole('option').first().click();
+    }
 
-    const check = page.getByRole('button', { name: 'Check affordability' });
+    await page.getByLabel(/Purchase amount/).fill('2400');
+    const cashOverride = page.getByLabel(/Available cash/);
+    if (await cashOverride.count()) await cashOverride.fill('6105');
+    await page.getByLabel(/Average monthly income/).fill('15717');
+    await page.getByLabel(/Average monthly expenses/).fill('6638');
+
+    const check = page.getByRole('button', { name: 'Check purchase impact' });
     await expect(check).toBeEnabled();
     await check.click();
 
-    await expect(page.getByText('Verdict')).toBeVisible();
-    await expect(page.getByText('Balance after purchase')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Purchase impact' })).toBeVisible();
+    await expect(page.getByText('Cash after purchase')).toBeVisible();
+    await expect(page.getByText('Cash reserve target')).toBeVisible();
+    await expect(page.getByText('Months until cash depletion')).toBeVisible();
     await page.waitForTimeout(1400);
   });
 

@@ -1,6 +1,7 @@
 import { financeAccountsSlice } from './accounts';
 import { financeBillsSlice } from './bills';
 import { financeBudgetsSlice } from './budgets';
+import { financeRulingsSlice } from './rulings';
 import { financeTransactionsSlice } from './transactions';
 
 export const financeSlices = [
@@ -8,4 +9,5 @@ export const financeSlices = [
   financeBillsSlice,
   financeBudgetsSlice,
   financeTransactionsSlice,
+  financeRulingsSlice,
 ] as const;
