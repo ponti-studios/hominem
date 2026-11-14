@@ -24,10 +24,15 @@ information architecture.
 Navigation uses one shared hierarchy: root domains in the desktop sidebar,
 with the active domain's destinations nested directly below it. On narrow
 screens, the same hierarchy opens from the app header in a navigation drawer.
-On desktop, the sidebar also holds the Hominem link, Jump to control, and
+On desktop, the sidebar also holds the Hominem link, Search or jump control, and
 account menu; do not render a full-width app header. On narrow screens, retain
 only the menu trigger and current page label above the content. Sub-app layouts
 must not add a second primary or section navigation strip.
+
+The sidebar control and `⌘K` open the same command palette. It searches
+transactions, accounts, destinations, and actions in one place. On the
+Transactions page, its filter panel edits URL-backed ledger filters. Do not add
+a second Finance search dialog or an inline transaction search field.
 
 Selected navigation links use the primary ink surface with inverse text.
 
@@ -70,23 +75,28 @@ The following are prohibited throughout `apps/web`, including Storybook:
   luminous text and borders.
 - Cyberpunk, Matrix, terminal, arcade, glitch, scanline, pixel-grid, or
   sci-fi visual motifs.
-- Glass, translucent chrome, backdrop blur, decorative texture, ambient
-  backgrounds, or animated decoration.
-- Decorative shadows, floating-card effects, pill-shaped page navigation, or
+- Decorative gradients, glow, texture, ambient backgrounds, or animated
+  chrome.
+- Decorative shadows on page content, pill-shaped page navigation, or
   excessive rounded panels.
 - Feature-specific themes, per-domain colors, hard-coded color values, or
   local replacements for shared components and tokens.
+
+The transaction editor is a centered floating glass modal. Give it a
+translucent popover surface, backdrop blur, a fine border, rounded corners, and
+a restrained shadow so it reads clearly above the ledger. Keep the page and
+ledger surfaces plain.
 
 Motion is limited to feedback that explains an interaction or state change.
 Keep it brief, preserve reduced-motion behavior, and do not animate ambient
 decoration.
 
-The Transactions ledger uses a more expressive, layered motion sequence:
-the page settles in over 240 ms, its controls follow 60 ms later, and only the
-first five rows stagger in at 24 ms intervals. Selection feedback and the
-details drawer animate their state changes. Keep transaction values still
-after entry, and reduce motion to a short opacity fade without positional
-movement.
+The Transactions ledger settles in over 240 ms and only the first five rows
+stagger in at 24 ms intervals. Selection feedback and the transaction modal
+animate their state changes. Keep transaction values still after entry, and
+reduce motion to a short opacity fade without positional movement. The command
+palette uses a brief fade and its filter panel animates open or closed; reduced
+motion must keep both interactions calm.
 
 ## Theme tokens
 
@@ -95,15 +105,15 @@ shared system is missing a needed role, add it in the token source and show it
 in Storybook before using it. Do not create aliases or one-off values in a
 feature.
 
-| Role | Value | Use |
-| --- | --- | --- |
-| Page background | `#ffffff` | Main page ground |
-| Primary ink | `#0a0a0a` | Main text and primary action |
-| Supporting ink | `#5c5c5c` | Secondary text |
-| Quiet ink | `#737373` | Metadata and tertiary text |
-| Rule | `#e0e0e0` | Dividers and control boundaries |
-| Quiet surface | `#f5f5f5` | Grouped data and read-only summaries |
-| Inverse text | `#ffffff` | Text on primary ink |
+| Role            | Value     | Use                                  |
+| --------------- | --------- | ------------------------------------ |
+| Page background | `#ffffff` | Main page ground                     |
+| Primary ink     | `#0a0a0a` | Main text and primary action         |
+| Supporting ink  | `#5c5c5c` | Secondary text                       |
+| Quiet ink       | `#737373` | Metadata and tertiary text           |
+| Rule            | `#e0e0e0` | Dividers and control boundaries      |
+| Quiet surface   | `#f5f5f5` | Grouped data and read-only summaries |
+| Inverse text    | `#ffffff` | Text on primary ink                  |
 
 The source implementation is the current billing page at
 `services/api/src/routes/billing/index.tsx` and the account shell at

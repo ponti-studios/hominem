@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -66,6 +67,14 @@ vi.mock('~/modules/finance/hooks/use-finance-data', () => ({
 
 import FinanceTransactionsPage from './transactions';
 
+function renderPage(entry = '/finance/transactions') {
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <FinanceTransactionsPage />
+    </MemoryRouter>,
+  );
+}
+
 afterEach(() => {
   cleanup();
   mocks.mutate.mockReset();
@@ -74,9 +83,10 @@ afterEach(() => {
 describe('Finance Transactions ledger', () => {
   it('shows a single-line transaction and applies a category to selected rows', async () => {
     const user = userEvent.setup();
-    render(<FinanceTransactionsPage />);
+    renderPage();
 
     expect(screen.getByText('Coffee Shop')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Search transactions')).not.toBeInTheDocument();
     expect(screen.getByTitle('Uncategorized')).toBeInTheDocument();
     expect(screen.getByLabelText('-£8.50')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Select Coffee Shop' }));
@@ -94,7 +104,7 @@ describe('Finance Transactions ledger', () => {
 
   it('keeps secondary bulk actions in a compact menu', async () => {
     const user = userEvent.setup();
-    render(<FinanceTransactionsPage />);
+    renderPage();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select Coffee Shop' }));
     await user.click(screen.getByRole('button', { name: 'More actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Edit tags…' }));
@@ -107,5 +117,21 @@ describe('Finance Transactions ledger', () => {
       ids: ['transaction-1'],
       action: { action: 'tags', tagIds: ['tag-1'] },
     });
+  });
+
+  it('opens a transaction selected from the global command search', async () => {
+    const user = userEvent.setup();
+    renderPage('/finance/transactions?search=coffee&transactionId=transaction-1');
+
+    const dialog = await screen.findByRole('dialog', { name: 'Transaction details' });
+    expect(dialog).toHaveClass('rounded-2xl', 'bg-popover/75', 'backdrop-blur-2xl', 'shadow-2xl');
+    expect(document.querySelector('[data-slot="dialog-overlay"]')).toHaveClass('backdrop-blur-md');
+    expect(screen.getByLabelText('Merchant')).toHaveValue('Coffee Shop');
+    expect(screen.getByLabelText('Amount')).toHaveValue(-8.5);
+    expect(screen.getByText('£')).toBeInTheDocument();
+    expect(screen.queryByText('2026-11-14 · GBP')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('list', { name: 'Transactions' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Transaction details' })).not.toBeInTheDocument();
   });
 });

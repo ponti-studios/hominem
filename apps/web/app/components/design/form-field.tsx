@@ -4,12 +4,16 @@ import { useCallback, useId, useState } from 'react';
 
 import { cn } from '~/lib/utils';
 
+export const formLabelClassName =
+  'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 pt-1 pb-0 text-xs font-normal text-foreground';
+
 type FieldProps = {
   label: string;
   hint?: string;
   error?: string | null;
   /** Visually hide the label while keeping it programmatically associated. */
   labelHidden?: boolean;
+  labelClassName?: string;
   children: (id: string) => React.ReactNode;
   className?: string;
 };
@@ -19,7 +23,15 @@ type FieldProps = {
  * modules must go through this instead of bare `<label>` grids, so
  * labeling, spacing, and error display stay uniform.
  */
-export function Field({ label, hint, error, labelHidden, children, className }: FieldProps) {
+export function Field({
+  label,
+  hint,
+  error,
+  labelHidden,
+  labelClassName,
+  children,
+  className,
+}: FieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
@@ -27,7 +39,9 @@ export function Field({ label, hint, error, labelHidden, children, className }: 
     <div className={cn('grid gap-1.5', className)}>
       <label
         htmlFor={id}
-        className={labelHidden ? 'sr-only' : 'text-sm font-medium text-foreground'}
+        className={
+          labelHidden ? 'sr-only' : (labelClassName ?? 'text-sm font-medium text-foreground')
+        }
       >
         {label}
       </label>
@@ -84,7 +98,14 @@ export function SelectField({
   }, []);
 
   return (
-    <Field label={label} hint={hint} error={error} labelHidden={labelHidden} className={className}>
+    <Field
+      label={label}
+      hint={hint}
+      error={error}
+      labelHidden={labelHidden}
+      labelClassName={formLabelClassName}
+      className={cn('flex flex-col gap-0', className)}
+    >
       {(id) => (
         <BaseSelect.Root
           modal={false}
@@ -101,7 +122,7 @@ export function SelectField({
             aria-label={label}
             aria-invalid={error ? true : undefined}
             className={cn(
-              'flex h-10 w-full items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 text-left text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 data-placeholder:text-muted-foreground',
+              'field-value flex h-10 w-full items-center justify-between gap-3 rounded-lg rounded-tl-none border border-border bg-background px-3 text-left text-sm text-foreground outline-none transition-colors focus-visible:border-sky-400 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-400 data-placeholder:text-muted-foreground',
               controlClassName,
             )}
           >

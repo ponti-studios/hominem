@@ -129,6 +129,8 @@ export type TransactionUpdateData = {
 
 type _TransactionListEndpoint = HonoClient['api']['finance']['transactions']['list']['$get'];
 export type TransactionListOutput = InferResponseType<_TransactionListEndpoint, 200>;
+type _TransactionOptionsEndpoint = HonoClient['api']['finance']['transactions']['options']['$get'];
+export type TransactionOptionsOutput = InferResponseType<_TransactionOptionsEndpoint, 200>;
 
 export type TransactionCreateOutput = TransactionData;
 export type TransactionUpdateOutput = TransactionData;

@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { useNavigation } from 'react-router';
 
-import { Field } from '~/components/design/form-field';
+import { Field, formLabelClassName } from '~/components/design/form-field';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { cn } from '~/lib/utils';
@@ -151,15 +151,8 @@ export function TextInput({
 }: TextInputProps) {
   const id = useId();
   return (
-    <div className={cn('grid gap-0', className)}>
-      <label
-        htmlFor={id}
-        className={
-          labelHidden
-            ? 'sr-only'
-            : 'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 py-1 text-xs font-normal text-foreground'
-        }
-      >
+    <div className={cn('flex flex-col', className)}>
+      <label htmlFor={id} className={labelHidden ? 'sr-only' : formLabelClassName}>
         {label}
       </label>
       <Input
@@ -212,15 +205,8 @@ export function CurrencyField({
         .find((part) => part.type === 'currency')?.value
     : null;
   return (
-    <div className={cn('grid gap-0', className)}>
-      <label
-        htmlFor={id}
-        className={
-          labelHidden
-            ? 'sr-only'
-            : 'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 py-1 text-xs font-normal text-foreground'
-        }
-      >
+    <div className={cn('flex flex-col', className)}>
+      <label htmlFor={id} className={labelHidden ? 'sr-only' : formLabelClassName}>
         {label}
       </label>
       <div className="relative">
@@ -283,7 +269,13 @@ export function TextAreaInput({
   ...rest
 }: TextAreaInputProps) {
   return (
-    <Field label={label} hint={hint} labelHidden={labelHidden} className={className}>
+    <Field
+      label={label}
+      hint={hint}
+      labelHidden={labelHidden}
+      labelClassName={formLabelClassName}
+      className={cn('flex flex-col gap-0', className)}
+    >
       {(id) => (
         <textarea
           id={id}
@@ -292,7 +284,7 @@ export function TextAreaInput({
           required={required}
           placeholder={placeholder}
           defaultValue={defaultValue}
-          className="w-full resize-none rounded-sm border border-border bg-muted px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring"
+          className="field-value w-full resize-none rounded-sm rounded-tl-none border border-border bg-muted px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-sky-400 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-400"
           {...rest}
         />
       )}

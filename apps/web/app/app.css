@@ -2,6 +2,18 @@
 @import 'tw-animate-css';
 @import '@ponti-studios/ui/styles.css';
 
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+.field-value {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+}
+
 @source '../../node_modules/@ponti-studios/ui/src/**/*.{ts,tsx}';
 @source './';
 

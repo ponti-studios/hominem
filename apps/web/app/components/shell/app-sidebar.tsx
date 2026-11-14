@@ -90,7 +90,7 @@ export const AppSidebar = memo(function AppSidebar({
           type="button"
         >
           <Command aria-hidden className="size-4 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">Jump to…</span>
+          <span className="min-w-0 flex-1 truncate">Search or jump…</span>
           <Kbd>⌘K</Kbd>
         </button>
         <AccountMenu user={user} />

@@ -2,11 +2,12 @@ import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Ellipsis, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 
 import {
+  CurrencyField,
   PageHeader,
-  SearchInput,
   SelectField,
   TextAreaInput,
   TextInput,
@@ -65,17 +66,22 @@ export default function FinanceTransactionsPage() {
   const reduceMotion = useReducedMotion();
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [categoryName, setCategoryName] = useState('');
-  const [tagId, setTagId] = useState('');
-  const [transactionType, setTransactionType] = useState<TransactionTypeFilter>('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get('search') ?? '';
+  const accountId = searchParams.get('account') ?? '';
+  const categoryName = searchParams.get('category') ?? '';
+  const tagId = searchParams.get('tag') ?? '';
+  const transactionType = toTransactionTypeFilter(searchParams.get('type') ?? '');
+  const dateFrom = searchParams.get('from') ?? '';
+  const dateTo = searchParams.get('to') ?? '';
+  const amountMin = searchParams.get('min') ?? '';
+  const amountMax = searchParams.get('max') ?? '';
+  const status = toStatusFilter(searchParams.get('status') ?? 'all');
+  const focusedTransactionId = searchParams.get('transactionId') ?? '';
   const [cursor, setCursor] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [activeTransaction, setActiveTransaction] = useState<FinanceTransactionData | null>(null);
+  const [dismissedTransactionId, setDismissedTransactionId] = useState('');
   const [categoryChoice, setCategoryChoice] = useState('');
   const [tagChoice, setTagChoice] = useState('');
   const [bulkDialog, setBulkDialog] = useState<'merchant' | 'notes' | 'tags' | 'move' | null>(null);
@@ -97,18 +103,11 @@ export default function FinanceTransactionsPage() {
     transactionType,
     dateFrom,
     dateTo,
+    amountMin,
+    amountMax,
     status,
   };
-  const hasFilters = Boolean(
-    search ||
-    accountId ||
-    categoryName ||
-    tagId ||
-    transactionType ||
-    dateFrom ||
-    dateTo ||
-    status !== 'all',
-  );
+  const filterKey = searchParams.toString();
   const queue = useQuery({
     queryKey: ['finance', 'rulings', 'queue'],
     queryFn: async () => {
@@ -153,6 +152,7 @@ export default function FinanceTransactionsPage() {
       'ledger',
       filters,
       cursor,
+      focusedTransactionId,
       status === 'queued' ? queuedIds : [],
     ],
     queryFn: async () => {
@@ -167,6 +167,8 @@ export default function FinanceTransactionsPage() {
           ...(transactionType ? { transactionType } : {}),
           ...(dateFrom ? { dateFrom } : {}),
           ...(dateTo ? { dateTo } : {}),
+          ...(amountMin ? { min: amountMin } : {}),
+          ...(amountMax ? { max: amountMax } : {}),
           ...(status === 'uncategorized' ? { uncategorizedOnly: 'true' as const } : {}),
           ...(status === 'excluded' ? { excluded: 'true' as const } : {}),
           ...(status === 'queued' && queuedIds.length ? { transactionIds: queuedIds } : {}),
@@ -175,7 +177,7 @@ export default function FinanceTransactionsPage() {
       if (!response.ok) throw new Error('Unable to load transactions.');
       return response.json();
     },
-    enabled: status !== 'queued' || queuedIds.length > 0,
+    enabled: focusedTransactionId.length > 0 || status !== 'queued' || queuedIds.length > 0,
   });
   const transactions = transactionQuery.data?.data ?? [];
   const visibleIds = transactions.map(({ id }) => id);
@@ -192,6 +194,19 @@ export default function FinanceTransactionsPage() {
       )?.category ?? null
     );
   };
+  const closeTransaction = useCallback(() => {
+    setActiveTransaction(null);
+    if (!focusedTransactionId) return;
+    setDismissedTransactionId(focusedTransactionId);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('transactionId');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [focusedTransactionId, setSearchParams]);
 
   const batch = useMutation({
     mutationFn: async ({ ids, action }: { ids: string[]; action: BatchAction }) => {
@@ -255,16 +270,11 @@ export default function FinanceTransactionsPage() {
       }
     },
     onSuccess: () => {
-      setActiveTransaction(null);
+      closeTransaction();
       void queryClient.invalidateQueries({ queryKey: ['finance'] });
     },
   });
 
-  const changeFilter = (update: () => void) => {
-    update();
-    setCursor('');
-    setSelected([]);
-  };
   const selectAllResults = async () => {
     setSelectAllError('');
     const ids: string[] = [];
@@ -282,6 +292,8 @@ export default function FinanceTransactionsPage() {
             ...(transactionType ? { transactionType } : {}),
             ...(dateFrom ? { dateFrom } : {}),
             ...(dateTo ? { dateTo } : {}),
+            ...(amountMin ? { min: amountMin } : {}),
+            ...(amountMax ? { max: amountMax } : {}),
             ...(status === 'uncategorized' ? { uncategorizedOnly: 'true' as const } : {}),
             ...(status === 'excluded' ? { excluded: 'true' as const } : {}),
             ...(status === 'queued' && queuedIds.length ? { transactionIds: queuedIds } : {}),
@@ -299,7 +311,7 @@ export default function FinanceTransactionsPage() {
     }
   };
 
-  const openTransaction = (transaction: FinanceTransactionData) => {
+  const openTransaction = useCallback((transaction: FinanceTransactionData) => {
     setActiveTransaction(transaction);
     setDrawerCategoryId(transaction.categoryId ?? '');
     setDrawerMerchant(transaction.merchantName ?? '');
@@ -308,7 +320,28 @@ export default function FinanceTransactionsPage() {
     setDrawerDate(transaction.postedOn.slice(0, 10));
     setDrawerNotes(transaction.notes ?? '');
     setDrawerAccountId(transaction.accountId);
-  };
+  }, []);
+  useEffect(() => {
+    setCursor('');
+    setSelected([]);
+  }, [filterKey]);
+
+  useEffect(() => {
+    if (!focusedTransactionId) setDismissedTransactionId('');
+  }, [focusedTransactionId]);
+
+  useEffect(() => {
+    if (!focusedTransactionId || dismissedTransactionId === focusedTransactionId) return;
+    const transaction = transactions.find(({ id }) => id === focusedTransactionId);
+    if (transaction && activeTransaction?.id !== transaction.id) openTransaction(transaction);
+  }, [
+    activeTransaction?.id,
+    dismissedTransactionId,
+    focusedTransactionId,
+    openTransaction,
+    transactions,
+  ]);
+
   const openBulkDialog = (action: 'merchant' | 'notes' | 'tags' | 'move') => {
     setBulkValue('');
     if (action === 'tags') setTagChoice('');
@@ -329,138 +362,11 @@ export default function FinanceTransactionsPage() {
         ease: [0.23, 1, 0.32, 1],
       }}
     >
-      <PageHeader
-        title="Transactions"
-        actions={
-          hasFilters ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearch('');
-                setAccountId('');
-                setCategoryName('');
-                setTagId('');
-                setTransactionType('');
-                setDateFrom('');
-                setDateTo('');
-                setStatus('all');
-                setCursor('');
-                setSelected([]);
-              }}
-            >
-              Reset filters
-            </Button>
-          ) : undefined
-        }
-      />
-
-      <motion.section
-        aria-label="Transaction controls"
-        animate={{ opacity: 1, transform: 'translateY(0px)' }}
-        className="mt-6 space-y-4"
-        data-slot="finance-transactions-controls"
-        initial={{
-          opacity: 0,
-          transform: reduceMotion ? 'none' : 'translateY(8px)',
-        }}
-        transition={{
-          delay: reduceMotion ? 0 : 0.06,
-          duration: reduceMotion ? 0.08 : 0.2,
-          ease: [0.23, 1, 0.32, 1],
-        }}
-      >
-        <SearchInput
-          ariaLabel="Search transactions"
-          placeholder="Search merchants, categories, accounts…"
-          value={search}
-          onChange={(value) => changeFilter(() => setSearch(value))}
-          onClear={() => changeFilter(() => setSearch(''))}
-          inputClassName="h-11 rounded-lg bg-background"
-          className="max-w-2xl"
-        />
-        <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
-          <SelectField
-            label="Account"
-            name="account"
-            value={accountId}
-            onChange={(value) => changeFilter(() => setAccountId(value))}
-            placeholder="All accounts"
-            controlClassName="rounded-lg bg-background"
-            options={accounts.map((account) => ({ value: account.id, label: account.name }))}
-          />
-          <SelectField
-            label="Category"
-            name="category"
-            value={categoryName}
-            onChange={(value) => changeFilter(() => setCategoryName(value))}
-            placeholder="All categories"
-            controlClassName="rounded-lg bg-background"
-            options={categoryOptions.map(({ name }) => ({ value: name, label: name }))}
-          />
-          <SelectField
-            label="Tag"
-            name="tag"
-            value={tagId}
-            onChange={(value) => changeFilter(() => setTagId(value))}
-            placeholder="All tags"
-            controlClassName="rounded-lg bg-background"
-            options={tagOptions.map(({ id, name }) => ({ value: id, label: name }))}
-          />
-          <SelectField
-            label="Type"
-            name="type"
-            value={transactionType}
-            onChange={(value) =>
-              changeFilter(() => setTransactionType(toTransactionTypeFilter(value)))
-            }
-            placeholder="All types"
-            controlClassName="rounded-lg bg-background"
-            options={[
-              { value: 'income', label: 'Income' },
-              { value: 'expense', label: 'Expense' },
-              { value: 'transfer', label: 'Transfer' },
-            ]}
-          />
-          <SelectField
-            label="Status"
-            name="status"
-            value={status}
-            onChange={(value) => changeFilter(() => setStatus(toStatusFilter(value)))}
-            placeholder="All transactions"
-            controlClassName="rounded-lg bg-background"
-            options={[
-              { value: 'all', label: 'All transactions' },
-              { value: 'uncategorized', label: 'Uncategorized' },
-              { value: 'excluded', label: 'Excluded' },
-              { value: 'queued', label: 'Queued' },
-            ]}
-          />
-          <fieldset className="grid min-w-0 grid-cols-2 gap-2 sm:col-span-2 lg:col-span-3">
-            <legend className="col-span-2 mb-1 text-sm font-medium text-foreground">
-              Date range
-            </legend>
-            <TextInput
-              label="From date"
-              name="date-from"
-              labelHidden
-              type="date"
-              value={dateFrom}
-              inputClassName="h-10 rounded-lg bg-background"
-              onChange={(event) => changeFilter(() => setDateFrom(event.target.value))}
-            />
-            <TextInput
-              label="To date"
-              name="date-to"
-              labelHidden
-              type="date"
-              value={dateTo}
-              inputClassName="h-10 rounded-lg bg-background"
-              onChange={(event) => changeFilter(() => setDateTo(event.target.value))}
-            />
-          </fieldset>
-        </div>
-      </motion.section>
+      <PageHeader title="Transactions" />
+      <p className="mt-2 text-sm text-muted-foreground">
+        Press <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-xs">⌘K</kbd>{' '}
+        to search or filter.
+      </p>
 
       <AnimatePresence initial={false}>
         {selected.length > 0 && (
@@ -682,12 +588,12 @@ export default function FinanceTransactionsPage() {
 
       <Dialog
         open={Boolean(activeTransaction)}
-        onOpenChange={(open) => !open && setActiveTransaction(null)}
+        onOpenChange={(open) => !open && closeTransaction()}
       >
-        <DialogContent className="inset-y-0 top-0 right-0 left-auto h-full max-h-screen w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-l border-border p-5 duration-[240ms] ease-[var(--motion-ease-drawer)] data-open:slide-in-from-right-full data-open:zoom-in-100 data-closed:slide-out-to-right-full data-closed:zoom-out-100 sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Transaction details</DialogTitle>
-          </DialogHeader>
+        <DialogContent
+          aria-label="Transaction details"
+          className="flex max-h-[85dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-2xl border border-border/70 bg-popover/75 p-6 shadow-2xl backdrop-blur-2xl sm:max-w-2xl"
+        >
           {activeTransaction && (
             <div className="grid gap-4 sm:grid-cols-2">
               <TextInput
@@ -702,10 +608,10 @@ export default function FinanceTransactionsPage() {
                 value={drawerDescription}
                 onChange={(event) => setDrawerDescription(event.target.value)}
               />
-              <TextInput
+              <CurrencyField
                 label="Amount"
                 name="amount"
-                type="number"
+                currency={activeTransaction.currencyCode}
                 step="0.01"
                 value={drawerAmount}
                 onChange={(event) => setDrawerAmount(event.target.value)}
@@ -740,11 +646,8 @@ export default function FinanceTransactionsPage() {
                 onChange={(event) => setDrawerNotes(event.target.value)}
                 className="sm:col-span-2"
               />
-              <div className="flex items-center gap-2 sm:col-span-2">
-                <span className="text-xs text-muted-foreground">
-                  {activeTransaction.postedOn.slice(0, 10)} · {activeTransaction.currencyCode}
-                </span>
-                {activeTransaction.counterpartId && (
+              {activeTransaction.counterpartId && (
+                <div className="flex items-center gap-2 sm:col-span-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -752,8 +655,8 @@ export default function FinanceTransactionsPage() {
                   >
                     Unlink transfer
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
           {saveTransaction.error ? (
@@ -761,8 +664,8 @@ export default function FinanceTransactionsPage() {
               {saveTransaction.error.message}
             </p>
           ) : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setActiveTransaction(null)}>
+          <DialogFooter className="mt-auto">
+            <Button variant="outline" onClick={closeTransaction}>
               Cancel
             </Button>
             <Button disabled={saveTransaction.isPending} onClick={() => saveTransaction.mutate()}>
