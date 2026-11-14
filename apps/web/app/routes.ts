@@ -26,6 +26,8 @@ export default [
         route('accounts/:id', 'routes/finance/accounts.$id.tsx'),
         route('runway', 'routes/finance/runway.tsx'),
         route('affordability', 'routes/finance/affordability.tsx'),
+        route('transactions', 'routes/finance/transactions.tsx'),
+        route('rulings', 'routes/finance/rulings.tsx'),
         route('reconcile', 'routes/finance/reconcile.tsx'),
         route('transfers', 'routes/finance/transfers.tsx'),
       ]),

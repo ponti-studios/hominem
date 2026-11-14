@@ -9,6 +9,7 @@ import { dataRoutes } from './finance.data';
 import { exportRoutes } from './finance.export';
 import { institutionsRoutes } from './finance.institutions';
 import { ledgerRoutes } from './finance.ledger';
+import { rulingsRoutes } from './finance.rulings';
 import { runwayRoutes } from './finance.runway';
 import { tagsRoutes } from './finance.tags';
 import { transactionsRoutes } from './finance.transactions';
@@ -25,6 +26,7 @@ export const financeRoutes = new Hono<AppContext>()
   .route('/institutions', institutionsRoutes)
   .route('/ledger', ledgerRoutes)
   .route('/runway', runwayRoutes)
+  .route('/rulings', rulingsRoutes)
   .route('/affordability', affordabilityRoutes)
   .route('/export', exportRoutes)
   .route('/data', dataRoutes);

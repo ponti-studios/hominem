@@ -88,15 +88,18 @@ export function toFinanceTransactionPage<T>(
 
 export interface FinanceTransactionFilterKeyInput {
   accountIds: readonly string[];
+  transactionIds?: readonly string[];
   dateFrom?: string | undefined;
   dateTo?: string | undefined;
   text?: string | undefined;
   tagIds: readonly string[];
   tagNames: readonly string[];
   categoryName?: string | undefined;
+  uncategorizedOnly?: boolean | undefined;
   transactionType?: string | undefined;
   amountMin?: number | undefined;
   amountMax?: number | undefined;
+  excluded?: boolean | undefined;
 }
 
 /**
@@ -107,15 +110,18 @@ export interface FinanceTransactionFilterKeyInput {
 export function financeTransactionFilterKey(input: FinanceTransactionFilterKeyInput): string {
   const fingerprint = JSON.stringify([
     [...input.accountIds].sort(),
+    [...(input.transactionIds ?? [])].sort(),
     input.dateFrom ?? null,
     input.dateTo ?? null,
     input.text ?? null,
     [...input.tagIds].sort(),
     [...input.tagNames].sort(),
     input.categoryName ?? null,
+    input.uncategorizedOnly ?? false,
     input.transactionType ?? null,
     input.amountMin ?? null,
     input.amountMax ?? null,
+    input.excluded ?? null,
   ]);
   return createHash('sha256').update(fingerprint).digest('base64url').slice(0, 22);
 }

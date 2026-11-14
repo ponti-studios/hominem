@@ -55,6 +55,11 @@ export const DOMAINS: readonly Domain[] = [
       { label: 'Accounts', path: '/finance/accounts', keywords: ['banks', 'balances'] },
       { label: 'Runway', path: '/finance/runway', keywords: ['burn', 'forecast'] },
       { label: 'Afford it?', path: '/finance/affordability', keywords: ['can i afford', 'buy'] },
+      {
+        label: 'Transactions',
+        path: '/finance/transactions',
+        keywords: ['ledger', 'categorize', 'uncategorized'],
+      },
       { label: 'Reconcile', path: '/finance/reconcile', keywords: ['true up', 'ledger'] },
       { label: 'Transfers', path: '/finance/transfers', keywords: ['move', 'pairs'] },
     ],

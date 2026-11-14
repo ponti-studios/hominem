@@ -5,7 +5,7 @@ import { AppSidebar } from '~/components/shell/app-sidebar';
 import { AppTopbar } from '~/components/shell/app-topbar';
 import { CommandPalette } from '~/components/shell/command-palette';
 import { RouteTransition } from '~/components/shell/route-transition';
-import { ENABLED_DOMAINS } from '~/domains';
+import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog';
 import { userContext } from '~/lib/middleware';
 import { GO_SEQUENCES, domainForPath } from '~/lib/navigation';
 import { Toaster } from '~/modules/finance/lib/toast';
@@ -51,6 +51,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const crumbs = useCrumbs(location.pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -93,60 +94,42 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   }, [paletteOpen]);
 
   return (
-    <div className="flex h-[100svh] min-h-[100svh] w-full flex-col overflow-hidden bg-transparent text-foreground">
+    <div className="flex h-[100svh] min-h-[100svh] w-full flex-row overflow-hidden bg-transparent text-foreground">
       {user ? (
-        <AppTopbar
-          crumbs={crumbs}
-          onPaletteOpen={openPalette}
-          pathname={location.pathname}
-          user={user}
-        />
+        <AppSidebar onPaletteOpen={openPalette} pathname={location.pathname} user={user} />
       ) : null}
-      <div className="flex min-h-0 flex-1">
-        {user ? <AppSidebar /> : null}
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {user ? (
+          <AppTopbar
+            onNavigationOpen={() => setNavigationOpen(true)}
+            pageTitle={crumbs.at(-1)?.label ?? 'Home'}
+          />
+        ) : null}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <RouteTransition>
             <Outlet />
           </RouteTransition>
-        </main>
-      </div>
-      {user ? <MobileTabBar pathname={location.pathname} /> : null}
+        </div>
+      </main>
+      {user ? (
+        <Dialog onOpenChange={setNavigationOpen} open={navigationOpen}>
+          <DialogContent
+            className="!top-0 !left-0 !h-[100dvh] !w-72 !max-w-[85vw] !translate-x-0 !translate-y-0 !gap-0 !rounded-none !p-0 !ring-0 md:hidden"
+            showCloseButton
+          >
+            <DialogTitle className="sr-only">Navigation</DialogTitle>
+            <AppSidebar
+              mobile
+              onPaletteOpen={openPalette}
+              onNavigate={() => setNavigationOpen(false)}
+              pathname={location.pathname}
+              user={user}
+            />
+          </DialogContent>
+        </Dialog>
+      ) : null}
       <CommandPalette onClose={closePalette} open={paletteOpen} />
       <Toaster />
     </div>
-  );
-}
-
-function MobileTabBar({ pathname }: { pathname: string }) {
-  const domain = domainForPath(pathname);
-  return (
-    <nav
-      aria-label="Domains"
-      className="flex shrink-0 items-stretch justify-around border-t border-border px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
-    >
-      {ENABLED_DOMAINS.map((d) => {
-        const Icon = d.icon;
-        const active = domain?.id === d.id;
-        return (
-          <a
-            key={d.id}
-            aria-current={active ? 'page' : undefined}
-            className="flex min-w-16 flex-col items-center gap-1 rounded-xl px-3 py-1.5"
-            href={d.path}
-          >
-            <span
-              className={
-                active
-                  ? 'flex size-8 items-center justify-center rounded-sm bg-primary text-primary-foreground'
-                  : 'flex size-8 items-center justify-center rounded-sm text-muted-foreground'
-              }
-            >
-              <Icon aria-hidden className="size-[18px]" />
-            </span>
-            <span className="font-mono text-[9px] tracking-[0.12em] uppercase">{d.label}</span>
-          </a>
-        );
-      })}
-    </nav>
   );
 }

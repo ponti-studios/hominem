@@ -272,6 +272,7 @@ export async function getMonthlyStatsReport(userId: string, month?: string) {
 
 export interface TransactionSearchInput {
   accountIds?: string[] | undefined;
+  transactionIds?: string[] | undefined;
   dateFrom?: string | undefined;
   dateTo?: string | undefined;
   /** Case-insensitive, fuzzy match against description, merchant, category and account names. */
@@ -279,9 +280,11 @@ export interface TransactionSearchInput {
   tagIds?: string[] | undefined;
   tagNames?: string[] | undefined;
   categoryName?: string | undefined;
+  uncategorizedOnly?: boolean | undefined;
   transactionType?: string | undefined;
   amountMin?: number | undefined;
   amountMax?: number | undefined;
+  excluded?: boolean | undefined;
   limit: number;
   /** Legacy offset paging, kept for `finance_transaction_search`; cursor surfaces omit it. */
   offset?: number | undefined;
@@ -310,6 +313,7 @@ function transactionSearchRank(text: string) {
 
 export async function searchTransactions(userId: string, input: TransactionSearchInput) {
   const accountIds = input.accountIds ?? [];
+  const transactionIds = input.transactionIds ?? [];
   const tagIds = input.tagIds ?? [];
   const tagNames = input.tagNames ?? [];
 
@@ -323,12 +327,25 @@ export async function searchTransactions(userId: string, input: TransactionSearc
   const applyFilters = (query: ReturnType<typeof filterableBase>) => {
     let filtered = query;
     if (accountIds.length > 0) filtered = filtered.where('t.accountId', 'in', accountIds);
+    if (transactionIds.length > 0) filtered = filtered.where('t.id', 'in', transactionIds);
     if (input.dateFrom) filtered = filtered.where('t.postedOn', '>=', input.dateFrom);
     if (input.dateTo) filtered = filtered.where('t.postedOn', '<=', input.dateTo);
     if (input.categoryName)
       filtered = filtered.where(sql`lower(c.name)`, '=', input.categoryName.toLowerCase());
-    if (input.transactionType)
-      filtered = filtered.where('t.transactionType', '=', input.transactionType);
+    if (input.uncategorizedOnly)
+      filtered = filtered.where((eb) =>
+        eb.or([eb('c.name', 'is', null), eb(sql`lower(c.name)`, '=', 'uncategorized')]),
+      );
+    if (input.transactionType) {
+      const transactionType =
+        input.transactionType === 'expense'
+          ? 'debit'
+          : input.transactionType === 'income'
+            ? 'credit'
+            : input.transactionType;
+      filtered = filtered.where('t.transactionType', '=', transactionType);
+    }
+    if (input.excluded !== undefined) filtered = filtered.where('t.excluded', '=', input.excluded);
     if (input.amountMin !== undefined) {
       filtered = filtered.where(sql<boolean>`abs(t.amount) >= ${input.amountMin}`);
     }
@@ -402,15 +419,18 @@ export async function searchTransactions(userId: string, input: TransactionSearc
 
   const filter = financeTransactionFilterKey({
     accountIds,
+    transactionIds,
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
     text: input.text,
     tagIds,
     tagNames,
     categoryName: input.categoryName,
+    uncategorizedOnly: input.uncategorizedOnly,
     transactionType: input.transactionType,
     amountMin: input.amountMin,
     amountMax: input.amountMax,
+    excluded: input.excluded,
   });
   const cursor = input.cursor
     ? decodeFinanceTransactionCursor(input.cursor, {

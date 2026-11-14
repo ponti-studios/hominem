@@ -11,7 +11,7 @@ const PROVIDERS = {
 // Local toggle for canned AI replies (no model, no key, no cost). The dev server runs under
 // `tsx watch`, so flipping this and saving restarts it with the new mode. Keep it `false` when
 // committing: index.ts refuses to boot scripted providers in production.
-export const USE_SCRIPTED_AI = false;
+export const USE_SCRIPTED_AI = true;
 
 export function resolveAiProvider(): AiProvider {
   return USE_SCRIPTED_AI ? 'scripted' : 'openrouter';

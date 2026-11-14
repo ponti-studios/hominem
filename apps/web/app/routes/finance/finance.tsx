@@ -147,7 +147,6 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
           loading={loading}
           error={errorMessage}
           transactions={transactions}
-          accountsMap={accountsMap}
           variant="divided"
         />
         {!loading && !errorMessage && transactions.length > 0 ? (

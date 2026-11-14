@@ -674,6 +674,44 @@ export interface AppFinanceRules {
   userId: string;
 }
 
+export interface AppFinanceRulingEvents {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  details: Generated<Json>;
+  eventType: string;
+  id: Generated<Int8>;
+  userId: string;
+  verdictId: string;
+}
+
+export interface AppFinanceRulingPreparations {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  snapshot: Json;
+  userId: string;
+}
+
+export interface AppFinanceRulingRulebooks {
+  contents: Json;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  fingerprint: string;
+  id: Generated<string>;
+  source: string;
+  userId: string;
+}
+
+export interface AppFinanceRulingVerdicts {
+  category: string | null;
+  clusterId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  merchant: string;
+  preparationId: string;
+  rows: Json;
+  tags: Generated<Json>;
+  userId: string;
+  verdict: string;
+}
+
 export interface AppFinanceRunwayPreferences {
   currencyCode: string;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1824,6 +1862,10 @@ export interface DB {
   'app.financeInstitutions': AppFinanceInstitutions;
   'app.financeMonthlyBudgets': AppFinanceMonthlyBudgets;
   'app.financeRules': AppFinanceRules;
+  'app.financeRulingEvents': AppFinanceRulingEvents;
+  'app.financeRulingPreparations': AppFinanceRulingPreparations;
+  'app.financeRulingRulebooks': AppFinanceRulingRulebooks;
+  'app.financeRulingVerdicts': AppFinanceRulingVerdicts;
   'app.financeRunwayPreferences': AppFinanceRunwayPreferences;
   'app.financeTransactions': AppFinanceTransactions;
   'app.healthActivities': AppHealthActivities;

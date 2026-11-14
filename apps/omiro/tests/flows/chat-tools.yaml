@@ -29,11 +29,18 @@ tags:
     id: 'new-chat-submit'
 - extendedWaitUntil:
     visible:
-      id: 'chat-composer-input'
+      id: 'tool-confirm-approve'
     timeout: 30000
 
-# TOOL-01: successful tool call.
-- assertVisible: 'list_collections'
+# Collection reads are planned before the requested write; the write pauses for
+# approval before the assistant can finish the turn.
+- assertVisible: 'List collections'
+- takeScreenshot: omiro-tool01-read-before-write
+- tapOn:
+    id: 'tool-confirm-approve'
+- extendedWaitUntil:
+    visible: 'SCRIPT:TOOL_READY'
+    timeout: 30000
 - takeScreenshot: omiro-tool01-tool-success
 
 # TOOL-02 uses a fresh chat so its approval result cannot match an earlier
@@ -51,7 +58,7 @@ tags:
     id: 'new-chat-submit'
 - extendedWaitUntil:
     visible:
-      id: 'chat-composer-input'
+      id: 'tool-confirm-approve'
     timeout: 30000
 
 # TOOL-02: confirmation-required tool, then approve.
@@ -81,7 +88,7 @@ tags:
     id: 'new-chat-submit'
 - extendedWaitUntil:
     visible:
-      id: 'chat-composer-input'
+      id: 'tool-confirm-reject'
     timeout: 30000
 
 # TOOL-03: confirmation-required tool, then reject.

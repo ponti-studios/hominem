@@ -40,6 +40,17 @@ const pageSchema = z.object({
       postedOn: z.string(),
       merchantName: z.string().nullable(),
       currencyCode: z.string(),
+      accountName: z.string(),
+      transactionType: z.string(),
+      categoryId: z.string().uuid().nullable(),
+      categoryName: z.string().nullable(),
+      tags: z.array(z.string()),
+      notes: z.string().nullable(),
+      counterpartId: z.string().uuid().nullable(),
+      recurring: z.boolean(),
+      pending: z.boolean(),
+      excluded: z.boolean(),
+      source: z.string().nullable(),
     }),
   ),
   filteredCount: z.number().int(),
@@ -378,12 +389,23 @@ describe('finance transaction list paging', () => {
     const page = await readPage(mainApp, { limit: '1' });
     expect(Object.keys(page.data[0] ?? {}).sort()).toEqual([
       'accountId',
+      'accountName',
       'amount',
+      'categoryId',
+      'categoryName',
+      'counterpartId',
       'currencyCode',
       'description',
+      'excluded',
       'id',
       'merchantName',
+      'notes',
+      'pending',
       'postedOn',
+      'recurring',
+      'source',
+      'tags',
+      'transactionType',
       'userId',
     ]);
     expect(page.data[0]).toMatchObject({ userId: mainUserId, accountId: mainAccountId });
@@ -481,6 +503,41 @@ describe('finance transaction list paging', () => {
       filterTransactionId(1),
       filterTransactionId(2),
     ]);
+  });
+
+  it('filters an explicit set of transaction ids and fingerprints it into the cursor', async () => {
+    const page = await readPage(mainApp, { transactionIds: [bulkId(1), bulkId(3)], limit: '1' });
+    expect(page.data.map((row) => row.id)).toEqual([bulkId(3)]);
+    expect(page.filteredCount).toBe(2);
+    expect(page.nextCursor).not.toBeNull();
+    const next = await readPage(mainApp, {
+      transactionIds: [bulkId(1), bulkId(3)],
+      limit: '1',
+      cursor: page.nextCursor ?? '',
+    });
+    expect(next.data.map((row) => row.id)).toEqual([bulkId(1)]);
+    expect(next.nextCursor).toBeNull();
+    expect(
+      (
+        await mainApp.request(
+          listUrl({ transactionIds: [bulkId(1)], cursor: page.nextCursor ?? '' }),
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it('rejects bulk changes to another owner’s transaction', async () => {
+    const response = await mainApp.request('/api/finance/transactions/batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: [otherRows[0]!.id], action: { action: 'exclude' } }),
+    });
+    expect(response.status).toBe(400);
+    const stored = await pool.query<{ excluded: boolean }>(
+      `SELECT excluded FROM app.finance_transactions WHERE id = $1`,
+      [otherRows[0]!.id],
+    );
+    expect(stored.rows[0]?.excluded).toBe(false);
   });
 
   it('keeps a stable order when text ranking ties', async () => {

@@ -1,7 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { RefreshCcw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { redirect, useParams } from 'react-router';
 
 import { AccountHeader } from '~/modules/finance/components/accounts/account-header';
@@ -43,12 +43,6 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
     error: accountError,
     refetch: refetchAccount,
   } = useAccountById(accountId, initialAccount ? { initialData: initialAccount } : undefined);
-
-  // TransactionsList expects a Map of accounts, even though we only have this one
-  const accountsMap = useMemo(() => {
-    if (!account) return new Map();
-    return new Map([[account.id, account]]);
-  }, [account]);
 
   const {
     transactions,
@@ -131,7 +125,6 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
           transactions={
             transactions.length > 0 ? transactions : (initialTransactionsResult.data ?? [])
           }
-          accountsMap={accountsMap}
         />
       </div>
     </div>

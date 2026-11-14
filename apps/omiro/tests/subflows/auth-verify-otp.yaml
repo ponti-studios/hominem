@@ -51,10 +51,7 @@ appId: com.pontistudios.hakumi.dev
         id: inbox-composer-input
     commands:
       - tapOn:
-          id: BackButton
-          optional: true
-      - tapOn:
-          text: BackButton
+          id: chat-back-button
           optional: true
       - tapOn:
           text: Inbox

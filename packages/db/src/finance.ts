@@ -32,4 +32,5 @@ export type {
   FinanceBillWriteInput,
 } from './services/finance/bill.repository';
 export { FinanceQueryRepository } from './services/finance/finance-query.repository';
+export { FinanceRulingRepository } from './services/finance/ruling.repository';
 export type { FinanceMonthlyTransactionRecord } from './services/finance/finance-query.repository';

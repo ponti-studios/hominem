@@ -1,7 +1,11 @@
-import { ChevronDown } from 'lucide-react';
-import { useId } from 'react';
+import { Select as BaseSelect } from '@base-ui/react/select';
+import { Check, ChevronDown } from 'lucide-react';
+import { useCallback, useId, useState } from 'react';
 
 import { cn } from '~/lib/utils';
+
+export const formLabelClassName =
+  'z-10 w-fit rounded-t-md border border-border border-b-0 bg-muted px-3 pt-1 pb-0 text-xs font-normal text-foreground';
 
 type FieldProps = {
   label: string;
@@ -9,6 +13,7 @@ type FieldProps = {
   error?: string | null;
   /** Visually hide the label while keeping it programmatically associated. */
   labelHidden?: boolean;
+  labelClassName?: string;
   children: (id: string) => React.ReactNode;
   className?: string;
 };
@@ -18,7 +23,15 @@ type FieldProps = {
  * modules must go through this instead of bare `<label>` grids, so
  * labeling, spacing, and error display stay uniform.
  */
-export function Field({ label, hint, error, labelHidden, children, className }: FieldProps) {
+export function Field({
+  label,
+  hint,
+  error,
+  labelHidden,
+  labelClassName,
+  children,
+  className,
+}: FieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
@@ -26,7 +39,9 @@ export function Field({ label, hint, error, labelHidden, children, className }: 
     <div className={cn('grid gap-1.5', className)}>
       <label
         htmlFor={id}
-        className={labelHidden ? 'sr-only' : 'text-sm font-medium text-foreground'}
+        className={
+          labelHidden ? 'sr-only' : (labelClassName ?? 'text-sm font-medium text-foreground')
+        }
       >
         {label}
       </label>
@@ -57,10 +72,11 @@ type SelectFieldProps = {
   hint?: string;
   error?: string | null;
   className?: string;
+  controlClassName?: string;
   labelHidden?: boolean;
 };
 
-/** Dark-styled native select. Replaces every raw `<select>` in the app. */
+/** Labeled Base UI select with shared styling and accessible popup behavior. */
 export function SelectField({
   label,
   name,
@@ -73,36 +89,69 @@ export function SelectField({
   hint,
   error,
   className,
+  controlClassName,
   labelHidden,
 }: SelectFieldProps) {
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const setTriggerRef = useCallback((node: HTMLButtonElement | null) => {
+    setPortalContainer(node?.closest<HTMLElement>('[role="dialog"]') ?? null);
+  }, []);
+
   return (
-    <Field label={label} hint={hint} error={error} labelHidden={labelHidden} className={className}>
+    <Field
+      label={label}
+      hint={hint}
+      error={error}
+      labelHidden={labelHidden}
+      labelClassName={formLabelClassName}
+      className={cn('flex flex-col gap-0', className)}
+    >
       {(id) => (
-        <span className="relative block">
-          <select
+        <BaseSelect.Root
+          modal={false}
+          name={name}
+          required={required}
+          items={options}
+          value={value === undefined ? undefined : value || null}
+          defaultValue={value === undefined ? defaultValue || null : undefined}
+          onValueChange={(nextValue) => onChange?.(nextValue ?? '')}
+        >
+          <BaseSelect.Trigger
+            ref={setTriggerRef}
             id={id}
-            name={name}
-            required={required}
-            value={value}
-            defaultValue={value === undefined ? defaultValue : undefined}
-            onChange={onChange ? (e) => onChange(e.target.value) : undefined}
             aria-label={label}
-            className="h-10 w-full appearance-none rounded-sm border border-border bg-muted pr-10 pl-3 text-sm text-foreground outline-none transition-colors focus:border-ring [&>option]:bg-popover"
+            aria-invalid={error ? true : undefined}
+            className={cn(
+              'field-value flex h-10 w-full items-center justify-between gap-3 rounded-lg rounded-tl-none border border-border bg-background px-3 text-left text-sm text-foreground outline-none transition-colors focus-visible:border-sky-400 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-400 data-placeholder:text-muted-foreground',
+              controlClassName,
+            )}
           >
-            <option value="" disabled>
-              {placeholder}
-            </option>
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-        </span>
+            <BaseSelect.Value placeholder={placeholder} />
+            <BaseSelect.Icon>
+              <ChevronDown aria-hidden className="size-4 text-muted-foreground" />
+            </BaseSelect.Icon>
+          </BaseSelect.Trigger>
+          <BaseSelect.Portal container={portalContainer ?? undefined}>
+            <BaseSelect.Positioner sideOffset={4} className="z-50 outline-none">
+              <BaseSelect.Popup className="max-h-72 min-w-48 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none">
+                <BaseSelect.List className="max-h-70 overflow-y-auto">
+                  {options.map((option) => (
+                    <BaseSelect.Item
+                      key={option.value}
+                      value={option.value}
+                      className="relative flex min-h-10 w-full cursor-default items-center rounded-md py-2 pr-9 pl-3 text-sm outline-none data-highlighted:bg-muted data-disabled:pointer-events-none data-disabled:opacity-50"
+                    >
+                      <BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
+                      <BaseSelect.ItemIndicator className="absolute right-3 inline-flex items-center justify-center">
+                        <Check aria-hidden className="size-4" />
+                      </BaseSelect.ItemIndicator>
+                    </BaseSelect.Item>
+                  ))}
+                </BaseSelect.List>
+              </BaseSelect.Popup>
+            </BaseSelect.Positioner>
+          </BaseSelect.Portal>
+        </BaseSelect.Root>
       )}
     </Field>
   );

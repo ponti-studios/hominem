@@ -1,93 +1,24 @@
 import { EmptyState } from '@ponti-studios/ui/feedback';
 import { Skeleton } from '@ponti-studios/ui/feedback';
-import { Badge } from '@ponti-studios/ui/primitives';
-import { CreditCard, Receipt } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 
 import { List } from '~/components/design';
-import { cn } from '~/lib/utils';
-import type {
-  useFinanceAccounts,
-  useFinanceTransactions,
-} from '~/modules/finance/hooks/use-finance-data';
+import { FinanceTransaction } from '~/modules/finance/components/transactions/finance-transaction';
+import type { useFinanceTransactions } from '~/modules/finance/hooks/use-finance-data';
 
 type TransactionFromAPI = ReturnType<typeof useFinanceTransactions>['transactions'][number];
-type AccountsMap = ReturnType<typeof useFinanceAccounts>['accountsMap'];
-type AccountFromMap = NonNullable<AccountsMap> extends Map<string, infer T> ? T : never;
 
 type TransactionsListProps = {
   loading: boolean;
   error: string | null;
   transactions: TransactionFromAPI[];
-  accountsMap: AccountsMap;
   variant?: 'card' | 'divided';
 };
-
-function formatPostedOn(value: string | Date | null | undefined) {
-  if (!value) return null;
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function TransactionAmount({ transaction }: { transaction: TransactionFromAPI }) {
-  const amount = Number(transaction.amount);
-  const isExpense = amount < 0;
-  const displayAmount = Math.abs(amount).toFixed(2);
-
-  return (
-    <div
-      className={cn(
-        'tabular-nums font-semibold',
-        isExpense ? 'text-destructive' : 'text-foreground',
-      )}
-    >
-      {isExpense ? '−' : '+'}${displayAmount}
-    </div>
-  );
-}
-
-function TransactionListItem({
-  transaction,
-  account,
-}: {
-  transaction: TransactionFromAPI;
-  account?: AccountFromMap | undefined;
-}) {
-  const postedOn = formatPostedOn(transaction.postedOn);
-  const isExpense = Number(transaction.amount) < 0;
-
-  return (
-    <div
-      role="listitem"
-      className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5"
-    >
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="heading-4 truncate text-foreground">
-            {transaction.description || 'Transaction'}
-          </h3>
-          <Badge variant="secondary">{isExpense ? 'Expense' : 'Income'}</Badge>
-        </div>
-        <div className="body-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-          {postedOn ? <span>{postedOn}</span> : null}
-          {account ? (
-            <span className="inline-flex items-center gap-1">
-              <CreditCard className="size-3" aria-hidden />
-              {account.name}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      <TransactionAmount transaction={transaction} />
-    </div>
-  );
-}
 
 export function TransactionsList({
   loading,
   error,
   transactions,
-  accountsMap,
   variant = 'card',
 }: TransactionsListProps) {
   if (loading) {
@@ -97,12 +28,9 @@ export function TransactionsList({
           <div
             key={`tx-skeleton-${i}`}
             role="listitem"
-            className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5"
+            className="flex h-12 items-center justify-between gap-4 border-b border-border px-4 last:border-b-0 sm:px-5"
           >
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
+            <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-16" />
           </div>
         ))}
@@ -135,11 +63,7 @@ export function TransactionsList({
   return (
     <List.Items as="div" ariaLabel="Transactions" variant={variant}>
       {transactions.map((transaction) => (
-        <TransactionListItem
-          key={transaction.id}
-          transaction={transaction}
-          account={accountsMap.get(transaction.accountId)}
-        />
+        <FinanceTransaction key={transaction.id} transaction={transaction} />
       ))}
     </List.Items>
   );

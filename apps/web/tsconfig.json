@@ -26,6 +26,7 @@
     "paths": {
       "~/*": ["./app/*"],
       "@hominem/api/types": ["../../services/api/build/rpc/app.d.ts"],
+      "@hominem/api/finance": ["../../services/api/build/rpc/routes/finance.d.ts"],
       "@hominem/db": ["../../packages/db/build/index.d.ts"],
       "@hominem/career-services": ["../../packages/career/build/index.d.ts"],
       "@hominem/ai": ["../../packages/ai/build/index.d.ts"],

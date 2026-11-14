@@ -25,8 +25,7 @@ appId: com.pontistudios.hakumi.dev
 - openLink: 'hakumi-dev:///chats/00000000-0000-0000-0000-000000000000'
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
-    id: 'chat-entry-error'
+- assertVisible: 'Conversation gone'
 - takeScreenshot: omiro-ui02-error-recovery
 - openLink: 'hakumi-dev://'
 - waitForAnimationToEnd:

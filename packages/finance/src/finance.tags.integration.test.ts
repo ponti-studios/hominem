@@ -116,4 +116,13 @@ describeIntegration('finance tags integration', () => {
       'One or more tags are invalid for this user',
     );
   });
+
+  it('serializes concurrent replacement so tag sets cannot interleave', async () => {
+    await Promise.all([
+      replaceTransactionTags(txOneId, ownerId, [ownerFoodTagId]),
+      replaceTransactionTags(txOneId, ownerId, [ownerTravelTagId]),
+    ]);
+    const tags = await getTransactionTagIds(txOneId, ownerId);
+    expect([[ownerFoodTagId], [ownerTravelTagId]]).toContainEqual(tags);
+  });
 });

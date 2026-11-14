@@ -159,83 +159,71 @@ export function calculateRunway(input: z.infer<typeof runwayCalculationSchema>):
 }
 
 export const affordabilityCheckInputSchema = z.object({
+  currencyCode: z.string().regex(/^[A-Z]{3}$/),
   purchaseAmount: z.number().finite().positive(),
   currentBalance: z.number().finite(),
   monthlyIncome: z.number().finite().nonnegative(),
   monthlyExpenses: z.number().finite().nonnegative(),
-  emergencyFundTarget: z.number().finite().nonnegative().optional(),
+  reserveTarget: z.number().finite().nonnegative().nullable(),
 });
 
-export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable';
+function roundAffordabilityAmount(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
 
 export function calculateAffordability(input: z.infer<typeof affordabilityCheckInputSchema>): {
-  verdict: AffordabilityVerdict;
+  currencyCode: string;
+  purchaseAmount: number;
+  currentBalance: number;
   balanceAfterPurchase: number;
+  reserveTarget: number | null;
+  reserveShortfall: number | null;
   monthlySurplus: number;
-  monthsOfRunwayAfterPurchase: number | null;
-  percentOfMonthlyIncome: number | null;
-  emergencyFundTarget: number;
-  emergencyFundShortfall: number;
-  reasons: string[];
+  monthsUntilDepletion: number | null;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  explanation: string;
 } {
-  const { purchaseAmount, currentBalance, monthlyIncome, monthlyExpenses } = input;
-  const emergencyFundTarget = input.emergencyFundTarget ?? monthlyExpenses * 3;
+  const {
+    purchaseAmount,
+    currentBalance,
+    monthlyIncome,
+    monthlyExpenses,
+    reserveTarget,
+    currencyCode,
+  } = input;
 
-  const balanceAfterPurchase = currentBalance - purchaseAmount;
-  const monthlySurplus = monthlyIncome - monthlyExpenses;
-  const monthsOfRunwayAfterPurchase =
-    balanceAfterPurchase <= 0
+  const balanceAfterPurchase = roundAffordabilityAmount(currentBalance - purchaseAmount);
+  const monthlySurplus = roundAffordabilityAmount(monthlyIncome - monthlyExpenses);
+  const monthsUntilDepletion =
+    balanceAfterPurchase < 0 || (balanceAfterPurchase === 0 && monthlySurplus < 0)
       ? 0
-      : monthlySurplus >= 0 || !Number.isFinite(monthlySurplus)
+      : monthlySurplus >= 0
         ? null
-        : balanceAfterPurchase / -monthlySurplus;
-  const percentOfMonthlyIncome = monthlyIncome > 0 ? (purchaseAmount / monthlyIncome) * 100 : null;
-  const emergencyFundShortfall = Math.max(0, emergencyFundTarget - balanceAfterPurchase);
-
-  const reasons: string[] = [];
-
-  if (balanceAfterPurchase < 0) {
-    reasons.push('This purchase would put your balance below zero.');
-  }
-  if (emergencyFundShortfall > 0) {
-    reasons.push(
-      `It would leave you ${emergencyFundShortfall.toFixed(2)} short of your emergency fund target.`,
-    );
-  }
-  if (monthsOfRunwayAfterPurchase !== null && monthsOfRunwayAfterPurchase < 6) {
-    reasons.push('Your spending already outpaces income, and this shortens your runway further.');
-  }
-  if (percentOfMonthlyIncome !== null && percentOfMonthlyIncome > 50) {
-    reasons.push(
-      `This purchase is ${percentOfMonthlyIncome.toFixed(0)}% of a month's income — a large single hit.`,
-    );
-  }
-
-  let verdict: AffordabilityVerdict;
-  if (balanceAfterPurchase < 0 || emergencyFundShortfall > 0) {
-    verdict = 'not-affordable';
-  } else if (
-    (percentOfMonthlyIncome !== null && percentOfMonthlyIncome > 50) ||
-    (monthsOfRunwayAfterPurchase !== null && monthsOfRunwayAfterPurchase < 6)
-  ) {
-    verdict = 'caution';
-  } else {
-    verdict = 'affordable';
-  }
-
-  if (verdict === 'affordable') {
-    reasons.push('This fits comfortably within your balance and emergency fund target.');
-  }
+        : roundAffordabilityAmount(balanceAfterPurchase / -monthlySurplus);
+  const reserveShortfall =
+    reserveTarget === null
+      ? null
+      : roundAffordabilityAmount(Math.max(0, reserveTarget - balanceAfterPurchase));
+  const explanation =
+    reserveTarget === null
+      ? 'Reserve comparison is turned off.'
+      : reserveShortfall !== null && reserveShortfall > 0
+        ? `Remaining cash is below the ${currencyCode} reserve target.`
+        : `Remaining cash meets the ${currencyCode} reserve target.`;
 
   return {
-    verdict,
+    currencyCode,
+    purchaseAmount,
+    currentBalance,
     balanceAfterPurchase,
+    reserveTarget,
+    reserveShortfall,
     monthlySurplus,
-    monthsOfRunwayAfterPurchase,
-    percentOfMonthlyIncome,
-    emergencyFundTarget,
-    emergencyFundShortfall,
-    reasons,
+    monthsUntilDepletion,
+    monthlyIncome,
+    monthlyExpenses,
+    explanation,
   };
 }
 
