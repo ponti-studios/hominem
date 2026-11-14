@@ -375,11 +375,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             <AnimatePresence initial={false}>
               {filtersOpen && transactionsPath ? (
                 <motion.section
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, y: 0 }}
                   aria-label="Transaction filters"
                   className="max-h-[55vh] overflow-y-auto border-t border-border px-4 py-4"
-                  exit={{ opacity: 0, height: 0 }}
-                  initial={{ opacity: 0, height: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  initial={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.18 }}
                 >
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
