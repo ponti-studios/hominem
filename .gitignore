@@ -106,3 +106,6 @@ services/ori/eval-costs/
 
 # local proactivity studio journal
 services/proactivity/.data/
+
+# weekly platform analysis reports (scripts/analysis)
+scripts/analysis/reports/
