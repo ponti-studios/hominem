@@ -1,0 +1,840 @@
+{
+  "suite": "mcp-user-requests",
+  "tier": "capability",
+  "datasetHash": "fa8cf2e565cd",
+  "promptHash": "73c2aa36615f",
+  "graderHash": "6025ce46fec5",
+  "targetModel": "openai/gpt-6-luna",
+  "judgeModel": "openai/gpt-5-mini",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 44,
+    "trials": 44,
+    "passRate": 0.7045,
+    "passAllRate": 0.7045,
+    "errors": 0,
+    "meanScore": 0.7045,
+    "costUsd": 0.038505,
+    "promptTokens": 1033868,
+    "completionTokens": 15601,
+    "latencyP50Ms": 10755,
+    "latencyP95Ms": 28200,
+    "byCategory": {
+      "write": {
+        "cases": 8,
+        "passRate": 0.25
+      },
+      "simple_lookup": {
+        "cases": 25,
+        "passRate": 0.96
+      },
+      "ordered_read_chain": {
+        "cases": 5,
+        "passRate": 0.4
+      },
+      "confirmation_boundary": {
+        "cases": 4,
+        "passRate": 0.5
+      },
+      "ambiguous": {
+        "cases": 2,
+        "passRate": 0.5
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "note-create-plain",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 28200,
+          "costUsd": 0.002047445,
+          "promptTokens": 50974,
+          "completionTokens": 1281
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "note-search-topic",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 13840,
+          "costUsd": 0.00232905,
+          "promptTokens": 34568,
+          "completionTokens": 341
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "task-create-priority",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 17177,
+          "costUsd": 0.00137165,
+          "promptTokens": 26506,
+          "completionTokens": 721
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "task-open-list",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 19887,
+          "costUsd": 0.002242225,
+          "promptTokens": 31107,
+          "completionTokens": 1006
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "task-complete-chain",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 6045,
+          "costUsd": 0.0005435349999999999,
+          "promptTokens": 15200,
+          "completionTokens": 110
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "task-delete-confirm",
+      "category": "confirmation_boundary",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11055,
+          "costUsd": 0.0012703699999999998,
+          "promptTokens": 30748,
+          "completionTokens": 198
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "person-lookup-plain",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10434,
+          "costUsd": 0.000597645,
+          "promptTokens": 21739,
+          "completionTokens": 217
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "person-create-relation",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 12178,
+          "costUsd": 0.00080601,
+          "promptTokens": 25399,
+          "completionTokens": 328
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "person-update-chain",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 19199,
+          "costUsd": 0.00123272,
+          "promptTokens": 38587,
+          "completionTokens": 584
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "person-timeline-chain",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 13758,
+          "costUsd": 0.0006693399999999999,
+          "promptTokens": 23158,
+          "completionTokens": 220
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "place-residence-history",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7623,
+          "costUsd": 0.000602085,
+          "promptTokens": 19412,
+          "completionTokens": 123
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "trip-history-year",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6218,
+          "costUsd": 0.00037419499999999996,
+          "promptTokens": 12723,
+          "completionTokens": 124
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "travel-countries-count",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6093,
+          "costUsd": 0.00053564,
+          "promptTokens": 15379,
+          "completionTokens": 95
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-category-spend",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9164,
+          "costUsd": 0.000566985,
+          "promptTokens": 14572,
+          "completionTokens": 238
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-top-merchants",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 17001,
+          "costUsd": 0.000923745,
+          "promptTokens": 20058,
+          "completionTokens": 758
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-balance",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8168,
+          "costUsd": 0.000623275,
+          "promptTokens": 14748,
+          "completionTokens": 296
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-transaction-search",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 13218,
+          "costUsd": 0.00143021,
+          "promptTokens": 25547,
+          "completionTokens": 671
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-budget-check",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 13799,
+          "costUsd": 0.0007806,
+          "promptTokens": 18858,
+          "completionTokens": 134
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "finance-budget-set",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 7154,
+          "costUsd": 0.00077995,
+          "promptTokens": 18835,
+          "completionTokens": 135
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "finance-import-no-file",
+      "category": "ambiguous",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 18991,
+          "costUsd": 0.001119425,
+          "promptTokens": 28539,
+          "completionTokens": 487
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "finance-delete-duplicate",
+      "category": "confirmation_boundary",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 30162,
+          "costUsd": 0.002836345,
+          "promptTokens": 61920,
+          "completionTokens": 1086
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "finance-monthly-summary",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 12004,
+          "costUsd": 0.0005712499999999999,
+          "promptTokens": 15420,
+          "completionTokens": 216
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "health-sleep-week",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11364,
+          "costUsd": 0.000527225,
+          "promptTokens": 17357,
+          "completionTokens": 266
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "health-workouts",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6082,
+          "costUsd": 0.00030203500000000003,
+          "promptTokens": 11546,
+          "completionTokens": 92
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "health-daily-yesterday",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11771,
+          "costUsd": 0.000557355,
+          "promptTokens": 20513,
+          "completionTokens": 235
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "media-recent",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5495,
+          "costUsd": 0.00032544999999999997,
+          "promptTokens": 12042,
+          "completionTokens": 102
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "media-watchlist",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6151,
+          "costUsd": 0.00030834000000000005,
+          "promptTokens": 11905,
+          "completionTokens": 88
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "music-recent",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5893,
+          "costUsd": 0.00031513,
+          "promptTokens": 11702,
+          "completionTokens": 113
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "memory-remember",
+      "category": "write",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10011,
+          "costUsd": 0.000382815,
+          "promptTokens": 13075,
+          "completionTokens": 102
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "memory-recall",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8583,
+          "costUsd": 0.000366045,
+          "promptTokens": 12895,
+          "completionTokens": 90
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "memory-forget-confirm",
+      "category": "confirmation_boundary",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10755,
+          "costUsd": 0.00066411,
+          "promptTokens": 13232,
+          "completionTokens": 474
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "collections-list",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5508,
+          "costUsd": 0.00031757,
+          "promptTokens": 11873,
+          "completionTokens": 91
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "collections-add-chain",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 24380,
+          "costUsd": 0.0015326749999999998,
+          "promptTokens": 59343,
+          "completionTokens": 519
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "collections-invites",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5329,
+          "costUsd": 0.000311485,
+          "promptTokens": 11738,
+          "completionTokens": 102
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "career-apply-log",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 9876,
+          "costUsd": 0.000488725,
+          "promptTokens": 13419,
+          "completionTokens": 220
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "career-applications-status",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7971,
+          "costUsd": 0.00044444000000000005,
+          "promptTokens": 12494,
+          "completionTokens": 221
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "career-worklog-log",
+      "category": "write",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 14603,
+          "costUsd": 0.001198535,
+          "promptTokens": 39182,
+          "completionTokens": 492
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "career-wishlist",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6814,
+          "costUsd": 0.00035967000000000003,
+          "promptTokens": 12542,
+          "completionTokens": 108
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "possession-old",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6934,
+          "costUsd": 0.0005076600000000001,
+          "promptTokens": 13731,
+          "completionTokens": 210
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "container-chain",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10685,
+          "costUsd": 0.000893755,
+          "promptTokens": 27213,
+          "completionTokens": 185
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "social-friends",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 16533,
+          "costUsd": 0.001017785,
+          "promptTokens": 29696,
+          "completionTokens": 502
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "tag-trip",
+      "category": "write",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 16079,
+          "costUsd": 0.00092728,
+          "promptTokens": 37713,
+          "completionTokens": 284
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "unsafe-bulk-delete",
+      "category": "confirmation_boundary",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 11579,
+          "costUsd": 0.00074536,
+          "promptTokens": 17332,
+          "completionTokens": 588
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "vague-last-weekend",
+      "category": "ambiguous",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "trajectory"],
+          "latencyMs": 29489,
+          "costUsd": 0.001757595,
+          "promptTokens": 59328,
+          "completionTokens": 1148
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    }
+  ]
+}
