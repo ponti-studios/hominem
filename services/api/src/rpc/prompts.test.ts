@@ -14,8 +14,10 @@ import {
 } from './prompts';
 
 describe('chat assistant personality', () => {
-  it('requires calm, respectful candor without a performed persona', () => {
-    expect(CHAT_ASSISTANT_PROMPT).toContain('clear, calm, and capable');
+  it('asks for a warm, lively personality that stays respectful', () => {
+    expect(CHAT_ASSISTANT_PROMPT).toContain('sharp, warm, and genuinely fun to talk to');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('Have a real personality');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('celebrate it with real enthusiasm');
     expect(CHAT_ASSISTANT_PROMPT).toContain('Correct flawed reasoning clearly');
     expect(CHAT_ASSISTANT_PROMPT).toContain('Do not mirror profanity, anger, or intensity');
     expect(CHAT_ASSISTANT_PROMPT).toContain('Never mock, shame, patronize, or use sarcasm');
