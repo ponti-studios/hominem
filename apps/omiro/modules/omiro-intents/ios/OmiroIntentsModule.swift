@@ -34,6 +34,44 @@ public struct StartChatIntent: AppIntent {
 }
 
 @available(iOS 18.0, *)
+public struct AskOmiroIntent: AppIntent {
+  public static let title: LocalizedStringResource = "Ask Omiro"
+  public static let description = IntentDescription("Starts a chat in Omiro with your question.")
+
+  @Parameter(title: "Question", requestValueDialog: "What do you want to ask?")
+  public var question: String
+
+  public init() {}
+
+  public func perform() async throws -> some IntentResult & OpensIntent {
+    guard let url = appURL(path: "chat", queryName: "seed", queryValue: question) else {
+      throw OmiroIntentError.invalidURL
+    }
+
+    return .result(opensIntent: OpenURLIntent(url))
+  }
+}
+
+@available(iOS 18.0, *)
+public struct AddTaskIntent: AppIntent {
+  public static let title: LocalizedStringResource = "Add a Task"
+  public static let description = IntentDescription("Opens Omiro with a new task ready to add.")
+
+  @Parameter(title: "Task", requestValueDialog: "What do you need to do?")
+  public var taskTitle: String
+
+  public init() {}
+
+  public func perform() async throws -> some IntentResult & OpensIntent {
+    guard let url = appURL(path: "task", queryName: "add", queryValue: taskTitle) else {
+      throw OmiroIntentError.invalidURL
+    }
+
+    return .result(opensIntent: OpenURLIntent(url))
+  }
+}
+
+@available(iOS 18.0, *)
 public struct OmiroShortcutsProvider: AppShortcutsProvider {
   public static var appShortcuts: [AppShortcut] {
     AppShortcut(
@@ -47,6 +85,18 @@ public struct OmiroShortcutsProvider: AppShortcutsProvider {
       phrases: ["Chat in \(.applicationName)", "Open chat in \(.applicationName)"],
       shortTitle: "Start Chat",
       systemImageName: "bubble.left.and.bubble.right"
+    )
+    AppShortcut(
+      intent: AskOmiroIntent(),
+      phrases: ["Ask \(.applicationName)", "Ask \(.applicationName) a question"],
+      shortTitle: "Ask Omiro",
+      systemImageName: "sparkles"
+    )
+    AppShortcut(
+      intent: AddTaskIntent(),
+      phrases: ["Add a task in \(.applicationName)", "New task in \(.applicationName)"],
+      shortTitle: "Add Task",
+      systemImageName: "checkmark.circle"
     )
   }
 }

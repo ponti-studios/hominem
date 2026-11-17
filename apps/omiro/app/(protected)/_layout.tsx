@@ -6,15 +6,21 @@ import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBo
 import { useNativeHeaderOptions } from '~/components/navigation/native-header';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
 import { useAppTheme, useStyles } from '~/components/theme';
+import { AuroraBackground } from '~/components/ui/aurora-background';
 import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
 import queryClient from '~/services/query-client';
+import { useSystemLinks } from '~/services/system/system-links';
 import { TaskSyncProvider } from '~/services/tasks/TaskSyncProvider';
 import t from '~/translations';
+
+// A form sheet with no background of its own sits on the system's glass.
+const glassSheetContent = { backgroundColor: 'transparent' };
 
 const springAnimationConfig = {
   damping: 18,
@@ -28,7 +34,13 @@ function ProtectedShell() {
   const headerOptions = useNativeHeaderOptions();
   const styles = useStyles((theme) => ({
     bootstrapContainer: { flex: 1 },
-    lockScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+    lockScreen: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      flex: 1,
+      gap: 16,
+      justifyContent: 'center',
+    },
     appTitle: { ...theme.textVariants.title1, color: theme.colors.foreground },
     lockMessage: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
     unlockButtonContainer: { minWidth: 160 },
@@ -71,6 +83,8 @@ function ProtectedShell() {
   if (!isUnlocked) {
     return (
       <View style={styles.lockScreen}>
+        <AuroraBackground />
+        <AppIcon name="lock.fill" size={34} />
         <Text style={styles.appTitle}>{APP_NAME}</Text>
         <Text style={styles.lockMessage}>{t.auth.unlockMessage}</Text>
         <View style={styles.unlockButtonContainer}>
@@ -79,7 +93,7 @@ function ProtectedShell() {
             onPress={() => {
               void authenticate();
             }}
-            variant="primary"
+            variant="glass"
           />
         </View>
       </View>
@@ -90,6 +104,7 @@ function ProtectedShell() {
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
         <TaskSyncProvider>
+          <SystemLinks />
           <View style={styles.container}>
             <View style={styles.stackContainer}>
               <Stack
@@ -138,6 +153,7 @@ function ProtectedShell() {
                 <Stack.Screen
                   name="enhance-sheet"
                   options={{
+                    contentStyle: glassSheetContent,
                     headerShown: false,
                     presentation: 'formSheet',
                     sheetAllowedDetents: 'fitToContents',
@@ -147,6 +163,7 @@ function ProtectedShell() {
                 <Stack.Screen
                   name="chat-to-note-sheet"
                   options={{
+                    contentStyle: glassSheetContent,
                     headerShown: false,
                     presentation: 'formSheet',
                     sheetGrabberVisible: true,
@@ -163,6 +180,13 @@ function ProtectedShell() {
   );
 }
 
-export const unstable_settings = { initialRouteName: '(tabs)' };
+// Mounted only once the shell is unlocked, so a quick action or Spotlight
+// result never opens content behind the app lock.
+function SystemLinks() {
+  useSystemLinks();
+  return null;
+}
+
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default ProtectedShell;

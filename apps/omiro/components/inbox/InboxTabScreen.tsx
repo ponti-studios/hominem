@@ -1,23 +1,28 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { ComposerReveal } from '~/components/composer/ComposerReveal';
 import { useStyles } from '~/components/theme';
 import { PlannerSheets } from '~/components/time/PlannerSheets';
 import { usePlanner } from '~/components/time/use-planner';
+import { AuroraBackground } from '~/components/ui/aurora-background';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import { clearAllDraft, readAllDraft, writeAllDraft } from '~/services/navigation/launch-state';
 import { NOTES_ROUTE } from '~/services/navigation/routes';
+import { useSpotlightIndex } from '~/services/system/spotlight';
+import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
 import { SavedPopup } from './SavedPopup';
-import { getEnteringItemIds } from './stream-rows';
+import { filterStreamItems, getEnteringItemIds } from './stream-rows';
 import { StreamEmptyState } from './StreamEmptyState';
 import { StreamLoadError } from './StreamLoadError';
+import { StreamSearchEmpty } from './StreamSearchEmpty';
 import { StreamSkeleton } from './StreamSkeleton';
 
 export type InboxTabKind = 'chat' | 'note';
@@ -42,6 +47,8 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
   const inbox = useInboxStreamItems();
   const planner = usePlanner();
   const [composerHeight, setComposerHeight] = useState(0);
+  // The composer is folded away until the button opens it.
+  const [composerOpen, setComposerOpen] = useState(false);
   const [savedPopupId, setSavedPopupId] = useState<number | null>(null);
   const styles = useStyles((theme) => ({
     container: { flex: 1, backgroundColor: theme.colors.background },
@@ -50,11 +57,21 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
     // its own box and overlaps the composer dock sibling below it.
     list: { flex: 1 },
     content: { paddingBottom: 16 },
+    // The composer floats over the list rather than sitting below it.
+    dockFloat: { bottom: 0, left: 0, position: 'absolute', right: 0 },
   }));
 
+  const [query, setQuery] = useState('');
+  const isSearching = query.trim().length > 0;
+  useSpotlightIndex(inbox.items);
+
   const items = useMemo(
-    () => inbox.items.filter((item) => item.kind === kind),
-    [inbox.items, kind],
+    () =>
+      filterStreamItems(
+        inbox.items.filter((item) => item.kind === kind),
+        query,
+      ),
+    [inbox.items, kind, query],
   );
 
   const { fetchNextPage, hasNextPage, isFetchingNextPage, isInitialLoading } = inbox;
@@ -63,11 +80,12 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
       !isInitialLoading &&
       hasNextPage &&
       !isFetchingNextPage &&
-      items.length < MIN_ROWS_BEFORE_IDLE_PAGING
+      // A search looks through everything, not just the pages loaded so far.
+      (isSearching || items.length < MIN_ROWS_BEFORE_IDLE_PAGING)
     ) {
       void fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isInitialLoading, items.length]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isInitialLoading, isSearching, items.length]);
 
   // Seeded with whatever the first settled render holds (including empty),
   // then grows with every commit -- the same gating ChatMessageList uses so
@@ -105,13 +123,28 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
 
   return (
     <View style={styles.container} testID={`${kind}-tab-screen`}>
+      {/* The system search field: it lives in the navigation bar and filters
+          this tab as you type. */}
+      <Stack.Screen
+        options={{
+          headerSearchBarOptions: {
+            hideWhenScrolling: true,
+            onCancelButtonPress: () => setQuery(''),
+            onChangeText: (event) => setQuery(event.nativeEvent.text),
+            placeholder: kind === 'chat' ? t.stream.search.chats : t.stream.search.notes,
+          },
+        }}
+      />
+      <AuroraBackground />
       <FlashList
         style={styles.list}
-        // The dock sits in flow below the list, so at rest nothing overlaps
-        // the last row. Real reserved space (not `contentInset`, which only
-        // affects overscroll) covers the dock riding up over the list while
-        // the keyboard is open.
-        contentContainerStyle={[styles.content, { paddingBottom: composerInset + 16 }]}
+        // The list runs under the floating composer. Real reserved space (not
+        // `contentInset`, which only affects overscroll) keeps the last row
+        // clear of the composer at rest and while the keyboard lifts it.
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: composerHeight + restingInset + composerInset + 16 },
+        ]}
         contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={(item) => item.id}
@@ -128,6 +161,8 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
                 void inbox.refetch();
               }}
             />
+          ) : isSearching ? (
+            <StreamSearchEmpty query={query.trim()} />
           ) : (
             <StreamEmptyState kind={kind} />
           )
@@ -160,21 +195,32 @@ export function InboxTabScreen({ kind }: InboxTabScreenProps) {
           }}
         />
       )}
-      <ComposerDock restingInset={restingInset} testID={`${kind}-composer-dock`}>
-        <View onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}>
-          <Composer
-            defaultEntryKind={kind}
-            entryMode="mixed"
-            initialMessage={readAllDraft()}
-            isPlanning={planner.isPlanning}
-            mode="inbox"
-            onNoteSaved={handleNoteSaved}
-            onPlan={planner.plan}
-            onClearDraft={clearAllDraft}
-            onDraftChange={writeAllDraft}
-          />
-        </View>
-      </ComposerDock>
+      <View pointerEvents="box-none" style={styles.dockFloat}>
+        <ComposerDock restingInset={restingInset} testID={`${kind}-composer-dock`}>
+          <View onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}>
+            <ComposerReveal
+              open={composerOpen}
+              onOpen={() => setComposerOpen(true)}
+              onClose={() => setComposerOpen(false)}
+              openLabel={kind === 'chat' ? 'New message' : 'New note'}
+              testID={`${kind}-composer`}
+            >
+              <Composer
+                defaultEntryKind={kind}
+                entryMode="mixed"
+                initialMessage={readAllDraft()}
+                isPlanning={planner.isPlanning}
+                mode="inbox"
+                onNoteSaved={handleNoteSaved}
+                onPlan={planner.plan}
+                onClearDraft={clearAllDraft}
+                onDraftChange={writeAllDraft}
+                onSent={() => setComposerOpen(false)}
+              />
+            </ComposerReveal>
+          </View>
+        </ComposerDock>
+      </View>
       <PlannerSheets planner={planner} />
     </View>
   );

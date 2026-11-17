@@ -15,6 +15,18 @@ describe('native Time intents', () => {
     );
   });
 
+  it('opens the Tasks tab with the composer ready for the New Task quick action', () => {
+    expect(redirectSystemPath({ initial: false, path: 'task/add' })).toBe(
+      '/(protected)/(tabs)/tasks?add=',
+    );
+  });
+
+  it('carries the task title Siri collected to the Tasks composer', () => {
+    expect(redirectSystemPath({ initial: false, path: 'task?add=Buy%20milk' })).toBe(
+      '/(protected)/(tabs)/tasks?add=Buy%20milk',
+    );
+  });
+
   it('rewrites a seeded chat deep link to the blank New Chat route', () => {
     expect(redirectSystemPath({ initial: true, path: 'chat?seed=Hello' })).toBe(
       '/(protected)/new-chat?seed=Hello',

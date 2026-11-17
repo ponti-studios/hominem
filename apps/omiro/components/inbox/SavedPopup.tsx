@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-native-reanimated';
+import { Text, View } from 'react-native';
+import Animated, { FadeOutDown, useReducedMotion } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
+import { glassPopIn } from '~/services/motion/native-motion';
 
 const AUTO_DISMISS_MS = 4000;
 
@@ -22,19 +25,13 @@ export function SavedPopup({ bottom, label, onDismiss, onOpen }: SavedPopupProps
   const reducedMotion = useReducedMotion();
   const { barAccentForeground, limeForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    popup: {
+    popup: { left: 12, position: 'absolute', right: 12 },
+    surface: {
       alignItems: 'center',
-      backgroundColor: theme.colors.bar,
-      borderCurve: 'continuous',
-      borderRadius: 24,
-      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 10,
       height: 48,
-      left: 12,
       paddingHorizontal: 6,
-      position: 'absolute',
-      right: 12,
     },
     badge: {
       alignItems: 'center',
@@ -63,25 +60,27 @@ export function SavedPopup({ bottom, label, onDismiss, onOpen }: SavedPopupProps
   return (
     <Animated.View
       accessibilityLiveRegion="polite"
-      entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}
+      entering={reducedMotion ? undefined : glassPopIn}
       exiting={reducedMotion ? undefined : FadeOutDown.duration(160)}
       style={[styles.popup, { bottom }]}
       testID="saved-popup"
     >
-      <View style={styles.badge}>
-        <AppIcon name="note.text" size={18} tintColor={limeForeground} />
-      </View>
-      <Text style={styles.label}>{label}</Text>
-      <Pressable
-        accessibilityLabel={`${label}. Open`}
-        accessibilityRole="button"
-        hitSlop={8}
-        onPress={onOpen}
-        style={styles.open}
-        testID="saved-popup-open"
-      >
-        <AppIcon name="arrow.right" size={16} tintColor={barAccentForeground} />
-      </Pressable>
+      <Glass style={styles.surface}>
+        <View style={styles.badge}>
+          <AppIcon name="note.text" size={18} tintColor={limeForeground} />
+        </View>
+        <Text style={styles.label}>{label}</Text>
+        <PressableScale
+          accessibilityLabel={`${label}. Open`}
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={onOpen}
+          style={styles.open}
+          testID="saved-popup-open"
+        >
+          <AppIcon name="arrow.right" size={16} tintColor={barAccentForeground} />
+        </PressableScale>
+      </Glass>
     </Animated.View>
   );
 }

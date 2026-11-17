@@ -1,21 +1,23 @@
+import {
+  DEFAULT_REPLY_LENGTH,
+  normalizeReplyLength,
+  REPLY_LENGTH_IDS,
+  type ReplyLengthId,
+} from '@hominem/ai/reply-profile';
 import { useSyncExternalStore } from 'react';
 
 import { storage, subscribeToStorageKey } from '~/services/storage/mmkv';
 
-export type ChatResponseLength = 'short' | 'medium' | 'long';
+export type ChatResponseLength = ReplyLengthId;
 
-export const CHAT_RESPONSE_LENGTHS: ChatResponseLength[] = ['short', 'medium', 'long'];
+export const CHAT_RESPONSE_LENGTHS: readonly ChatResponseLength[] = REPLY_LENGTH_IDS;
 
 const RESPONSE_LENGTH_KEY = 'chat_response_length';
-const DEFAULT_RESPONSE_LENGTH: ChatResponseLength = 'medium';
 
-function isChatResponseLength(value: string | undefined): value is ChatResponseLength {
-  return value === 'short' || value === 'medium' || value === 'long';
-}
-
+// Reads a stored value through the shared normalizer, so a value saved as short, medium, or long
+// by an older build still resolves to its current level.
 export function getChatResponseLength(): ChatResponseLength {
-  const stored = storage.getString(RESPONSE_LENGTH_KEY);
-  return isChatResponseLength(stored) ? stored : DEFAULT_RESPONSE_LENGTH;
+  return normalizeReplyLength(storage.getString(RESPONSE_LENGTH_KEY)) ?? DEFAULT_REPLY_LENGTH;
 }
 
 export function setChatResponseLength(value: ChatResponseLength) {

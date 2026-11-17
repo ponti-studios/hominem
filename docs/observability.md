@@ -62,20 +62,16 @@ The expected lifecycle is:
 ```text
 chat.speech
   ├─ provider response / first audio byte
-  ├─ browser speech.playback
   └─ speech.reconciliation.lookup
        └─ usage event with tokens and cost
 ```
 
 Useful bounded attributes include `speech.feature`, `speech.character_count`,
 `speech.provider_wait_ms`, `speech.time_to_first_audio_byte_ms`,
-`speech.request_to_first_playable_ms`, `speech.stream_duration_ms`,
-`speech.session_duration_ms`, `speech.audio_bytes`, `speech.outcome`,
+`speech.stream_duration_ms`, `speech.session_duration_ms`,
+`speech.audio_bytes`, `speech.outcome`,
 `speech.usage_available`, `speech.total_tokens`, reconciliation attempt, and
 reconciliation outcome.
-
-The browser sends one terminal playback event through the authenticated API
-proxy. The API converts it into a `speech.playback` span.
 
 ### Chat generation lifecycle
 
@@ -217,6 +213,6 @@ skill (`.agents/skills/hominem-observability/`).
 ## Local and post-deploy verification
 
 Run the `hominem-observability` skill's local verification loop
-(foundation stack + Jaeger) and post-deploy check (confirm one
-`speech.playback` span, one `chat.speech` trace, and a `succeeded`
-reconciliation run) — see `.agents/skills/hominem-observability/`.
+(foundation stack + Jaeger) and post-deploy check (confirm one `chat.speech`
+trace and a `succeeded` reconciliation run) — see
+`.agents/skills/hominem-observability/`.

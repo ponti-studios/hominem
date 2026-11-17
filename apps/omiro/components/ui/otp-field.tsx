@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAppTheme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useShakeAnimation } from '~/services/motion/use-shake-animation';
 
 interface OtpInputProps {
@@ -26,8 +27,14 @@ interface OtpInputProps {
 
 function Caret({ color }: { color: string }) {
   const opacity = useSharedValue(1);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    // Reduced Motion: a steady caret instead of a blink.
+    if (reducedMotion) {
+      opacity.set(1);
+      return;
+    }
     opacity.set(
       withRepeat(
         withSequence(
@@ -37,7 +44,7 @@ function Caret({ color }: { color: string }) {
         -1,
       ),
     );
-  }, [opacity]);
+  }, [opacity, reducedMotion]);
 
   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
@@ -65,9 +72,11 @@ function OtpCell({
 }) {
   const scale = useSharedValue(1);
   const prevFilled = useRef(false);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (isFilled && !prevFilled.current) {
+    // Reduced Motion: the digit appears without the bump.
+    if (isFilled && !prevFilled.current && !reducedMotion) {
       scale.set(
         withSequence(
           withTiming(1.12, { duration: 90, easing: Easing.out(Easing.quad) }),
@@ -76,7 +85,7 @@ function OtpCell({
       );
     }
     prevFilled.current = isFilled;
-  }, [isFilled, scale]);
+  }, [isFilled, reducedMotion, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

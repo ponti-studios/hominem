@@ -12,35 +12,44 @@ const { storage } = await import('~/services/storage/mmkv');
 
 describe('useChatResponseLength', () => {
   afterEach(() => {
-    setChatResponseLength('medium');
+    setChatResponseLength('standard');
   });
 
-  it('defaults to medium when nothing is stored', () => {
-    expect(getChatResponseLength()).toBe('medium');
+  it('defaults to standard when nothing is stored', () => {
+    expect(getChatResponseLength()).toBe('standard');
     const { result } = renderHook(() => useChatResponseLength());
-    expect(result.current).toBe('medium');
+    expect(result.current).toBe('standard');
   });
 
   it('reflects a stored value', () => {
-    setChatResponseLength('long');
+    setChatResponseLength('deep');
     const { result } = renderHook(() => useChatResponseLength());
-    expect(result.current).toBe('long');
+    expect(result.current).toBe('deep');
+  });
+
+  it('maps a value saved by an older build onto the current level', () => {
+    storage.set('chat_response_length', 'short');
+    expect(getChatResponseLength()).toBe('brief');
+    storage.set('chat_response_length', 'medium');
+    expect(getChatResponseLength()).toBe('standard');
+    storage.set('chat_response_length', 'long');
+    expect(getChatResponseLength()).toBe('deep');
   });
 
   it('ignores an invalid stored value and falls back to the default', () => {
     storage.set('chat_response_length', 'extra-long');
-    expect(getChatResponseLength()).toBe('medium');
+    expect(getChatResponseLength()).toBe('standard');
   });
 
   it('reflects an external value change once the component re-renders', () => {
     const { result, rerender } = renderHook(() => useChatResponseLength());
-    expect(result.current).toBe('medium');
+    expect(result.current).toBe('standard');
 
     act(() => {
-      setChatResponseLength('short');
+      setChatResponseLength('brief');
     });
     rerender();
 
-    expect(result.current).toBe('short');
+    expect(result.current).toBe('brief');
   });
 });

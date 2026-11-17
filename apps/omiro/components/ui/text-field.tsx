@@ -9,6 +9,7 @@ import {
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
@@ -22,6 +23,7 @@ export const TextField = forwardRef<TextInputInstance, TextFieldProps>(function 
   ref,
 ) {
   const [focused, setFocused] = useState(false);
+  const reducedMotion = useReducedMotion();
   const { colors } = useAppTheme();
   const styles = useStyles((theme) => ({
     input: {
@@ -42,7 +44,9 @@ export const TextField = forwardRef<TextInputInstance, TextFieldProps>(function 
 
     return {
       borderColor: hasError ? colors.destructive : focused ? colors.ring : colors.border,
-      borderWidth: withTiming(focused || hasError ? 1.5 : 1, { duration: 150 }),
+      borderWidth: withTiming(focused || hasError ? 1.5 : 1, {
+        duration: reducedMotion ? 0 : 150,
+      }),
     };
   });
 

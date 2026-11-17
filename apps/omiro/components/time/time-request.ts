@@ -16,6 +16,19 @@ const UPCOMING_EVENT_DAYS = 90;
 const DEFAULT_EVENT_MINUTES = 60;
 const DEFAULT_GAP_MINUTES = 30;
 
+// Keeps raw API payloads and extraction-failure codes out of the toast. Anything
+// that reads like JSON or a server failure gets the friendly fallback instead.
+export function friendlyMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+  const text = error.message.trim();
+  if (!text || text.startsWith('{') || text.startsWith('[') || /extraction failed/i.test(text)) {
+    return fallback;
+  }
+  return text;
+}
+
 export type RequestResult =
   | { kind: 'answer'; answer: string }
   | { kind: 'availability'; block: TimeBlock; openings: TimeOpening[]; submittedPrompt: string }
@@ -152,6 +165,6 @@ export async function resolveTimeRequest({
         }
       : fail('No opening fits that request in the selected time range.');
   } catch (error) {
-    return fail(error instanceof Error ? error.message : 'Unable to interpret that time request.');
+    return fail(friendlyMessage(error, 'Unable to interpret that time request.'));
   }
 }

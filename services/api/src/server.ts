@@ -17,6 +17,7 @@ import { createAuthMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestBodyLimit } from './middleware/body-limit';
 import { clientIpMiddleware } from './middleware/client-ip';
+import { drainRejectedBody } from './middleware/drain-rejected-body';
 import { originGuard } from './middleware/origin-guard';
 import {
   otpSendLimit,
@@ -106,6 +107,8 @@ export type ServerDependencies = {
 function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependencies) {
   const { env: inputEnv, rateLimitCounter } = dependencies;
   app.get('/healthz', (c) => c.text('ok'));
+  // First, so every rejection below it (origin guard, body limit, auth) closes its socket cleanly.
+  app.use('*', drainRejectedBody());
   app.use('*', originGuard(inputEnv.ORIGIN_SECRET));
   app.use(
     '*',

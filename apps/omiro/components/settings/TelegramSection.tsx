@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { ActivityIndicator, Alert, Text, View } from 'react-native';
 
-import { SectionLabel, SettingsRow } from '~/components/settings/SettingsRow';
+import { SectionLabel, SettingsGroup, SettingsRow } from '~/components/settings/SettingsRow';
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
@@ -93,20 +93,22 @@ export function TelegramSection() {
   return (
     <>
       <SectionLabel>{t.settings.telegram.section}</SectionLabel>
-      <SettingsRow
-        icon="paperplane"
-        label={t.settings.telegram.label}
-        description={description}
-        onPress={status?.available ? onPress : undefined}
-        testID="settings-telegram-connection"
-        accessory={
-          connection.isPending || link.isPending || unlink.isPending ? (
-            <ActivityIndicator size="small" color={tertiaryColor} />
-          ) : status?.available ? (
-            <AppIcon name="chevron.right" size={12} tintColor={tertiaryColor} />
-          ) : null
-        }
-      />
+      <SettingsGroup>
+        <SettingsRow
+          icon="paperplane"
+          label={t.settings.telegram.label}
+          description={description}
+          onPress={status?.available ? onPress : undefined}
+          testID="settings-telegram-connection"
+          accessory={
+            connection.isPending || link.isPending || unlink.isPending ? (
+              <ActivityIndicator size="small" color={tertiaryColor} />
+            ) : status?.available ? (
+              <AppIcon name="chevron.right" size={12} tintColor={tertiaryColor} />
+            ) : null
+          }
+        />
+      </SettingsGroup>
       <View>
         <Text style={styles.disclosure}>{t.settings.telegram.privacyDisclosure}</Text>
       </View>

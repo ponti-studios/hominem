@@ -2,6 +2,7 @@ import type { InboxStreamItem } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { clearResumeTarget, readResumeTarget } from '~/services/navigation/launch-state';
+import { removeFromSpotlight } from '~/services/system/spotlight';
 
 import { restoreInbox, snapshotInbox, type InboxSnapshot } from './inbox-entities';
 import { removeInboxStreamItem } from './inbox-refresh';
@@ -29,6 +30,7 @@ export function useInboxItemRemoval<TVariables = void>({
       const previousInbox = await snapshotInbox(queryClient);
 
       removeInboxStreamItem(queryClient, { kind, entityId });
+      removeFromSpotlight(kind, entityId);
 
       return { previousInbox };
     },

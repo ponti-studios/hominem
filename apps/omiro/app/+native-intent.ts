@@ -32,6 +32,13 @@ export function redirectSystemPath({
     return TASKS_ROUTE;
   }
 
+  // task/add (quick action) or task?add=<title> (Siri) -> Tasks tab with the
+  // composer focused and filled in
+  if (normalized === 'task/add' || normalized.startsWith('task?')) {
+    const title = new URLSearchParams(normalized.split('?')[1] ?? '').get('add') ?? '';
+    return `${TASKS_ROUTE}?add=${encodeURIComponent(title)}`;
+  }
+
   // Task deep links open the Tasks tab, where the task has its detail sheet.
   const taskBlockMatch = normalized.match(/^time\/task\/([^?]+)/);
   if (taskBlockMatch) {

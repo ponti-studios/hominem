@@ -49,7 +49,7 @@ export function CarriedOverCard({ task, onOpen, onDone, onMove, onDrop }: Carrie
     move: { backgroundColor: theme.colors.eventViolet },
     drop: { backgroundColor: theme.colors.card },
     label: { ...theme.textVariants.chip, color: theme.colors.foreground, fontWeight: '700' },
-    dropLabel: { ...theme.textVariants.chip, color: theme.colors.coral, fontWeight: '700' },
+    dropLabel: { ...theme.textVariants.chip, color: theme.colors.coralText, fontWeight: '700' },
   }));
   return (
     <View style={styles.card} testID={`carried-${task.id}`}>

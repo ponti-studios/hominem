@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { ChatGenerationFailedBar, ChatSearchBar, ChatToolApprovalBar } from '~/components/chat';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock } from '~/components/composer/ComposerDock';
+import { ComposerReveal } from '~/components/composer/ComposerReveal';
 import type { useChatSearch } from '~/hooks/use-chat-search';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 import type { useSendMessage } from '~/services/chat/use-send-message';
@@ -45,6 +46,9 @@ type ChatScreenDockProps = {
   onRetryGeneration: () => void;
   search: ReturnType<typeof useChatSearch>;
   chatSend: Pick<ReturnType<typeof useSendMessage>, 'sendChatMessage' | 'isChatSending'>;
+  composerOpen: boolean;
+  onOpenComposer: () => void;
+  onCloseComposer: () => void;
 };
 
 export function ChatScreenDock({
@@ -61,7 +65,12 @@ export function ChatScreenDock({
   onRetryGeneration,
   search,
   chatSend,
+  composerOpen,
+  onOpenComposer,
+  onCloseComposer,
 }: ChatScreenDockProps) {
+  // A reply still generating keeps the composer up, so its stop control stays reachable.
+  const showComposer = composerOpen || generation !== null;
   if (isConversationGone) {
     return null;
   }
@@ -98,20 +107,29 @@ export function ChatScreenDock({
           </DockSlot>
         ) : (
           <DockSlot slot="composer">
-            <Composer
-              mode="chat"
-              chatId={chatId}
-              chatSend={chatSend}
-              generation={
-                generation
-                  ? {
-                      isStopping:
-                        generation.stage === 'stopping' || generation.stage === 'cancelled',
-                      onCancel: onCancelGeneration,
-                    }
-                  : undefined
-              }
-            />
+            <ComposerReveal
+              open={showComposer}
+              onOpen={onOpenComposer}
+              onClose={onCloseComposer}
+              openLabel="New message"
+              testID="chat-composer"
+            >
+              <Composer
+                mode="chat"
+                chatId={chatId}
+                chatSend={chatSend}
+                onSent={onCloseComposer}
+                generation={
+                  generation
+                    ? {
+                        isStopping:
+                          generation.stage === 'stopping' || generation.stage === 'cancelled',
+                        onCancel: onCancelGeneration,
+                      }
+                    : undefined
+                }
+              />
+            </ComposerReveal>
           </DockSlot>
         )}
       </ComposerDock>

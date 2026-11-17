@@ -103,6 +103,7 @@ registerTool(
     scopes: ['memory:read'],
     resultCap: 50,
     guidance: {
+      examples: ['what do you remember about someone', 'recall a fact I shared earlier'],
       whenToUse:
         'A response depends on remembered personal context and a keyword search is appropriate.',
       whenNotToUse: 'Do not use as a substitute for current domain data such as trips or finances.',

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useCallback, useRef } from 'react';
 
+import { getChatReplyPrefs } from '~/hooks/use-chat-reply-prefs';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 
 import { invalidateChatQueries } from './chat-cache';
@@ -24,7 +25,7 @@ export function useRegenerateMessage(
         {
           chatId,
           target: { messageId },
-          body: { generationId, responseLength: getChatResponseLength() },
+          body: { generationId, responseLength: getChatResponseLength(), ...getChatReplyPrefs() },
         },
         {
           id: generationId,

@@ -572,6 +572,9 @@ registerTool(
 registerTool(
   {
     name: 'career_wishlist_add',
+    guidance: {
+      examples: ['save a company to my wishlist', 'add a company I want to work for'],
+    },
     title: 'Add a career wishlist company',
     description: 'Adds a company you want to work for to your career wishlist.',
     inputSchema: careerWishlistCompanyCreateSchema,

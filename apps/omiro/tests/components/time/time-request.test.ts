@@ -229,7 +229,24 @@ describe('resolveTimeRequest', () => {
 
     expect(result).toEqual({
       kind: 'error',
-      message: 'Time block extraction failed',
+      message: 'Unable to interpret that time request.',
+      submittedPrompt: 'Schedule lunch',
+    });
+  });
+
+  it('never shows a raw JSON payload from the server', async () => {
+    const result = await resolveTimeRequest({
+      gateway: makeGateway(),
+      parse: vi.fn(async () => {
+        throw new Error('{"error":"Time block extraction failed","failureType":"ai"}');
+      }),
+      prompt: 'Schedule lunch',
+      taskBusyIntervals: [],
+    });
+
+    expect(result).toEqual({
+      kind: 'error',
+      message: 'Unable to interpret that time request.',
       submittedPrompt: 'Schedule lunch',
     });
   });

@@ -18,6 +18,14 @@ import { registerTool } from '../tool-registry';
 registerTool(
   {
     name: 'tag_entity',
+    guidance: {
+      examples: [
+        'label my note as important',
+        'put a tag on this possession',
+        'add the tag work to a person',
+        'tag a place as a favourite',
+      ],
+    },
     title: 'Tag an entity',
     description:
       'Tags an owned person, venue place, possession, note, or travel entity with a named tag. Travel Place and Residence are distinct from venue places.',

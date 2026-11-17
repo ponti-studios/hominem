@@ -78,7 +78,7 @@ export function PlaceScreen() {
       borderWidth: 2,
     },
     chipLabel: { ...theme.textVariants.chip, color: theme.colors.foreground },
-    chipPickLabel: { ...theme.textVariants.chip, color: theme.colors.primary },
+    chipPickLabel: { ...theme.textVariants.chip, color: theme.colors.primaryText },
     picker: { alignItems: 'flex-start', marginTop: 12 },
     divider: { backgroundColor: theme.colors.border, height: 1 },
     action: { alignItems: 'center', flexDirection: 'row', gap: 12, minHeight: 48 },

@@ -4,6 +4,7 @@ import { randomUUID } from 'expo-crypto';
 import { useCallback, useRef } from 'react';
 
 import type { ChatMessageItem } from '~/components/chat';
+import { getChatReplyPrefs } from '~/hooks/use-chat-reply-prefs';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { chatKeys } from '~/services/notes/query-keys';
 
@@ -115,6 +116,7 @@ export function useSendMessage({
           fileIds,
           responseModality,
           responseLength: getChatResponseLength(),
+          ...getChatReplyPrefs(),
         },
         {
           id: generationId,
@@ -188,7 +190,7 @@ export function useSendMessage({
         {
           chatId,
           target: { generationId: failed.id },
-          body: { generationId, responseLength: getChatResponseLength() },
+          body: { generationId, responseLength: getChatResponseLength(), ...getChatReplyPrefs() },
         },
         {
           id: generationId,

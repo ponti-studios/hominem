@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { CHAT_MODEL } from '@hominem/ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -103,6 +104,20 @@ describe('ChatGenerationHarness', () => {
       totalTokens: 10,
       outputTokens: 6,
     });
+  });
+
+  it('sends the picked reply model to the provider, and the default when none is picked', async () => {
+    const provider = scriptedProvider([textTurn('picked'), textTurn('default')]);
+    test = await ChatGenerationHarness.create({ provider });
+
+    await test.chat.start({
+      title: 'Picked model',
+      message: 'Hello',
+      replyModel: 'z-ai/glm-4.7-flash',
+    });
+    await test.chat.start({ title: 'Default model', message: 'Hello again' });
+
+    expect(provider.models).toEqual(['z-ai/glm-4.7-flash', CHAT_MODEL]);
   });
 
   it('publishes redacted evidence with durable duplicate checks', async () => {

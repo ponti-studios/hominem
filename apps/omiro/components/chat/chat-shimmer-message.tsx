@@ -8,20 +8,26 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { transitionDurations, useAppTheme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const SHIMMER_DURATION = transitionDurations[150] * 5;
+// Reduced Motion: hold the placeholder at a steady mid-tone instead of pulsing.
+const STATIC_OPACITY = 0.7;
 
 function usePulse() {
+  const reducedMotion = useReducedMotion();
   const opacity = useDerivedValue(
     () =>
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: SHIMMER_DURATION }),
-          withTiming(0.4, { duration: SHIMMER_DURATION }),
-        ),
-        -1,
-      ),
-    [],
+      reducedMotion
+        ? STATIC_OPACITY
+        : withRepeat(
+            withSequence(
+              withTiming(1, { duration: SHIMMER_DURATION }),
+              withTiming(0.4, { duration: SHIMMER_DURATION }),
+            ),
+            -1,
+          ),
+    [reducedMotion],
   );
 
   return useAnimatedStyle(() => ({ opacity: opacity.value }));

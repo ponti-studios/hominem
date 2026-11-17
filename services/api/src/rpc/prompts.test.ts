@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { REPLY_LENGTHS } from '@hominem/ai/reply-profile';
+import { REPLY_LENGTHS, REPLY_STYLES } from '@hominem/ai/reply-profile';
 import { describe, expect, it } from 'vitest';
 
 import { labelUtcDate, type ChatResponseLength } from '../chat/chat-prompts';
@@ -27,6 +27,19 @@ describe('chat assistant personality', () => {
     expect(CHAT_ASSISTANT_PROMPT).not.toContain('Match the user’s intensity');
   });
 
+  it('appends the selected reply style, and leaves the prompt alone without one', () => {
+    expect(buildChatSystemPrompt(undefined, undefined, 'straight')).toContain(
+      REPLY_STYLES.straight.guidance,
+    );
+    expect(buildChatSystemPrompt(undefined, undefined, 'straight')).not.toContain(
+      REPLY_STYLES.friend.guidance,
+    );
+    expect(buildChatSystemPrompt('brief', undefined, 'friend')).toContain(
+      REPLY_STYLES.friend.guidance,
+    );
+    expect(buildChatSystemPrompt()).not.toContain('REPLY STYLE:');
+  });
+
   it('makes default brevity explicit and appends each selected length mode', () => {
     expect(CHAT_ASSISTANT_PROMPT).toContain('the way a sharp friend replies to a text message');
     // Models cannot count characters; the default must not promise a numeric limit.
@@ -37,7 +50,7 @@ describe('chat assistant personality', () => {
     expect(buildChatSystemPrompt()).toContain(CHAT_ASSISTANT_PROMPT);
     expect(buildChatSystemPrompt()).toMatch(/CURRENT DATE \(UTC\): \d{4}-\d{2}-\d{2}/);
 
-    const lengths: ChatResponseLength[] = ['short', 'medium', 'long'];
+    const lengths: ChatResponseLength[] = ['brief', 'standard', 'deep'];
     expect([...lengths].sort()).toEqual(Object.keys(REPLY_LENGTHS).sort());
     for (const length of lengths) {
       const prompt = buildChatSystemPrompt(length);

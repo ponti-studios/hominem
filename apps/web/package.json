@@ -23,7 +23,6 @@
     "@base-ui/react": "catalog:",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
-    "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@ponti-studios/auth": "workspace:*",
     "@ponti-studios/ui": "catalog:",

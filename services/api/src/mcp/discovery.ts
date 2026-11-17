@@ -61,11 +61,88 @@ function searchText(tool: DiscoveredTool): { name: string; title: string; descri
   return {
     name: tool.name.toLowerCase(),
     title: tool.title.toLowerCase(),
-    description: [describeCapability(tool), tool.guidance?.examples?.join(' ')]
+    description: [
+      describeCapability(tool),
+      tool.guidance?.whenToUse,
+      tool.guidance?.examples?.join(' '),
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase(),
   };
+}
+
+// Words that say nothing about which tool to use. Without this list, "list", "past" or "date"
+// match dozens of unrelated tools and bury the real one.
+const STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'and',
+  'or',
+  'to',
+  'of',
+  'for',
+  'in',
+  'on',
+  'at',
+  'by',
+  'with',
+  'from',
+  'as',
+  'is',
+  'are',
+  'was',
+  'be',
+  'it',
+  'its',
+  'my',
+  'me',
+  'i',
+  'you',
+  'your',
+  'we',
+  'our',
+  'this',
+  'that',
+  'what',
+  'which',
+  'who',
+  'how',
+  'do',
+  'does',
+  'did',
+  'can',
+  'please',
+  'about',
+  'any',
+  'some',
+  'all',
+  'show',
+  'give',
+  'find',
+  'get',
+  'list',
+  'past',
+  'last',
+  'next',
+  'date',
+  'range',
+  'new',
+  'one',
+  'out',
+  'up',
+]);
+
+// Light stemming so "notes" finds "note" and "events" finds "event". Not a real stemmer.
+export function stem(token: string): string {
+  if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`;
+  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss')) return token.slice(0, -1);
+  return token;
+}
+
+function tokens(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).map(stem);
 }
 
 export function searchTools(
@@ -74,15 +151,32 @@ export function searchTools(
   limit: number,
   offset = 0,
 ) {
-  const terms = [...new Set(query.toLowerCase().match(/[a-z0-9]+/g) ?? [])];
+  const terms = [
+    ...new Set(tokens(query).filter((term) => term.length > 1 && !STOPWORDS.has(term))),
+  ];
+  const fieldsByTool = definitions.map((tool) => searchText(tool));
+
+  // A term that appears in most tools tells us little. Weight each term by how rare it is.
+  const docFrequency = new Map<string, number>();
+  for (const fields of fieldsByTool) {
+    const seen = new Set(tokens(`${fields.name} ${fields.title} ${fields.description}`));
+    for (const term of terms)
+      if (seen.has(term)) docFrequency.set(term, (docFrequency.get(term) ?? 0) + 1);
+  }
+  const total = Math.max(definitions.length, 1);
+  const weight = (term: string) => Math.log(1 + total / (1 + (docFrequency.get(term) ?? 0)));
+
   const matches = definitions
-    .map((tool) => {
-      const fields = searchText(tool);
+    .map((tool, index) => {
+      const fields = fieldsByTool[index]!;
+      const nameTokens = tokens(fields.name);
+      const titleTokens = tokens(fields.title);
       const score = terms.reduce((total, term) => {
-        if (fields.name === term) return total + 12;
-        if (fields.name.includes(term)) return total + 8;
-        if (fields.title.includes(term)) return total + 5;
-        if (fields.description.includes(term)) return total + 1;
+        const idf = weight(term);
+        if (nameTokens.includes(term)) return total + 12 * idf;
+        if (fields.name.includes(term)) return total + 8 * idf;
+        if (titleTokens.includes(term)) return total + 5 * idf;
+        if (fields.description.includes(term)) return total + 1 * idf;
         return total;
       }, 0);
       return { tool, score };

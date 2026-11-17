@@ -124,9 +124,9 @@ function createConfig({ config }) {
         image: SPLASH_IMAGE,
         enableFullScreenImage_legacy: false,
         imageWidth: 150,
-        backgroundColor: '#F5F3FF',
+        backgroundColor: '#F4F2FB',
         resizeMode: 'contain',
-        dark: { backgroundColor: '#0E0C1A' },
+        dark: { backgroundColor: '#0B0A14' },
       },
     ],
     'expo-asset',
@@ -205,6 +205,25 @@ function createConfig({ config }) {
         NSRemindersFullAccessUsageDescription:
           'Allow Omiro to read and write your reminders so tasks stay in sync with Apple Reminders.',
         LSApplicationQueriesSchemes: ['x-apple-reminderkit', 'x-apple-reminder'],
+        // Home Screen quick actions. The types are routed to app paths in
+        // modules/omiro-system/ios/OmiroSystemLinks.swift.
+        UIApplicationShortcutItems: [
+          {
+            UIApplicationShortcutItemType: 'omiro.new-chat',
+            UIApplicationShortcutItemTitle: 'New Chat',
+            UIApplicationShortcutItemIconSymbolName: 'bubble.left',
+          },
+          {
+            UIApplicationShortcutItemType: 'omiro.new-note',
+            UIApplicationShortcutItemTitle: 'New Note',
+            UIApplicationShortcutItemIconSymbolName: 'note.text',
+          },
+          {
+            UIApplicationShortcutItemType: 'omiro.new-task',
+            UIApplicationShortcutItemTitle: 'New Task',
+            UIApplicationShortcutItemIconSymbolName: 'checkmark.circle',
+          },
+        ],
       },
     },
     extra: {

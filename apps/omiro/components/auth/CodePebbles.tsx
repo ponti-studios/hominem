@@ -147,7 +147,7 @@ function Pebble({ index, digit, isActive, status }: PebbleProps) {
     const dealt = deal.value;
     return {
       opacity: reducedMotion ? dealt : interpolate(dealt, [0, 0.4], [0, 1], 'clamp'),
-      backgroundColor: interpolateColor(good.value, [0, 1], [colors.bar, colors.lime]),
+      backgroundColor: interpolateColor(good.value, [0, 1], [colors.ink, colors.lime]),
       transform: [
         { translateX: reducedMotion ? 0 : (1 - dealt) * fanDistance },
         { translateY: wave.value },
@@ -170,7 +170,7 @@ function Pebble({ index, digit, isActive, status }: PebbleProps) {
       {status === 'success' ? (
         <Animated.Text style={[styles.digit, { color: colors.limeForeground }]}>✓</Animated.Text>
       ) : isFilled ? (
-        <Animated.Text style={[styles.digit, { color: colors.barForeground }]}>
+        <Animated.Text style={[styles.digit, { color: colors.inkForeground }]}>
           {digit}
         </Animated.Text>
       ) : isActive ? (

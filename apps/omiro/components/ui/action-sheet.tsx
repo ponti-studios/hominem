@@ -3,7 +3,9 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
 
 type IconName = SymbolViewProps['name'];
 
@@ -24,8 +26,8 @@ interface ActionSheetProps {
 }
 
 // The designed replacement for ActionSheetIOS: a floating card of
-// options with a separate Cancel pill, over a dimmed page. Both use the composer's
-// fixed ink bar colors so the menu matches the bar it opens from.
+// options with a separate Cancel pill, over a dimmed page. Both are glass, so
+// the menu matches the bar it opens from.
 export function ActionSheet({
   visible,
   onClose,
@@ -37,14 +39,9 @@ export function ActionSheet({
   const { bottom } = useSafeAreaInsets();
   const { barForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    backdrop: { flex: 1, backgroundColor: withAlpha(theme.colors.overlayScrim, 0.55) },
+    backdrop: { flex: 1, backgroundColor: withAlpha(theme.colors.overlayScrim, 0.3) },
     wrap: { position: 'absolute', left: 12, right: 12, bottom: Math.max(bottom, 12) + 10 },
-    card: {
-      borderRadius: 28,
-      overflow: 'hidden',
-      backgroundColor: theme.colors.bar,
-      boxShadow: theme.shadows.bar,
-    },
+    card: { overflow: 'hidden' },
     title: {
       padding: 16,
       textAlign: 'center',
@@ -63,14 +60,11 @@ export function ActionSheet({
     },
     pressed: { backgroundColor: theme.colors.barControl },
     label: { color: theme.colors.barForeground, fontSize: 18, fontWeight: '700' },
+    cancelWrap: { marginTop: 10 },
     cancel: {
-      marginTop: 10,
       height: 60,
-      borderRadius: 28,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.colors.bar,
-      boxShadow: theme.shadows.bar,
     },
     cancelLabel: { color: theme.colors.barAccent, fontSize: 18, fontWeight: '800' },
   }));
@@ -79,7 +73,7 @@ export function ActionSheet({
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <Pressable accessibilityLabel={cancelLabel} onPress={onClose} style={styles.backdrop} />
       <View style={styles.wrap} testID={testID}>
-        <View style={styles.card}>
+        <Glass radius="2xl" style={styles.card}>
           <Text style={styles.title}>{title}</Text>
           {options.map((option) => (
             <Pressable
@@ -97,15 +91,17 @@ export function ActionSheet({
               <Text style={styles.label}>{option.label}</Text>
             </Pressable>
           ))}
-        </View>
-        <Pressable
+        </Glass>
+        <PressableScale
           accessibilityRole="button"
           onPress={onClose}
-          style={styles.cancel}
+          style={styles.cancelWrap}
           testID={testID ? `${testID}-cancel` : undefined}
         >
-          <Text style={styles.cancelLabel}>{cancelLabel}</Text>
-        </Pressable>
+          <Glass interactive radius="2xl" style={styles.cancel}>
+            <Text style={styles.cancelLabel}>{cancelLabel}</Text>
+          </Glass>
+        </PressableScale>
       </View>
     </Modal>
   );

@@ -8,6 +8,12 @@ const t = {
     confirm: 'Enhance',
   },
   stream: {
+    search: {
+      chats: 'Search chats',
+      notes: 'Search notes',
+      emptyTitle: (query: string) => `No results for \u201C${query}\u201D`,
+      emptyDescription: 'Check the spelling or try a different word.',
+    },
     loadError: {
       title: 'Inbox unavailable',
       description: "We couldn't load your inbox. Check your connection and try again.",
@@ -44,6 +50,8 @@ const t = {
       missingNoteTitle: 'Note unavailable',
       missingNoteMessage: 'This note may have been deleted or is no longer available.',
       startChat: 'Start chat',
+      exportPdf: 'Export as PDF',
+      exportPdfFailed: 'Could not export this note',
       startChatMessage: "Let's talk about this note.",
       startChatErrorTitle: 'Could not start chat',
       startChatErrorOffline: 'You appear to be offline. Please reconnect and try again.',
@@ -141,6 +149,13 @@ const t = {
         cancel: 'Cancel',
         takePhoto: 'Take Photo',
         chooseFromLibrary: 'Choose from Library',
+        scanText: 'Scan Text from Photo',
+      },
+      scanText: {
+        emptyTitle: 'No text found',
+        emptyMessage: 'That photo has no text Omiro could read.',
+        failedTitle: 'Could not scan',
+        failedMessage: 'Something went wrong reading that photo. Try another one.',
       },
     },
     messageEdit: {
@@ -191,16 +206,11 @@ const t = {
       title: 'Chat settings',
       responseLengthLabel: 'Response length',
       responseLengthDescription: 'Choose how long you want the assistant’s replies to be.',
-      responseLengthOptions: {
-        short: { emoji: '🎬', name: 'Danny DeVito', caption: 'Short · under 600 characters' },
-        medium: { emoji: '🍔', name: 'Value Meal', caption: 'Medium · a 3-5 min read' },
-        long: {
-          emoji: '🌭',
-          name: "Nathan's Famous",
-          caption: 'Long · full essay, outlined first',
-        },
-      },
-      done: 'Done',
+      replyStyleLabel: 'Reply style',
+      replyStyleDescription: 'Pick who the assistant sounds like.',
+      replyModelLabel: 'Reply model',
+      replyModelDescription: 'Pick the model that writes the replies.',
+      close: 'Close',
     },
     sources: {
       title: 'Sources',
@@ -303,6 +313,7 @@ const t = {
       chatLabel: 'Chat',
       noteLabel: 'Note',
       archiveChat: 'Archive',
+      share: 'Share',
       deleteNote: {
         title: 'Delete',
         menu: 'Delete',
@@ -369,9 +380,20 @@ const t = {
     },
   },
   settings: {
+    appearance: {
+      label: 'Appearance',
+      system: 'Auto',
+      light: 'Light',
+      dark: 'Dark',
+    },
+    morningBrief: {
+      label: 'Morning brief',
+      description: 'A notification at 8:00 on days with tasks.',
+    },
     sections: {
       account: 'Account',
       privacy: 'Privacy',
+      preferences: 'Preferences',
       chats: 'Chats',
       about: 'About',
     },

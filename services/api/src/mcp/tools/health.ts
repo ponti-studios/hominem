@@ -46,6 +46,9 @@ registerTool(
 registerTool(
   {
     name: 'health_sleep_summary',
+    guidance: {
+      examples: ['how did I sleep', 'sleep quality this week', 'how many hours did I sleep'],
+    },
     title: 'Health sleep summary',
     description:
       'Lists recent sleep sessions with stage breakdowns (deep, light, REM, awake), total sleep duration, heart rate, and wake-up count.',

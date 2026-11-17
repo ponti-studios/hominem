@@ -35,6 +35,11 @@ describe.each([
     expect(contrast(colors.destructive, colors.card)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
+  it('keeps bar text readable on the glass fallback', () => {
+    expect(contrast(colors.barForeground, colors.bar)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrast(colors.barAccentForeground, colors.barAccent)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
   it('keeps event text readable on every pastel fill', () => {
     for (const fill of [colors.eventViolet, colors.eventCoral, colors.eventSky, colors.eventSun]) {
       expect(contrast(colors.eventForeground, fill)).toBeGreaterThanOrEqual(AA_TEXT);

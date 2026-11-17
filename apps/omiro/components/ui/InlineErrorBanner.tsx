@@ -29,7 +29,7 @@ export function InlineErrorBanner({ message, onDismiss, onRetry }: InlineErrorBa
       paddingVertical: 4,
     },
     message: { ...theme.textVariants.footnote, flex: 1, color: theme.colors.destructive },
-    retry: { ...theme.textVariants.footnote, color: theme.colors.primary, fontWeight: '600' },
+    retry: { ...theme.textVariants.footnote, color: theme.colors.primaryText, fontWeight: '600' },
     actions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   }));
 

@@ -1,4 +1,9 @@
-import { REPLY_LENGTHS, type ReplyLengthId } from '@hominem/ai/reply-profile';
+import {
+  REPLY_LENGTHS,
+  REPLY_STYLES,
+  type ReplyLengthId,
+  type ReplyStyleId,
+} from '@hominem/ai/reply-profile';
 
 export type ChatResponseLength = ReplyLengthId;
 
@@ -91,7 +96,9 @@ export function labelUtcDate(currentDate: string): string {
 export function buildChatSystemPrompt(
   responseLength?: ChatResponseLength,
   currentDate = getCurrentUtcDate(),
+  replyStyle?: ReplyStyleId,
 ): string {
   const prompt = `${CHAT_ASSISTANT_PROMPT}\n\nCURRENT DATE (UTC): ${labelUtcDate(currentDate)}\nUse this date when interpreting relative dates and checking current public information.`;
-  return responseLength ? `${prompt}\n\n${REPLY_LENGTHS[responseLength].guidance}` : prompt;
+  const withStyle = replyStyle ? `${prompt}\n\n${REPLY_STYLES[replyStyle].guidance}` : prompt;
+  return responseLength ? `${withStyle}\n\n${REPLY_LENGTHS[responseLength].guidance}` : withStyle;
 }

@@ -1,4 +1,4 @@
-import type { WithTimingConfig } from 'react-native-reanimated';
+import type { WithSpringConfig, WithTimingConfig } from 'react-native-reanimated';
 import {
   Easing,
   FadeIn,
@@ -6,6 +6,7 @@ import {
   FadeOut,
   FadeOutUp,
   LinearTransition,
+  withSpring,
 } from 'react-native-reanimated';
 
 const portableMotion = {
@@ -79,3 +80,33 @@ export const nativeMotionTiming = {
     easing: nativeMotionContracts.easing.exit,
   } satisfies WithTimingConfig,
 };
+
+// Spring presets, named after the SwiftUI animations they match. Duration-based
+// so they read the same as `.snappy` / `.smooth` / `.bouncy` on the native side.
+export const nativeMotionSprings = {
+  // Answers a touch: presses, toggles, chips.
+  snappy: { duration: 350, dampingRatio: 0.85 },
+  // Sheets, docks and bars changing size or place.
+  smooth: { duration: 500, dampingRatio: 1 },
+  // Arrivals worth noticing: a new row, a toast, a completion.
+  bouncy: { duration: 500, dampingRatio: 0.7 },
+} as const satisfies Record<string, WithSpringConfig>;
+
+// How far a control sinks under a finger.
+export const PRESS_SCALE = 0.96;
+
+// Entering animation for a glass surface: it grows and settles into place.
+// Transform only -- system glass stops rendering while its opacity (or a
+// parent's) is below 1, so a fade would show a flat grey box for a moment.
+export function glassPopIn() {
+  'worklet';
+  return {
+    initialValues: { transform: [{ scale: 0.92 }, { translateY: 10 }] },
+    animations: {
+      transform: [
+        { scale: withSpring(1, nativeMotionSprings.bouncy) },
+        { translateY: withSpring(0, nativeMotionSprings.bouncy) },
+      ],
+    },
+  };
+}

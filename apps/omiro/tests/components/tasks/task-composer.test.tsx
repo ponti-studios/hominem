@@ -15,7 +15,8 @@ vi.mock('~/components/theme', async () => ({
   fontFamilies: { sans: 'sans' },
   withAlpha: (color: string) => color,
 }));
-vi.mock('~/components/ui', () => ({
+vi.mock('~/components/ui', async () => ({
+  Glass: (await import('../../mocks/glass')).glassModuleMock.Glass,
   TextField: ({
     onChangeText,
     onSubmitEditing,

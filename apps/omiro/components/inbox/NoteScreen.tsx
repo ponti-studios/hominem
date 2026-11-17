@@ -37,6 +37,7 @@ import { clearResumeTarget, writeResumeTarget } from '~/services/navigation/laun
 import { NOTES_ROUTE } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
+import { shareNoteAsPdf } from '~/services/system/note-pdf';
 import t from '~/translations';
 
 interface NoteDraft {
@@ -101,10 +102,10 @@ function useNoteScreenStyles() {
     metaSeparator: { ...theme.textVariants.overline, color: theme.colors.border },
     divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 20 },
     undoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-    undoText: { ...theme.textVariants.caption1, color: theme.colors.primary },
+    undoText: { ...theme.textVariants.caption1, color: theme.colors.primaryText },
     previewEmptyText: { color: theme.colors.tertiary, fontStyle: 'italic', minHeight: 240 },
     saveMessage: { ...theme.textVariants.overline, color: theme.colors.tertiary },
-    saveMessageOffline: { color: theme.colors.warning },
+    saveMessageOffline: { color: theme.colors.warningText },
     saveMessageError: { color: theme.colors.destructive },
     saveMessageUnderline: { textDecorationLine: 'underline' },
     attachmentsSection: { marginTop: 24, gap: 8 },
@@ -576,6 +577,16 @@ function NoteEditorBody({
                 label: t.notes.editor.startChat,
                 onPress: () => {
                   void handleStartChat();
+                },
+              },
+              {
+                key: 'export-pdf',
+                icon: 'square.and.arrow.up',
+                label: t.notes.editor.exportPdf,
+                onPress: () => {
+                  shareNoteAsPdf(draft.title, draft.content).catch(() =>
+                    Alert.alert(t.notes.editor.exportPdfFailed),
+                  );
                 },
               },
               {

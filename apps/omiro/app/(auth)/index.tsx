@@ -87,7 +87,7 @@ function AuthScreen() {
       color: theme.colors.limeForeground,
       fontWeight: '500',
     },
-    link: { ...theme.textVariants.footnote, color: theme.colors.primary, fontWeight: '500' },
+    link: { ...theme.textVariants.footnote, color: theme.colors.primaryText, fontWeight: '500' },
     linkMuted: { ...theme.textVariants.footnote, color: theme.colors.mutedForeground },
     linkButton: { minHeight: 32, justifyContent: 'center' },
     message: {

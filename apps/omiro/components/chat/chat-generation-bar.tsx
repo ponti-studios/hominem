@@ -1,8 +1,10 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
 import t from '~/translations';
 
@@ -17,7 +19,7 @@ interface ChatGenerationFailedBarProps {
   onEdit?: () => void;
 }
 
-// Takes the composer's place when a reply fails: coral-ringed, with retry and
+// Takes the composer's place when a reply fails: coral-ringed glass, with retry and
 // edit. Working and stopping have no bar of their own -- the thinking
 // indicator in the reply bubble is the only "working" signal, and the composer
 // swaps its send button for stop. Matches the composer's resting height so the
@@ -26,16 +28,11 @@ export function ChatGenerationFailedBar({ onEdit, onRetry }: ChatGenerationFaile
   const styles = useStyles((theme) => ({
     bar: {
       alignItems: 'center',
-      backgroundColor: theme.colors.bar,
       borderColor: theme.colors.coral,
-      borderCurve: 'continuous',
-      borderRadius: BAR_HEIGHT / 2,
       borderWidth: 2,
-      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 12,
       height: BAR_HEIGHT,
-      overflow: 'hidden',
       paddingLeft: 6,
       paddingRight: 6,
     },
@@ -79,7 +76,7 @@ export function ChatGenerationFailedBar({ onEdit, onRetry }: ChatGenerationFaile
       exiting={nativeMotionAnimations.fadeOutQuick}
       testID="chat-generation-bar"
     >
-      <View accessibilityLiveRegion="polite" style={styles.bar} testID="chat-activity">
+      <Glass accessibilityLiveRegion="polite" style={styles.bar} testID="chat-activity">
         <View style={styles.failedBadge}>
           <AppIcon name="exclamationmark" size={20} tintColor={limeForeground} />
         </View>
@@ -92,18 +89,19 @@ export function ChatGenerationFailedBar({ onEdit, onRetry }: ChatGenerationFaile
           </Text>
         </View>
         {onRetry ? (
-          <Pressable
+          <PressableScale
             accessibilityLabel={t.chat.generation.retryA11y}
+            haptic
             accessibilityRole="button"
             onPress={onRetry}
             style={styles.retryButton}
             testID="chat-generation-retry"
           >
             <AppIcon name="arrow.clockwise" size={20} tintColor={limeForeground} />
-          </Pressable>
+          </PressableScale>
         ) : null}
         {onEdit ? (
-          <Pressable
+          <PressableScale
             accessibilityLabel={t.chat.generation.editA11y}
             accessibilityRole="button"
             onPress={onEdit}
@@ -111,9 +109,9 @@ export function ChatGenerationFailedBar({ onEdit, onRetry }: ChatGenerationFaile
             testID="chat-generation-edit"
           >
             <AppIcon name="square.and.pencil" size={20} tintColor={barForeground} />
-          </Pressable>
+          </PressableScale>
         ) : null}
-      </View>
+      </Glass>
     </Animated.View>
   );
 }

@@ -1,8 +1,10 @@
 import type { SFSymbol } from 'expo-symbols';
-import { Pressable, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import { fontFamilies, useAppTheme } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
 
 interface ComposerTrayChipProps {
   accessibilityLabel: string;
@@ -25,11 +27,11 @@ export function ComposerTrayChip({
   tone = 'default',
   testID,
 }: ComposerTrayChipProps) {
-  const { bar, barForeground, lime } = useAppTheme().colors;
-  const color = tone === 'accent' ? lime : barForeground;
+  const { barForeground, primary } = useAppTheme().colors;
+  const color = tone === 'accent' ? primary : barForeground;
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
@@ -37,28 +39,25 @@ export function ComposerTrayChip({
       hitSlop={{ top: 5, bottom: 5 }}
       onPress={onPress}
       testID={testID}
-      style={({ pressed }) => [
-        {
+    >
+      <Glass
+        interactive
+        style={{
           alignItems: 'center',
-          backgroundColor: bar,
-          borderCurve: 'continuous',
-          borderRadius: 17,
           flexDirection: 'row',
           gap: 6,
           height: 34,
           paddingHorizontal: 14,
-        },
-        pressed && { opacity: 0.8 },
-        disabled && { opacity: 0.4 },
-      ]}
-    >
-      <AppIcon name={icon} size={15} tintColor={color} />
-      <Text
-        numberOfLines={1}
-        style={{ color, fontFamily: fontFamilies.sans, fontSize: 14, fontWeight: '500' }}
+        }}
       >
-        {label}
-      </Text>
-    </Pressable>
+        <AppIcon name={icon} size={15} tintColor={color} />
+        <Text
+          numberOfLines={1}
+          style={{ color, fontFamily: fontFamilies.sans, fontSize: 14, fontWeight: '500' }}
+        >
+          {label}
+        </Text>
+      </Glass>
+    </PressableScale>
   );
 }

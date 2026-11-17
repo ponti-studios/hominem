@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { InboxStreamItemData } from '~/components/inbox/InboxStreamItem.types';
-import { getEnteringItemIds } from '~/components/inbox/stream-rows';
+import { filterStreamItems, getEnteringItemIds } from '~/components/inbox/stream-rows';
 
 function item(id: string): InboxStreamItemData {
   return {
@@ -45,5 +45,32 @@ describe('getEnteringItemIds', () => {
     const items = [item('bumped'), item('other')];
 
     expect(getEnteringItemIds(items, new Set(['bumped', 'other']))).toEqual(new Set());
+  });
+});
+
+describe('filterStreamItems', () => {
+  const rows = [
+    { ...item('a'), title: 'Trip to Lisbon', preview: 'Book the **flights** first' },
+    { ...item('b'), title: 'Groceries', preview: 'Milk, eggs' },
+    { ...item('c'), title: null, preview: 'lisbon restaurants' },
+  ];
+
+  it('keeps every row for an empty or blank search', () => {
+    expect(filterStreamItems(rows, '')).toBe(rows);
+    expect(filterStreamItems(rows, '   ')).toBe(rows);
+  });
+
+  it('matches the title or the preview, ignoring case', () => {
+    expect(filterStreamItems(rows, 'LISBON').map((row) => row.id)).toEqual(['a', 'c']);
+  });
+
+  it('requires every word, in any order', () => {
+    expect(filterStreamItems(rows, 'flights trip').map((row) => row.id)).toEqual(['a']);
+    expect(filterStreamItems(rows, 'trip eggs')).toEqual([]);
+  });
+
+  it('searches the preview text, not its markdown', () => {
+    expect(filterStreamItems(rows, 'the flights').map((row) => row.id)).toEqual(['a']);
+    expect(filterStreamItems(rows, '**')).toEqual([]);
   });
 });

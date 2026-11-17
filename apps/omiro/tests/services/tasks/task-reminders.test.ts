@@ -110,4 +110,13 @@ describe('reconcileReminders', () => {
     expect([...state.keys()].sort()).toEqual(['keep', 'move', 'new']);
     expect(state.get('move')?.at).toBe(moved.getTime());
   });
+
+  it('schedules a reminder again when it predates the reminder buttons', async () => {
+    const at = new Date(2026, 9, 7, 8);
+    const { state, scheduler } = fakeScheduler([
+      { taskId: 'old', at: at.getTime(), title: 'Old', actionable: false },
+    ]);
+    await reconcileReminders(scheduler, [{ taskId: 'old', title: 'Old', at }]);
+    expect(state.get('old')?.actionable).toBeUndefined();
+  });
 });

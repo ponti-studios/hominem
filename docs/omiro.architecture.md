@@ -3,7 +3,9 @@
 This document describes the implemented iOS app structure. Product behavior
 specific to chat, planning, tasks, or voice lives in the companion documents
 [`omiro.chat.md`](omiro.chat.md), [`omiro.planning.md`](omiro.planning.md),
-[`omiro.tasks.md`](omiro.tasks.md), and [`omiro.voice.md`](omiro.voice.md).
+[`omiro.tasks.md`](omiro.tasks.md), [`omiro.voice.md`](omiro.voice.md), and
+[`omiro.system.md`](omiro.system.md). The visual system is in
+[`omiro.design-system.md`](omiro.design-system.md).
 
 ## Platform and runtime
 
@@ -96,6 +98,9 @@ Local native modules are under `apps/omiro/modules/`:
   presentation, on-device free-slot search, and event-title matching. It is the
   only calendar write boundary and contains no language model.
 - `omiro-intents` exposes the supported Apple intent entry points.
+- `omiro-system` owns the Spotlight index, Home Screen quick actions, on-device
+  text recognition and PDF rendering. See
+  [`omiro.system.md`](omiro.system.md).
 
 Shared UI packages may provide serializable design and motion contracts, but
 Omiro owns the React Native/Reanimated adapters, Expo Router gestures, native

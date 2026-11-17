@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
-import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import { type StyleProp, type ViewStyle } from 'react-native';
 
 import { useStyles } from '~/components/theme';
+
+import { Glass } from './glass';
+import { PressableScale } from './pressable-scale';
 
 interface IconButtonProps {
   accessibilityLabel?: string;
@@ -12,7 +15,8 @@ interface IconButtonProps {
   style?: StyleProp<ViewStyle>;
   testID?: string;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'bordered' | 'plain' | 'solid' | 'tonal' | 'ink';
+  // `glass` floats over content (header buttons); the rest sit on a surface.
+  variant?: 'bordered' | 'plain' | 'solid' | 'tonal' | 'ink' | 'glass';
 }
 
 export function IconButton({
@@ -43,27 +47,26 @@ export function IconButton({
       borderWidth: 0,
       backgroundColor: currentTheme.colors.primary,
     } satisfies ViewStyle,
-    pressed: { opacity: 0.7 } satisfies ViewStyle,
-    disabled: { opacity: 0.4 } satisfies ViewStyle,
+    glass: { borderWidth: 0 } satisfies ViewStyle,
+    fill: { alignItems: 'center', flex: 1, justifyContent: 'center' } satisfies ViewStyle,
   }));
   return (
-    <Pressable
+    <PressableScale
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
       onPressIn={onPressIn}
-      style={({ pressed }) => [
-        styles.button,
-        styles[size],
-        styles[variant],
-        style,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-      ]}
+      style={[styles.button, styles[size], styles[variant], style]}
       testID={testID}
     >
-      {children}
-    </Pressable>
+      {variant === 'glass' ? (
+        <Glass interactive style={[styles.fill, { alignSelf: 'stretch' }]}>
+          {children}
+        </Glass>
+      ) : (
+        children
+      )}
+    </PressableScale>
   );
 }

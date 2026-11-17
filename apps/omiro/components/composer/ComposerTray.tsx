@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
+import { appendScannedText } from '~/services/system/scan-text';
 import t from '~/translations';
 
 import type { ComposerEntryKind, ComposerProps } from './composer.types';
@@ -82,7 +83,13 @@ function ComposerTrayComponent({
         {showKindToggle ? (
           <ComposerKindToggle onSelect={onManualEntryKindChange} selected={selectedEntryKind} />
         ) : null}
-        <ComposerAttachButton disabled={!canPickMedia} variant="chip" />
+        <ComposerAttachButton
+          disabled={!canPickMedia}
+          onInsertText={(text) =>
+            onChangeMessage(appendScannedText(messageStore.getMessage(), text))
+          }
+          variant="chip"
+        />
         {hasContent ? (
           <ComposerTrayChip
             accessibilityLabel={t.inboxComposer.composer.enhanceTextA11y}

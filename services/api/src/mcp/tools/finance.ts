@@ -157,6 +157,13 @@ registerTool(
 registerTool(
   {
     name: 'finance_spending_by_category',
+    guidance: {
+      examples: [
+        'how much did I spend on each category',
+        'where does my money go each month',
+        'spending breakdown by category',
+      ],
+    },
     title: 'Finance Spending by Category',
     description:
       'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range (defaults to the last 30 days through today). Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit.',

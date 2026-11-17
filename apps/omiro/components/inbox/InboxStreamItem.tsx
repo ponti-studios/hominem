@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { memo, useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
   Extrapolation,
@@ -9,6 +9,7 @@ import Reanimated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
   type WithTimingConfig,
 } from 'react-native-reanimated';
@@ -20,7 +21,7 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useTimerSlot } from '~/hooks/use-timer-slot';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
-import { nativeMotionTiming } from '~/services/motion/native-motion';
+import { nativeMotionSprings, nativeMotionTiming } from '~/services/motion/native-motion';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
 
@@ -71,19 +72,22 @@ const ALERT_CONFIRM_DEFER_MS = 350;
 
 const TITLE_LINE_HEIGHT = 22;
 
+// A full-width row sinks less than a button: the same travel in points.
+const PRESS_SCALE_ROW = 0.98;
+
 function instantOr(config: WithTimingConfig, reducedMotion: boolean): WithTimingConfig {
   'worklet';
   return reducedMotion ? { duration: 0 } : config;
 }
 
 export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemProps) => {
-  const router = useRouter();
   const reducedMotion = useReducedMotion();
   const titleText = cleanText(item.title);
   const previewText = cleanText(item.preview ? stripPreviewMarkdown(item.preview) : item.preview);
   const primaryText = titleText ?? previewText ?? t.inbox.item.untitled;
   const isChat = item.kind === 'chat';
   const {
+    background,
     destructive,
     destructiveForeground,
     eventForeground,
@@ -167,7 +171,6 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
       alignItems: 'center',
       justifyContent: 'center',
     },
-    pressed: { opacity: 0.85 },
     actionLabel: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
     title: {
       color: theme.colors.foreground,
@@ -179,6 +182,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   }));
 
   const leaving = useSharedValue(1);
+  const pressed = useSharedValue(0);
   const dragX = useSharedValue(0);
   const startOffset = useSharedValue(0);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -223,7 +227,10 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     setIsLeaving(false);
   }, [closeSwipe, exitTimer, leaving]);
 
-  const leavingStyle = useAnimatedStyle(() => ({ opacity: leaving.value }));
+  const leavingStyle = useAnimatedStyle(() => ({
+    opacity: leaving.value,
+    transform: [{ scale: reducedMotion ? 1 : 1 - pressed.value * (1 - PRESS_SCALE_ROW) }],
+  }));
   const dragStyle = useAnimatedStyle(() => {
     const radius = interpolate(
       dragX.value,
@@ -307,13 +314,20 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     handleDelete();
   }, [dragX, handleArchive, handleDelete, isChat, isLeaving, isPending, reducedMotion]);
 
-  const onOpen = useCallback(() => {
-    if (dragX.value !== 0) {
-      closeSwipe();
-      return;
-    }
-    router.push(item.route);
-  }, [closeSwipe, dragX, item.route, router]);
+  // The Link navigates; a tap on a row whose action is revealed only closes it.
+  const onOpen = useCallback(
+    (event: { preventDefault: () => void }) => {
+      if (dragX.value !== 0) {
+        event.preventDefault();
+        closeSwipe();
+      }
+    },
+    [closeSwipe, dragX],
+  );
+
+  const handleShare = useCallback(() => {
+    void Share.share({ message: [titleText, previewText].filter(Boolean).join('\n\n') });
+  }, [previewText, titleText]);
 
   const swipe = Gesture.Pan()
     .enabled(!isPending && !isLeaving)
@@ -377,47 +391,68 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
         </Reanimated.View>
         <GestureDetector gesture={swipe}>
           <Reanimated.View style={[styles.dragSurface, dragStyle]}>
-            <Pressable
-              accessibilityActions={[
-                {
-                  name: isChat ? 'archive' : 'delete',
-                  label: isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu,
-                },
-              ]}
-              accessibilityLabel={[
-                primaryText,
-                titleText ? previewText : null,
-                formatRelativeAge(item.updatedAt),
-              ]
-                .filter(Boolean)
-                .join(', ')}
-              accessibilityRole="button"
-              onAccessibilityAction={handleAccessibilityAction}
-              onPress={onOpen}
-              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-              testID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
-            >
-              <View style={[styles.tile, { backgroundColor: isChat ? eventViolet : eventSun }]}>
-                <AppIcon
-                  name={isChat ? 'bubble.left' : 'note.text'}
-                  size={22}
-                  tintColor={eventForeground}
-                />
-              </View>
-              <View style={styles.body}>
-                <Text ellipsizeMode="tail" numberOfLines={1} style={styles.title}>
-                  {primaryText}
-                </Text>
-                {titleText && previewText ? (
-                  <Text ellipsizeMode="tail" numberOfLines={2} style={styles.preview}>
-                    {previewText}
+            {/* Opens with the system zoom from the row; a long press peeks at the
+                screen and offers the row's actions. */}
+            <Link asChild href={item.route} onPress={onOpen}>
+              <Link.Trigger withAppleZoom>
+                <Pressable
+                  accessibilityActions={[
+                    {
+                      name: isChat ? 'archive' : 'delete',
+                      label: isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu,
+                    },
+                  ]}
+                  accessibilityLabel={[
+                    primaryText,
+                    titleText ? previewText : null,
+                    formatRelativeAge(item.updatedAt),
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                  accessibilityRole="button"
+                  onAccessibilityAction={handleAccessibilityAction}
+                  onPressIn={() => pressed.set(withSpring(1, nativeMotionSprings.snappy))}
+                  onPressOut={() => pressed.set(withSpring(0, nativeMotionSprings.snappy))}
+                  // A plain style: the Link's native trigger drops a style function.
+                  style={styles.row}
+                  testID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
+                >
+                  <View style={[styles.tile, { backgroundColor: isChat ? eventViolet : eventSun }]}>
+                    <AppIcon
+                      name={isChat ? 'bubble.left' : 'note.text'}
+                      size={22}
+                      tintColor={eventForeground}
+                    />
+                  </View>
+                  <View style={styles.body}>
+                    <Text ellipsizeMode="tail" numberOfLines={1} style={styles.title}>
+                      {primaryText}
+                    </Text>
+                    {titleText && previewText ? (
+                      <Text ellipsizeMode="tail" numberOfLines={2} style={styles.preview}>
+                        {previewText}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.meta}>
+                    {formatRelativeAge(item.updatedAt).replace(' ago', '')}
                   </Text>
-                ) : null}
-              </View>
-              <Text style={styles.meta}>
-                {formatRelativeAge(item.updatedAt).replace(' ago', '')}
-              </Text>
-            </Pressable>
+                </Pressable>
+              </Link.Trigger>
+              <Link.Preview style={{ backgroundColor: background }} />
+              <Link.Menu>
+                <Link.MenuAction icon="square.and.arrow.up" onPress={handleShare}>
+                  {t.inbox.item.share}
+                </Link.MenuAction>
+                <Link.MenuAction
+                  destructive={!isChat}
+                  icon={isChat ? 'archivebox' : 'trash'}
+                  onPress={handleAccessibilityAction}
+                >
+                  {isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu}
+                </Link.MenuAction>
+              </Link.Menu>
+            </Link>
             <Reanimated.View
               pointerEvents="none"
               style={[StyleSheet.absoluteFill, styles.swipeScrim, swipeScrimStyle]}

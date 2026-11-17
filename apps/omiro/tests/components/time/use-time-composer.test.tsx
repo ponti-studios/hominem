@@ -112,10 +112,10 @@ describe('useTimeComposer', () => {
     act(() => result.current.setPrompt('Schedule lunch'));
     await act(async () => result.current.ask());
 
-    expect(onError).toHaveBeenCalledWith('Time block extraction failed');
+    expect(onError).toHaveBeenCalledWith('Unable to interpret that time request.');
     expect(result.current.interaction).toEqual({
       kind: 'error',
-      message: 'Time block extraction failed',
+      message: 'Unable to interpret that time request.',
       submittedPrompt: 'Schedule lunch',
     });
     act(() => result.current.cancelResult());

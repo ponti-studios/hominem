@@ -26,6 +26,14 @@
     "./reply-profile": {
       "types": "./build/reply-profile.d.ts",
       "default": "./src/reply-profile.ts"
+    },
+    "./reply-models": {
+      "types": "./build/reply-models.d.ts",
+      "default": "./src/reply-models.ts"
+    },
+    "./speech-catalog": {
+      "types": "./build/speech-catalog.d.ts",
+      "default": "./src/speech-catalog.ts"
     }
   },
   "scripts": {

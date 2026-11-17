@@ -23,6 +23,7 @@ type ChatScreenMessageListProps = {
   onRetry: (messageId: string) => void;
   generation: ChatGenerationState | null;
   topInset: number;
+  bottomInset: number;
 };
 
 export function ChatScreenMessageList({
@@ -36,6 +37,7 @@ export function ChatScreenMessageList({
   onRetry,
   generation,
   topInset,
+  bottomInset,
 }: ChatScreenMessageListProps) {
   const emptyState = (
     <EmptyState
@@ -70,6 +72,7 @@ export function ChatScreenMessageList({
   return (
     <ChatMessageList
       topInset={topInset}
+      bottomInset={bottomInset}
       isMessagesLoading={status.phase === 'loading'}
       displayMessages={search.displayMessages}
       search={{

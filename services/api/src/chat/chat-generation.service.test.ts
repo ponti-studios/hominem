@@ -713,7 +713,7 @@ describe('ChatGenerationService.regenerate (failedGenerationId)', () => {
       chatId: 'chat-1',
       failedGenerationId: 'generation-failed',
       generationId: 'generation-retry',
-      responseLength: 'short',
+      responseLength: 'brief',
     });
 
     expect(mocks.createGenerationRun).toHaveBeenCalledWith(

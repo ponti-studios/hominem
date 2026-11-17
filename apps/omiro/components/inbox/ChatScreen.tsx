@@ -46,11 +46,16 @@ export function ChatScreen({ id }: { id: string }) {
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const { restingInset } = useComposerDockMetrics();
+  const [dockHeight, setDockHeight] = useState(0);
+  // The composer is folded away until the button opens it.
+  const [composerOpen, setComposerOpen] = useState(false);
   const headerHeight = useFloatingHeaderHeight();
   const [showDebug, setShowDebug] = useState(false);
   const { isOnline } = useNetworkStatus();
   const styles = useStyles((theme) => ({
     container: { flex: 1 },
+    // The composer floats over the message list rather than sitting below it.
+    dockFloat: { bottom: 0, left: 0, position: 'absolute', right: 0 },
     offlineIndicator: {
       marginTop: headerHeight,
       backgroundColor: theme.colors.muted,
@@ -256,27 +261,37 @@ export function ChatScreen({ id }: { id: string }) {
             onRetry={retryFailedMessage}
             generation={activeGeneration}
             topInset={headerHeight}
+            bottomInset={dockHeight}
           />
         </PerfProfiler>
-        <ChatScreenDock
-          chatId={chatId}
-          restingInset={restingInset}
-          isConversationGone={isConversationGone}
-          pendingToolCall={pendingToolCall}
-          isRespondingToToolCall={isRespondingToToolCall}
-          onRespondToToolCall={(approved) => {
-            void respondToToolCall(approved);
-          }}
-          generation={activeGeneration}
-          failedMessageText={failedMessageText}
-          onEditFailedMessage={editFailedMessage}
-          onCancelGeneration={() => {
-            void cancelActiveGeneration();
-          }}
-          onRetryGeneration={retryActiveGeneration}
-          search={search}
-          chatSend={chatSend}
-        />
+        <View
+          onLayout={(event) => setDockHeight(event.nativeEvent.layout.height)}
+          pointerEvents="box-none"
+          style={styles.dockFloat}
+        >
+          <ChatScreenDock
+            chatId={chatId}
+            restingInset={restingInset}
+            isConversationGone={isConversationGone}
+            pendingToolCall={pendingToolCall}
+            isRespondingToToolCall={isRespondingToToolCall}
+            onRespondToToolCall={(approved) => {
+              void respondToToolCall(approved);
+            }}
+            generation={activeGeneration}
+            failedMessageText={failedMessageText}
+            onEditFailedMessage={editFailedMessage}
+            onCancelGeneration={() => {
+              void cancelActiveGeneration();
+            }}
+            onRetryGeneration={retryActiveGeneration}
+            search={search}
+            chatSend={chatSend}
+            composerOpen={composerOpen}
+            onOpenComposer={() => setComposerOpen(true)}
+            onCloseComposer={() => setComposerOpen(false)}
+          />
+        </View>
       </KeyboardAvoidingView>
     </>
   );

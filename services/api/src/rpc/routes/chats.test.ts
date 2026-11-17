@@ -469,7 +469,7 @@ describe('chat stream accounting', () => {
         generationId: '11111111-1111-4111-8111-111111111113',
         title: 'Test',
         message: 'Hello',
-        responseLength: 'long',
+        responseLength: 'deep',
       }),
     });
 
@@ -481,10 +481,10 @@ describe('chat stream accounting', () => {
     expect(completionOptions.maxTokens).toBe(32_000);
     expect(completionOptions.reasoning).toEqual({ effort: 'none' });
     expect(completionOptions.messages[0]?.role).toBe('system');
-    expect(completionOptions.messages[0]?.content).toContain('silently plan a short outline');
+    expect(completionOptions.messages[0]?.content).toContain('at least sixteen hundred words');
     expect(completionOptions.messages[1]).toEqual({
       role: 'user',
-      content: expect.stringMatching(/^Hello\n\n\(Give the full essay/),
+      content: expect.stringMatching(/^Hello\n\n\(Give the full in-depth answer/),
     });
   });
 

@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -20,8 +21,6 @@ import { useComposerSubmission } from './useComposerSubmission';
 import { getVoiceComposerErrorPresentation } from './voiceComposerInput.helpers';
 
 export type { ComposerProps } from './composer.types';
-
-const SURFACE_RADIUS = 26;
 
 export function Composer(props: ComposerProps) {
   return (
@@ -78,7 +77,10 @@ function ComposerContent(props: ComposerProps) {
       void submission.submit(
         {
           canSubmit,
-          clearComposer: controller.clearComposer,
+          clearComposer: () => {
+            controller.clearComposer();
+            props.onSent?.();
+          },
           fileIds: controller.uploadedAttachmentIds,
           images: controller.attachedImages,
           message,
@@ -90,6 +92,7 @@ function ComposerContent(props: ComposerProps) {
     [
       controller.clearComposer,
       controller.markAttachmentsSubmitted,
+      props.onSent,
       controller.setMessage,
       controller.uploadedAttachmentIds,
       controller.attachedImages,
@@ -97,21 +100,12 @@ function ComposerContent(props: ComposerProps) {
     ],
   );
 
-  const styles = useStyles((currentTheme) => ({
+  const styles = useStyles(() => ({
     composer: { width: '100%', gap: 10 },
     // Text (and any attachments above it) on the left, the mic/send action
     // bottom-aligned on the right.
     fields: { alignItems: 'flex-end', flexDirection: 'row', gap: 8 },
     fieldsMain: { flex: 1, gap: 8 },
-    // The floating pill: the same dark surface in light and dark mode (`bar`
-    // tokens do not flip with the color scheme). Its own margin comes from
-    // ComposerDock.
-    surface: {
-      backgroundColor: currentTheme.colors.bar,
-      borderCurve: 'continuous',
-      borderRadius: SURFACE_RADIUS,
-      boxShadow: currentTheme.shadows.bar,
-    },
     surfaceContent: { gap: 8, minHeight: 52, padding: 6, paddingLeft: 20 },
     // Recording is one 44px row in the same 52px pill.
     surfaceRecording: { gap: 0, paddingLeft: 6 },
@@ -159,9 +153,10 @@ function ComposerContent(props: ComposerProps) {
   return (
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
       {tray}
-      <View
+      {/* The floating glass pill. Its own margin comes from ComposerDock. */}
+      <Glass
         collapsable={false}
-        style={styles.surface}
+        radius="xl"
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
         <View style={[styles.surfaceContent, isRecording && styles.surfaceRecording]}>
@@ -230,7 +225,7 @@ function ComposerContent(props: ComposerProps) {
             </Animated.View>
           )}
         </View>
-      </View>
+      </Glass>
     </Animated.View>
   );
 }

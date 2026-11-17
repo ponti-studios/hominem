@@ -38,8 +38,9 @@ Exit codes: `0` ok, `1` gate failed (regression), `2` infrastructure errors.
   and grade the tool trace (`mcp-trace.ts`), then the answer (`mcp-judge.ts`).
 - **Trials**: `--trials k` repeats every case. Reports show pass@1 (mean pass rate) and pass^k
   (case passed every trial), because a flaky pass isn't a pass.
-- **Judge**: a different model family from the target (`ORI_JUDGE_MODEL`, default
-  `openai/gpt-6-luna`), threshold 0.7. `calibrate` grades the judge against
+- **Judge**: `ORI_JUDGE_MODEL`, default `openai/gpt-5-mini`, threshold 0.7. The default is the
+  same OpenAI family as the chat target (`openai/gpt-6-luna`), which the rule "a different model
+  family from the target" disallows. Set `ORI_JUDGE_MODEL` to another family for release-grade runs. `calibrate` grades the judge against
   `calibration/judge-labels.json`, reports agreement, Cohen's kappa, a 95% Wilson interval, and
   per-suite confusion counts. Each suite must reach 85% observed agreement and a 95% Wilson lower
   bound of at least 85%, with zero false passes. The labels are curated screening examples, so

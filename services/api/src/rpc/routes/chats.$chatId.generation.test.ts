@@ -218,7 +218,7 @@ describe('chat generation retry route', () => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           generationId: '00000000-0000-4000-8000-000000000006',
-          responseLength: 'short',
+          responseLength: 'brief',
         }),
       },
     );
@@ -230,7 +230,7 @@ describe('chat generation retry route', () => {
       chatId: '00000000-0000-4000-8000-000000000001',
       failedGenerationId: '00000000-0000-4000-8000-000000000005',
       generationId: '00000000-0000-4000-8000-000000000006',
-      responseLength: 'short',
+      responseLength: 'brief',
     });
     expect((await response.text()).match(/data: \[DONE\]/g)).toHaveLength(1);
   });
