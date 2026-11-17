@@ -97,3 +97,13 @@ test('confirmation cannot execute dependent writes before approval', () => {
     }),
   ).toEqual(false);
 });
+
+test('fails a run that ran out of turns, even when the calls it made were right', () => {
+  const score = scoreMcpTrace(
+    { toolCalls: ['search_tools', 'trip_history'], truncated: true },
+    { requiredTools: ['trip_history'] },
+  );
+  expect(score.passed).toEqual(false);
+  expect(score.completed).toEqual({ passed: false });
+  expect(score.failureCategory).toEqual('planning');
+});

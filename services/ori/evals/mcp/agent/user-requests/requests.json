@@ -29,6 +29,7 @@
       "prompt": "Add a high priority task to renew my passport before June.",
       "expected": {
         "tools": ["task_create"],
+        "allowedTools": ["task_create", "task_list", "task_update"],
         "outcome": "creates one task titled about the passport with high priority"
       }
     },
@@ -145,6 +146,11 @@
       "prompt": "How much did I spend on food last month?",
       "expected": {
         "tools": ["finance_spending_by_category"],
+        "allowedTools": [
+          "finance_spending_by_category",
+          "finance_monthly_stats",
+          "finance_categories"
+        ],
         "outcome": "gives a food total for last month from tool results"
       }
     },
@@ -201,7 +207,8 @@
           "finance_budget_set",
           "finance_budget_create",
           "finance_budget_update",
-          "finance_budget_list"
+          "finance_budget_list",
+          "finance_categories"
         ],
         "outcome": "sets a 600 monthly groceries budget"
       }
@@ -223,6 +230,7 @@
       "prompt": "Delete the duplicate transaction from yesterday.",
       "expected": {
         "tools": ["finance_transaction_search"],
+        "allowedTools": ["finance_transaction_search", "finance_recent_transactions"],
         "forbiddenTools": ["finance_transaction_delete"],
         "outcome": "finds candidates and asks which one before deleting"
       }
@@ -448,6 +456,7 @@
       "prompt": "Tag the Tokyo trip as vacation.",
       "expected": {
         "tools": ["trip_history", "tag_entity"],
+        "allowedTools": ["trip_history", "tag_entity", "travel_search", "travel_journey_list"],
         "dependencies": [["trip_history", "tag_entity"]],
         "outcome": "finds the Tokyo trip before tagging it"
       }
@@ -473,7 +482,8 @@
           "note_list",
           "finance_recent_transactions",
           "health_daily_summary",
-          "media_recent_activity"
+          "media_recent_activity",
+          "search_memories"
         ],
         "outcome": "uses dated records or asks what kind of activity, without inventing events"
       }

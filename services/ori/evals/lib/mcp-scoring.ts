@@ -11,6 +11,8 @@ export type McpTrace = {
   confirmationRequested?: string;
   providerError?: boolean;
   runtimeError?: boolean;
+  /** The agent hit its turn budget before it stopped calling tools. */
+  truncated?: boolean;
 };
 
 export type McpExpectation = {
@@ -39,6 +41,7 @@ export type McpScenarioScore = {
   allowedTools: { passed: boolean; unexpected: string[] };
   forbiddenTools: { passed: boolean; found: string[] };
   dependencies: { passed: boolean; violated: string[] };
+  completed: { passed: boolean };
   confirmation: { passed: boolean; reason?: string };
   output: { passed: boolean; missing: string[] };
   arguments: { passed: boolean; failed: string[] };
@@ -129,6 +132,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
     : trace.runtimeError
       ? 'runtime'
       : missing.length ||
+          trace.truncated ||
           unexpected.length ||
           forbidden.length ||
           violated.length ||
@@ -151,7 +155,9 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       failedArguments.length === 0 &&
       failedResults.length === 0 &&
       !trace.providerError &&
-      !trace.runtimeError,
+      !trace.runtimeError &&
+      !trace.truncated,
+    completed: { passed: !trace.truncated },
     requiredTools: { passed: missing.length === 0, missing },
     allowedTools: { passed: unexpected.length === 0, unexpected },
     forbiddenTools: { passed: forbidden.length === 0, found: forbidden },

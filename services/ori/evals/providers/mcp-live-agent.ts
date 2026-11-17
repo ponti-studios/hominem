@@ -13,7 +13,9 @@ import type { McpTrace } from '../lib/mcp-scoring';
 //   HOMINEM_EVAL_API_URL    default http://localhost:4040. Local loopback or api.lvh.me only.
 //   OPENROUTER_API_KEY      model access.
 
-const MAX_TURNS = 8;
+// Discovery costs turns too: search_tools, get_tool_details, then the call itself is about three
+// turns per underlying action, so 8 cut off agents that were still making progress.
+const MAX_TURNS = 12;
 const DEFAULT_API = 'http://localhost:4040';
 const ALLOWED_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'api.lvh.me']);
 const DISCOVERY = new Set([
@@ -289,11 +291,14 @@ export default class McpLiveAgentProvider implements ApiProvider {
       }
     }
 
-    const trace: McpTrace = { toolCalls, calls, text };
+    // Not a provider error: the agent ran out of budget, which is a planning failure the
+    // trajectory grader scores. Leaving `error` unset keeps it out of the infrastructure count.
+    const trace: McpTrace = { toolCalls, calls, text, truncated: true };
     return {
       output: text,
+      tokenUsage: { prompt: usage.prompt, completion: usage.completion, total: usage.total },
+      cost: usage.cost,
       metadata: { trace, turns: MAX_TURNS, truncated: true },
-      error: `MCP agent reached ${MAX_TURNS} turns without finishing`,
     };
   }
 }
