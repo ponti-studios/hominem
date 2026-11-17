@@ -47,8 +47,6 @@ export function ChatScreen({ id }: { id: string }) {
   const chatId = activeChat?.id ?? id;
   const { restingInset } = useComposerDockMetrics();
   const [dockHeight, setDockHeight] = useState(0);
-  // The composer is folded away until the button opens it.
-  const [composerOpen, setComposerOpen] = useState(false);
   const headerHeight = useFloatingHeaderHeight();
   const [showDebug, setShowDebug] = useState(false);
   const { isOnline } = useNetworkStatus();
@@ -287,9 +285,6 @@ export function ChatScreen({ id }: { id: string }) {
             onRetryGeneration={retryActiveGeneration}
             search={search}
             chatSend={chatSend}
-            composerOpen={composerOpen}
-            onOpenComposer={() => setComposerOpen(true)}
-            onCloseComposer={() => setComposerOpen(false)}
           />
         </View>
       </KeyboardAvoidingView>
