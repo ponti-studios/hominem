@@ -205,7 +205,8 @@ export function ChatMessageList({
     if (anchorIndex < 0 || viewport <= 0) {
       return;
     }
-    let below = FOOTER_HEIGHT;
+    // The list pads its end by the floating dock's height, so that space sits below the reply too.
+    let below = FOOTER_HEIGHT + bottomInset;
     for (let index = anchorIndex; index < messages.length; index++) {
       const message = messages[index];
       if (!message) {
@@ -228,7 +229,13 @@ export function ChatMessageList({
       setAnchorKey(null);
       followingBottomRef.current = true;
     }
-  }, [topInset]);
+  }, [topInset, bottomInset]);
+
+  // The dock grows while typing (the Attach and Enhance row appears), so re-size the blank space
+  // whenever its inset changes, not only when rows measure.
+  useEffect(() => {
+    recomputeBlank();
+  }, [recomputeBlank]);
 
   // The blank inset is sized so the furthest the list can scroll is exactly "anchor flush under the
   // header". The native scroll view knows its true content size (ours lags a layout pass, and
