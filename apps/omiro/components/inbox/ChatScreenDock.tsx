@@ -112,6 +112,7 @@ export function ChatScreenDock({
               onOpen={onOpenComposer}
               onClose={onCloseComposer}
               openLabel="New message"
+              placement="screen"
               testID="chat-composer"
             >
               <Composer

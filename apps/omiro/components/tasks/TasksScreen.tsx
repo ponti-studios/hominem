@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
@@ -39,6 +39,12 @@ export function TasksScreen() {
   const [composerHeight, setComposerHeight] = useState(0);
   // The composer is folded away until the button opens it. A quick add (the `add` param) opens it.
   const [composerOpen, setComposerOpen] = useState(add !== undefined);
+  // A new `add` (a quick action fired while Tasks is already mounted) reopens it.
+  useEffect(() => {
+    if (add !== undefined) {
+      setComposerOpen(true);
+    }
+  }, [add]);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 

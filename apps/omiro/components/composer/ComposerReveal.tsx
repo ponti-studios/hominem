@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme } from '~/components/theme';
+import { useAppTheme, useStyles } from '~/components/theme';
 import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
 import { PressableScale } from '~/components/ui/pressable-scale';
@@ -45,37 +45,60 @@ interface ComposerRevealProps {
   onClose: () => void;
   // What the button says to VoiceOver when closed, e.g. "New message" or "New task".
   openLabel: string;
+  // Where the button sits. `tab-bar` puts it beside the native tab bar; `screen` is for
+  // a pushed screen with no tab bar, where it sits in the flow under the composer.
+  placement?: 'tab-bar' | 'screen';
   testID?: string;
   children: ReactNode;
 }
 
 // The composer is folded away until asked for. One glass button sits beside the
-// tab bar; its icon turns from a pencil into a close X. A single progress value
-// drives the composer and the icon, so a reversal mid-motion retargets from where
-// it is instead of snapping. Reduce Motion drops the travel and shows it at once.
+// tab bar (or at the end of a pushed screen's dock); its icon turns from a pencil
+// into a close X. A single progress value drives the composer and the icon, so a
+// reversal mid-motion retargets from where it is instead of snapping. The composer
+// stays mounted while folded, so unsent text and attachments survive. Reduce Motion
+// drops the travel and shows it at once.
 export function ComposerReveal({
   open,
   onOpen,
   onClose,
   openLabel,
+  placement = 'tab-bar',
   testID,
   children,
 }: ComposerRevealProps) {
   const { primary, primaryForeground } = useAppTheme().colors;
+  const styles = useStyles(() => ({
+    tabRowSlot: { bottom: TAB_ROW_BOTTOM, position: 'absolute', right: TAB_ROW_RIGHT },
+    screenRow: { alignSelf: 'flex-end' },
+    button: { height: BUTTON_SIZE, width: BUTTON_SIZE },
+    fill: {
+      alignItems: 'center',
+      height: BUTTON_SIZE,
+      justifyContent: 'center',
+      width: BUTTON_SIZE,
+    },
+    // Both icons share one fixed box, so flipping pencil to X never shifts the button.
+    iconStack: { alignItems: 'center', height: 22, justifyContent: 'center', width: 22 },
+    icon: { alignItems: 'center', justifyContent: 'center', position: 'absolute' },
+    composer: { display: 'flex' },
+    composerHidden: { display: 'none' },
+  }));
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(open ? 1 : 0);
-  // The composer is only in the tree while it is (or is becoming) visible.
-  const [mounted, setMounted] = useState(open);
+  // Whether the composer takes up room. It stays mounted either way, so drafts and
+  // attachments survive folding it away; it only leaves the layout while folded.
+  const [visible, setVisible] = useState(open);
 
   useEffect(() => {
     if (open) {
-      setMounted(true);
+      setVisible(true);
     }
     if (reduceMotion) {
       // No travel: the composer simply appears and disappears.
       progress.value = open ? 1 : 0;
       if (!open) {
-        setMounted(false);
+        setVisible(false);
       }
       return;
     }
@@ -85,7 +108,7 @@ export function ComposerReveal({
       (finished) => {
         // A reopen mid-close cancels this callback (finished is false), so the composer stays up.
         if (finished && !open) {
-          runOnJS(setMounted)(false);
+          runOnJS(setVisible)(false);
         }
       },
     );
@@ -117,45 +140,41 @@ export function ComposerReveal({
     };
   });
 
+  const button = (
+    <PressableScale
+      accessibilityLabel={open ? 'Close' : openLabel}
+      accessibilityRole="button"
+      onPress={open ? onClose : onOpen}
+      style={styles.button}
+      testID={testID ? `${testID}-button` : undefined}
+    >
+      {/* Primary-tinted glass, the same colour as the send button, so the one
+          action in the row reads as the main one. */}
+      <Glass interactive style={styles.fill} tint={primary}>
+        <View style={styles.iconStack}>
+          <Animated.View style={[styles.icon, pencilStyle]}>
+            <AppIcon name="square.and.pencil" size={20} tintColor={primaryForeground} />
+          </Animated.View>
+          <Animated.View style={[styles.icon, closeIconStyle]}>
+            <AppIcon name="xmark" size={16} tintColor={primaryForeground} />
+          </Animated.View>
+        </View>
+      </Glass>
+    </PressableScale>
+  );
+
   return (
     <>
-      {mounted ? <Animated.View style={composerStyle}>{children}</Animated.View> : null}
-      <View pointerEvents="box-none" style={styles.tabRowSlot}>
-        <PressableScale
-          accessibilityLabel={open ? 'Close' : openLabel}
-          accessibilityRole="button"
-          onPress={open ? onClose : onOpen}
-          style={styles.button}
-          testID={testID ? `${testID}-button` : undefined}
-        >
-          {/* Primary-tinted glass, the same colour as the send button, so the one
-              action in the row reads as the main one. */}
-          <Glass interactive style={styles.fill} tint={primary}>
-            <View style={styles.iconStack}>
-              <Animated.View style={[styles.icon, pencilStyle]}>
-                <AppIcon name="square.and.pencil" size={20} tintColor={primaryForeground} />
-              </Animated.View>
-              <Animated.View style={[styles.icon, closeIconStyle]}>
-                <AppIcon name="xmark" size={16} tintColor={primaryForeground} />
-              </Animated.View>
-            </View>
-          </Glass>
-        </PressableScale>
-      </View>
+      <Animated.View style={[composerStyle, visible ? styles.composer : styles.composerHidden]}>
+        {children}
+      </Animated.View>
+      {placement === 'tab-bar' ? (
+        <View pointerEvents="box-none" style={styles.tabRowSlot}>
+          {button}
+        </View>
+      ) : (
+        <View style={styles.screenRow}>{button}</View>
+      )}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  tabRowSlot: { bottom: TAB_ROW_BOTTOM, position: 'absolute', right: TAB_ROW_RIGHT },
-  button: { height: BUTTON_SIZE, width: BUTTON_SIZE },
-  fill: {
-    alignItems: 'center',
-    height: BUTTON_SIZE,
-    justifyContent: 'center',
-    width: BUTTON_SIZE,
-  },
-  // Both icons share one fixed box, so flipping pencil to X never shifts the button.
-  iconStack: { alignItems: 'center', height: 22, justifyContent: 'center', width: 22 },
-  icon: { alignItems: 'center', justifyContent: 'center', position: 'absolute' },
-});
