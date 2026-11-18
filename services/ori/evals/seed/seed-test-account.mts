@@ -102,6 +102,25 @@ await ensure(
     }),
 );
 await ensure(
+  'note "Kyoto guide"',
+  async () => (await read('note_list', { query: 'Kyoto' })).includes('Kyoto guide'),
+  () =>
+    write('note_create', {
+      title: 'Kyoto guide',
+      content:
+        'Kyoto guide: Fushimi Inari at sunrise, Nishiki market for lunch, Gion in the evening.',
+    }),
+);
+await ensure(
+  'task "Dentist appointment"',
+  async () => (await read('task_list', { query: 'Dentist' })).includes('Dentist appointment'),
+  () =>
+    write('task_create', {
+      title: 'Dentist appointment',
+      artifactType: 'task',
+    }),
+);
+await ensure(
   'collection "Japan"',
   async () => (await read('list_collections', { limit: 50 })).includes('"Japan"'),
   () => write('create_collection', { name: 'Japan' }),
@@ -247,5 +266,37 @@ for (const t of txns) {
       }),
   );
 }
+
+// A Dining budget so "am I over budget on dining" has something to compare against.
+function findCategoryId(node: unknown, name: string): string | undefined {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const hit = findCategoryId(item, name);
+      if (hit) return hit;
+    }
+    return undefined;
+  }
+  if (node && typeof node === 'object') {
+    const obj = node as Record<string, unknown>;
+    if (obj.name === name && typeof obj.id === 'string') return obj.id;
+    for (const value of Object.values(obj)) {
+      const hit = findCategoryId(value, name);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
+}
+const diningId = findCategoryId(JSON.parse(await read('finance_categories', {})), 'Dining');
+if (!diningId) throw new Error('Dining category not found; transactions should have created it');
+await ensure(
+  'budget Dining',
+  async () => (await read('finance_budget_list', {})).includes(diningId),
+  () =>
+    write('finance_budget_create', {
+      categoryId: diningId,
+      amountCents: 20000,
+      cadence: 'monthly',
+    }),
+);
 
 console.log(log.join('\n'));

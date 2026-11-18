@@ -455,9 +455,9 @@
       "toolDomains": ["travel"],
       "prompt": "Tag the Tokyo trip as vacation.",
       "expected": {
-        "tools": ["trip_history", "tag_entity"],
+        "tools": ["travel_journey_list", "tag_entity"],
         "allowedTools": ["trip_history", "tag_entity", "travel_search", "travel_journey_list"],
-        "dependencies": [["trip_history", "tag_entity"]],
+        "dependencies": [["travel_journey_list", "tag_entity"]],
         "outcome": "finds the Tokyo trip before tagging it"
       }
     },
