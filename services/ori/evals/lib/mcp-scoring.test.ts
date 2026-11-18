@@ -136,3 +136,39 @@ test('keeps a run passing when a failed tool attempt was recovered by a later su
   expect(score.passed).toEqual(true);
   expect(score.executions.passed).toEqual(true);
 });
+
+test('requiredAnyOf passes when one tool per group is called and names the group when none is', () => {
+  const expected = {
+    requiredAnyOf: [['budget_get', 'budget_list']],
+    allowedTools: ['budget_get', 'budget_list'],
+  };
+  expect(scoreMcpTrace({ toolCalls: ['budget_list'] }, expected).passed).toEqual(true);
+  const miss = scoreMcpTrace({ toolCalls: [] }, expected);
+  expect(miss.passed).toEqual(false);
+  expect(miss.requiredTools.missing).toEqual(['budget_get | budget_list']);
+});
+
+test('gatedTools tolerates a request the gate stopped but fails a call that ran', () => {
+  const expected = { gatedTools: ['note_delete'], allowedTools: ['note_list'] };
+  const stopped = scoreMcpTrace(
+    {
+      toolCalls: ['note_list', 'note_delete'],
+      calls: [
+        { tool: 'note_list', input: {}, status: 'succeeded' },
+        { tool: 'note_delete', input: {}, status: 'confirmation_required' },
+      ],
+      confirmationRequested: 'note_delete',
+    },
+    expected,
+  );
+  expect(stopped.passed).toEqual(true);
+  const ran = scoreMcpTrace(
+    {
+      toolCalls: ['note_delete'],
+      calls: [{ tool: 'note_delete', input: {}, status: 'succeeded' }],
+    },
+    expected,
+  );
+  expect(ran.forbiddenTools.found).toEqual(['note_delete']);
+  expect(ran.passed).toEqual(false);
+});

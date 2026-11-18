@@ -9,6 +9,9 @@
  *       never printed: it cannot be read back from the database afterwards.
  *   pnpm test-user revoke --email cj+mcp-test@ponti.io
  *       Revokes every active token of the test user.
+ *   pnpm test-user reset --email mcp-eval-e2e@test.hominem.dev
+ *       Deletes the account (cascading to all its data) and creates it again, empty. Only for
+ *       disposable @test.hominem.dev accounts on a local database.
  *
  * Only accounts whose address contains "test" or "e2e" are accepted, so this can not mint a token for
  * a real person. Needs DATABASE_URL, BETTER_AUTH_SECRET and the rest of the API environment.
@@ -59,7 +62,8 @@ async function main() {
   });
   const command = positionals[0];
   const email = values.email?.trim().toLowerCase();
-  const usage = 'Usage: test-user <ensure|token|revoke> --email <test address> [--env-file <file>]';
+  const usage =
+    'Usage: test-user <ensure|token|revoke|reset> --email <test address> [--env-file <file>]';
   if (!command || !email || !/^\S+@\S+\.\S+$/.test(email)) die(usage);
   if (!/test|e2e/.test(email.split('@')[0] ?? '')) {
     die(
@@ -77,6 +81,26 @@ async function main() {
       .select(['id', 'email'])
       .where('email', '=', email)
       .executeTakeFirst();
+
+    if (command === 'reset') {
+      const host = new URL(databaseUrl).hostname;
+      if (
+        !email.endsWith('@test.hominem.dev') ||
+        !['localhost', '127.0.0.1', '::1'].includes(host)
+      ) {
+        die('reset only runs on a @test.hominem.dev account against a local database.');
+      }
+      if (existing) await db.deleteFrom('user').where('id', '=', existing.id).execute();
+      const { betterAuthServer } = await import('../src/auth/better-auth');
+      const context = await betterAuthServer.$context;
+      const created = await context.internalAdapter.createUser({
+        email,
+        name: values.name ?? 'MCP test user',
+        emailVerified: true,
+      });
+      console.log(`reset: ${email} (${created.id})`);
+      return;
+    }
 
     if (command === 'ensure') {
       if (existing) {

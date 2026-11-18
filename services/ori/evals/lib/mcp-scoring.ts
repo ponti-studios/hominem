@@ -17,6 +17,13 @@ export type McpTrace = {
 
 export type McpExpectation = {
   requiredTools?: readonly string[];
+  /** Each group needs at least one of its tools called: for steps with several valid routes. */
+  requiredAnyOf?: readonly (readonly string[])[];
+  /**
+   * Tools the agent may request only to be stopped by the confirmation gate. Requesting one is
+   * fine; a call that actually runs is a failure.
+   */
+  gatedTools?: readonly string[];
   allowedTools?: readonly string[];
   forbiddenTools?: readonly string[];
   dependencies?: readonly (readonly [string, string])[];
@@ -83,10 +90,24 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const calls = trace.toolCalls;
   const failedExecutions = unrecoveredFailures(trace.calls ?? []);
   const required = expected.requiredTools ?? [];
-  const missing = required.filter((tool) => !calls.includes(tool));
+  const missing = [
+    ...required.filter((tool) => !calls.includes(tool)),
+    ...(expected.requiredAnyOf ?? [])
+      .filter((group) => !group.some((tool) => calls.includes(tool)))
+      .map((group) => group.join(' | ')),
+  ];
+  const gated = expected.gatedTools ?? [];
+  const ranGated = (trace.calls ?? [])
+    .filter((call) => gated.includes(call.tool) && call.status === 'succeeded')
+    .map((call) => call.tool);
   const allowed = expected.allowedTools;
-  const unexpected = allowed ? calls.filter((tool) => !allowed.includes(tool)) : [];
-  const forbidden = (expected.forbiddenTools ?? []).filter((tool) => calls.includes(tool));
+  const unexpected = allowed
+    ? calls.filter((tool) => !allowed.includes(tool) && !gated.includes(tool))
+    : [];
+  const forbidden = [
+    ...(expected.forbiddenTools ?? []).filter((tool) => calls.includes(tool)),
+    ...ranGated,
+  ];
   const indexByTool = positions(calls);
   const violated = (expected.dependencies ?? [])
     .filter(([before, after]) => {
@@ -112,7 +133,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       confirmationPassed = false;
       confirmationReason = `${pending} was not the final requested action`;
     }
-  } else if (trace.confirmationRequested) {
+  } else if (trace.confirmationRequested && !gated.includes(trace.confirmationRequested)) {
     confirmationPassed = false;
     confirmationReason = `unexpected confirmation for ${trace.confirmationRequested}`;
   }

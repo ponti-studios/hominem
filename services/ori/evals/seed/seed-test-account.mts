@@ -5,12 +5,12 @@
 // path as the eval. Refuses to run unless the operator names the target account.
 //
 // Usage:
-//   HOMINEM_EVAL_SEED_ACCOUNT=test@lvh.me \
+//   HOMINEM_EVAL_SEED_ACCOUNT=mcp-eval-e2e@test.hominem.dev \
 //   HOMINEM_EVAL_API_URL=http://localhost:4042 \
 //   HOMINEM_EVAL_MCP_TOKEN=... pnpm exec tsx evals/seed/seed-test-account.mts
 import { McpClient, resolveApiBase } from '../providers/mcp-live-agent.ts';
 
-const ALLOWED_ACCOUNT = 'test@lvh.me';
+const ALLOWED_ACCOUNT = 'mcp-eval-e2e@test.hominem.dev';
 if (process.env.HOMINEM_EVAL_SEED_ACCOUNT !== ALLOWED_ACCOUNT) {
   throw new Error(`refusing to seed: set HOMINEM_EVAL_SEED_ACCOUNT=${ALLOWED_ACCOUNT}`);
 }
@@ -288,6 +288,12 @@ function findCategoryId(node: unknown, name: string): string | undefined {
 }
 const diningId = findCategoryId(JSON.parse(await read('finance_categories', {})), 'Dining');
 if (!diningId) throw new Error('Dining category not found; transactions should have created it');
+// Budgets need a primary currency; setting it again is harmless.
+await ensure(
+  'primary currency USD',
+  async () => false,
+  () => write('finance_primary_currency_set', { currencyCode: 'USD' }),
+);
 await ensure(
   'budget Dining',
   async () => (await read('finance_budget_list', {})).includes(diningId),

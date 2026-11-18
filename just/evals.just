@@ -18,14 +18,14 @@ run *args:
     set -a; source '{{ ENV_FILE }}'; set +a
     pnpm --filter @hominem/ori eval run {{ args }}
 
-# Run the live MCP suite end to end with no manual steps: ensure the test account, mint a throwaway
+# Run the live MCP suite end to end with no manual steps: reset a disposable eval account, mint a throwaway
 # token, seed, run, then revoke on exit. Needs the local API up (default http://localhost:4040).
 live *args:
     #!/usr/bin/env bash
     set -euo pipefail
     set -a; source '{{ ENV_FILE }}'; set +a
     export HOMINEM_EVAL_API_URL="${HOMINEM_EVAL_API_URL:-http://localhost:4040}"
-    export HOMINEM_EVAL_SEED_ACCOUNT=test@lvh.me
+    export HOMINEM_EVAL_SEED_ACCOUNT=mcp-eval-e2e@test.hominem.dev
     if ! curl -fsS -m 5 -o /dev/null "$HOMINEM_EVAL_API_URL/healthz"; then
       echo "✗ API not reachable at $HOMINEM_EVAL_API_URL. Start it (pnpm dev) or set HOMINEM_EVAL_API_URL." >&2
       exit 1
@@ -36,7 +36,8 @@ live *args:
       rm -f "$tokenfile"
     }
     trap cleanup EXIT
-    pnpm --filter @hominem/api test-user ensure --email "$HOMINEM_EVAL_SEED_ACCOUNT"
+    # Fresh account every run: reset deletes it (and all its data) and creates it again.
+    pnpm --filter @hominem/api test-user reset --email "$HOMINEM_EVAL_SEED_ACCOUNT"
     pnpm --filter @hominem/api test-user token --email "$HOMINEM_EVAL_SEED_ACCOUNT" \
       --env-file "$tokenfile" --var HOMINEM_EVAL_MCP_TOKEN
     set -a; source "$tokenfile"; set +a
