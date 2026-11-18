@@ -128,7 +128,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+// The shared Redis client (used by the token cache) keeps the process alive after main() returns,
+// so a one-shot CLI exits explicitly.
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

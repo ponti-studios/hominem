@@ -37,7 +37,7 @@ export default await defineMcpSuite({
   name: 'mcp-user-requests',
   description: `Realistic user requests across all MCP domains: lookups, writes, chains, confirmation boundaries (${benchmark.version})`,
   tier: 'capability',
-  // Real MCP execution against the local API. Needs HOMINEM_EVAL_MCP_TOKEN and OPENROUTER_API_KEY.
+  // Real MCP execution against the local API. Run it with `just evals live`: it mints and revokes its own token, so nobody creates one by hand.
   provider: 'live',
   datasetFiles: [scenariosUrl],
   promptFiles: [promptUrl],
