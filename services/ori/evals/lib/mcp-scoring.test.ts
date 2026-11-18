@@ -107,3 +107,32 @@ test('fails a run that ran out of turns, even when the calls it made were right'
   expect(score.completed).toEqual({ passed: false });
   expect(score.failureCategory).toEqual('planning');
 });
+
+test('fails a run whose required tool errored and was never retried successfully', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['note_create'],
+      calls: [{ tool: 'note_create', input: {}, error: 'failed', status: 'failed' }],
+      text: 'Sorry, that did not save, but I noted it.',
+    },
+    { requiredTools: ['note_create'] },
+  );
+  expect(score.passed).toEqual(false);
+  expect(score.executions).toEqual({ passed: false, failed: ['note_create'] });
+  expect(score.failureCategory).toEqual('planning');
+});
+
+test('keeps a run passing when a failed tool attempt was recovered by a later success', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['note_create', 'note_create'],
+      calls: [
+        { tool: 'note_create', input: {}, error: 'failed', status: 'failed' },
+        { tool: 'note_create', input: {}, output: { ok: true }, status: 'succeeded' },
+      ],
+    },
+    { requiredTools: ['note_create'] },
+  );
+  expect(score.passed).toEqual(true);
+  expect(score.executions.passed).toEqual(true);
+});
