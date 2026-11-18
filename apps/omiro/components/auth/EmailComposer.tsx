@@ -14,7 +14,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
+import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useShakeAnimation } from '~/services/motion/use-shake-animation';
@@ -22,7 +23,6 @@ import t from '~/translations';
 
 const BAR_HEIGHT = 68;
 const SEND_SIZE = 52;
-const PLACEHOLDER_COLOR = 'rgba(255, 255, 255, 0.45)';
 
 interface EmailComposerProps {
   value: string;
@@ -35,7 +35,7 @@ interface EmailComposerProps {
   hasError: boolean;
 }
 
-// The email field is the capture bar's ink pill with its violet send circle, so the first thing you
+// The email field is the capture bar's glass pill with its violet send circle, so the first thing you
 // touch on the login screen already looks like the app.
 export const EmailComposer = forwardRef<TextInputInstance, EmailComposerProps>(
   function EmailComposer(
@@ -55,9 +55,6 @@ export const EmailComposer = forwardRef<TextInputInstance, EmailComposerProps>(
         height: BAR_HEIGHT,
         paddingStart: 24,
         paddingEnd: 8,
-        borderRadius: BAR_HEIGHT / 2,
-        borderCurve: 'continuous',
-        backgroundColor: theme.colors.bar,
       },
       input: {
         flex: 1,
@@ -84,60 +81,60 @@ export const EmailComposer = forwardRef<TextInputInstance, EmailComposerProps>(
 
     const ring = hasError ? colors.destructive : colors.primary;
     const ringStyle =
-      focused || hasError
-        ? { boxShadow: `0 0 0 2px ${colors.background}, 0 0 0 4px ${ring}` }
-        : null;
+      focused || hasError ? { borderRadius: BAR_HEIGHT / 2, boxShadow: `0 0 0 2px ${ring}` } : null;
     const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
     return (
-      <Animated.View style={[styles.bar, ringStyle, shakeStyle]}>
-        <TextInput
-          ref={ref}
-          testID="auth-email-input"
-          accessibilityLabel={t.auth.emailEntry.emailLabel}
-          autoCapitalize="none"
-          autoComplete="email"
-          autoCorrect={false}
-          cursorColor={colors.lime}
-          editable={!isSubmitting}
-          keyboardType="email-address"
-          onBlur={() => {
-            setFocused(false);
-            onBlur?.();
-          }}
-          onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onSubmitEditing={onSubmit}
-          placeholder={t.auth.emailEntry.emailPlaceholder}
-          placeholderTextColor={PLACEHOLDER_COLOR}
-          returnKeyType="send"
-          selectionColor={colors.lime}
-          style={styles.input}
-          textContentType="emailAddress"
-          value={value}
-        />
-        <Animated.View style={pulseStyle}>
-          <Pressable
-            testID="auth-send-otp"
-            accessibilityLabel={t.auth.emailEntry.sendCodeA11y}
-            accessibilityRole="button"
-            accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
-            disabled={isSubmitting}
-            onPress={onSubmit}
-            style={[
-              styles.send,
-              { backgroundColor: isReady ? colors.barAccent : colors.barControl },
-            ]}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={colors.barAccentForeground} />
-            ) : (
-              <View>
-                <AppIcon name="arrow.up" size={22} tintColor={colors.barAccentForeground} />
-              </View>
-            )}
-          </Pressable>
-        </Animated.View>
+      <Animated.View style={[ringStyle, shakeStyle]}>
+        <Glass style={styles.bar}>
+          <TextInput
+            ref={ref}
+            testID="auth-email-input"
+            accessibilityLabel={t.auth.emailEntry.emailLabel}
+            autoCapitalize="none"
+            autoComplete="email"
+            autoCorrect={false}
+            cursorColor={colors.primary}
+            editable={!isSubmitting}
+            keyboardType="email-address"
+            onBlur={() => {
+              setFocused(false);
+              onBlur?.();
+            }}
+            onChangeText={onChangeText}
+            onFocus={() => setFocused(true)}
+            onSubmitEditing={onSubmit}
+            placeholder={t.auth.emailEntry.emailPlaceholder}
+            placeholderTextColor={withAlpha(colors.barForeground, 0.5)}
+            returnKeyType="send"
+            selectionColor={withAlpha(colors.primary, 0.3)}
+            style={styles.input}
+            textContentType="emailAddress"
+            value={value}
+          />
+          <Animated.View style={pulseStyle}>
+            <Pressable
+              testID="auth-send-otp"
+              accessibilityLabel={t.auth.emailEntry.sendCodeA11y}
+              accessibilityRole="button"
+              accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+              disabled={isSubmitting}
+              onPress={onSubmit}
+              style={[
+                styles.send,
+                { backgroundColor: isReady ? colors.barAccent : colors.barControl },
+              ]}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.barAccentForeground} />
+              ) : (
+                <View>
+                  <AppIcon name="arrow.up" size={22} tintColor={colors.barAccentForeground} />
+                </View>
+              )}
+            </Pressable>
+          </Animated.View>
+        </Glass>
       </Animated.View>
     );
   },

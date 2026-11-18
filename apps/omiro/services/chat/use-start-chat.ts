@@ -8,6 +8,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import type { ChatMessageItem } from '~/components/chat';
 import { API_BASE_URL } from '~/constants';
+import { getChatReplyPrefs } from '~/hooks/use-chat-reply-prefs';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { useAuth } from '~/services/auth/auth-provider';
 import { OFFLINE_UNAVAILABLE_ERROR } from '~/services/chat/chat-errors';
@@ -69,6 +70,7 @@ export function useStartChat() {
         ...input,
         generationId: randomUUID(),
         responseLength: getChatResponseLength(),
+        ...getChatReplyPrefs(),
       });
       let unsubscribe: () => void = () => {};
       unsubscribe = generation.subscribe((_state, event) => {

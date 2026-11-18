@@ -6,8 +6,9 @@ import { ProtectedRouteFallback } from '~/components/protected/protected-route-f
 import { AboutSection } from '~/components/settings/AboutSection';
 import { AccountIdentitySection } from '~/components/settings/AccountIdentitySection';
 import { DangerZoneSection } from '~/components/settings/DangerZoneSection';
+import { PreferencesSection } from '~/components/settings/PreferencesSection';
 import { PrivacySection } from '~/components/settings/PrivacySection';
-import { SectionLabel, SettingsRow } from '~/components/settings/SettingsRow';
+import { SectionLabel, SettingsGroup, SettingsRow } from '~/components/settings/SettingsRow';
 import { TelegramSection } from '~/components/settings/TelegramSection';
 import { UsageSection } from '~/components/settings/UsageSection';
 import { useAppTheme } from '~/components/theme';
@@ -124,16 +125,21 @@ function Settings() {
         preventScreenshots={preventScreenshots}
       />
 
+      <PreferencesSection />
+
       <TelegramSection />
 
       <View style={styles.chatsSection}>
         <SectionLabel>{t.settings.sections.chats}</SectionLabel>
-        <SettingsRow
-          icon="archivebox"
-          label={t.settings.archivedChats}
-          onPress={onArchivedChatsPress}
-          accessory=<AppIcon name="chevron.right" size={12} tintColor={tertiaryColor} />
-        />
+        <SettingsGroup>
+          <SettingsRow
+            icon="archivebox"
+            label={t.settings.archivedChats}
+            onPress={onArchivedChatsPress}
+            testID="settings-archived-chats"
+            accessory=<AppIcon name="chevron.right" size={12} tintColor={tertiaryColor} />
+          />
+        </SettingsGroup>
       </View>
 
       <AboutSection />

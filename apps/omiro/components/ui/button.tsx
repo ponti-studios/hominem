@@ -1,21 +1,23 @@
-import { useCallback, useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  type StyleProp,
-  StyleSheet,
-  Text,
-  type ViewStyle,
-  type PressableStateCallbackType,
-} from 'react-native';
+import { useMemo } from 'react';
+import { ActivityIndicator, type StyleProp, StyleSheet, Text, type ViewStyle } from 'react-native';
 
 import { useAppTheme, useStyles } from '~/components/theme';
+
+import { Glass } from './glass';
+import { PressableScale } from './pressable-scale';
 
 // shadcn's variant taxonomy (default/secondary/destructive/outline/ghost),
 // mapped to the design constitution's tokens. `outline` is the one variant
 // with a border -- the documented exception for a control that needs to
-// read as tappable without a solid fill.
-type ButtonVariant = 'primary' | 'ink' | 'secondary' | 'destructive' | 'outline' | 'ghost';
+// read as tappable without a solid fill. `glass` floats over content.
+type ButtonVariant =
+  | 'primary'
+  | 'ink'
+  | 'secondary'
+  | 'destructive'
+  | 'outline'
+  | 'ghost'
+  | 'glass';
 
 interface ButtonProps {
   label: string;
@@ -28,9 +30,7 @@ interface ButtonProps {
   testID?: string;
 }
 
-const PRESSED_OPACITY = 0.7;
 const LOADING_OPACITY = 0.7;
-const DISABLED_OPACITY = 0.5;
 
 export function Button({
   label,
@@ -90,6 +90,7 @@ export function Button({
         borderColor: colorTokens.border,
       },
       ghost: { backgroundColor: 'transparent' },
+      glass: { backgroundColor: 'transparent' },
     }),
     [colorTokens],
   );
@@ -102,24 +103,9 @@ export function Button({
       destructive: colorTokens['primary-foreground'],
       outline: colorTokens.foreground,
       ghost: colorTokens.foreground,
+      glass: colorTokens.foreground,
     }),
     [colorTokens],
-  );
-
-  const resolvedContainerStyle = useMemo(
-    () => ({
-      ...variantStyles[variant],
-      ...(disabled ? { opacity: DISABLED_OPACITY } : {}),
-    }),
-    [variant, variantStyles, disabled],
-  );
-
-  const resolvedTextStyle = useMemo(
-    () => ({
-      color: textColor[variant],
-      opacity: disabled ? 0.5 : 1,
-    }),
-    [variant, textColor, disabled],
   );
 
   const styles = useStyles((theme) => ({
@@ -130,6 +116,7 @@ export function Button({
       borderCurve: 'continuous',
       borderRadius: theme.borderRadii.pill,
     },
+    glass: { alignItems: 'center', justifyContent: 'center' },
     smallButton: { paddingHorizontal: 16, height: 36 },
     mediumButton: { paddingHorizontal: 20, height: 48 },
     largeButton: { paddingHorizontal: 24, height: 56 },
@@ -138,45 +125,43 @@ export function Button({
     largeText: { ...theme.textVariants.headline, fontWeight: '700', lineHeight: 22 },
   }));
 
-  const isInteractionDisabled = disabled || loading;
-
-  const pressableStyle = useCallback(
-    ({ pressed }: PressableStateCallbackType) => [
-      resolvedContainerStyle,
-      style,
-      loading && { opacity: LOADING_OPACITY },
-      pressed && !isInteractionDisabled && { opacity: PRESSED_OPACITY },
-    ],
-    [isInteractionDisabled, loading, resolvedContainerStyle, style],
+  const sizeStyle =
+    size === 'sm' ? styles.smallButton : size === 'lg' ? styles.largeButton : styles.mediumButton;
+  const content = loading ? (
+    <ActivityIndicator color={textColor[variant]} size="small" />
+  ) : (
+    <Text
+      style={[
+        size === 'sm' ? styles.smallText : size === 'lg' ? styles.largeText : styles.mediumText,
+        { color: textColor[variant] },
+      ]}
+    >
+      {label}
+    </Text>
   );
 
   return (
-    <Pressable
-      testID={testID}
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityState={{ busy: loading, disabled }}
+      disabled={disabled || loading}
       onPress={onPress}
-      disabled={isInteractionDisabled}
-      style={({ pressed }) => [
+      style={[
         styles.button,
-        size === 'sm'
-          ? styles.smallButton
-          : size === 'lg'
-            ? styles.largeButton
-            : styles.mediumButton,
-        ...pressableStyle({ pressed }),
+        variant === 'glass' ? null : sizeStyle,
+        variantStyles[variant],
+        style,
+        loading && { opacity: LOADING_OPACITY },
       ]}
+      testID={testID}
     >
-      {loading ? (
-        <ActivityIndicator color={textColor[variant]} size="small" />
+      {variant === 'glass' ? (
+        <Glass interactive style={[styles.glass, sizeStyle]}>
+          {content}
+        </Glass>
       ) : (
-        <Text
-          style={[
-            size === 'sm' ? styles.smallText : size === 'lg' ? styles.largeText : styles.mediumText,
-            resolvedTextStyle,
-          ]}
-        >
-          {label}
-        </Text>
+        content
       )}
-    </Pressable>
+    </PressableScale>
   );
 }

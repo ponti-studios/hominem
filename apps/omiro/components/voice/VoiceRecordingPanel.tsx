@@ -11,6 +11,7 @@ import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { RecordingLevelMeter } from '~/components/voice/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/voice/useElapsedTimer';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import t from '~/translations';
 
 interface VoiceRecordingPanelProps {
@@ -60,12 +61,12 @@ export function VoiceRecordingPanel({
     },
   }));
   const elapsed = useElapsedTimer(startedAt);
+  const reducedMotion = useReducedMotion();
   const dotOpacity = useAnimatedStyle(() => ({
-    opacity: withRepeat(
-      withTiming(0.3, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    ),
+    // Reduced Motion: the recording dot stays solid instead of pulsing.
+    opacity: reducedMotion
+      ? 1
+      : withRepeat(withTiming(0.3, { duration: 700, easing: Easing.inOut(Easing.ease) }), -1, true),
   }));
 
   return (

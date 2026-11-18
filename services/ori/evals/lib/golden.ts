@@ -21,7 +21,7 @@ export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-5
 const shipped = (model: string): string => process.env.ORI_TARGET_MODEL?.trim() || model;
 export const chatModel = shipped('openai/gpt-6-luna');
 export const timeBlockModel = shipped('z-ai/glm-5.3-flash');
-export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-6-luna';
+export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-5-mini';
 export const currentUtcDate = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
 

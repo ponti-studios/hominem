@@ -40,8 +40,11 @@ import { posthog, posthogClient } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { mobilePersistOptions } from '~/services/query-persistence';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
+import { applyAppearance } from '~/services/system/appearance';
 
 SplashScreen.preventAutoHideAsync();
+// Before the first frame, so the app never flashes the system appearance.
+applyAppearance();
 
 function InnerRootLayout() {
   const theme = useAppTheme();

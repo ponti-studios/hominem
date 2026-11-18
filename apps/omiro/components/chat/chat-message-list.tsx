@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 
 import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 import { countRender } from '~/services/perf/stream-perf';
 
@@ -64,32 +66,6 @@ const FOOTER_HEIGHT = 24;
 const itemSeparatorStyle = { height: ITEM_SEPARATOR_HEIGHT };
 const ItemSeparator = () => <View style={itemSeparatorStyle} />;
 
-const FADE_STEPS = 10;
-const FADE_STEP_HEIGHT = 3;
-const fadeStrips = Array.from({ length: FADE_STEPS }, (_, index) => {
-  const t = (index + 1) / FADE_STEPS;
-  return { key: index, opacity: t * t * (3 - 2 * t) };
-});
-
-// The list ends flush against the composer; this softens that edge so
-// messages dissolve into the page instead of being cut off.
-function BottomFade({ color }: { color: string }) {
-  return (
-    <View
-      pointerEvents="none"
-      style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
-      testID="chat-list-bottom-fade"
-    >
-      {fadeStrips.map((strip) => (
-        <View
-          key={strip.key}
-          style={{ height: FADE_STEP_HEIGHT, backgroundColor: color, opacity: strip.opacity }}
-        />
-      ))}
-    </View>
-  );
-}
-
 interface ChatMessageListProps {
   isMessagesLoading: boolean;
   displayMessages: ChatMessageItem[];
@@ -104,6 +80,8 @@ interface ChatMessageListProps {
   refreshControl?: React.ReactElement<RefreshControlProps>;
   // Space the list keeps clear at the top for a floating header drawn over it.
   topInset?: number;
+  // Space the list keeps clear at the bottom for a floating composer drawn over it.
+  bottomInset?: number;
   generation?: ChatGenerationState | null;
 }
 
@@ -152,6 +130,7 @@ export function ChatMessageList({
   emptyState,
   refreshControl,
   topInset = 0,
+  bottomInset = 0,
   generation,
 }: ChatMessageListProps) {
   countRender('ChatMessageList');
@@ -169,12 +148,10 @@ export function ChatMessageList({
       height: 36,
       width: 36,
       borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.bar,
     },
+    jumpGlass: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   }));
-  const { barForeground, background } = useAppTheme().colors;
+  const { barForeground } = useAppTheme().colors;
   const targetMessageId = generation?.targetMessageId;
   const renderedMessages = useMemo(
     () =>
@@ -228,7 +205,8 @@ export function ChatMessageList({
     if (anchorIndex < 0 || viewport <= 0) {
       return;
     }
-    let below = FOOTER_HEIGHT;
+    // The list pads its end by the floating dock's height, so that space sits below the reply too.
+    let below = FOOTER_HEIGHT + bottomInset;
     for (let index = anchorIndex; index < messages.length; index++) {
       const message = messages[index];
       if (!message) {
@@ -251,7 +229,13 @@ export function ChatMessageList({
       setAnchorKey(null);
       followingBottomRef.current = true;
     }
-  }, [topInset]);
+  }, [topInset, bottomInset]);
+
+  // The dock grows while typing (the Attach and Enhance row appears), so re-size the blank space
+  // whenever its inset changes, not only when rows measure.
+  useEffect(() => {
+    recomputeBlank();
+  }, [recomputeBlank]);
 
   // The blank inset is sized so the furthest the list can scroll is exactly "anchor flush under the
   // header". The native scroll view knows its true content size (ours lags a layout pass, and
@@ -551,6 +535,7 @@ export function ChatMessageList({
             flexGrow: anchorKey ? 0 : 1,
             paddingHorizontal: 16,
             paddingTop: topInset,
+            paddingBottom: bottomInset,
           }}
           ItemSeparatorComponent={ItemSeparator}
           data={renderedMessages}
@@ -568,17 +553,18 @@ export function ChatMessageList({
           scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
           testID="chat-message-list"
         />
-        <BottomFade color={background} />
         {showJump ? (
-          <Pressable
+          <PressableScale
             accessibilityLabel="Jump to latest message"
             accessibilityRole="button"
             onPress={jumpToLatest}
             style={styles.jumpPill}
             testID="chat-jump-to-latest"
           >
-            <AppIcon name="arrow.down" size={16} tintColor={barForeground} />
-          </Pressable>
+            <Glass interactive style={styles.jumpGlass}>
+              <AppIcon name="arrow.down" size={16} tintColor={barForeground} />
+            </Glass>
+          </PressableScale>
         ) : null}
       </View>
     </>

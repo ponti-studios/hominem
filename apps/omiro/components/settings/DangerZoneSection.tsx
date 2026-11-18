@@ -1,6 +1,6 @@
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { SettingsRow } from '~/components/settings/SettingsRow';
+import { SettingsGroup, SettingsRow } from '~/components/settings/SettingsRow';
 import t from '~/translations';
 
 function showDeleteAccountAlert() {
@@ -12,17 +12,19 @@ function showDeleteAccountAlert() {
 export function DangerZoneSection({ onLogoutPress }: { onLogoutPress: () => void }) {
   return (
     <View style={styles.dangerSection}>
-      <SettingsRow
-        icon="rectangle.portrait.and.arrow.right"
-        label={t.settings.signOut.label}
-        onPress={onLogoutPress}
-      />
-      <SettingsRow
-        icon="trash"
-        label={t.settings.deleteAccount.label}
-        onPress={showDeleteAccountAlert}
-        destructive
-      />
+      <SettingsGroup>
+        <SettingsRow
+          icon="rectangle.portrait.and.arrow.right"
+          label={t.settings.signOut.label}
+          onPress={onLogoutPress}
+        />
+        <SettingsRow
+          icon="trash"
+          label={t.settings.deleteAccount.label}
+          onPress={showDeleteAccountAlert}
+          destructive
+        />
+      </SettingsGroup>
     </View>
   );
 }

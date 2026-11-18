@@ -13,12 +13,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAppTheme } from '~/components/theme';
+import { nativeMotionSprings } from '~/services/motion/native-motion';
+
+import { Glass } from './glass';
 
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 900;
-const SHEET_SPRING = { damping: 24, mass: 0.7, stiffness: 260 };
+const SHEET_SPRING = nativeMotionSprings.smooth;
+// The sheet floats: inset from the screen edges, like the system's own sheets.
+const SHEET_INSET = 8;
 const CLOSE_MS = 180;
-const SCRIM_OPACITY = 0.4;
+const SCRIM_OPACITY = 0.25;
 
 interface BottomSheetProps {
   children: ReactNode;
@@ -29,8 +34,8 @@ interface BottomSheetProps {
   visible: boolean;
 }
 
-// The system's modal surface: a rounded-top sheet over a dimmed scrim, lifted
-// above the keyboard. Open, close and drag-to-dismiss are Reanimated shared
+// The system's modal surface: a floating glass sheet over a dimmed scrim,
+// lifted above the keyboard. Open, close and drag-to-dismiss are Reanimated shared
 // values (UI thread); React re-renders only when `visible` flips. The Modal
 // stays mounted until the close animation finishes.
 export function BottomSheet({ children, maxHeight, onClose, testID, visible }: BottomSheetProps) {
@@ -111,21 +116,23 @@ export function BottomSheet({ children, maxHeight, onClose, testID, visible }: B
             style={[
               styles.sheet,
               {
-                backgroundColor: theme.colors.card,
-                boxShadow: theme.shadows.float,
+                marginBottom: Math.max(bottom, SHEET_INSET),
                 maxHeight: maxHeight ?? windowHeight * 0.85,
-                paddingBottom: bottom + 16,
               },
               sheetStyle,
             ]}
             testID={testID}
           >
-            <GestureDetector gesture={pan}>
-              <View style={styles.grabberArea}>
-                <View style={[styles.grabber, { backgroundColor: theme.colors.border }]} />
-              </View>
-            </GestureDetector>
-            {children}
+            <Glass radius="2xl" style={styles.surface}>
+              <GestureDetector gesture={pan}>
+                <View style={styles.grabberArea}>
+                  <View
+                    style={[styles.grabber, { backgroundColor: theme.colors.mutedForeground }]}
+                  />
+                </View>
+              </GestureDetector>
+              {children}
+            </Glass>
           </Animated.View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -137,13 +144,8 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   avoiding: { flex: 1, justifyContent: 'flex-end' },
   scrim: { bottom: 0, left: 0, position: 'absolute', right: 0, top: 0 },
-  sheet: {
-    borderCurve: 'continuous',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    overflow: 'hidden',
-    paddingHorizontal: 20,
-  },
+  sheet: { marginHorizontal: SHEET_INSET },
+  surface: { overflow: 'hidden', paddingBottom: 20, paddingHorizontal: 20 },
   grabberArea: { alignItems: 'center', height: 28, justifyContent: 'center' },
-  grabber: { borderRadius: 3, height: 5, width: 40 },
+  grabber: { borderRadius: 3, height: 5, opacity: 0.4, width: 36 },
 });

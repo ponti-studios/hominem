@@ -44,8 +44,11 @@ export interface ServerTaskFields {
 export function toServerFields(
   task: Pick<Task, 'title' | 'notes' | 'startAt' | 'dueAt' | 'location'>,
 ): ServerTaskFields {
-  // A block needs both ends; a lone start has no end, so it is just a due time.
-  const isBlock = Boolean(task.startAt && task.dueAt);
+  // A block needs both ends, and the end has to come after the start: the API rejects
+  // anything else. Anything less is just a due time.
+  const isBlock = Boolean(
+    task.startAt && task.dueAt && Date.parse(task.dueAt) > Date.parse(task.startAt),
+  );
   return {
     title: task.title,
     description: task.notes,

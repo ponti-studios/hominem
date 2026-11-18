@@ -3,23 +3,23 @@
   "tier": "capability",
   "datasetHash": "a3e24d506686",
   "promptHash": "00fedb613382",
-  "graderHash": "5ceea9664073",
+  "graderHash": "9de030169898",
   "targetModel": "openai/gpt-5-mini",
-  "judgeModel": "openai/gpt-6-luna",
-  "trialsPerCase": 3,
+  "judgeModel": "openai/gpt-5-mini",
+  "trialsPerCase": 1,
   "limited": false,
   "summary": {
     "cases": 4,
-    "trials": 12,
+    "trials": 4,
     "passRate": 1,
     "passAllRate": 1,
     "errors": 0,
     "meanScore": 1,
-    "costUsd": 0.006808,
-    "promptTokens": 2745,
-    "completionTokens": 3061,
-    "latencyP50Ms": 3033,
-    "latencyP95Ms": 5500,
+    "costUsd": 0.002317,
+    "promptTokens": 915,
+    "completionTokens": 1044,
+    "latencyP50Ms": 4114,
+    "latencyP95Ms": 8607,
     "byCategory": {
       "uncategorized": {
         "cases": 4,
@@ -36,28 +36,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3888,
-          "costUsd": 0.0007175,
+          "latencyMs": 8607,
+          "costUsd": 0.0009555,
           "promptTokens": 246,
-          "completionTokens": 328
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 4982,
-          "costUsd": 0.0009495,
-          "promptTokens": 246,
-          "completionTokens": 444
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 5500,
-          "costUsd": 0.0010875,
-          "promptTokens": 246,
-          "completionTokens": 513
+          "completionTokens": 447
         }
       ],
       "passRate": 1,
@@ -72,28 +54,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 2751,
-          "costUsd": 0.0002955,
+          "latencyMs": 4264,
+          "costUsd": 0.0003395,
           "promptTokens": 222,
-          "completionTokens": 120
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 2995,
-          "costUsd": 0.0004115,
-          "promptTokens": 222,
-          "completionTokens": 178
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 3037,
-          "costUsd": 0.0003735,
-          "promptTokens": 222,
-          "completionTokens": 159
+          "completionTokens": 142
         }
       ],
       "passRate": 1,
@@ -108,28 +72,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 2810,
-          "costUsd": 0.00070125,
+          "latencyMs": 4114,
+          "costUsd": 0.00077125,
           "promptTokens": 229,
-          "completionTokens": 322
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 4268,
-          "costUsd": 0.00071125,
-          "promptTokens": 229,
-          "completionTokens": 327
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 4777,
-          "costUsd": 0.00061725,
-          "promptTokens": 229,
-          "completionTokens": 280
+          "completionTokens": 357
         }
       ],
       "passRate": 1,
@@ -144,28 +90,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 2921,
-          "costUsd": 0.0003545,
-          "promptTokens": 218,
-          "completionTokens": 150
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 2025,
+          "latencyMs": 3644,
           "costUsd": 0.0002505,
           "promptTokens": 218,
           "completionTokens": 98
-        },
-        {
-          "pass": true,
-          "score": 1,
-          "failedMetrics": [],
-          "latencyMs": 3033,
-          "costUsd": 0.0003385,
-          "promptTokens": 218,
-          "completionTokens": 142
         }
       ],
       "passRate": 1,

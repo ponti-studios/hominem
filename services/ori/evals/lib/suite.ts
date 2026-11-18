@@ -179,6 +179,7 @@ const graderFiles = [
   '../assertions/offer-shape.ts',
   '../assertions/mcp-grade.ts',
   '../providers/mcp-agent.ts',
+  '../providers/mcp-live-agent.ts',
 ].map((name) => new URL(name, import.meta.url));
 
 export const suiteMetadata = async (options: {
@@ -214,9 +215,11 @@ type McpSuiteOptions = {
   cases: readonly McpCase[];
   datasetFiles: readonly URL[];
   promptFiles: readonly URL[];
+  /** `fixture` (default) answers tools from fixtures. `live` runs them on the real MCP endpoint. */
+  provider?: 'fixture' | 'live';
 };
 
-/** Agent suites: the model drives a fixture-backed tool loop; the trace is graded first. */
+/** Agent suites: the model drives a tool loop; the trace is graded first. */
 export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
   const tests: TestCase[] = options.cases.map((scenario) => ({
     description: scenario.id,
@@ -247,7 +250,7 @@ export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
       prompts: ['{{prompt}}'],
       providers: [
         {
-          id: `file://${path(new URL('../providers/mcp-agent.ts', import.meta.url))}`,
+          id: `file://${path(new URL(options.provider === 'live' ? '../providers/mcp-live-agent.ts' : '../providers/mcp-agent.ts', import.meta.url))}`,
           label: `mcp-agent:${chatModel}`,
           config: { model: chatModel },
         },

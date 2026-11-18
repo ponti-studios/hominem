@@ -1,9 +1,10 @@
 import type { SFSymbol } from 'expo-symbols';
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { PressableScale } from '~/components/ui/pressable-scale';
 
 function useSettingsRowStyles() {
   return useStyles((theme) => ({
@@ -14,11 +15,21 @@ function useSettingsRowStyles() {
     description: { fontSize: 13, color: theme.colors.mutedForeground },
     staticRow: { paddingHorizontal: 16 },
     pressableRow: { paddingHorizontal: 16 },
+    // An inset grouped card, the way system Settings groups its rows.
+    group: {
+      backgroundColor: theme.colors.card,
+      borderCurve: 'continuous',
+      borderRadius: theme.borderRadii.xl,
+      marginHorizontal: 16,
+      paddingVertical: 4,
+    },
     sectionLabel: {
       fontSize: 13,
       fontWeight: '600',
       color: theme.colors.mutedForeground,
-      paddingHorizontal: 16,
+      paddingHorizontal: 32,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
     },
   }));
 }
@@ -71,14 +82,15 @@ export function SettingsRow({
   }
 
   return (
-    <Pressable
-      testID={testID}
-      onPress={onPress}
-      style={({ pressed }) => [styles.pressableRow, pressed ? { opacity: 0.6 } : undefined]}
-    >
+    <PressableScale onPress={onPress} scale={0.98} style={styles.pressableRow} testID={testID}>
       {content}
-    </Pressable>
+    </PressableScale>
   );
+}
+
+export function SettingsGroup({ children }: { children: ReactNode }) {
+  const styles = useSettingsRowStyles();
+  return <View style={styles.group}>{children}</View>;
 }
 
 export function SectionLabel({ children }: { children: string }) {

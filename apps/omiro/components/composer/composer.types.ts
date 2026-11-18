@@ -13,6 +13,8 @@ interface ComposerInboxProps {
   // Called once a note has been handed off (it is already in the Notes list).
   onNoteSaved?: () => void;
   onComplete?: () => void;
+  // Called as a message, note, or chat is sent, so the screen can fold the composer away.
+  onSent?: () => void;
   onStartChatAccepted?: (chatId: string) => void;
   presentation?: 'inbox' | 'new-chat';
   // Shows a "plan" action that hands the text to a natural-language planner
@@ -43,6 +45,8 @@ interface ComposerChatProps {
   // Set while a reply is generating: the trailing send/mic action becomes a
   // stop button (disabled once the stop is in flight).
   generation?: { isStopping: boolean; onCancel: () => void };
+  // Called as a message is sent, so the screen can fold the composer away.
+  onSent?: () => void;
 }
 
 export type ComposerProps = ComposerInboxProps | ComposerChatProps;

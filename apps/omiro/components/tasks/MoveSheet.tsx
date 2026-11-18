@@ -54,7 +54,7 @@ export function MoveSheet({ task, onClose, onMove }: MoveSheetProps) {
     },
     tilePick: { backgroundColor: theme.colors.eventViolet },
     label: { ...theme.textVariants.headline, color: theme.colors.foreground, flex: 1 },
-    pickLabel: { ...theme.textVariants.headline, color: theme.colors.primary, flex: 1 },
+    pickLabel: { ...theme.textVariants.headline, color: theme.colors.primaryText, flex: 1 },
     detail: { ...theme.textVariants.footnote, color: mutedForeground, fontWeight: '600' },
     picker: { alignItems: 'center', paddingTop: 8 },
   }));

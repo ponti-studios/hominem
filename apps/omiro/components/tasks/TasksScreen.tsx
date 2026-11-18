@@ -1,9 +1,11 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { ComposerReveal } from '~/components/composer/ComposerReveal';
 import { useStyles } from '~/components/theme';
+import { AuroraBackground } from '~/components/ui/aurora-background';
 import { useRemindersImport } from '~/services/tasks/import/use-reminders-import';
 import type { TaskListItem } from '~/services/tasks/task-types';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
@@ -31,7 +33,18 @@ export function TasksScreen() {
   const remove = useTaskDelete();
   const reminders = useRemindersImport();
   const router = useRouter();
+  // Set by the New Task quick action and the Add Task shortcut.
+  const { add } = useLocalSearchParams<{ add?: string }>();
   const { inset: composerInset, restingInset } = useComposerDockMetrics({ clearance: 16 });
+  const [composerHeight, setComposerHeight] = useState(0);
+  // The composer is folded away until the button opens it. A quick add (the `add` param) opens it.
+  const [composerOpen, setComposerOpen] = useState(add !== undefined);
+  // A new `add` (a quick action fired while Tasks is already mounted) reopens it.
+  useEffect(() => {
+    if (add !== undefined) {
+      setComposerOpen(true);
+    }
+  }, [add]);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 
@@ -51,6 +64,8 @@ export function TasksScreen() {
     container: { backgroundColor: theme.colors.background, flex: 1 },
     list: { flex: 1 },
     content: { gap: 10, paddingHorizontal: 16, paddingTop: 6 },
+    // The composer floats over the list rather than sitting below it.
+    dockFloat: { bottom: 0, left: 0, position: 'absolute', right: 0 },
     more: {
       ...theme.textVariants.footnote,
       color: theme.colors.mutedForeground,
@@ -81,14 +96,18 @@ export function TasksScreen() {
 
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
+      <AuroraBackground />
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: composerInset + 16 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: composerHeight + restingInset + composerInset + 16 },
+        ]}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         style={styles.list}
         refreshControl={refreshControl}
-        scrollIndicatorInsets={{ bottom: composerInset }}
+        scrollIndicatorInsets={{ bottom: composerHeight + restingInset + composerInset }}
         showsVerticalScrollIndicator={false}
         testID="unscheduled-task-list"
       >
@@ -150,9 +169,26 @@ export function TasksScreen() {
           </View>
         ) : null}
       </ScrollView>
-      <ComposerDock restingInset={restingInset} testID="tasks-composer-dock">
-        <TaskComposer />
-      </ComposerDock>
+      <View pointerEvents="box-none" style={styles.dockFloat}>
+        <ComposerDock restingInset={restingInset} testID="tasks-composer-dock">
+          <View onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}>
+            <ComposerReveal
+              open={composerOpen}
+              onOpen={() => setComposerOpen(true)}
+              onClose={() => setComposerOpen(false)}
+              openLabel="New task"
+              testID="tasks-composer"
+            >
+              <TaskComposer
+                autoFocus={add !== undefined}
+                initialTitle={add}
+                key={add ?? ''}
+                onSent={() => setComposerOpen(false)}
+              />
+            </ComposerReveal>
+          </View>
+        </ComposerDock>
+      </View>
       <TaskDetailSheet
         onClose={() => setDetailTaskId(null)}
         onError={() => undefined}

@@ -12,7 +12,6 @@ import {
 import { UpdateGuard } from '~/components/update-guard';
 import { WEB_BRAND } from '~/lib/brand';
 import { AnalyticsProvider } from '~/lib/posthog';
-import { TelemetryProvider } from '~/lib/telemetry/telemetry-provider';
 
 import type { Route } from './+types/root';
 import { ErrorState } from './components/error-state';
@@ -98,13 +97,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   return (
     <HonoProvider baseUrl={apiBaseUrl}>
-      <TelemetryProvider>
-        <AnalyticsProvider>
-          <UpdateGuard logo={WEB_BRAND.logoPath} appName={WEB_BRAND.appName}>
-            <Outlet />
-          </UpdateGuard>
-        </AnalyticsProvider>
-      </TelemetryProvider>
+      <AnalyticsProvider>
+        <UpdateGuard logo={WEB_BRAND.logoPath} appName={WEB_BRAND.appName}>
+          <Outlet />
+        </UpdateGuard>
+      </AnalyticsProvider>
     </HonoProvider>
   );
 }

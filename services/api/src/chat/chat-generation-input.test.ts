@@ -19,9 +19,9 @@ describe('getReasoningConfig', () => {
 
 describe('buildMessages', () => {
   it('adds the length reminder to the request-only last user turn', () => {
-    const messages = buildMessages([], 'Hello', 'system prompt', 'short');
+    const messages = buildMessages([], 'Hello', 'system prompt', 'brief');
     expect(messages.at(-1)?.content).toContain('Hello');
-    expect(messages.at(-1)?.content).toContain('under sixty words');
+    expect(messages.at(-1)?.content).toContain('under fifty words');
     expect(messages[0]).toEqual({ role: 'system', content: 'system prompt' });
   });
 

@@ -31,26 +31,52 @@ appId: com.pontistudios.hakumi.dev
 - pressKey: Escape
 
 # ── 4. Settings ───────────────────────────────────────────────────────────────
-- tapOn: 'gearshape'
+# Header search stays open after the tour above and hides the native header items, so close it first.
+- runFlow:
+    when:
+      visible: 'Close'
+    commands:
+      - tapOn: 'Close'
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn: 'Settings'
 - waitForAnimationToEnd:
     timeout: 2000
 - takeScreenshot: omiro_screen_04_settings
 
 # ── 5. Archived chats (from Settings) ────────────────────────────────────────
-- tapOn: 'Archived chats'
+- swipe:
+    direction: UP
+    duration: 600
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn:
+    id: 'settings-archived-chats'
 - waitForAnimationToEnd:
     timeout: 2000
 - takeScreenshot: omiro_screen_05_archived_chats
-- tapOn: 'Back'
+# Settings is a form sheet with no visible back button here; dismiss it with a downward drag.
+- swipe:
+    start: '50%,12%'
+    end: '50%,95%'
+    duration: 500
 - waitForAnimationToEnd:
     timeout: 1000
-- tapOn: 'Back'
+- swipe:
+    start: '50%,12%'
+    end: '50%,95%'
+    duration: 500
 - waitForAnimationToEnd:
     timeout: 1000
 
 # ── 6. Note detail ────────────────────────────────────────────────────────────
 # Notes are listed on the Notes tab; the chat list (next section) is on the Chat tab.
-- tapOn: 'Notes'
+- tapOn:
+    point: '35%,11%'
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn:
+    point: '50%,94%'
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn:
@@ -58,10 +84,13 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 2500
 - takeScreenshot: omiro_screen_06_note_detail
-- tapOn: 'Back'
+# Glass close button, top-left corner of the detail sheet.
+- tapOn:
+    point: '10%,10%'
 - waitForAnimationToEnd:
     timeout: 1000
-- tapOn: 'Chat'
+- tapOn:
+    point: '28%,94%'
 - waitForAnimationToEnd:
     timeout: 1500
 
@@ -71,6 +100,8 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 2500
 - takeScreenshot: omiro_screen_07_chat_detail
-- tapOn: 'Back'
+# Glass close button, top-left corner of the detail sheet.
+- tapOn:
+    point: '10%,10%'
 - waitForAnimationToEnd:
     timeout: 1000

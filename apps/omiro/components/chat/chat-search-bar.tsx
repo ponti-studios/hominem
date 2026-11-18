@@ -4,12 +4,12 @@ import {
   Pressable,
   Text,
   TextInput,
-  View,
   type TextInputInstance,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
@@ -38,10 +38,6 @@ export function ChatSearchBar({
   const styles = useStyles((theme) => ({
     bar: {
       alignItems: 'center',
-      backgroundColor: theme.colors.bar,
-      borderCurve: 'continuous',
-      borderRadius: 28,
-      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 10,
       height: 56,
@@ -73,7 +69,7 @@ export function ChatSearchBar({
 
   return (
     <Animated.View entering={FadeIn.duration(160)} testID="chat-search-bar">
-      <View style={styles.bar}>
+      <Glass style={styles.bar}>
         <AppIcon name="magnifyingglass" size={18} tintColor={barForeground} />
         <TextInput
           ref={inputRef}
@@ -103,7 +99,7 @@ export function ChatSearchBar({
         >
           <AppIcon name="xmark" size={18} tintColor={bar} />
         </Pressable>
-      </View>
+      </Glass>
     </Animated.View>
   );
 }

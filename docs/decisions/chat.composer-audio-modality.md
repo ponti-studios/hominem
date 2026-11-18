@@ -9,6 +9,10 @@ is the sign-off `composer-parity.md` required before this document existed.
 
 ## Context
 
+**Current implementation status (2026-11-14):** Web chat was subsequently
+removed from `apps/web`; this decision records approved audio-modality behavior,
+not a claim that a Web implementation currently ships. Omiro remains active.
+
 `composer-parity.md` (W-001) required a recorded decision on Omiro audio
 response and walkie-talkie behavior before further composer work proceeds.
 `chat.capabilities.md` already documents that both apps support submitting

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
@@ -7,16 +7,24 @@ import { useAppTheme } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { ActionSheet } from '~/components/ui/action-sheet';
 import AppIcon from '~/components/ui/icon';
+import { scanTextFromLibrary } from '~/services/system/scan-text';
 import t from '~/translations';
 
 import { ComposerTrayChip } from './ComposerTrayChip';
 
 interface ComposerAttachButtonProps {
   disabled: boolean;
+  // Receives the text read out of a photo (Scan Text). The option is hidden
+  // where there is no composer to put the text in.
+  onInsertText?: (text: string) => void;
   variant?: 'icon' | 'chip';
 }
 
-export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAttachButtonProps) {
+export function ComposerAttachButton({
+  disabled,
+  onInsertText,
+  variant = 'icon',
+}: ComposerAttachButtonProps) {
   const { pickAttachment, handleCameraCapture, isUploading } = useComposerContext();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,6 +36,22 @@ export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAtt
     : t.inboxComposer.composer.addAttachmentA11y;
 
   const showMenu = useCallback(() => setIsMenuOpen(true), []);
+
+  const scanText = useCallback(async () => {
+    try {
+      const text = await scanTextFromLibrary();
+      if (text === null) {
+        return;
+      }
+      if (text.trim()) {
+        onInsertText?.(text);
+      } else {
+        Alert.alert(t.chat.input.scanText.emptyTitle, t.chat.input.scanText.emptyMessage);
+      }
+    } catch {
+      Alert.alert(t.chat.input.scanText.failedTitle, t.chat.input.scanText.failedMessage);
+    }
+  }, [onInsertText]);
 
   return (
     <>
@@ -74,6 +98,18 @@ export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAtt
               void pickAttachment();
             },
           },
+          ...(onInsertText
+            ? [
+                {
+                  key: 'scan-text',
+                  icon: 'text.viewfinder' as const,
+                  label: t.chat.input.actionSheet.scanText,
+                  onPress: () => {
+                    void scanText();
+                  },
+                },
+              ]
+            : []),
         ]}
         testID="composer-attach-menu"
         title={t.inboxComposer.composer.addAttachmentA11y}

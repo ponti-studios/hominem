@@ -51,6 +51,9 @@ export interface ScheduledReminder {
   taskId: string;
   at: number;
   title: string;
+  // False for a reminder scheduled before reminders had buttons; it is
+  // scheduled again so it gets them.
+  actionable?: boolean;
 }
 
 export interface ReminderScheduler {
@@ -76,7 +79,10 @@ export async function reconcileReminders(
       .filter((reminder) => {
         const existing = current.get(reminder.taskId);
         return (
-          !existing || existing.at !== reminder.at.getTime() || existing.title !== reminder.title
+          !existing ||
+          existing.actionable === false ||
+          existing.at !== reminder.at.getTime() ||
+          existing.title !== reminder.title
         );
       })
       .map(async (reminder) => {

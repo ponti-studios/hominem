@@ -8,13 +8,13 @@ export const fontFamilies = {
   pixel: 'Geist Pixel Square',
 } as const;
 
-// Playful palette: an ink-dark foreground on a lavender ground, with violet as
-// the action color and coral/lime as accents. `ink*` is the high-contrast
-// inverted surface (capture bar, toasts); `event*` are the pastel fills for
-// calendar blocks; `lime*` marks completion. Tokens, not literals, so every
-// screen picks the system up.
+// Liquid Glass palette: an ink-dark foreground on a calm lavender ground, with
+// violet as the action color and coral/lime as accents. Chrome floats on system
+// glass (`glass*`, `bar*`); `ink*` is the high-contrast inverted fill;
+// `event*` are the pastel fills for calendar blocks; `lime*` marks completion.
+// Tokens, not literals, so every screen picks the system up.
 export const lightColors = {
-  background: '#F5F3FF',
+  background: '#F4F2FB',
   card: '#FFFFFF',
   cardForeground: '#14121F',
   popover: '#FFFFFF',
@@ -24,6 +24,8 @@ export const lightColors = {
   mutedForeground: '#625F78',
   tertiary: '#625F78',
   primary: '#6C4DFF',
+  // Text-safe tones (>=4.5:1 on the light surfaces). Fills keep the base colors.
+  primaryText: '#6C4DFF',
   secondary: '#EDE9FE',
   secondaryForeground: '#14121F',
   accent: '#EDE9FE',
@@ -31,6 +33,7 @@ export const lightColors = {
   destructive: '#D93B2B',
   success: '#0F8A5F',
   warning: '#F59E0B',
+  warningText: '#8A4F00',
   primaryForeground: '#FFFFFF',
   destructiveForeground: '#FFFFFF',
   border: '#E6E1FA',
@@ -39,10 +42,19 @@ export const lightColors = {
   overlayScrim: '#14121F',
   ink: '#14121F',
   inkForeground: '#FFFFFF',
-  // The composer family (composer, search bar, toasts, the dock's stopping and
-  // failed bars) is one fixed dark bar: these do not flip with the color scheme.
-  bar: '#14121F',
-  barForeground: '#FFFFFF',
+  // What the system glass is tinted with, and the solid stand-in (plus its
+  // hairline edge) used when Reduce Transparency turns glass off.
+  glassTint: '#FFFFFF33',
+  glassFallback: '#FFFFFF',
+  glassStroke: '#14121F1F',
+  // Soft colour pools behind root screens, so glass has something to bend.
+  aurora1: '#B9A8FF',
+  aurora2: '#FFC2B8',
+  aurora3: '#A9E4FF',
+  // Drawn on a glass bar (composer, search bar, toasts, the dock's stopping and
+  // failed bars). `bar` is the fill under them when glass is off.
+  bar: '#FFFFFF',
+  barForeground: '#14121F',
   barAccent: '#6C4DFF',
   barAccentForeground: '#FFFFFF',
   // Controls drawn on a bar surface (disabled stop, edit button).
@@ -52,6 +64,8 @@ export const lightColors = {
   // Neutral tile behind a tool-call icon that was rejected.
   neutralTile: 'rgba(127, 127, 160, 0.2)',
   coral: '#FF6B57',
+  // Coral for text and labels: passes WCAG AA on the light surfaces.
+  coralText: '#B8321F',
   lime: '#C9F36B',
   limeForeground: '#14121F',
   eventViolet: '#E2D9FF',
@@ -67,7 +81,7 @@ export const lightColors = {
 } as const;
 
 export const darkColors = {
-  background: '#0E0C1A',
+  background: '#0B0A14',
   card: '#1B1830',
   cardForeground: '#F4F2FF',
   popover: '#1B1830',
@@ -77,6 +91,7 @@ export const darkColors = {
   mutedForeground: '#A29FBA',
   tertiary: '#A29FBA',
   primary: '#6C4DFF',
+  primaryText: '#A894FF',
   secondary: '#241F3D',
   secondaryForeground: '#F4F2FF',
   accent: '#241F3D',
@@ -84,6 +99,7 @@ export const darkColors = {
   destructive: '#FF7D6B',
   success: '#34D399',
   warning: '#FBBF24',
+  warningText: '#FBBF24',
   primaryForeground: '#FFFFFF',
   destructiveForeground: '#14121F',
   border: '#2B2745',
@@ -92,10 +108,19 @@ export const darkColors = {
   overlayScrim: '#000000',
   ink: '#F4F2FF',
   inkForeground: '#14121F',
-  // The composer family (composer, search bar, toasts, the dock's stopping and
-  // failed bars) is one fixed dark bar: these do not flip with the color scheme.
-  bar: '#14121F',
-  barForeground: '#FFFFFF',
+  // What the system glass is tinted with, and the solid stand-in (plus its
+  // hairline edge) used when Reduce Transparency turns glass off.
+  glassTint: '#1B183033',
+  glassFallback: '#1B1830',
+  glassStroke: '#FFFFFF29',
+  // Soft colour pools behind root screens, so glass has something to bend.
+  aurora1: '#3A2A8C',
+  aurora2: '#5A2238',
+  aurora3: '#123A55',
+  // Drawn on a glass bar (composer, search bar, toasts, the dock's stopping and
+  // failed bars). `bar` is the fill under them when glass is off.
+  bar: '#1B1830',
+  barForeground: '#F4F2FF',
   barAccent: '#6C4DFF',
   barAccentForeground: '#FFFFFF',
   // Controls drawn on a bar surface (disabled stop, edit button).
@@ -105,6 +130,8 @@ export const darkColors = {
   // Neutral tile behind a tool-call icon that was rejected.
   neutralTile: 'rgba(127, 127, 160, 0.2)',
   coral: '#FF7D6B',
+  // Coral for text and labels: passes WCAG AA on the dark surfaces.
+  coralText: '#FF9A8A',
   lime: '#C9F36B',
   limeForeground: '#14121F',
   eventViolet: '#3B2F7E',
@@ -134,11 +161,11 @@ export const spacing = {
 } as const;
 
 export const borderRadii = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 22,
-  '2xl': 28,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 26,
+  '2xl': 34,
   pill: 999,
 } as const;
 
@@ -159,17 +186,11 @@ export const shadows = {
   md: [
     { color: '#00000024', offsetX: 0, offsetY: 3, blurRadius: 6, spreadDistance: 0, inset: false },
   ],
-  // The one soft shadow in the system: floating chrome only (capture bar,
-  // sheets, toasts). List rows and cards stay flat -- blur shadows on every
-  // row are the classic scroll-jank source.
+  // The one soft shadow in the system, and only under the glass fallback: real
+  // glass carries its own depth. List rows and cards stay flat -- blur shadows
+  // on every row are the classic scroll-jank source.
   float: [
-    { color: '#14121F47', offsetX: 0, offsetY: 8, blurRadius: 24, spreadDistance: 0, inset: false },
-  ],
-  // `float` plus a 1px white 10% ring, so the fixed dark bar keeps a readable
-  // edge on a dark ground. The ring is invisible on a light ground.
-  bar: [
-    { color: '#FFFFFF1A', offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, inset: false },
-    { color: '#14121F47', offsetX: 0, offsetY: 8, blurRadius: 24, spreadDistance: 0, inset: false },
+    { color: '#14121F29', offsetX: 0, offsetY: 8, blurRadius: 24, spreadDistance: 0, inset: false },
   ],
 } as const;
 

@@ -11,6 +11,8 @@ export type McpTrace = {
   confirmationRequested?: string;
   providerError?: boolean;
   runtimeError?: boolean;
+  /** The agent hit its turn budget before it stopped calling tools. */
+  truncated?: boolean;
 };
 
 export type McpExpectation = {
@@ -39,6 +41,9 @@ export type McpScenarioScore = {
   allowedTools: { passed: boolean; unexpected: string[] };
   forbiddenTools: { passed: boolean; found: string[] };
   dependencies: { passed: boolean; violated: string[] };
+  completed: { passed: boolean };
+  /** Tools whose latest attempt failed and was never followed by a successful attempt. */
+  executions: { passed: boolean; failed: string[] };
   confirmation: { passed: boolean; reason?: string };
   output: { passed: boolean; missing: string[] };
   arguments: { passed: boolean; failed: string[] };
@@ -61,8 +66,22 @@ const stableStringify = (value: unknown): string =>
     return nested;
   });
 
+/**
+ * A tool counts as failed when its latest attempt errored. A failed attempt the agent recovered
+ * from (a later attempt at the same tool succeeded) does not count against the run.
+ */
+export function unrecoveredFailures(calls: NonNullable<McpTrace['calls']>): string[] {
+  const latest = new Map<string, (typeof calls)[number]>();
+  for (const call of calls) {
+    if (call.status === 'requested') continue;
+    latest.set(call.tool, call);
+  }
+  return [...latest.values()].filter((call) => call.status === 'failed').map((call) => call.tool);
+}
+
 export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpScenarioScore {
   const calls = trace.toolCalls;
+  const failedExecutions = unrecoveredFailures(trace.calls ?? []);
   const required = expected.requiredTools ?? [];
   const missing = required.filter((tool) => !calls.includes(tool));
   const allowed = expected.allowedTools;
@@ -129,6 +148,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
     : trace.runtimeError
       ? 'runtime'
       : missing.length ||
+          trace.truncated ||
+          failedExecutions.length ||
           unexpected.length ||
           forbidden.length ||
           violated.length ||
@@ -150,8 +171,12 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       missingOutput.length === 0 &&
       failedArguments.length === 0 &&
       failedResults.length === 0 &&
+      failedExecutions.length === 0 &&
       !trace.providerError &&
-      !trace.runtimeError,
+      !trace.runtimeError &&
+      !trace.truncated,
+    completed: { passed: !trace.truncated },
+    executions: { passed: failedExecutions.length === 0, failed: failedExecutions },
     requiredTools: { passed: missing.length === 0, missing },
     allowedTools: { passed: unexpected.length === 0, unexpected },
     forbiddenTools: { passed: forbidden.length === 0, found: forbidden },

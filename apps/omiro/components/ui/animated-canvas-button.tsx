@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAppTheme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 interface AnimatedCanvasButtonProps extends Pick<ViewProps, 'children' | 'style'> {
   progress: number;
@@ -46,19 +47,20 @@ export function AnimatedCanvasButton({
       .detach();
   }, [borderRadius, height, width]);
 
+  const reducedMotion = useReducedMotion();
   const drawProgress = useSharedValue(clampedProgress);
   React.useEffect(() => {
-    drawProgress.set(withTiming(clampedProgress, { duration: 300 }));
-  }, [clampedProgress, drawProgress]);
+    drawProgress.set(withTiming(clampedProgress, { duration: reducedMotion ? 0 : 300 }));
+  }, [clampedProgress, drawProgress, reducedMotion]);
 
   const strokeColor = useDerivedValue(() =>
     interpolateColor(drawProgress.value, [0, 1], [mutedForeground, primary]),
   );
   const borderStyle = useAnimatedStyle(
     () => ({
-      opacity: withTiming(clampedProgress === 1 ? 0 : 1, { duration: 200 }),
+      opacity: withTiming(clampedProgress === 1 ? 0 : 1, { duration: reducedMotion ? 0 : 200 }),
     }),
-    [clampedProgress],
+    [clampedProgress, reducedMotion],
   );
 
   return (

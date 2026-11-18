@@ -1,15 +1,15 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 
 import { fontFamilies, useAppTheme } from '~/components/theme';
 
-// The app's one navigation shell: a native tab bar. The system lays out the
-// bar against the home indicator and keyboard; each tab owns a native stack
-// (and so a native header) in its own folder.
+// The app's one navigation shell: the system tab bar, on the system's own
+// glass (so no background colour here). The system lays out the bar against
+// the home indicator and keyboard; each tab owns a native stack (and so a
+// native header) in its own folder.
 export default function TabsLayout() {
-  const { card, mutedForeground, primary } = useAppTheme().colors;
+  const { mutedForeground, primary } = useAppTheme().colors;
   return (
     <NativeTabs
-      backgroundColor={card}
       iconColor={{ default: mutedForeground, selected: primary }}
       labelStyle={{
         default: { color: mutedForeground, fontFamily: fontFamilies.sans },

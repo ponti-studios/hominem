@@ -31,6 +31,7 @@ testflight *flags:
 otp email:
     pnpm --filter @hominem/api exec tsx scripts/otp.ts "{{ email }}"
 
+mod analysis 'just/analysis.just'
 mod db 'just/db.just'
 mod billing 'just/billing.just'
 mod deploy 'just/deploy.just'

@@ -1,6 +1,6 @@
 import type { SFSymbol } from 'expo-symbols';
 import { useEffect } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
@@ -40,14 +41,11 @@ const options: { kind: ComposerEntryKind; label: string; icon: SFSymbol; iconFil
 // control. The thumb sliding between them is what makes the switch legible.
 export function ComposerKindToggle({ selected, onSelect }: ComposerKindToggleProps) {
   const theme = useAppTheme();
-  const { bar, barAccent, barAccentForeground, barForeground } = theme.colors;
+  const { barAccent, barAccentForeground, barForeground } = theme.colors;
   const styles = useStyles(() => ({
     control: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: bar,
-      borderRadius: 999,
-      borderCurve: 'continuous',
       padding: TRACK_PADDING,
     },
   }));
@@ -68,7 +66,7 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
   }));
 
   return (
-    <View style={styles.control} testID="composer-kind-control">
+    <Glass style={styles.control} testID="composer-kind-control">
       <Animated.View
         pointerEvents="none"
         style={[
@@ -110,6 +108,6 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
           </Pressable>
         );
       })}
-    </View>
+    </Glass>
   );
 }

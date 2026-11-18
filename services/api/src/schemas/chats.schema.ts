@@ -1,4 +1,16 @@
+import { isReplyModelId } from '@hominem/ai/reply-models';
+import {
+  DEFAULT_REPLY_LENGTH,
+  normalizeReplyLength,
+  REPLY_LENGTH_IDS,
+} from '@hominem/ai/reply-profile';
 import { z } from 'zod';
+
+// Current ids, plus the legacy short/medium/long that older apps still send. Always resolves to a
+// current id, so nothing downstream sees the legacy names.
+const replyLengthSchema = z
+  .enum([...REPLY_LENGTH_IDS, 'short', 'medium', 'long'])
+  .transform((value) => normalizeReplyLength(value) ?? DEFAULT_REPLY_LENGTH);
 
 export const ChatsSendSchema = z
   .object({
@@ -6,7 +18,9 @@ export const ChatsSendSchema = z
     message: z.string(),
     fileIds: z.array(z.uuid()).max(5).optional(),
     responseModality: z.enum(['text', 'audio']).optional(),
-    responseLength: z.enum(['short', 'medium', 'long']).optional(),
+    responseLength: replyLengthSchema.optional(),
+    replyStyle: z.enum(['partner', 'friend', 'straight']).optional(),
+    replyModel: z.string().refine(isReplyModelId, 'Unknown reply model').optional(),
   })
   .superRefine((value, ctx) => {
     if (value.message.trim().length === 0 && (!value.fileIds || value.fileIds.length === 0)) {
@@ -32,7 +46,9 @@ export const ChatsStartStreamSchema = ChatsCreateSchema.extend({
   generationId: z.uuid(),
   message: z.string(),
   fileIds: z.array(z.uuid()).max(5).optional(),
-  responseLength: z.enum(['short', 'medium', 'long']).optional(),
+  responseLength: replyLengthSchema.optional(),
+  replyStyle: z.enum(['partner', 'friend', 'straight']).optional(),
+  replyModel: z.string().refine(isReplyModelId, 'Unknown reply model').optional(),
 }).superRefine((value, ctx) => {
   if (value.message.trim().length === 0 && (!value.fileIds || value.fileIds.length === 0)) {
     ctx.addIssue({
@@ -53,18 +69,24 @@ export const ChatsEditMessageSchema = z.object({
 
 export const ChatsRegenerateMessageSchema = z.object({
   generationId: z.uuid(),
-  responseLength: z.enum(['short', 'medium', 'long']).optional(),
+  responseLength: replyLengthSchema.optional(),
+  replyStyle: z.enum(['partner', 'friend', 'straight']).optional(),
+  replyModel: z.string().refine(isReplyModelId, 'Unknown reply model').optional(),
 });
 
 export const ChatsRetryGenerationSchema = z.object({
   generationId: z.uuid(),
-  responseLength: z.enum(['short', 'medium', 'long']).optional(),
+  responseLength: replyLengthSchema.optional(),
+  replyStyle: z.enum(['partner', 'friend', 'straight']).optional(),
+  replyModel: z.string().refine(isReplyModelId, 'Unknown reply model').optional(),
 });
 
 export const ChatsToolCallRespondSchema = z
   .object({
     approved: z.boolean(),
-    responseLength: z.enum(['short', 'medium', 'long']).optional(),
+    responseLength: replyLengthSchema.optional(),
+    replyStyle: z.enum(['partner', 'friend', 'straight']).optional(),
+    replyModel: z.string().refine(isReplyModelId, 'Unknown reply model').optional(),
   })
   .strict();
 

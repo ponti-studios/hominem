@@ -74,17 +74,18 @@ export function AuthMascot({
     if (!greet || reducedMotion) {
       return;
     }
+    // Short and snappy: a quick rise, then a stiff spring that settles in well under half a second.
     greetScale.set(
       withSequence(
         withTiming(0.96, { duration: 0 }),
-        withTiming(1.07, { duration: 300, easing: Easing.out(Easing.quad) }),
-        withSpring(1, { damping: 8, stiffness: 140 }),
+        withTiming(1.07, { duration: 160, easing: Easing.out(Easing.quad) }),
+        withSpring(1, { damping: 14, stiffness: 320 }),
       ),
     );
     greetY.set(
       withSequence(
-        withTiming(-6, { duration: 300, easing: Easing.out(Easing.quad) }),
-        withSpring(0, { damping: 8, stiffness: 140 }),
+        withTiming(-6, { duration: 160, easing: Easing.out(Easing.quad) }),
+        withSpring(0, { damping: 14, stiffness: 320 }),
       ),
     );
   }, [greet, greetScale, greetY, reducedMotion]);

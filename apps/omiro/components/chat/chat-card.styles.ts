@@ -39,7 +39,7 @@ export function useToolCardStyles() {
       paddingVertical: 3,
     },
     draftChipText: {
-      color: theme.colors.primary,
+      color: theme.colors.primaryText,
       fontSize: 11,
       fontWeight: '800',
       letterSpacing: 0.8,

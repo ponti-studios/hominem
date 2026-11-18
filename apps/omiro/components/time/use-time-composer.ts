@@ -8,7 +8,7 @@ import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 import { useTimeBlockParse } from '~/services/tasks/use-time-block-parse';
 
 import { addScheduledTaskToCalendar } from './add-task-to-calendar';
-import { resolveTimeRequest } from './time-request';
+import { friendlyMessage, resolveTimeRequest } from './time-request';
 import type {
   EditableTimeBlockField,
   TimeInteractionState,
@@ -96,10 +96,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         if (requestTokenRef.current !== requestToken) {
           return;
         }
-        fail(
-          error instanceof Error ? error.message : 'Unable to interpret that time request.',
-          submittedPrompt,
-        );
+        fail(friendlyMessage(error, 'Unable to interpret that time request.'), submittedPrompt);
       } finally {
         if (requestTokenRef.current === requestToken) {
           requestTokenRef.current = null;
@@ -155,10 +152,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         });
         setPrompt(editorResult === 'saved' ? '' : submittedPrompt);
       } catch (error) {
-        fail(
-          error instanceof Error ? error.message : 'Unable to open a calendar draft.',
-          submittedPrompt,
-        );
+        fail(friendlyMessage(error, 'Unable to open a calendar draft.'), submittedPrompt);
       }
     },
     [fail, interaction],
@@ -213,7 +207,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
       setInteraction({ kind: 'idle' });
       return { onCalendar };
     } catch (error) {
-      fail(error instanceof Error ? error.message : 'Unable to save this task.', submittedPrompt);
+      fail(friendlyMessage(error, 'Unable to save this task.'), submittedPrompt);
       return null;
     }
   }, [createTask, fail, interaction, isSaving]);

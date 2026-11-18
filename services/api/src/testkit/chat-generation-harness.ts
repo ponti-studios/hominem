@@ -61,6 +61,8 @@ export type ScriptedProvider = {
   calls: number;
   cursor: number;
   readonly usage: readonly (AIUsageMetrics | null)[];
+  // The model id each provider turn was requested with, in call order.
+  readonly models: string[];
 };
 
 const DEFAULT_TEST_USAGE: AIUsageMetrics = {
@@ -92,6 +94,7 @@ export function scriptedProvider(
     calls: 0,
     cursor: 0,
     usage,
+    models: [],
   };
 }
 
@@ -194,7 +197,10 @@ function toStreamChunk(
 }
 
 function createScriptedStreamChat(script: ScriptedProvider): typeof streamChatCompletion {
-  return () => scriptedStream(script);
+  return (options) => {
+    script.models.push(options.model ?? '');
+    return scriptedStream(script);
+  };
 }
 
 async function* scriptedStream(script: ScriptedProvider): AsyncGenerator<ChatStreamChunk> {
@@ -281,7 +287,9 @@ export type ChatGenerationInput = {
   generationId?: string;
   message: string;
   fileIds?: string[];
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
   responseModality?: 'text' | 'audio';
 };
 
@@ -381,11 +389,14 @@ export class ChatGenerationHarness {
     },
   };
   readonly chat = {
-    start: (input: { generationId?: string; title: string; message: string }) =>
+    start: (input: ChatGenerationInput & { title: string }) =>
       this.request('/api/chats/start-stream', {
         generationId: input.generationId ?? randomUUID(),
         title: input.title,
         message: input.message,
+        responseLength: input.responseLength,
+        replyStyle: input.replyStyle,
+        replyModel: input.replyModel,
       }),
     send: (chatId: string, input: ChatGenerationInput) =>
       this.request(`/api/chats/${chatId}/stream`, {
@@ -393,12 +404,14 @@ export class ChatGenerationHarness {
         message: input.message,
         fileIds: input.fileIds ?? [],
         responseLength: input.responseLength,
+        replyStyle: input.replyStyle,
+        replyModel: input.replyModel,
         responseModality: input.responseModality,
       }),
     retry: (
       chatId: string,
       failedGenerationId: string,
-      input: { generationId?: string; responseLength?: 'short' | 'medium' | 'long' },
+      input: { generationId?: string; responseLength?: 'brief' | 'standard' | 'deep' },
     ) =>
       this.request(`/api/chats/${chatId}/generations/${failedGenerationId}/regenerate`, {
         generationId: input.generationId ?? randomUUID(),
@@ -412,7 +425,7 @@ export class ChatGenerationHarness {
       chatId: string,
       messageId: string,
       toolCallId: string,
-      input: { approved: boolean; responseLength?: 'short' | 'medium' | 'long' },
+      input: { approved: boolean; responseLength?: 'brief' | 'standard' | 'deep' },
     ) =>
       this.request(
         `/api/chats/${chatId}/messages/${messageId}/tool-calls/${toolCallId}/respond`,

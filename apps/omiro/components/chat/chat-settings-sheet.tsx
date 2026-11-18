@@ -1,17 +1,16 @@
-import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { BottomSheetModal, BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAppTheme, useStyles } from '~/components/theme';
-import { Button } from '~/components/ui/button';
-import { DiscreteSlider } from '~/components/ui/discrete-slider';
 import {
-  CHAT_RESPONSE_LENGTHS,
-  setChatResponseLength,
-  useChatResponseLength,
-} from '~/hooks/use-chat-response-length';
+  ChatReplyPicker,
+  ChatReplyPrefsSection,
+  type ChatReplyPickerKind,
+} from '~/components/chat/chat-reply-prefs-section';
+import { ChatSheetCloseButton } from '~/components/chat/chat-sheet-close-button';
+import { useAppTheme, useStyles } from '~/components/theme';
 import t from '~/translations';
 
 interface ChatSettingsSheetProps {
@@ -19,44 +18,26 @@ interface ChatSettingsSheetProps {
   onClose: () => void;
 }
 
+type SheetView = 'settings' | ChatReplyPickerKind;
+
+// One sheet for the chat settings and its pickers. Choosing a row swaps the sheet's content to that
+// picker in place, so there is never a second sheet stacked on top.
 export function ChatSettingsSheet({ visible, onClose }: ChatSettingsSheetProps) {
   const insets = useSafeAreaInsets();
-  const {
-    border: borderDefault,
-    background,
-    foreground: textPrimary,
-    mutedForeground: textSecondary,
-  } = useAppTheme().colors;
-  const styles = useStyles((theme) => ({
-    sheetContent: { gap: 24, paddingHorizontal: 24 },
+  const { border: borderDefault, background, foreground: textPrimary } = useAppTheme().colors;
+  const styles = useStyles(() => ({
+    sheetContent: { paddingHorizontal: 24 },
+    stack: { gap: 24 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     sheetTitle: { fontSize: 24, fontWeight: '800' },
-    settingGroup: { gap: 8 },
-    settingLabel: { fontSize: 16, fontWeight: '700' },
-    settingDescription: { ...theme.textVariants.footnote },
-    metric: { alignItems: 'center', gap: 2, paddingVertical: 8 },
-    metricValue: { fontSize: 40 },
-    metricLabel: { fontSize: 18, fontWeight: '800' },
-    metricDetail: { ...theme.textVariants.footnote },
-    control: { paddingHorizontal: 8 },
-    controlRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8 },
-    empty: {},
   }));
   const modalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['45%'], []);
-  const responseLength = useChatResponseLength();
-  const selectedIndex = CHAT_RESPONSE_LENGTHS.indexOf(responseLength);
-  const selectedOption = t.chat.settings.responseLengthOptions[responseLength];
+  const [view, setView] = useState<SheetView>('settings');
 
   const handleDismiss = useCallback(() => {
+    setView('settings');
     onClose();
   }, [onClose]);
-
-  const handleSliderChange = useCallback((index: number) => {
-    const next = CHAT_RESPONSE_LENGTHS[index];
-    if (next) {
-      setChatResponseLength(next);
-    }
-  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -76,59 +57,31 @@ export function ChatSettingsSheet({ visible, onClose }: ChatSettingsSheetProps) 
   return (
     <BottomSheetModal
       ref={modalRef}
-      snapPoints={snapPoints}
+      enableDynamicSizing
       enablePanDownToClose
       handleIndicatorStyle={{ backgroundColor: borderDefault, width: 40, height: 4 }}
       backgroundStyle={{ backgroundColor: background }}
       onDismiss={handleDismiss}
     >
-      <BottomSheetView style={[styles.sheetContent, { paddingBottom: insets.bottom + 24 }]}>
-        <Text style={[styles.sheetTitle, { color: textPrimary }]}>{t.chat.settings.title}</Text>
-
-        <View style={styles.settingGroup}>
-          <Text style={[styles.settingLabel, { color: textPrimary }]}>
-            {t.chat.settings.responseLengthLabel}
-          </Text>
-          <Text style={[styles.settingDescription, { color: textSecondary }]}>
-            {t.chat.settings.responseLengthDescription}
-          </Text>
-
-          <Animated.View
-            key={responseLength}
-            entering={FadeIn.duration(180)}
-            exiting={FadeOut.duration(120)}
-            style={styles.metric}
-          >
-            <Text style={styles.metricValue}>{selectedOption.emoji}</Text>
-            <Text style={[styles.metricLabel, { color: textPrimary }]}>{selectedOption.name}</Text>
-            <Text style={[styles.metricDetail, { color: textSecondary }]}>
-              {selectedOption.caption}
-            </Text>
-          </Animated.View>
-
-          <View style={styles.control}>
-            <DiscreteSlider
-              value={Math.max(0, selectedIndex)}
-              steps={CHAT_RESPONSE_LENGTHS.length}
-              onValueChange={handleSliderChange}
-              accessibilityLabel={t.chat.settings.responseLengthLabel}
-            />
-          </View>
-
-          <View style={styles.controlRow}>
-            {CHAT_RESPONSE_LENGTHS.map((length) => (
-              <Text
-                key={length}
-                style={[styles.empty, { opacity: length === responseLength ? 1 : 0.4 }]}
-              >
-                {t.chat.settings.responseLengthOptions[length].emoji}
+      <BottomSheetScrollView
+        contentContainerStyle={[styles.sheetContent, { paddingBottom: insets.bottom + 24 }]}
+      >
+        {view === 'settings' ? (
+          <Animated.View key="settings" entering={FadeIn.duration(180)} style={styles.stack}>
+            <View style={styles.titleRow}>
+              <Text style={[styles.sheetTitle, { color: textPrimary }]}>
+                {t.chat.settings.title}
               </Text>
-            ))}
-          </View>
-        </View>
-
-        <Button label={t.chat.settings.done} onPress={handleDismiss} variant="secondary" />
-      </BottomSheetView>
+              <ChatSheetCloseButton onPress={handleDismiss} label={t.chat.settings.close} />
+            </View>
+            <ChatReplyPrefsSection onOpen={setView} />
+          </Animated.View>
+        ) : (
+          <Animated.View key={view} entering={SlideInRight.duration(240)}>
+            <ChatReplyPicker kind={view} onClose={handleDismiss} />
+          </Animated.View>
+        )}
+      </BottomSheetScrollView>
     </BottomSheetModal>
   );
 }

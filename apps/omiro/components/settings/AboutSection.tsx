@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import t from '~/translations';
 
-import { SectionLabel, SettingsRow } from './SettingsRow';
+import { SectionLabel, SettingsGroup, SettingsRow } from './SettingsRow';
 
 function formatUpdateDate(date: Date | null) {
   if (!date) {
@@ -39,18 +39,20 @@ export function AboutSection() {
   return (
     <View style={styles.aboutSection}>
       <SectionLabel>{t.settings.sections.about}</SectionLabel>
-      <SettingsRow
-        icon="info.circle"
-        label={t.settings.about.version}
-        description={versionLabel}
-        testID="settings-about-version"
-      />
-      <SettingsRow
-        icon="arrow.triangle.2.circlepath"
-        label={t.settings.about.update}
-        description={getUpdateDescription()}
-        testID="settings-about-update"
-      />
+      <SettingsGroup>
+        <SettingsRow
+          icon="info.circle"
+          label={t.settings.about.version}
+          description={versionLabel}
+          testID="settings-about-version"
+        />
+        <SettingsRow
+          icon="arrow.triangle.2.circlepath"
+          label={t.settings.about.update}
+          description={getUpdateDescription()}
+          testID="settings-about-update"
+        />
+      </SettingsGroup>
     </View>
   );
 }

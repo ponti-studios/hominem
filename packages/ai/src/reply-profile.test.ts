@@ -5,6 +5,7 @@ import {
   DEFAULT_MAX_OUTPUT_TOKENS,
   getMaxOutputTokens,
   hitOutputCap,
+  normalizeReplyLength,
   REPLY_LENGTHS,
   withLengthReminder,
 } from './reply-profile';
@@ -16,10 +17,10 @@ describe('withLengthReminder', () => {
   ];
 
   it('appends the reminder to the last user message without mutating the input', () => {
-    const result = withLengthReminder(messages, 'short');
+    const result = withLengthReminder(messages, 'brief');
     expect(result.at(-1)).toEqual({
       role: 'user',
-      content: `Hello\n\n${REPLY_LENGTHS.short.reminder}`,
+      content: `Hello\n\n${REPLY_LENGTHS.brief.reminder}`,
     });
     expect(messages.at(-1)).toEqual({ role: 'user', content: 'Hello' });
   });
@@ -27,7 +28,24 @@ describe('withLengthReminder', () => {
   it('leaves the conversation alone with no length or no trailing user turn', () => {
     expect(withLengthReminder(messages, undefined)).toBe(messages);
     const endsOnAssistant: ChatMessages[] = [...messages, { role: 'assistant', content: 'Hi' }];
-    expect(withLengthReminder(endsOnAssistant, 'long')).toBe(endsOnAssistant);
+    expect(withLengthReminder(endsOnAssistant, 'deep')).toBe(endsOnAssistant);
+  });
+});
+
+describe('normalizeReplyLength', () => {
+  it('accepts the current ids and maps the legacy short, medium, and long ids', () => {
+    expect(normalizeReplyLength('brief')).toBe('brief');
+    expect(normalizeReplyLength('standard')).toBe('standard');
+    expect(normalizeReplyLength('deep')).toBe('deep');
+    expect(normalizeReplyLength('short')).toBe('brief');
+    expect(normalizeReplyLength('medium')).toBe('standard');
+    expect(normalizeReplyLength('long')).toBe('deep');
+  });
+
+  it('returns undefined for anything else', () => {
+    expect(normalizeReplyLength('huge')).toBeUndefined();
+    expect(normalizeReplyLength('')).toBeUndefined();
+    expect(normalizeReplyLength(undefined)).toBeUndefined();
   });
 });
 

@@ -1,5 +1,10 @@
 # Web Composer Attachment and Voice Error Recovery
 
+**Current implementation status (2026-11-14):** The Web chat client this
+decision describes was subsequently removed from `apps/web`. The details below
+record the earlier implementation and remain historical; Omiro owns current
+chat-composer behavior.
+
 ## Status
 
 Accepted (2026-09-09)

@@ -1,0 +1,23 @@
+# Focused evidence run for the redesign and the advanced features. Uses deep links for
+# navigation so it never depends on the composer or tab-bar hit targets.
+appId: com.pontistudios.hakumi.dev
+---
+- stopApp
+- launchApp
+- openLink: hakumi-dev:///notes
+- waitForAnimationToEnd:
+    timeout: 9000
+- takeScreenshot: feat_01_notes_glass_list
+- openLink: hakumi-dev:///tasks
+- waitForAnimationToEnd:
+    timeout: 6000
+- takeScreenshot: feat_02_tasks_aurora
+# Quick-add route used by the home-screen shortcut and the AddTaskIntent.
+- openLink: hakumi-dev:///tasks?add=Buy%20oat%20milk
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: feat_03_task_quick_add_glass_composer
+- openLink: hakumi-dev:///settings
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: feat_04_settings_preferences

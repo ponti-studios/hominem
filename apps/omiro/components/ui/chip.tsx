@@ -1,16 +1,19 @@
 import type { SFSymbol } from 'expo-symbols';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 
+import { Glass } from './glass';
 import AppIcon from './icon';
+import { PressableScale } from './pressable-scale';
 
 interface ChipProps {
   icon?: SFSymbol;
   label: string;
   onPress?: () => void;
-  // 'ink' is the inverted, selected look; 'tonal' sits on a card or sheet.
-  tone?: 'ink' | 'tonal' | 'outline' | 'card';
+  // 'ink' is the inverted, selected look; 'tonal' sits on a card or sheet;
+  // 'glass' floats over content.
+  tone?: 'ink' | 'tonal' | 'outline' | 'card' | 'glass';
   testID?: string;
 }
 
@@ -36,7 +39,9 @@ export function Chip({ icon, label, onPress, testID, tone = 'tonal' }: ChipProps
         ? { backgroundColor: card }
         : tone === 'outline'
           ? { backgroundColor: 'transparent', borderColor: border, borderWidth: 1.5 }
-          : { backgroundColor: background };
+          : tone === 'glass'
+            ? null
+            : { backgroundColor: background };
   const color = tone === 'ink' ? inkForeground : foreground;
   const content = (
     <>
@@ -47,22 +52,37 @@ export function Chip({ icon, label, onPress, testID, tone = 'tonal' }: ChipProps
     </>
   );
 
+  const body =
+    tone === 'glass' ? (
+      <Glass
+        interactive={Boolean(onPress)}
+        style={styles.chip}
+        testID={onPress ? undefined : testID}
+      >
+        {content}
+      </Glass>
+    ) : (
+      content
+    );
+
   if (!onPress) {
-    return (
+    return tone === 'glass' ? (
+      body
+    ) : (
       <View style={[styles.chip, surface]} testID={testID}>
         {content}
       </View>
     );
   }
   return (
-    <Pressable
+    <PressableScale
       accessibilityLabel={label}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.chip, surface, pressed && { opacity: 0.7 }]}
+      style={tone === 'glass' ? undefined : [styles.chip, surface]}
       testID={testID}
     >
-      {content}
-    </Pressable>
+      {body}
+    </PressableScale>
   );
 }

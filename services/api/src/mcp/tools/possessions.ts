@@ -383,6 +383,7 @@ registerTool(
     }),
     resultCap: LIST_CAP,
     guidance: {
+      examples: ['what is inside a storage box', 'list the things stored in a container'],
       whenToUse: 'Asking "what is in X" or "what is inside this box".',
       whenNotToUse: 'Do not invent a container id.',
       dependencies: [containerLookup],

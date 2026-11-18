@@ -98,6 +98,8 @@ export async function regenerate(
         staleGenerationId: null,
         staleAssistantMessageId: null,
         responseLength: input.responseLength,
+        replyStyle: input.replyStyle,
+        replyModel: input.replyModel,
       });
     }
     if (!target.parentMessageId) {
@@ -119,6 +121,8 @@ export async function regenerate(
       staleGenerationId: staleRun?.id ?? null,
       staleAssistantMessageId: target.id,
       responseLength: input.responseLength,
+      replyStyle: input.replyStyle,
+      replyModel: input.replyModel,
     });
   }
 
@@ -143,6 +147,8 @@ export async function regenerate(
     staleGenerationId: failedRun.id,
     staleAssistantMessageId: null,
     responseLength: input.responseLength,
+    replyStyle: input.replyStyle,
+    replyModel: input.replyModel,
   });
 }
 
@@ -171,7 +177,7 @@ export async function startMessage(
   const textMessages = buildMessages(
     [],
     formatUserContentWithContext(input.message, [], files),
-    buildChatSystemPrompt(input.responseLength),
+    buildChatSystemPrompt(input.responseLength, undefined, input.replyStyle),
     input.responseLength,
   );
   // Tool planning reads text; only the model request carries the images.
@@ -204,14 +210,14 @@ export async function startMessage(
     isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: created.chat.id,
-    model: CHAT_MODEL,
+    model: input.replyModel ?? CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxOutputTokens(CHAT_MODEL),
-    reasoning: getReasoningConfig(CHAT_MODEL),
+    maxTokens: getMaxOutputTokens(input.replyModel ?? CHAT_MODEL),
+    reasoning: getReasoningConfig(input.replyModel ?? CHAT_MODEL),
     userMessageId: created.userMessageId,
   });
 }
@@ -246,7 +252,7 @@ export async function sendMessage(
   const textMessages = buildMessages(
     history,
     formatUserContentWithContext(input.message, notes, files),
-    buildChatSystemPrompt(input.responseLength),
+    buildChatSystemPrompt(input.responseLength, undefined, input.replyStyle),
     input.responseLength,
   );
   const [toolPlan, messages] = await Promise.all([
@@ -278,14 +284,14 @@ export async function sendMessage(
     isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: input.chatId,
-    model: CHAT_MODEL,
+    model: input.replyModel ?? CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxOutputTokens(CHAT_MODEL),
-    reasoning: getReasoningConfig(CHAT_MODEL),
+    maxTokens: getMaxOutputTokens(input.replyModel ?? CHAT_MODEL),
+    reasoning: getReasoningConfig(input.replyModel ?? CHAT_MODEL),
     userMessageId,
     responseModality: input.responseModality,
   });
@@ -304,7 +310,9 @@ async function redoGeneration(
     staleGenerationId: string | null;
     staleAssistantMessageId: string | null;
     isAdmin?: boolean;
-    responseLength?: 'short' | 'medium' | 'long';
+    responseLength?: 'brief' | 'standard' | 'deep';
+    replyStyle?: 'partner' | 'friend' | 'straight';
+    replyModel?: string;
   },
 ): Promise<AsyncIterable<GenerationEvent>> {
   await assertChatAllowed(input.userId);
@@ -320,7 +328,7 @@ async function redoGeneration(
   const textMessages = buildMessages(
     history.slice(0, userMessageIndex),
     formatUserContentWithContext(userMessage.content, notes, userMessage.files ?? []),
-    buildChatSystemPrompt(input.responseLength),
+    buildChatSystemPrompt(input.responseLength, undefined, input.replyStyle),
     input.responseLength,
   );
   const [toolPlan, messages] = await Promise.all([
@@ -340,14 +348,14 @@ async function redoGeneration(
     isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: input.chatId,
-    model: CHAT_MODEL,
+    model: input.replyModel ?? CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxOutputTokens(CHAT_MODEL),
-    reasoning: getReasoningConfig(CHAT_MODEL),
+    maxTokens: getMaxOutputTokens(input.replyModel ?? CHAT_MODEL),
+    reasoning: getReasoningConfig(input.replyModel ?? CHAT_MODEL),
     userMessageId: input.userMessageId,
     staleGenerationId: input.staleGenerationId,
     staleAssistantMessageId: input.staleAssistantMessageId,
@@ -380,7 +388,10 @@ export async function respondToConfirmation(
   const pendingMessageIndex = history.findIndex((entry) => entry.id === input.messageId);
   const priorHistory = pendingMessageIndex === -1 ? history : history.slice(0, pendingMessageIndex);
   const messages: ChatMessages[] = [
-    { role: 'system', content: buildChatSystemPrompt(input.responseLength) },
+    {
+      role: 'system',
+      content: buildChatSystemPrompt(input.responseLength, undefined, input.replyStyle),
+    },
     ...priorHistory.map((entry): ChatMessages => ({
       role: entry.role === 'assistant' ? 'assistant' : 'user',
       content: entry.content,
@@ -427,14 +438,14 @@ export async function respondToConfirmation(
     isAdmin: input.isAdmin,
     generationId: run.id,
     chatId: chat.id,
-    model: CHAT_MODEL,
+    model: input.replyModel ?? CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxOutputTokens(CHAT_MODEL),
-    reasoning: getReasoningConfig(CHAT_MODEL),
+    maxTokens: getMaxOutputTokens(input.replyModel ?? CHAT_MODEL),
+    reasoning: getReasoningConfig(input.replyModel ?? CHAT_MODEL),
     userMessageId: null,
     targetAssistantMessageId: input.messageId,
     kind: 'send',

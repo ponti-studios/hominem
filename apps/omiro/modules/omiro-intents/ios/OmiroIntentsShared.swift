@@ -37,3 +37,16 @@ func appURL(for route: OmiroRoute) -> URL? {
 
   return URL(string: "\(scheme)://\(route.rawValue)")
 }
+
+// An app URL carrying one query value (the question to ask, the task to add).
+func appURL(path: String, queryName: String, queryValue: String) -> URL? {
+  guard let scheme = appScheme() else {
+    return nil
+  }
+
+  var components = URLComponents()
+  components.scheme = scheme
+  components.host = path
+  components.queryItems = [URLQueryItem(name: queryName, value: queryValue)]
+  return components.url
+}

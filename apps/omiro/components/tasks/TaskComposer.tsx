@@ -3,22 +3,26 @@ import { View } from 'react-native';
 
 import { ComposerSendButton } from '~/components/composer/ComposerSendButton';
 import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
-import { TextField } from '~/components/ui';
+import { Glass, TextField } from '~/components/ui';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 
-// The Tasks tab's composer: the same dark bar as Chat and Notes, but it only
+// The Tasks tab's composer: the same glass bar as Chat and Notes, but it only
 // makes tasks. A new task has no day, so it lands in the inbox to be placed.
-export function TaskComposer() {
+interface TaskComposerProps {
+  // Opens the keyboard on mount (a quick action or Siri asked for a new task).
+  autoFocus?: boolean;
+  initialTitle?: string;
+  // Called once a task is handed off, so the screen can fold the composer away.
+  onSent?: () => void;
+}
+
+export function TaskComposer({ autoFocus = false, initialTitle = '', onSent }: TaskComposerProps) {
   const { barForeground } = useAppTheme().colors;
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle);
   const create = useTaskCreate();
-  const styles = useStyles((theme) => ({
+  const styles = useStyles(() => ({
     surface: {
       alignItems: 'center',
-      backgroundColor: theme.colors.bar,
-      borderCurve: 'continuous',
-      borderRadius: 28,
-      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 8,
       minHeight: 56,
@@ -36,12 +40,14 @@ export function TaskComposer() {
     }
     create.mutate({ title: title.trim() });
     setTitle('');
+    onSent?.();
   };
 
   return (
-    <View style={styles.surface} testID="task-composer">
+    <Glass style={styles.surface} testID="task-composer">
       <View style={styles.field}>
         <TextField
+          autoFocus={autoFocus}
           cursorColor={barForeground}
           focusBorder={false}
           onChangeText={setTitle}
@@ -74,6 +80,6 @@ export function TaskComposer() {
         size={40}
         testID="task-composer-submit"
       />
-    </View>
+    </Glass>
   );
 }

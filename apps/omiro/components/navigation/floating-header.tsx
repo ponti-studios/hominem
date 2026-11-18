@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '~/components/theme';
-import { IconButton } from '~/components/ui';
+import { Glass, IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 
 type IconName = SymbolViewProps['name'];
@@ -27,9 +27,8 @@ export function useFloatingHeaderHeight() {
   return top + BAR_PADDING_TOP + BUTTON_SIZE + BAR_PADDING_BOTTOM;
 }
 
-// The detail screens' top bar: a white circle on the left and a white pill of
-// actions on the right, floating over the page background. It sits in the
-// layout flow (not over the content) so lists never scroll under it.
+// The detail screens' top bar: a glass circle on the left and a glass pill of
+// actions on the right, floating over the page.
 export function FloatingHeader({ left, right, overlay = false }: FloatingHeaderProps) {
   const { top } = useSafeAreaInsets();
   const height = useFloatingHeaderHeight();
@@ -71,44 +70,32 @@ interface FloatingIconButtonProps {
   testID?: string;
 }
 
-// One 48pt white circle -- the back / close button.
+// One 48pt glass circle -- the back / close button.
 export function FloatingCircleButton({
   accessibilityLabel,
   icon,
   onPress,
   testID,
 }: FloatingIconButtonProps) {
-  const styles = useStyles((theme) => ({
-    circle: { boxShadow: theme.shadows.float },
-  }));
   return (
     <IconButton
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       size="lg"
-      style={styles.circle}
       testID={testID}
-      variant="tonal"
+      variant="glass"
     >
       <AppIcon name={icon} size={22} />
     </IconButton>
   );
 }
 
-// A white pill that groups the screen's action buttons (and any status chip).
+// A glass pill that groups the screen's action buttons (and any status chip).
 export function FloatingActionPill({ children }: { children: ReactNode }) {
-  const styles = useStyles((theme) => ({
-    pill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: 48,
-      paddingHorizontal: 4,
-      borderRadius: theme.borderRadii.pill,
-      backgroundColor: theme.colors.card,
-      boxShadow: theme.shadows.float,
-    },
+  const styles = useStyles(() => ({
+    pill: { flexDirection: 'row', alignItems: 'center', height: 48, paddingHorizontal: 4 },
   }));
-  return <View style={styles.pill}>{children}</View>;
+  return <Glass style={styles.pill}>{children}</Glass>;
 }
 
 export function FloatingPillButton({

@@ -1,8 +1,10 @@
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeOutUp, useReducedMotion } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
+import { Glass } from '~/components/ui/glass';
 import AppIcon from '~/components/ui/icon';
+import { glassPopIn } from '~/services/motion/native-motion';
 
 export interface TimeToastModel {
   action?: { label: string; onPress: () => void };
@@ -20,30 +22,22 @@ interface TimeToastProps {
   toast: TimeToastModel;
 }
 
-// Transient feedback floating above the capture bar. Success is the fixed
-// dark bar pill with a lime badge; errors are a bordered card with a coral icon
-// and a retry.
+// Transient feedback floating above the capture bar, on glass. Success has a
+// lime badge; errors a coral ring, a coral icon and a retry.
 export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
   const reducedMotion = useReducedMotion();
   const { primaryForeground } = useAppTheme().colors;
   const isError = toast.tone === 'error';
   const styles = useStyles((theme) => ({
-    toast: {
+    toast: { left: 16, position: 'absolute', right: 16, top },
+    surface: {
       alignItems: 'center',
-      backgroundColor: isError ? theme.colors.card : theme.colors.bar,
       borderColor: theme.colors.coral,
-      borderCurve: 'continuous',
-      borderRadius: 26,
       borderWidth: isError ? 2 : 0,
-      top,
-      boxShadow: isError ? theme.shadows.float : theme.shadows.bar,
       flexDirection: 'row',
       gap: 14,
-      left: 16,
       paddingHorizontal: 18,
       paddingVertical: 14,
-      position: 'absolute',
-      right: 16,
     },
     badge: {
       alignItems: 'center',
@@ -61,16 +55,16 @@ export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
     body: { flex: 1, gap: 1 },
     message: {
       ...theme.textVariants.headline,
-      color: isError ? theme.colors.foreground : theme.colors.barForeground,
+      color: theme.colors.barForeground,
     },
     detail: {
       ...theme.textVariants.footnote,
-      color: isError ? theme.colors.mutedForeground : theme.colors.barForeground,
-      opacity: isError ? 1 : 0.7,
+      color: theme.colors.barForeground,
+      opacity: 0.7,
     },
     action: {
       ...theme.textVariants.subhead,
-      color: isError ? theme.colors.primary : theme.colors.lime,
+      color: theme.colors.primaryText,
       fontWeight: '700',
     },
   }));
@@ -78,52 +72,54 @@ export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
   return (
     <Animated.View
       accessibilityLiveRegion="polite"
-      entering={reducedMotion ? undefined : FadeInUp.springify().damping(18)}
+      entering={reducedMotion ? undefined : glassPopIn}
       exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
       style={styles.toast}
       testID={isError ? 'time-error-toast' : 'time-success-toast'}
     >
-      <View style={styles.badge}>
-        {isError ? (
-          <AppIcon name="wifi.slash" size={22} tintColor={primaryForeground} />
-        ) : (
-          <Text style={styles.badgeText}>{toast.badge ?? ''}</Text>
-        )}
-      </View>
-      <View style={styles.body}>
-        <Text numberOfLines={2} style={styles.message}>
-          {toast.message}
-        </Text>
-        {toast.detail ? (
-          <Text numberOfLines={1} style={styles.detail}>
-            {toast.detail}
+      <Glass radius="xl" style={styles.surface}>
+        <View style={styles.badge}>
+          {isError ? (
+            <AppIcon name="wifi.slash" size={22} tintColor={primaryForeground} />
+          ) : (
+            <Text style={styles.badgeText}>{toast.badge ?? ''}</Text>
+          )}
+        </View>
+        <View style={styles.body}>
+          <Text numberOfLines={2} style={styles.message}>
+            {toast.message}
           </Text>
+          {toast.detail ? (
+            <Text numberOfLines={1} style={styles.detail}>
+              {toast.detail}
+            </Text>
+          ) : null}
+        </View>
+        {toast.action ? (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={() => {
+              toast.action?.onPress();
+              onDismiss();
+            }}
+            testID="time-toast-action"
+          >
+            <Text style={styles.action}>{toast.action.label}</Text>
+          </Pressable>
         ) : null}
-      </View>
-      {toast.action ? (
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={() => {
-            toast.action?.onPress();
-            onDismiss();
-          }}
-          testID="time-toast-action"
-        >
-          <Text style={styles.action}>{toast.action.label}</Text>
-        </Pressable>
-      ) : null}
-      {isError ? (
-        <Pressable
-          accessibilityLabel="Dismiss"
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={onDismiss}
-          testID="time-toast-dismiss"
-        >
-          <AppIcon name="xmark" size={16} />
-        </Pressable>
-      ) : null}
+        {isError ? (
+          <Pressable
+            accessibilityLabel="Dismiss"
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={onDismiss}
+            testID="time-toast-dismiss"
+          >
+            <AppIcon name="xmark" size={16} />
+          </Pressable>
+        ) : null}
+      </Glass>
     </Animated.View>
   );
 }

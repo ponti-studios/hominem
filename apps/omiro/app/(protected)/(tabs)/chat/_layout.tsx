@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import {
+  inlineTitleOptions,
   settingsHeaderRightItems,
   useNativeHeaderOptions,
 } from '~/components/navigation/native-header';
@@ -12,6 +13,7 @@ export default function ChatStackLayout() {
       <Stack.Screen
         name="index"
         options={{
+          ...inlineTitleOptions,
           unstable_headerRightItems: settingsHeaderRightItems,
           title: 'Chat',
         }}

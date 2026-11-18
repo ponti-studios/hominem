@@ -63,7 +63,9 @@ export type ChatMessageInput = {
   generationId?: string;
   message: string;
   fileIds?: readonly string[];
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
   responseModality?: 'text' | 'audio';
 };
 
@@ -122,7 +124,9 @@ export class ChatClient {
     title: string;
     message: string;
     fileIds?: readonly string[];
-    responseLength?: 'short' | 'medium' | 'long';
+    responseLength?: 'brief' | 'standard' | 'deep';
+    replyStyle?: 'partner' | 'friend' | 'straight';
+    replyModel?: string;
   }): ChatGenerationController {
     return this.createGenerationWith({
       generationId: input.generationId,

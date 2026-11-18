@@ -19,7 +19,6 @@ import { personalRoutes } from './routes/personal';
 import { possessionsRoutes } from './routes/possessions';
 import { tasksRoutes } from './routes/tasks';
 import { telegramRoutes } from './routes/telegram';
-import { telemetryRoutes } from './routes/telemetry';
 import { usageRoutes } from './routes/usage';
 import { voiceRoutes } from './routes/voice';
 
@@ -40,7 +39,6 @@ export const rpcRoutes = new Hono<AppContext>()
   .route('/possessions', possessionsRoutes)
   .route('/tasks', tasksRoutes)
   .route('/telegram', telegramRoutes)
-  .route('/telemetry', telemetryRoutes)
   .route('/usage', usageRoutes)
   .route('/voice', voiceRoutes);
 

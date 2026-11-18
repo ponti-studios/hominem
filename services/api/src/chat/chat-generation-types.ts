@@ -88,7 +88,9 @@ type PreparedGeneration = {
   requiresWebSearch?: boolean;
   toolPlan?: ChatToolPlan['steps'];
   maxTokens?: number;
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
   responseModality?: 'text' | 'audio';
   targetAssistantMessageId?: string | null;
   userMessageId?: string | null;
@@ -144,7 +146,9 @@ export type ConfirmationMessageInput = {
   messageId: string;
   toolCallId: string;
   approved: boolean;
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
 };
 
 export type SendMessageInput = {
@@ -154,7 +158,9 @@ export type SendMessageInput = {
   chatId: string;
   message: string;
   fileIds: string[];
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
   responseModality?: 'text' | 'audio';
 };
 
@@ -169,7 +175,9 @@ type RegenerateInputBase = {
   isAdmin?: boolean;
   generationId: string;
   chatId: string;
-  responseLength?: 'short' | 'medium' | 'long';
+  responseLength?: 'brief' | 'standard' | 'deep';
+  replyStyle?: 'partner' | 'friend' | 'straight';
+  replyModel?: string;
 };
 
 export type RegenerateInput =

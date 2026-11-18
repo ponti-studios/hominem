@@ -188,7 +188,7 @@ async function processMessage(updateId: number, update: TelegramUpdate) {
     generationId,
     message: text,
     fileIds: [],
-    responseLength: 'short',
+    responseLength: 'brief',
   });
   const result = await drainGeneration(events);
   await deliverGeneration(telegramChatId, result, identity.ownerUserId, identity.chatId);
@@ -223,7 +223,7 @@ async function processCallback(update: TelegramUpdate) {
     messageId: action.messageId,
     toolCallId: action.toolCallId,
     approved: action.approved,
-    responseLength: 'short',
+    responseLength: 'brief',
   });
   const result = await drainGeneration(events);
   await deliverGeneration(telegramChatId, result, identity.ownerUserId, identity.chatId);

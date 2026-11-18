@@ -20,3 +20,25 @@ vi.mock('expo-crypto', () => ({
 
 // expo-notifications is native; tests plan and reconcile with a fake scheduler.
 vi.mock('expo-notifications', () => ({}));
+
+// System glass and the Reanimated press feedback are native; tests render
+// plain elements in their place.
+vi.mock('~/components/ui/glass', async () => (await import('./mocks/glass')).glassModuleMock);
+vi.mock(
+  '~/components/ui/pressable-scale',
+  async () => (await import('./mocks/glass')).pressableScaleModuleMock,
+);
+
+// The system-integration module (Spotlight, quick actions, text recognition,
+// PDF export) is native; tests that care replace it with their own fake.
+vi.mock('~/modules/omiro-system', () => ({
+  default: {
+    addListener: () => ({ remove: () => undefined }),
+    clearSpotlight: async () => undefined,
+    consumePendingLink: () => null,
+    indexSpotlightItems: async () => undefined,
+    recognizeText: async () => '',
+    removeSpotlightItems: async () => undefined,
+    renderPdf: async () => '',
+  },
+}));

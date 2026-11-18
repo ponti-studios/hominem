@@ -84,7 +84,6 @@ const OTEL_LOG_ATTRIBUTES = new Set([
   'samplingRatio',
   'terminal',
   'providerReadyDurationMs',
-  'requestToFirstPlayableMs',
   'sessionDurationMs',
   'timeToFirstAudioByteMs',
   'totalTokens',

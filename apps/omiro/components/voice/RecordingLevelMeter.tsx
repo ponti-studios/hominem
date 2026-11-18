@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 
 import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
 import { useAppTheme, useStyles } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const BAR_COUNT = 16;
 const BAR_MAX_HEIGHT = 28;
@@ -28,10 +29,11 @@ interface LevelBarProps {
 
 function LevelBar({ db, tintColor }: LevelBarProps) {
   const level = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    level.set(withTiming(normalizeDb(db), { duration: 120 }));
-  }, [db, level]);
+    level.set(withTiming(normalizeDb(db), { duration: reducedMotion ? 0 : 120 }));
+  }, [db, level, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: BAR_MIN_HEIGHT + level.value * (BAR_MAX_HEIGHT - BAR_MIN_HEIGHT),
