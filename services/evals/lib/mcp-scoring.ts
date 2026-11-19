@@ -35,7 +35,13 @@ export type McpExpectation = {
    * When a successful read already shows the fact, skipping the write is correct: the write steps
    * are not required. The read itself still is, and a write that does run is still scored.
    */
-  alreadyHolds?: { tool: string; outputIncludes: string };
+  alreadyHolds?: {
+    tool: string;
+    /** Case-insensitive substring of the read's JSON output. */
+    outputIncludes?: string;
+    /** Case-insensitive regex over the read's JSON output, for facts that tie fields together. */
+    outputMatches?: string;
+  };
   argumentAssertions?: readonly {
     tool: string;
     equals?: Record<string, unknown>;
@@ -79,17 +85,33 @@ const stableStringify = (value: unknown): string =>
     return nested;
   });
 
+// The agent's own discovery helpers. A malformed call to one of these (say, `name` where
+// `search_tools` wants `query`) is the agent's slip, not a product tool failing. If discovery were
+// truly broken the agent would never reach the tools it needs, and the required-tool checks catch that.
+const DISCOVERY_HELPERS = new Set(['search_tools', 'get_tool_details']);
+
 /**
  * A tool counts as failed when its latest attempt errored. A failed attempt the agent recovered
- * from (a later attempt at the same tool succeeded) does not count against the run.
+ * from (a later attempt at the same tool succeeded) does not count against the run, and neither
+ * do errors from the discovery helpers.
  */
 export function unrecoveredFailures(calls: NonNullable<McpTrace['calls']>): string[] {
   const latest = new Map<string, (typeof calls)[number]>();
   for (const call of calls) {
-    if (call.status === 'requested') continue;
+    if (call.status === 'requested' || DISCOVERY_HELPERS.has(call.tool)) continue;
     latest.set(call.tool, call);
   }
   return [...latest.values()].filter((call) => call.status === 'failed').map((call) => call.tool);
+}
+
+function holdsIn(output: string, already: NonNullable<McpExpectation['alreadyHolds']>): boolean {
+  const text = output.toLowerCase();
+  const { outputIncludes, outputMatches } = already;
+  if (outputIncludes === undefined && outputMatches === undefined) return false;
+  return (
+    (outputIncludes === undefined || text.includes(outputIncludes.toLowerCase())) &&
+    (outputMatches === undefined || new RegExp(outputMatches, 'i').test(text))
+  );
 }
 
 export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpScenarioScore {
@@ -102,9 +124,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       (call) =>
         call.tool === already.tool &&
         call.status === 'succeeded' &&
-        JSON.stringify(call.output ?? '')
-          .toLowerCase()
-          .includes(already.outputIncludes.toLowerCase()),
+        holdsIn(JSON.stringify(call.output ?? ''), already),
     );
   const required = (expected.requiredTools ?? []).filter(
     (tool) => !alreadyHolds || tool === already?.tool || calls.includes(tool),
@@ -112,6 +132,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const missing = [
     ...required.filter((tool) => !calls.includes(tool)),
     ...(expected.requiredAnyOf ?? [])
+      // Same waiver as requiredTools: when the fact already holds, only a group holding the read tool still binds.
+      .filter((group) => !alreadyHolds || group.includes(already?.tool ?? ''))
       .filter((group) => !group.some((tool) => calls.includes(tool)))
       .map((group) => group.join(' | ')),
   ];

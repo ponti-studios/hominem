@@ -30,6 +30,11 @@
       "expected": {
         "tools": ["task_create"],
         "allowedTools": ["task_create", "task_list", "task_update"],
+        "gatedTools": ["task_delete"],
+        "alreadyHolds": {
+          "tool": "task_list",
+          "outputMatches": "renew (my )?passport"
+        },
         "outcome": "creates one task titled about the passport with high priority"
       }
     },
@@ -51,6 +56,10 @@
       "expected": {
         "tools": ["task_list", "task_complete"],
         "dependencies": [["task_list", "task_complete"]],
+        "alreadyHolds": {
+          "tool": "task_list",
+          "outputMatches": "dentist appointment[^}]*\"status\":\"completed\""
+        },
         "outcome": "finds the dentist task before completing it"
       }
     },
@@ -85,7 +94,10 @@
         "tools": ["person_create"],
         "outcome": "creates Marco with the cousin relationship and Rome",
         "allowedTools": ["person_create", "people_lookup"],
-        "alreadyHolds": { "tool": "people_lookup", "outputIncludes": "Marco" }
+        "alreadyHolds": {
+          "tool": "people_lookup",
+          "outputIncludes": "Marco"
+        }
       }
     },
     {
@@ -96,7 +108,10 @@
       "expected": {
         "tools": ["people_lookup", "person_update"],
         "dependencies": [["people_lookup", "person_update"]],
-        "alreadyHolds": { "tool": "people_lookup", "outputIncludes": "Milan" },
+        "alreadyHolds": {
+          "tool": "people_lookup",
+          "outputIncludes": "Milan"
+        },
         "outcome": "looks Priya up before updating her city"
       }
     },
@@ -127,7 +142,13 @@
       "toolDomains": ["travel"],
       "prompt": "Where did I travel in 2025?",
       "expected": {
-        "allowedTools": ["trip_history", "travel_journey_list", "travel_search"],
+        "allowedTools": [
+          "trip_history",
+          "travel_journey_list",
+          "travel_journey_get",
+          "travel_search",
+          "travel_place_list"
+        ],
         "outcome": "lists 2025 trips with cities and countries",
         "requiredAnyOf": [["trip_history", "travel_journey_list", "travel_search"]]
       }
@@ -215,6 +236,10 @@
           "finance_budget_list",
           "finance_categories"
         ],
+        "alreadyHolds": {
+          "tool": "finance_budget_list",
+          "outputMatches": "\"categoryname\":\"groceries\"[^}]*\"amountcents\":60000,\"cadence\":\"monthly\""
+        },
         "outcome": "sets a 600 monthly groceries budget"
       }
     },
@@ -345,8 +370,8 @@
       "prompt": "Forget the old address I told you about.",
       "expected": {
         "tools": ["search_memories"],
-        "allowedTools": ["search_memories", "list_memories"],
-        "forbiddenTools": ["forget_memory"],
+        "allowedTools": ["search_memories", "list_memories", "place_residence_list"],
+        "gatedTools": ["forget_memory"],
         "outcome": "finds the memory and asks before forgetting it"
       }
     },
@@ -367,8 +392,17 @@
       "prompt": "Add the Kyoto guide to my Japan collection.",
       "expected": {
         "tools": ["list_collections", "add_collection_item"],
-        "allowedTools": ["list_collections", "add_collection_item", "note_list"],
+        "allowedTools": [
+          "list_collections",
+          "add_collection_item",
+          "note_list",
+          "collection_detail"
+        ],
         "dependencies": [["list_collections", "add_collection_item"]],
+        "alreadyHolds": {
+          "tool": "collection_detail",
+          "outputIncludes": "Kyoto guide"
+        },
         "outcome": "finds the Japan collection before adding"
       }
     },
@@ -390,7 +424,11 @@
       "expected": {
         "tools": ["career_application_create"],
         "outcome": "creates a Stripe backend application",
-        "allowedTools": ["career_application_create", "career_applications"]
+        "allowedTools": ["career_application_create", "career_applications"],
+        "alreadyHolds": {
+          "tool": "career_applications",
+          "outputIncludes": "Stripe"
+        }
       }
     },
     {
@@ -471,7 +509,10 @@
           "travel_search",
           "travel_journey_list"
         ],
-        "alreadyHolds": { "tool": "entity_tags", "outputIncludes": "vacation" },
+        "alreadyHolds": {
+          "tool": "entity_tags",
+          "outputIncludes": "vacation"
+        },
         "outcome": "finds the Tokyo trip before tagging it",
         "requiredAnyOf": [["trip_history", "travel_journey_list", "travel_search"]]
       }
@@ -502,7 +543,8 @@
           "search_memories",
           "place_visit_history",
           "health_recent_workouts",
-          "travel_journey_list"
+          "travel_journey_list",
+          "travel_timeline"
         ],
         "outcome": "uses dated records or asks what kind of activity, without inventing events"
       }

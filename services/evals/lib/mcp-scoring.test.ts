@@ -137,6 +137,22 @@ test('keeps a run passing when a failed tool attempt was recovered by a later su
   expect(score.executions.passed).toEqual(true);
 });
 
+test('a malformed discovery call does not fail the run, but a failing product tool still does', () => {
+  const calls = (productStatus: 'succeeded' | 'failed') => [
+    { tool: 'search_tools', input: {}, error: 'bad args', status: 'failed' as const },
+    { tool: 'career_application_create', input: {}, status: productStatus },
+  ];
+  const expected = { requiredTools: ['career_application_create'] };
+  expect(
+    scoreMcpTrace({ toolCalls: ['career_application_create'], calls: calls('succeeded') }, expected)
+      .passed,
+  ).toEqual(true);
+  expect(
+    scoreMcpTrace({ toolCalls: ['career_application_create'], calls: calls('failed') }, expected)
+      .executions.failed,
+  ).toEqual(['career_application_create']);
+});
+
 test('requiredAnyOf passes when one tool per group is called and names the group when none is', () => {
   const expected = {
     requiredAnyOf: [['budget_get', 'budget_list']],
@@ -204,4 +220,44 @@ test('alreadyHolds waives the write only when a read shows the fact is already t
       expected,
     ).passed,
   ).toEqual(false);
+});
+
+test('alreadyHolds outputMatches ties fields together, so another completed task cannot waive it', () => {
+  const expected = {
+    requiredTools: ['task_list', 'task_complete'],
+    alreadyHolds: {
+      tool: 'task_list',
+      outputMatches: 'dentist appointment[^}]*"status":"completed"',
+    },
+  };
+  const listed = (tasks: object[]) => ({
+    toolCalls: ['task_list'],
+    calls: [{ tool: 'task_list', input: {}, output: { tasks }, status: 'succeeded' as const }],
+  });
+  expect(
+    scoreMcpTrace(listed([{ title: 'Dentist appointment', status: 'completed' }]), expected).passed,
+  ).toEqual(true);
+  expect(
+    scoreMcpTrace(
+      listed([
+        { title: 'Dentist appointment', status: 'pending' },
+        { title: 'Passport', status: 'completed' },
+      ]),
+      expected,
+    ).passed,
+  ).toEqual(false);
+});
+
+test('alreadyHolds also waives a requiredAnyOf group of write tools, but not one holding the read', () => {
+  const expected = {
+    requiredAnyOf: [['budget_set', 'budget_update'], ['budget_list']],
+    alreadyHolds: { tool: 'budget_list', outputIncludes: '60000' },
+  };
+  const read = (output: object) => ({
+    toolCalls: ['budget_list'],
+    calls: [{ tool: 'budget_list', input: {}, output, status: 'succeeded' as const }],
+  });
+  expect(scoreMcpTrace(read({ budgets: [{ amountCents: 60000 }] }), expected).passed).toEqual(true);
+  expect(scoreMcpTrace(read({ budgets: [] }), expected).passed).toEqual(false);
+  expect(scoreMcpTrace({ toolCalls: [], calls: [] }, expected).passed).toEqual(false);
 });

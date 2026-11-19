@@ -30,6 +30,13 @@ registerTool(
     readOnly: true,
     scopes: ['media:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse:
+        'The user asks what they watched, read or consumed lately across media types, or names no single type.',
+      whenNotToUse:
+        'Do not use when the user asks only about music or what they listened to; use music_recent_plays.',
+      produces: ['recent activity entries'],
+    },
   },
   listMediaRecentActivity,
 );
@@ -45,6 +52,11 @@ registerTool(
     readOnly: true,
     scopes: ['media:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse:
+        'The user asks what music they listened to or played recently, even if they never say "music".',
+      produces: ['recent plays with track and artist'],
+    },
   },
   listMusicRecentPlays,
 );

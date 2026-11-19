@@ -58,3 +58,16 @@ export const renderMessages = (
   values: Record<string, string>,
 ): PromptMessage[] =>
   messages.map((message) => ({ ...message, content: render(message.content, values) }));
+
+/**
+ * The assistant prompt as one system string. The prompt file holds several system messages (the date
+ * line is its own message), so taking only the first one drops the date and the model guesses the year.
+ */
+export const renderSystemPrompt = (
+  messages: PromptMessage[],
+  values: Record<string, string>,
+): string =>
+  renderMessages(messages, values)
+    .filter((message) => message.role === 'system')
+    .map((message) => message.content)
+    .join('\n\n');

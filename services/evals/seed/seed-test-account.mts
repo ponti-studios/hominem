@@ -126,6 +126,17 @@ await ensure(
   () => write('create_collection', { name: 'Japan' }),
 );
 
+// Memory
+await ensure(
+  'memory "old address"',
+  async () => (await read('search_memories', { query: 'address' })).includes('Rua Augusta'),
+  () =>
+    write('remember', {
+      title: 'Old address',
+      content: "The user's old address was 14 Rua Augusta, Lisbon.",
+    }),
+);
+
 // Career
 await ensure(
   'engagement "Migration project"',

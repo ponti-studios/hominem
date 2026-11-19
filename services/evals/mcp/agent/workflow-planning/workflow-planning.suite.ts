@@ -1,7 +1,7 @@
 import {
   currentUtcDateLabel,
   loadJson,
-  renderMessages,
+  renderSystemPrompt,
   type PromptMessage,
 } from '../../../lib/golden';
 import type { McpFixtureProfile } from '../../../lib/mcp-fixtures';
@@ -24,11 +24,10 @@ type Scenario = {
 const scenariosUrl = new URL('./scenarios.json', import.meta.url);
 // The chat assistant's own prompt, so these workflows test what ships instead of a bespoke instruction.
 const promptUrl = new URL('../../../chat/assistant/system-prompt.json', import.meta.url);
-const systemPrompt =
-  renderMessages(await loadJson<PromptMessage[]>(promptUrl), {
-    user_message: '',
-    current_date: currentUtcDateLabel(),
-  })[0]?.content ?? '';
+const systemPrompt = renderSystemPrompt(await loadJson<PromptMessage[]>(promptUrl), {
+  user_message: '',
+  current_date: currentUtcDateLabel(),
+});
 const benchmark = await loadJson<{ version: string; scenarios: Scenario[] }>(scenariosUrl);
 
 export default await defineMcpSuite({

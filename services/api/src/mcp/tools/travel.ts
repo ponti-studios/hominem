@@ -63,7 +63,8 @@ registerTool(
     resultCap: 50,
     guidance: {
       whenToUse: 'The user asks about past or upcoming trips, destinations, dates, or attendees.',
-      whenNotToUse: 'Do not use for restaurant or venue visits without a travel question.',
+      whenNotToUse:
+        'Do not use for restaurant or venue visits without a travel question. This covers legacy calendar trips and can be empty: for where the user travelled, also check travel_journey_list.',
       produces: ['trip ids', 'trip dates', 'trip destinations', 'attendee names'],
     },
   },

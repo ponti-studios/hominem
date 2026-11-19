@@ -43,7 +43,7 @@
     "type": "function",
     "function": {
       "name": "add_collection_item",
-      "description": "Add any supported entity to a collection with an optional note. Mode: write. Use when: A confirmed collection id and entity id are available and the user asked to add the item. Do not use when: Do not invent collection or entity ids.  Prerequisites: list_collections (resolve an existing collection when needed).  Produces: collection item id.",
+      "description": "Add any supported entity to a collection with an optional note. Mode: write. Use when: A confirmed collection id and entity id are available and the user asked to add the item. Do not use when: Do not invent collection or entity ids. Do not hunt across unrelated search tools for the entity: a guide or written piece is a note, so find it with note_list (entityType notes), and take a place, person or media id from that domain's own list or lookup tool.  Prerequisites: list_collections (resolve an existing collection when needed).  Produces: collection item id.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5484,7 +5484,7 @@
     "type": "function",
     "function": {
       "name": "media_recent_activity",
-      "description": "Lists recent media activity (watches, listens, reads, purchases) across all media types, newest first. Mode: read-only.",
+      "description": "Lists recent media activity (watches, listens, reads, purchases) across all media types, newest first. Mode: read-only. Use when: The user asks what they watched, read or consumed lately across media types, or names no single type. Do not use when: Do not use when the user asks only about music or what they listened to; use music_recent_plays.  Produces: recent activity entries.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5563,7 +5563,7 @@
     "type": "function",
     "function": {
       "name": "music_recent_plays",
-      "description": "Lists recent music plays (listen activity), newest first, with track and artist names. Mode: read-only.",
+      "description": "Lists recent music plays (listen activity), newest first, with track and artist names. Mode: read-only. Use when: The user asks what music they listened to or played recently, even if they never say \"music\".  Produces: recent plays with track and artist.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5725,7 +5725,7 @@
     "type": "function",
     "function": {
       "name": "people_lookup",
-      "description": "Searches people by name or alias and returns a summary with contact info, organizations, and tags. Mode: read-only. Use when: A person must be resolved by name or alias before requesting person-specific data. Do not use when: Do not guess a person id or use this for general relationship questions.  Produces: person ids, person names, contact summaries.",
+      "description": "Searches people by name or alias and returns a summary with contact info, organizations, and tags. Mode: read-only. Use when: A person must be resolved by name or alias before requesting person-specific data, or the user asks who someone is. Do not use when: Do not guess a person id or use this for general relationship questions.  Produces: person ids, person names, contact summaries.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5791,7 +5791,7 @@
     "type": "function",
     "function": {
       "name": "person_timeline",
-      "description": "A person’s activity across identity, travel, and relationships, newest first. Requires people, travel, and social read access. Mode: read-only. Use when: A resolved person id is available and the user asks for that person's cross-domain timeline. Do not use when: Do not call before people_lookup has identified a person id.  Prerequisites: people_lookup (requires a stable person id).  Produces: person timeline, related trips, relationships.",
+      "description": "A person’s activity across identity, travel, and relationships, newest first. Requires people, travel, and social read access. Mode: read-only. Use when: A resolved person id is available and the user asks for that person's cross-domain timeline. Do not use when: Do not call before people_lookup has identified a person id. Do not use for a plain \"who is X\" question: people_lookup already returns the person's summary and notes. Use this only when the user asks about shared history, trips or activity over time.  Prerequisites: people_lookup (requires a stable person id).  Produces: person timeline, related trips, relationships.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -7790,7 +7790,7 @@
     "type": "function",
     "function": {
       "name": "remember",
-      "description": "Saves a durable fact, preference, or piece of personal context as a memory. Call this immediately when the user asks to be remembered something, or when a lasting fact about them surfaces naturally in conversation — no confirmation needed before saving. Each call saves exactly one distinct fact: if the user mentions several facts, make one call per fact. Never save the same fact more than once or under multiple titles — an identical fact already in memory is returned as-is instead of being saved again. Mode: write. Use when: The user explicitly asks to remember something or states a durable preference. Do not use when: Do not save transient instructions, one-off plans, or facts about other people. Things the user needs to do, deadlines, appointments and reminders are tasks: use task_create.  Produces: memory id, saved memory content.",
+      "description": "Saves a durable fact, preference, or piece of personal context as a memory. Call this immediately when the user asks to be remembered something, or when a lasting fact about them surfaces naturally in conversation — no confirmation needed before saving. Each call saves exactly one distinct fact: if the user mentions several facts, make one call per fact. Never save the same fact more than once or under multiple titles — an identical fact already in memory is returned as-is instead of being saved again. Mode: write. Use when: The user explicitly asks to remember something or states a durable preference. Do not use when: Do not save transient instructions or one-off plans. A fact the user states about someone in their life, like a sister's birthday, is fine to save when they ask you to remember it. Things the user needs to do, deadlines, appointments and reminders are tasks: use task_create.  Produces: memory id, saved memory content.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -9934,7 +9934,7 @@
     "type": "function",
     "function": {
       "name": "travel_search",
-      "description": "Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available. Prerequisites: a search query. Produces: matching UUIDs grouped by entity type. Mode: read-only.",
+      "description": "Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available, or the user asks about their notes (use note_list). Prerequisites: a search query. Produces: matching UUIDs grouped by entity type. Mode: read-only.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -10252,7 +10252,7 @@
     "type": "function",
     "function": {
       "name": "travel_stats",
-      "description": "Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline. Prerequisites: none. Produces: journey and place UUIDs for the returned trip summaries. Mode: read-only.",
+      "description": "Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline, or ask where they went or which trips they took (this returns counts and totals only; use travel_journey_list). Prerequisites: none. Produces: journey and place UUIDs for the returned trip summaries. Mode: read-only.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -10934,7 +10934,7 @@
     "type": "function",
     "function": {
       "name": "trip_history",
-      "description": "Lists past and upcoming trips, newest first, with attendee names. Mode: read-only. Use when: The user asks about past or upcoming trips, destinations, dates, or attendees. Do not use when: Do not use for restaurant or venue visits without a travel question.  Produces: trip ids, trip dates, trip destinations, attendee names.",
+      "description": "Lists past and upcoming trips, newest first, with attendee names. Mode: read-only. Use when: The user asks about past or upcoming trips, destinations, dates, or attendees. Do not use when: Do not use for restaurant or venue visits without a travel question. This covers legacy calendar trips and can be empty: for where the user travelled, also check travel_journey_list.  Produces: trip ids, trip dates, trip destinations, attendee names.",
       "parameters": {
         "type": "object",
         "properties": {
