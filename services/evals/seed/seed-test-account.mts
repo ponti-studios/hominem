@@ -7,7 +7,7 @@
 // Usage:
 //   HOMINEM_EVAL_SEED_ACCOUNT=mcp-eval-e2e@test.hominem.dev \
 //   HOMINEM_EVAL_API_URL=http://localhost:4042 \
-//   HOMINEM_EVAL_MCP_TOKEN=... pnpm exec tsx evals/seed/seed-test-account.mts
+//   HOMINEM_EVAL_MCP_TOKEN=... pnpm exec tsx seed/seed-test-account.mts
 import { McpClient, resolveApiBase } from '../providers/mcp-live-agent.ts';
 
 const ALLOWED_ACCOUNT = 'mcp-eval-e2e@test.hominem.dev';

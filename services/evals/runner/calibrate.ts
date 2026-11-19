@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import { assertions } from 'promptfoo';
 
-import { judgeModel } from '../evals/lib/golden';
+import { judgeModel } from '../lib/golden';
 import { summarizeCalibration, type CalibrationRow } from './calibration-metrics';
 import { discoverSuites } from './discover';
 

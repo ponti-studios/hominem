@@ -6,8 +6,8 @@ import { parseArgs } from 'node:util';
 
 import { evaluate } from 'promptfoo';
 
-import { judgeModel, targetModel } from '../evals/lib/golden';
-import type { Suite } from '../evals/lib/suite';
+import { judgeModel, targetModel } from '../lib/golden';
+import type { Suite } from '../lib/suite';
 import { compareToBaseline, type Comparison } from './compare';
 import { discoverSuites } from './discover';
 import { printLedger, writeLedger } from './ledger';

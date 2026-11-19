@@ -1,4 +1,4 @@
-import type { Tier } from '../evals/lib/suite';
+import type { Tier } from '../lib/suite';
 import type { CaseRecord, SuiteSummary, TrialRecord } from './types';
 
 /** The few fields we read off a promptfoo result row. Loosely typed on purpose. */

@@ -41,7 +41,7 @@ live *args:
     pnpm --filter @hominem/api test-user token --email "$HOMINEM_EVAL_SEED_ACCOUNT" \
       --env-file "$tokenfile" --var HOMINEM_EVAL_MCP_TOKEN
     set -a; source "$tokenfile"; set +a
-    pnpm --filter @hominem/evals exec tsx evals/seed/seed-test-account.mts
+    pnpm --filter @hominem/evals exec tsx seed/seed-test-account.mts
     pnpm --filter @hominem/evals eval run --suite mcp-user-requests {{ args }}
 
 # Promote the latest full run to the committed baselines (review the diff first).

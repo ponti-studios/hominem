@@ -26,15 +26,15 @@ Exit codes: `0` ok, `1` gate failed (regression), `2` infrastructure errors.
 
 ## How it's built
 
-- **Suites** are `evals/**/*.suite.ts`, each `export default await defineTextSuite(...)` or
-  `defineMcpSuite(...)` (`evals/lib/suite.ts`). Datasets (`*.json`) and system prompts sit beside them.
+- **Suites** are `**/*.suite.ts`, each `export default await defineTextSuite(...)` or
+  `defineMcpSuite(...)` (`lib/suite.ts`). Datasets (`*.json`) and system prompts sit beside them.
 - **Tiers**: `regression` (must not get worse, tolerance 0), `capability` (tolerance 0.1),
   `holdout` (release gate, tolerance 0.05, don't tune against it).
 - **Deterministic graders first**: JSON schema, trajectory, and exact-field checks. In agent
   (MCP) suites the trajectory and judge are one assertion, so a trajectory failure never pays for
   the judge. Text suites run their judge alongside the deterministic checks (promptfoo runs
   assertions concurrently).
-- **MCP suites** run a real tool-calling loop against fixtures (`evals/providers/mcp-agent.ts`)
+- **MCP suites** run a real tool-calling loop against fixtures (`providers/mcp-agent.ts`)
   and grade the tool trace (`mcp-trace.ts`), then the answer (`mcp-judge.ts`).
 - **Trials**: `--trials k` repeats every case. Reports show pass@1 (mean pass rate) and pass^k
   (case passed every trial), because a flaky pass isn't a pass.
@@ -73,7 +73,7 @@ Changed a dataset, prompt, or model on purpose? Run the full suite, read the rep
 `eval:check`, unit tests and typecheck (free, deterministic). The live job is manual
 (`workflow_dispatch`) because it costs money.
 
-`evals/lib/mcp-tool-catalog.generated.json` is the generated model-facing tool catalog from the API
+`lib/mcp-tool-catalog.generated.json` is the generated model-facing tool catalog from the API
 registry. `eval:check` compares it with the current API definitions; after an intentional tool
 change, review and update it with `pnpm --filter @hominem/evals eval:catalog:update`. Eval domain
 membership remains explicitly curated in `mcp-tool-catalog.ts`. Catalog content contributes to the

@@ -2,15 +2,17 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import type { Suite } from '../evals/lib/suite';
+import type { Suite } from '../lib/suite';
 
-const root = new URL('../evals/', import.meta.url).pathname;
+// Everything under the package root is walked, so skip what isn't source.
+const skippedDirs = new Set(['node_modules', 'runs', 'baselines', 'eval-costs']);
+const root = new URL('../', import.meta.url).pathname;
 
 const walk = async (dir: string): Promise<string[]> => {
   const entries = await readdir(dir, { withFileTypes: true });
   const nested = await Promise.all(
     entries.map((entry) =>
-      entry.isDirectory()
+      entry.isDirectory() && !skippedDirs.has(entry.name)
         ? walk(join(dir, entry.name))
         : Promise.resolve(entry.name.endsWith('.suite.ts') ? [join(dir, entry.name)] : []),
     ),

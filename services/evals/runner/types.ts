@@ -1,4 +1,4 @@
-import type { Tier } from '../evals/lib/suite';
+import type { Tier } from '../lib/suite';
 
 export type TrialRecord = {
   pass: boolean;

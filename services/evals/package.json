@@ -8,8 +8,8 @@
     "eval:catalog:update": "tsx runner/mcp-tool-catalog.ts --write",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "format": "oxfmt evals runner --write '!evals/**/*.html' '!evals/**/*.generated.json'",
-    "format:check": "oxfmt evals runner --check '!evals/**/*.html' '!evals/**/*.generated.json'"
+    "format": "oxfmt . --write '!**/*.html' '!**/*.generated.json' '!runs' '!node_modules'",
+    "format:check": "oxfmt . --check '!**/*.html' '!**/*.generated.json' '!runs' '!node_modules'"
   },
   "devDependencies": {
     "@types/node": "catalog:",

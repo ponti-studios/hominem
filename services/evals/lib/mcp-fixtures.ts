@@ -1,4 +1,4 @@
-import { financeSpendingByCategoryOutputSchema } from '../../../api/src/schemas/finance.schema';
+import { financeSpendingByCategoryOutputSchema } from '../../api/src/schemas/finance.schema';
 
 export type McpFixtureProfile = {
   ambiguousPerson?: boolean;

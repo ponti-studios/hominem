@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { discoverSuites } from '../runner/discover';
+import { discoverSuites } from './runner/discover';
 
 // Offline sanity for every suite: nothing here calls a model.
 const suites = await discoverSuites();

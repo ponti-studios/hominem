@@ -1,4 +1,4 @@
-import type { Tier } from '../evals/lib/suite';
+import type { Tier } from '../lib/suite';
 import type { SuiteRecord } from './types';
 
 /** Allowed drop in suite pass rate before a non-regression tier fails the gate. */

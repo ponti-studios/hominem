@@ -1,4 +1,4 @@
-import { buildFinanceReviewPromptText } from '../../../../../../api/src/mcp/prompts/finance-review-content';
+import { buildFinanceReviewPromptText } from '../../../../../api/src/mcp/prompts/finance-review-content';
 import { loadJson } from '../../../../lib/golden';
 import type { McpExpectation } from '../../../../lib/mcp-scoring';
 import { toolsByDomain } from '../../../../lib/mcp-tool-catalog';

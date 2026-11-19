@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const snapshotPath = fileURLToPath(
-  new URL('../evals/lib/mcp-tool-catalog.generated.json', import.meta.url),
+  new URL('../lib/mcp-tool-catalog.generated.json', import.meta.url),
 );
 const exporterArgs = (outputPath: string) => [
   '--silent',

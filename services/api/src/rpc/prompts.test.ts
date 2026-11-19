@@ -64,7 +64,7 @@ describe('chat assistant personality', () => {
   it('keeps the chat prompt snapshot aligned with production', () => {
     const messages: Array<{ role: string; content: string }> = JSON.parse(
       readFileSync(
-        resolve(import.meta.dirname, '../../../evals/evals/chat/assistant/system-prompt.json'),
+        resolve(import.meta.dirname, '../../../evals/chat/assistant/system-prompt.json'),
         'utf8',
       ),
     );
@@ -83,10 +83,7 @@ describe('time-block extraction prompt', () => {
   it('keeps the time-block snapshot aligned with production', () => {
     const messages: Array<{ role: string; content: string }> = JSON.parse(
       readFileSync(
-        resolve(
-          import.meta.dirname,
-          '../../../evals/evals/scheduling/time-block/system-prompt.json',
-        ),
+        resolve(import.meta.dirname, '../../../evals/scheduling/time-block/system-prompt.json'),
         'utf8',
       ),
     );
