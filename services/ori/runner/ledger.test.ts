@@ -9,6 +9,7 @@ const manifest = {
   suites: [
     {
       suite: 'demo',
+      promptHash: 'p123',
       tier: 'capability',
       trialsPerCase: 3,
       limited: false,
@@ -35,7 +36,7 @@ describe('ledger', () => {
     expect(lines[0]).toBe(ledgerColumns.join(','));
     expect(lines).toHaveLength(2);
     expect(
-      lines[1]?.startsWith('2026-01-01T00-00-00-000Z,abc123,demo,capability,2,3,false,0.5'),
+      lines[1]?.startsWith('2026-01-01T00-00-00-000Z,abc123,p123,demo,capability,2,3,false,0.5'),
     ).toBe(true);
   });
 

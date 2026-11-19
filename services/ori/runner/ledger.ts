@@ -10,6 +10,7 @@ export const ledgerFile = `${oriRoot}ledger.csv`;
 export const ledgerColumns = [
   'runId',
   'gitSha',
+  'promptHash',
   'suite',
   'tier',
   'cases',
@@ -33,6 +34,7 @@ export function ledgerRows(manifest: RunManifest): Row[] {
   return manifest.suites.map((record) => ({
     runId: manifest.runId,
     gitSha: manifest.gitSha,
+    promptHash: record.promptHash,
     suite: record.suite,
     tier: record.tier,
     cases: record.summary.cases,
