@@ -119,7 +119,7 @@ registerTool(
       whenToUse:
         'The user says they need or want to do something, mentions a deadline or appointment, or asks to be reminded, even if they never say "add a task".',
       whenNotToUse:
-        'Do not use for a durable fact or preference about the user; use remember for those.',
+        'Do not use for a durable fact or preference about the user; use remember for those. Do not use when the user asks to make, write down or save a note, even if the text mentions a date or deadline; use note_create.',
     },
   },
   async (ownerUserId, input) => ({ task: await createTask(ownerUserId, input) }),

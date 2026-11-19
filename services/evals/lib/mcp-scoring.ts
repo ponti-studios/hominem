@@ -30,6 +30,12 @@ export type McpExpectation = {
   stopBefore?: string;
   confirmation?: boolean;
   outputIncludes?: readonly string[];
+  /**
+   * Trials of one case share an account, so a later trial can find the write an earlier one made.
+   * When a successful read already shows the fact, skipping the write is correct: the write steps
+   * are not required. The read itself still is, and a write that does run is still scored.
+   */
+  alreadyHolds?: { tool: string; outputIncludes: string };
   argumentAssertions?: readonly {
     tool: string;
     equals?: Record<string, unknown>;
@@ -89,7 +95,20 @@ export function unrecoveredFailures(calls: NonNullable<McpTrace['calls']>): stri
 export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpScenarioScore {
   const calls = trace.toolCalls;
   const failedExecutions = unrecoveredFailures(trace.calls ?? []);
-  const required = expected.requiredTools ?? [];
+  const already = expected.alreadyHolds;
+  const alreadyHolds =
+    already !== undefined &&
+    (trace.calls ?? []).some(
+      (call) =>
+        call.tool === already.tool &&
+        call.status === 'succeeded' &&
+        JSON.stringify(call.output ?? '')
+          .toLowerCase()
+          .includes(already.outputIncludes.toLowerCase()),
+    );
+  const required = (expected.requiredTools ?? []).filter(
+    (tool) => !alreadyHolds || tool === already?.tool || calls.includes(tool),
+  );
   const missing = [
     ...required.filter((tool) => !calls.includes(tool)),
     ...(expected.requiredAnyOf ?? [])
@@ -111,6 +130,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const indexByTool = positions(calls);
   const violated = (expected.dependencies ?? [])
     .filter(([before, after]) => {
+      if (alreadyHolds && !calls.includes(after)) return false;
       const beforeIndex = indexByTool.get(before);
       const afterIndex = indexByTool.get(after);
       return beforeIndex === undefined || afterIndex === undefined || beforeIndex >= afterIndex;

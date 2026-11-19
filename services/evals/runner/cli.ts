@@ -37,6 +37,7 @@ Options for run
   --tier <tier>            regression | capability | holdout (repeatable)
   --trials <n>             repeat each case n times for pass^k (default 1)
   --limit <n>              first n cases per suite, a smoke run (never gates, never baselined)
+  --case <id>              only the case(s) with this id (repeatable), also a smoke run
   --concurrency <n>        parallel model calls (default 4)
   --cache                  reuse cached model responses (off by default: runs are measurements)
   --no-gate                report only; always exit 0 unless a run errored
@@ -49,6 +50,7 @@ const { positionals, values } = parseArgs({
     tier: { type: 'string', multiple: true },
     trials: { type: 'string' },
     limit: { type: 'string' },
+    case: { type: 'string', multiple: true },
     concurrency: { type: 'string' },
     cache: { type: 'boolean' },
     'no-gate': { type: 'boolean' },
@@ -175,9 +177,22 @@ async function check(): Promise<void> {
 
 async function runSuite(
   suite: Suite,
-  options: { trials: number; limit?: number; concurrency: number; cache: boolean },
+  options: {
+    trials: number;
+    limit?: number;
+    cases?: string[];
+    concurrency: number;
+    cache: boolean;
+  },
 ): Promise<SuiteRecord> {
-  const tests = options.limit ? testsOf(suite).slice(0, options.limit) : testsOf(suite);
+  const all = testsOf(suite);
+  const picked = options.cases
+    ? all.filter((t) => options.cases?.includes(t.description ?? ''))
+    : all;
+  if (options.cases && picked.length === 0) {
+    throw new Error(`no case in ${suite.name} matches ${options.cases.join(', ')}`);
+  }
+  const tests = options.limit ? picked.slice(0, options.limit) : picked;
   const evalRecord = await evaluate(
     { ...suite.config, tests, writeLatestResults: true } as Parameters<typeof evaluate>[0],
     {
@@ -206,7 +221,7 @@ async function runSuite(
     targetModel: suite.model ?? targetModel,
     judgeModel,
     trialsPerCase: options.trials,
-    limited: Boolean(options.limit),
+    limited: Boolean(options.limit || options.cases),
     summary: summarize(cases),
     cases,
   };
@@ -220,6 +235,7 @@ async function run(): Promise<void> {
   const options = {
     trials: positive(values.trials, 1, '--trials'),
     limit: values.limit ? positive(values.limit, 1, '--limit') : undefined,
+    cases: values.case,
     concurrency: positive(values.concurrency, 4, '--concurrency'),
     cache: Boolean(values.cache),
   };
@@ -272,7 +288,7 @@ async function baseline(): Promise<void> {
   await mkdir(baselinesDir, { recursive: true });
   for (const record of manifest.suites) {
     if (record.limited) {
-      console.log(`skip ${record.suite}: partial run (--limit)`);
+      console.log(`skip ${record.suite}: partial run (--limit/--case)`);
       continue;
     }
     if (record.summary.errors > 0) {

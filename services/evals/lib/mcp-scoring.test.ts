@@ -172,3 +172,36 @@ test('gatedTools tolerates a request the gate stopped but fails a call that ran'
   expect(ran.forbiddenTools.found).toEqual(['note_delete']);
   expect(ran.passed).toEqual(false);
 });
+
+test('alreadyHolds waives the write only when a read shows the fact is already there', () => {
+  const expected = {
+    requiredTools: ['people_lookup', 'person_update'],
+    dependencies: [['people_lookup', 'person_update']] as [string, string][],
+    alreadyHolds: { tool: 'people_lookup', outputIncludes: 'Milan' },
+  };
+  const lookup = (notes: string) => ({
+    tool: 'people_lookup',
+    input: {},
+    output: { people: [{ notes }] },
+    status: 'succeeded' as const,
+  });
+
+  // An earlier trial already wrote it: the read shows Milan, so no write is right.
+  expect(
+    scoreMcpTrace({ toolCalls: ['people_lookup'], calls: [lookup('Moved to Milan')] }, expected)
+      .passed,
+  ).toEqual(true);
+  // The record does not say Milan and the agent never wrote: still a failure.
+  expect(
+    scoreMcpTrace({ toolCalls: ['people_lookup'], calls: [lookup('')] }, expected).passed,
+  ).toEqual(false);
+  // The read is still required.
+  expect(scoreMcpTrace({ toolCalls: [], calls: [] }, expected).passed).toEqual(false);
+  // A write that does run keeps its ordering check.
+  expect(
+    scoreMcpTrace(
+      { toolCalls: ['person_update', 'people_lookup'], calls: [lookup('Moved to Milan')] },
+      expected,
+    ).passed,
+  ).toEqual(false);
+});

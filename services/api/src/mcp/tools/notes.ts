@@ -105,7 +105,8 @@ registerTool(
     inputSchema: noteCreateToolInputSchema,
     outputSchema: noteCreateToolOutputSchema,
     guidance: {
-      whenToUse: 'The user asks to write down, save or capture something as a note.',
+      whenToUse:
+        'The user asks to write down, save or capture something as a note, even if the text mentions a date or deadline.',
       whenNotToUse: 'Do not use for durable personal facts; use remember instead.',
       produces: ['note id'],
     },

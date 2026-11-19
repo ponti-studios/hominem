@@ -84,7 +84,8 @@
       "expected": {
         "tools": ["person_create"],
         "outcome": "creates Marco with the cousin relationship and Rome",
-        "allowedTools": ["person_create", "people_lookup"]
+        "allowedTools": ["person_create", "people_lookup"],
+        "alreadyHolds": { "tool": "people_lookup", "outputIncludes": "Marco" }
       }
     },
     {
@@ -95,6 +96,7 @@
       "expected": {
         "tools": ["people_lookup", "person_update"],
         "dependencies": [["people_lookup", "person_update"]],
+        "alreadyHolds": { "tool": "people_lookup", "outputIncludes": "Milan" },
         "outcome": "looks Priya up before updating her city"
       }
     },
@@ -462,7 +464,14 @@
       "prompt": "Tag the Tokyo trip as vacation.",
       "expected": {
         "tools": ["tag_entity"],
-        "allowedTools": ["trip_history", "tag_entity", "travel_search", "travel_journey_list"],
+        "allowedTools": [
+          "trip_history",
+          "tag_entity",
+          "entity_tags",
+          "travel_search",
+          "travel_journey_list"
+        ],
+        "alreadyHolds": { "tool": "entity_tags", "outputIncludes": "vacation" },
         "outcome": "finds the Tokyo trip before tagging it",
         "requiredAnyOf": [["trip_history", "travel_journey_list", "travel_search"]]
       }

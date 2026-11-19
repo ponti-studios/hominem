@@ -134,15 +134,21 @@ export async function createPerson({
   ownerUserId,
   displayName,
   email,
+  notes,
 }: {
   ownerUserId: string;
   displayName: string;
   email?: string | null;
+  notes?: string;
 }): Promise<PersonPickerRecord> {
   const personId = await runInTransaction(async (trx) => {
     const person = await trx
       .insertInto('app.people')
-      .values({ ownerUserid: ownerUserId, displayName: displayName.trim() })
+      .values({
+        ownerUserid: ownerUserId,
+        displayName: displayName.trim(),
+        ...(notes ? { notes } : {}),
+      })
       .returning('id')
       .executeTakeFirstOrThrow();
 
@@ -172,11 +178,13 @@ export async function updatePerson({
   personId,
   displayName,
   email,
+  notes,
 }: {
   ownerUserId: string;
   personId: string;
   displayName?: string;
   email?: string | null;
+  notes?: string | null;
 }): Promise<PersonPickerRecord | null> {
   const found = await runInTransaction(async (trx) => {
     const person = await trx
@@ -191,6 +199,15 @@ export async function updatePerson({
       await trx
         .updateTable('app.people')
         .set({ displayName: displayName.trim() })
+        .where('id', '=', personId)
+        .where('ownerUserid', '=', ownerUserId)
+        .execute();
+    }
+
+    if (notes !== undefined) {
+      await trx
+        .updateTable('app.people')
+        .set({ notes: notes === null || notes === '' ? null : notes })
         .where('id', '=', personId)
         .where('ownerUserid', '=', ownerUserId)
         .execute();

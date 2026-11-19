@@ -5592,7 +5592,7 @@
     "type": "function",
     "function": {
       "name": "note_create",
-      "description": "Saves a new note with an optional title. Mode: write. Use when: The user asks to write down, save or capture something as a note. Do not use when: Do not use for durable personal facts; use remember instead.  Produces: note id.",
+      "description": "Saves a new note with an optional title. Mode: write. Use when: The user asks to write down, save or capture something as a note, even if the text mentions a date or deadline. Do not use when: Do not use for durable personal facts; use remember instead.  Produces: note id.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5753,7 +5753,7 @@
     "type": "function",
     "function": {
       "name": "person_create",
-      "description": "Adds a person to the address book with an optional primary email. Call people_lookup first so the same person is not added twice. Mode: write. Use when: The user asks to add someone and people_lookup found no match. Do not use when: Do not create a person that people_lookup already returns.  Prerequisites: people_lookup (avoid creating a duplicate).  Produces: person id.",
+      "description": "Adds a person to the address book with an optional primary email and notes (how the user knows them, where they live). Call people_lookup first so the same person is not added twice. Mode: write. Use when: The user asks to add someone and people_lookup found no match. Do not use when: Do not create a person that people_lookup already returns.  Prerequisites: people_lookup (avoid creating a duplicate).  Produces: person id.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5773,6 +5773,11 @@
                 "type": "null"
               }
             ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "Free-form facts about the person: how you know them, where they live or moved to, anything worth remembering."
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -5805,7 +5810,7 @@
     "type": "function",
     "function": {
       "name": "person_update",
-      "description": "Changes a person's display name and/or primary email. Returns null if the person does not exist. Mode: write. Use when: A person id has been returned by people_lookup. Do not use when: Do not invent a person id.  Prerequisites: people_lookup (resolve the stable person id).",
+      "description": "Changes a person's display name, primary email and/or notes. Notes are where facts like a move or how the user knows them live. Returns null if the person does not exist. Mode: write. Use when: A person id has been returned by people_lookup. Do not use when: Do not invent a person id.  Prerequisites: people_lookup (resolve the stable person id).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5827,6 +5832,19 @@
                 "type": "string",
                 "format": "email",
                 "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "description": "Replaces the notes on the person; null clears them. Read the current notes with people_lookup first and keep what still holds.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000,
+                "description": "Free-form facts about the person: how you know them, where they live or moved to, anything worth remembering."
               },
               {
                 "type": "null"
@@ -8112,7 +8130,7 @@
     "type": "function",
     "function": {
       "name": "task_create",
-      "description": "Creates a standalone task, optionally assigning participants or nesting it under a parent task list. Use task_batch_create to create a task list with subtasks. Mode: write. Use when: The user says they need or want to do something, mentions a deadline or appointment, or asks to be reminded, even if they never say \"add a task\". Do not use when: Do not use for a durable fact or preference about the user; use remember for those.",
+      "description": "Creates a standalone task, optionally assigning participants or nesting it under a parent task list. Use task_batch_create to create a task list with subtasks. Mode: write. Use when: The user says they need or want to do something, mentions a deadline or appointment, or asks to be reminded, even if they never say \"add a task\". Do not use when: Do not use for a durable fact or preference about the user; use remember for those. Do not use when the user asks to make, write down or save a note, even if the text mentions a date or deadline; use note_create.",
       "parameters": {
         "type": "object",
         "properties": {

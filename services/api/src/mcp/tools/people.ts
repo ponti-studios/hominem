@@ -67,7 +67,7 @@ registerTool(
     name: 'person_create',
     title: 'Add a person',
     description:
-      'Adds a person to the address book with an optional primary email. Call people_lookup first so the same person is not added twice.',
+      'Adds a person to the address book with an optional primary email and notes (how the user knows them, where they live). Call people_lookup first so the same person is not added twice.',
     inputSchema: personCreateToolInputSchema,
     outputSchema: personCreateToolOutputSchema,
     readOnly: false,
@@ -89,6 +89,7 @@ registerTool(
       ownerUserId,
       displayName: input.displayName,
       email: input.email ?? null,
+      ...(input.notes ? { notes: input.notes } : {}),
     }),
   }),
 );
@@ -98,7 +99,7 @@ registerTool(
     name: 'person_update',
     title: 'Update a person',
     description:
-      "Changes a person's display name and/or primary email. Returns null if the person does not exist.",
+      "Changes a person's display name, primary email and/or notes. Notes are where facts like a move or how the user knows them live. Returns null if the person does not exist.",
     inputSchema: personUpdateToolInputSchema,
     outputSchema: personUpdateToolOutputSchema,
     readOnly: false,
@@ -120,6 +121,7 @@ registerTool(
       personId: input.personId,
       ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
       ...(input.email !== undefined ? { email: input.email } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
     }),
   }),
 );
