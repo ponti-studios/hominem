@@ -47,6 +47,7 @@ Exit codes: `0` ok, `1` gate failed (regression), `2` infrastructure errors.
   even a passing interval does not establish generalization; add diverse human-reviewed cases for
   each rubric before relying on the judge as a release signal.
 - **Tracked every run**: cost, tokens (target + judge), p50/p95 latency, dataset/prompt/grader hashes, models.
+- **Ledger**: `ledger.csv` (committed) has one row per suite run: git sha, pass rate, pass^k, cost, tokens, latency, models. It is rebuilt after every run; `just evals ledger` rebuilds it by hand and prints the recent runs.
 
 ## Baselines and the gate
 

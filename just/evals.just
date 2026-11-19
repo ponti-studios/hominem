@@ -55,6 +55,10 @@ calibrate:
     set -a; source '{{ ENV_FILE }}'; set +a
     pnpm --filter @hominem/ori eval calibrate
 
+# Rebuild services/ori/ledger.csv from every run on disk (also done after each run) and show the recent ones.
+ledger:
+    pnpm --filter @hominem/ori eval ledger
+
 # Typecheck every suite, runner file and test.
 typecheck:
     pnpm --filter @hominem/ori typecheck

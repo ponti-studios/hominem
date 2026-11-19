@@ -10,6 +10,7 @@ import { judgeModel, targetModel } from '../evals/lib/golden';
 import type { Suite } from '../evals/lib/suite';
 import { compareToBaseline, type Comparison } from './compare';
 import { discoverSuites } from './discover';
+import { printLedger, writeLedger } from './ledger';
 import { summarize, toCases, type RawResult } from './normalize';
 import { renderReport } from './report';
 import type { RunManifest, SuiteRecord } from './types';
@@ -35,6 +36,7 @@ Commands
   run                      run suites against the live model and gate against baselines
   baseline                 promote the latest full run to the committed baselines
   calibrate                score the judge against human-labeled cases
+  ledger                   rebuild ledger.csv from every past run and print the recent ones
 
 Options for run
   --suite <name>           run one suite (repeatable)
@@ -250,6 +252,7 @@ async function run(): Promise<void> {
   );
   await writeFile(`${runsDir}/${manifest.runId}/report.md`, report);
   await writeFile(`${runsDir}/latest.json`, `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeLedger();
   console.log(`\n${report}`);
   if (process.env.GITHUB_STEP_SUMMARY) {
     await writeFile(process.env.GITHUB_STEP_SUMMARY, report, { flag: 'a' });
@@ -314,6 +317,8 @@ async function main(): Promise<void> {
       return run();
     case 'baseline':
       return baseline();
+    case 'ledger':
+      return printLedger();
     case 'calibrate':
       return (await import('./calibrate')).calibrate();
     default:
