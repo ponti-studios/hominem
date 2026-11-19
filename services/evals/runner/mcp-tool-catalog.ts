@@ -72,7 +72,7 @@ try {
     process.stdout.write(`Updated ${snapshotPath}\n`);
   } else if (!isDeepStrictEqual(current, generatedCatalog)) {
     process.stderr.write(
-      'The checked-in MCP eval catalog is stale. Run `pnpm --filter @hominem/ori eval:catalog:update` and review the diff.\n',
+      'The checked-in MCP eval catalog is stale. Run `pnpm --filter @hominem/evals eval:catalog:update` and review the diff.\n',
     );
     process.exitCode = 1;
   } else {

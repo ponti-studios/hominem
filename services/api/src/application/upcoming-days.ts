@@ -5,7 +5,7 @@ const DAY_MS = 86_400_000;
  * "Monday" off a list instead of counting from the reference date. Returns null
  * when the reference date or time zone cannot be interpreted.
  *
- * Keep services/ori/evals/lib/upcoming-days.ts identical: the evals must send
+ * Keep services/evals/evals/lib/upcoming-days.ts identical: the evals must send
  * the model the same line production does.
  */
 export function describeUpcomingDays(

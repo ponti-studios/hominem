@@ -27,7 +27,7 @@ process.env.PROMPTFOO_CONFIG_DIR ??= `${runsDir}/.promptfoo`;
 
 const usage = `ori evals
 
-  pnpm --filter @hominem/ori eval <command> [options]
+  pnpm --filter @hominem/evals eval <command> [options]
 
 Commands
   list                     suites, tiers, case counts, dataset/prompt hashes (offline)

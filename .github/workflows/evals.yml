@@ -9,7 +9,7 @@ name: evals
 on:
   pull_request:
     paths:
-      - 'services/ori/**'
+      - 'services/evals/**'
       - 'services/api/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
@@ -29,7 +29,7 @@ on:
         type: string
         default: '3'
       target-model:
-        description: OpenRouter model id under test (defaults to ORI_TARGET_MODEL / gpt-5-mini).
+        description: OpenRouter model id under test (defaults to EVALS_TARGET_MODEL / gpt-5-mini).
         type: string
         required: false
 
@@ -51,11 +51,11 @@ jobs:
         with:
           node-version: '24.18.0'
       - name: eval-check
-        run: pnpm --filter @hominem/ori eval:check
+        run: pnpm --filter @hominem/evals eval:check
       - name: eval-unit-tests
-        run: pnpm --filter @hominem/ori test
+        run: pnpm --filter @hominem/evals test
       - name: eval-typecheck
-        run: pnpm --filter @hominem/ori typecheck
+        run: pnpm --filter @hominem/evals typecheck
 
   evals-live:
     if: github.event_name == 'workflow_dispatch'
@@ -63,7 +63,7 @@ jobs:
     timeout-minutes: 60
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      ORI_TARGET_MODEL: ${{ inputs.target-model }}
+      EVALS_TARGET_MODEL: ${{ inputs.target-model }}
     steps:
       - name: require-openrouter-key
         run: |
@@ -84,11 +84,11 @@ jobs:
           args=(--trials "$TRIALS")
           [ -n "$SUITE" ] && args+=(--suite "$SUITE")
           [ -n "$TIER" ] && args+=(--tier "$TIER")
-          pnpm --filter @hominem/ori eval run "${args[@]}"
+          pnpm --filter @hominem/evals eval run "${args[@]}"
       - name: upload-results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: eval-results
-          path: services/ori/runs
+          path: services/evals/runs
           if-no-files-found: ignore

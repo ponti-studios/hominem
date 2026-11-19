@@ -1,22 +1,22 @@
 ROOT_DIR := justfile_directory()
 ENV_FILE := ROOT_DIR / "services/api/.env"
 
-# Every recipe forwards to `pnpm --filter @hominem/ori eval`; the live ones load the API .env for the OpenRouter key.
+# Every recipe forwards to `pnpm --filter @hominem/evals eval`; the live ones load the API .env for the OpenRouter key.
 
 # List suites, tiers, case counts and hashes (offline, free).
 list:
-    pnpm --filter @hominem/ori eval list
+    pnpm --filter @hominem/evals eval list
 
 # Validate every suite and baseline without calling a model. This is what CI runs.
 check:
-    pnpm --filter @hominem/ori eval:check
+    pnpm --filter @hominem/evals eval:check
 
 # Run suites live and gate against baselines. Pass flags through, e.g. `just evals run --suite voice-cleanup --trials 3`.
 run *args:
     #!/usr/bin/env bash
     set -euo pipefail
     set -a; source '{{ ENV_FILE }}'; set +a
-    pnpm --filter @hominem/ori eval run {{ args }}
+    pnpm --filter @hominem/evals eval run {{ args }}
 
 # Run the live MCP suite end to end with no manual steps: reset a disposable eval account, mint a throwaway
 # token, seed, run, then revoke on exit. Needs the local API up (default http://localhost:4040).
@@ -41,28 +41,28 @@ live *args:
     pnpm --filter @hominem/api test-user token --email "$HOMINEM_EVAL_SEED_ACCOUNT" \
       --env-file "$tokenfile" --var HOMINEM_EVAL_MCP_TOKEN
     set -a; source "$tokenfile"; set +a
-    pnpm --filter @hominem/ori exec tsx evals/seed/seed-test-account.mts
-    pnpm --filter @hominem/ori eval run --suite mcp-user-requests {{ args }}
+    pnpm --filter @hominem/evals exec tsx evals/seed/seed-test-account.mts
+    pnpm --filter @hominem/evals eval run --suite mcp-user-requests {{ args }}
 
 # Promote the latest full run to the committed baselines (review the diff first).
 baseline:
-    pnpm --filter @hominem/ori eval baseline
+    pnpm --filter @hominem/evals eval baseline
 
 # Score the judge model against the human-labeled calibration cases.
 calibrate:
     #!/usr/bin/env bash
     set -euo pipefail
     set -a; source '{{ ENV_FILE }}'; set +a
-    pnpm --filter @hominem/ori eval calibrate
+    pnpm --filter @hominem/evals eval calibrate
 
-# Rebuild services/ori/ledger.csv from every run on disk (also done after each run) and show the recent ones.
+# Rebuild services/evals/ledger.csv from every run on disk (also done after each run) and show the recent ones.
 ledger:
-    pnpm --filter @hominem/ori eval ledger
+    pnpm --filter @hominem/evals eval ledger
 
 # Typecheck every suite, runner file and test.
 typecheck:
-    pnpm --filter @hominem/ori typecheck
+    pnpm --filter @hominem/evals typecheck
 
 # Run the offline unit tests for the runner, assertions and suite config.
 test:
-    pnpm --filter @hominem/ori test
+    pnpm --filter @hominem/evals test

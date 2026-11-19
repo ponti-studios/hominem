@@ -24,7 +24,7 @@ services/api/public/settings-ai.js
 services/api/public/settings-ai-footprint.js
 
 # Evals
-services/ori/runs
+services/evals/runs
 
 # signing
 *.p8
@@ -102,7 +102,7 @@ tmp/
 debug-storybook.log
 
 # generated eval cost reports
-services/ori/eval-costs/
+services/evals/eval-costs/
 
 # local proactivity studio journal
 services/proactivity/.data/

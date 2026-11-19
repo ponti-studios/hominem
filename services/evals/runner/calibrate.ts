@@ -25,7 +25,7 @@ const labelsUrl = new URL('../calibration/judge-labels.json', import.meta.url);
  * the judge model, the rubric wording, or the judging provider changes.
  */
 export async function calibrate(): Promise<void> {
-  if (process.env.ORI_ENV_FILE) process.loadEnvFile(process.env.ORI_ENV_FILE);
+  if (process.env.EVALS_ENV_FILE) process.loadEnvFile(process.env.EVALS_ENV_FILE);
   if (!process.env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY is required');
   const { cases } = JSON.parse(await readFile(labelsUrl, 'utf8')) as { cases: LabeledCase[] };
   if (cases.length === 0)
