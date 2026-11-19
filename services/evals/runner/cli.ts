@@ -15,17 +15,11 @@ import { summarize, toCases, type RawResult } from './normalize';
 import { renderReport } from './report';
 import type { RunManifest, SuiteRecord } from './types';
 
-const oriRoot = new URL('../', import.meta.url).pathname;
-const runsDir = `${oriRoot}runs`;
-const baselinesDir = `${oriRoot}baselines`;
+const packageRoot = new URL('../', import.meta.url).pathname;
+const runsDir = `${packageRoot}runs`;
+const baselinesDir = `${packageRoot}baselines`;
 
-// Eval runs stay private and local: no telemetry, no update checks, no result sharing.
-process.env.PROMPTFOO_DISABLE_TELEMETRY = '1';
-process.env.PROMPTFOO_DISABLE_UPDATE = '1';
-process.env.PROMPTFOO_DISABLE_SHARING = '1';
-process.env.PROMPTFOO_CONFIG_DIR ??= `${runsDir}/.promptfoo`;
-
-const usage = `ori evals
+const usage = `evals
 
   pnpm --filter @hominem/evals eval <command> [options]
 
@@ -64,7 +58,7 @@ const { positionals, values } = parseArgs({
 });
 
 const promptfooVersion = (): string => {
-  const manifestPath = `${oriRoot}node_modules/promptfoo/package.json`;
+  const manifestPath = `${packageRoot}node_modules/promptfoo/package.json`;
   return (JSON.parse(readFileSync(manifestPath, 'utf8')) as { version: string }).version;
 };
 
@@ -184,12 +178,15 @@ async function runSuite(
   options: { trials: number; limit?: number; concurrency: number; cache: boolean },
 ): Promise<SuiteRecord> {
   const tests = options.limit ? testsOf(suite).slice(0, options.limit) : testsOf(suite);
-  const evalRecord = await evaluate({ ...suite.config, tests } as Parameters<typeof evaluate>[0], {
-    maxConcurrency: options.concurrency,
-    repeat: options.trials,
-    cache: options.cache,
-    showProgressBar: false,
-  });
+  const evalRecord = await evaluate(
+    { ...suite.config, tests, writeLatestResults: true } as Parameters<typeof evaluate>[0],
+    {
+      maxConcurrency: options.concurrency,
+      repeat: options.trials,
+      cache: options.cache,
+      showProgressBar: false,
+    },
+  );
   const rows = (await evalRecord.getResults()) as unknown as RawResult[];
   const cases = toCases(
     rows,

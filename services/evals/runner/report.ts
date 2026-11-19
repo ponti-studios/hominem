@@ -7,7 +7,7 @@ const usd = (value: number): string => `$${value.toFixed(4)}`;
 /** Markdown report: one table for the run, then detail for anything that needs eyes. */
 export function renderReport(manifest: RunManifest, comparisons: readonly Comparison[]): string {
   const lines = [
-    `## ori evals · ${manifest.runId}`,
+    `## evals · ${manifest.runId}`,
     '',
     `git \`${manifest.gitSha}\` · promptfoo ${manifest.promptfooVersion} · ${manifest.node}`,
     '',

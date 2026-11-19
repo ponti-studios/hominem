@@ -59,6 +59,10 @@ calibrate:
 ledger:
     pnpm --filter @hominem/evals eval ledger
 
+# Open promptfoo's web UI (localhost:15500) on the runs stored in services/evals/runs/.promptfoo.
+view:
+    PROMPTFOO_CONFIG_DIR="{{ ROOT_DIR }}/services/evals/runs/.promptfoo" PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 pnpm --filter @hominem/evals exec promptfoo view -y
+
 # Typecheck every suite, runner file and test.
 typecheck:
     pnpm --filter @hominem/evals typecheck

@@ -3,9 +3,9 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 
 import type { RunManifest } from './types';
 
-const oriRoot = new URL('../', import.meta.url).pathname;
-const runsDir = `${oriRoot}runs`;
-export const ledgerFile = `${oriRoot}ledger.csv`;
+const packageRoot = new URL('../', import.meta.url).pathname;
+const runsDir = `${packageRoot}runs`;
+export const ledgerFile = `${packageRoot}ledger.csv`;
 
 export const ledgerColumns = [
   'runId',

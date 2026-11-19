@@ -246,3 +246,5 @@ runId,gitSha,promptHash,suite,tier,cases,trials,limited,passRate,passAllRate,err
 2026-11-18T23-15-56-400Z,b643812da,73c2aa36615f,mcp-user-requests,capability,44,3,false,0.8712,0.7727,0,0.104336,3230834,45411,8467,24414,openai/gpt-6-luna,openai/gpt-5-mini
 2026-11-18T23-25-02-623Z,84268c466,9d06ec81dd5b,mcp-user-requests,capability,44,3,false,0.9015,0.8182,0,0.104303,3189548,43380,7845,25065,openai/gpt-6-luna,openai/gpt-5-mini
 2026-11-19T04-13-49-517Z,477b12ed0,9d06ec81dd5b,mcp-user-requests,capability,4,1,true,1,1,0,0.004207,115496,1822,8710,26306,openai/gpt-6-luna,openai/gpt-5-mini
+2026-11-19T04-32-01-898Z,b90ffd982,9d06ec81dd5b,mcp-user-requests,capability,2,1,true,0.5,0.5,0,0.003157,100415,1340,10761,25410,openai/gpt-6-luna,openai/gpt-5-mini
+2026-11-19T04-32-48-597Z,b90ffd982,9d06ec81dd5b,mcp-user-requests,capability,2,1,true,0.5,0.5,0,0.002452,65369,1493,8214,25271,openai/gpt-6-luna,openai/gpt-5-mini
