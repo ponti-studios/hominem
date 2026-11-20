@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { checkAuth, googleAuth } from './auth.js';
+import { GoogleAuthError } from './google.js';
 import { installAgent, uninstallAgent } from './launchd.js';
 import { syncRclone } from './system.js';
 
@@ -37,11 +38,21 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
+const FAILURES: Record<GoogleAuthError['code'], string> = {
+  TOKEN_MISSING: 'hominem: no Google token or client secret found. Run `hominem auth google`.',
+  TOKEN_REVOKED: 'hominem: Google revoked the token. Run `hominem auth google`.',
+  REFRESH_FAILED: 'hominem: could not refresh the Google token. Run `hominem auth google`.',
+  API_UNAUTHORIZED: 'hominem: Google rejected the token. Run `hominem auth google`.',
+  API_FAILED: 'hominem: the Google API call failed. Try again later.',
+  NETWORK: 'hominem: could not reach Google. Check your connection.',
+};
+
 try {
   process.exitCode = await main(process.argv.slice(2));
 } catch (error) {
-  // Strip line breaks so a user-supplied value in the message can't forge extra log lines.
-  const message = String(error instanceof Error ? error.message : error);
-  console.error(message.replace(/\n|\r/g, ' '));
+  // Print fixed text keyed by error code, never the raw message, so nothing user-supplied reaches the log.
+  console.error(
+    error instanceof GoogleAuthError ? FAILURES[error.code] : 'hominem: unexpected error',
+  );
   process.exitCode = 1;
 }
