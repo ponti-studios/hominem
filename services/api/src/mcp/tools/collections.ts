@@ -85,7 +85,8 @@ registerTool(
     guidance: {
       whenToUse:
         'A confirmed collection id and entity id are available and the user asked to add the item.',
-      whenNotToUse: 'Do not invent collection or entity ids.',
+      whenNotToUse:
+        "Do not invent collection or entity ids. Do not hunt across unrelated search tools for the entity: a guide or written piece is a note, so find it with note_list (entityType notes), and take a place, person or media id from that domain's own list or lookup tool.",
       dependencies: [
         {
           tool: 'list_collections',

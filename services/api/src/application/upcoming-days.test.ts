@@ -37,9 +37,9 @@ describe('describeUpcomingDays', () => {
     expect(describeUpcomingDays('not a date', 'America/Los_Angeles')).toBeNull();
   });
 
-  it('stays identical to the helper the Ori evals send to the model', () => {
+  it('stays identical to the helper the evals send to the model', () => {
     const code = (path: string) =>
       readFileSync(resolve(import.meta.dirname, path), 'utf8').replace(/\/\*\*[\s\S]*?\*\//, '');
-    expect(code('../../../ori/evals/lib/upcoming-days.ts')).toBe(code('./upcoming-days.ts'));
+    expect(code('../../../evals/lib/upcoming-days.ts')).toBe(code('./upcoming-days.ts'));
   });
 });

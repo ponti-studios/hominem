@@ -60,9 +60,18 @@ export const peopleSearchOutputSchema = z.object({
   count: z.number().int().min(0),
 });
 
+const personNotesSchema = z
+  .string()
+  .trim()
+  .max(4000)
+  .describe(
+    'Free-form facts about the person: how you know them, where they live or moved to, anything worth remembering.',
+  );
+
 export const personCreateSchema = z.object({
   displayName: z.string().trim().min(1).max(200),
   email: z.email().trim().nullable().optional(),
+  notes: personNotesSchema.optional(),
 });
 
 export const personCreateToolInputSchema = personCreateSchema.describe(
@@ -81,10 +90,18 @@ export const personUpdateToolInputSchema = z
       .nullable()
       .optional()
       .describe("Sets the person's primary email; null removes it."),
+    notes: personNotesSchema
+      .nullable()
+      .optional()
+      .describe(
+        'Replaces the notes on the person; null clears them. Read the current notes with people_lookup first and keep what still holds.',
+      ),
   })
-  .refine((data) => data.displayName !== undefined || data.email !== undefined, {
-    message: 'Provide a displayName or email to update',
-  });
+  .refine(
+    (data) =>
+      data.displayName !== undefined || data.email !== undefined || data.notes !== undefined,
+    { message: 'Provide a displayName, email or notes to update' },
+  );
 
 export const personUpdateToolOutputSchema = z.object({ person: personPickerSchema.nullable() });
 

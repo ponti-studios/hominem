@@ -29,7 +29,7 @@ registerTool(
     resultCap: 50,
     guidance: {
       whenToUse:
-        'A person must be resolved by name or alias before requesting person-specific data.',
+        'A person must be resolved by name or alias before requesting person-specific data, or the user asks who someone is.',
       whenNotToUse: 'Do not guess a person id or use this for general relationship questions.',
       produces: ['person ids', 'person names', 'contact summaries'],
     },
@@ -52,7 +52,8 @@ registerTool(
     guidance: {
       whenToUse:
         "A resolved person id is available and the user asks for that person's cross-domain timeline.",
-      whenNotToUse: 'Do not call before people_lookup has identified a person id.',
+      whenNotToUse:
+        'Do not call before people_lookup has identified a person id. Do not use for a plain "who is X" question: people_lookup already returns the person\'s summary and notes. Use this only when the user asks about shared history, trips or activity over time.',
       dependencies: [
         { tool: 'people_lookup', reason: 'requires a stable person id', provides: ['personId'] },
       ],
@@ -67,7 +68,7 @@ registerTool(
     name: 'person_create',
     title: 'Add a person',
     description:
-      'Adds a person to the address book with an optional primary email. Call people_lookup first so the same person is not added twice.',
+      'Adds a person to the address book with an optional primary email and notes (how the user knows them, where they live). Call people_lookup first so the same person is not added twice.',
     inputSchema: personCreateToolInputSchema,
     outputSchema: personCreateToolOutputSchema,
     readOnly: false,
@@ -89,6 +90,7 @@ registerTool(
       ownerUserId,
       displayName: input.displayName,
       email: input.email ?? null,
+      ...(input.notes ? { notes: input.notes } : {}),
     }),
   }),
 );
@@ -98,7 +100,7 @@ registerTool(
     name: 'person_update',
     title: 'Update a person',
     description:
-      "Changes a person's display name and/or primary email. Returns null if the person does not exist.",
+      "Changes a person's display name, primary email and/or notes. Notes are where facts like a move or how the user knows them live. Returns null if the person does not exist.",
     inputSchema: personUpdateToolInputSchema,
     outputSchema: personUpdateToolOutputSchema,
     readOnly: false,
@@ -120,6 +122,7 @@ registerTool(
       personId: input.personId,
       ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
       ...(input.email !== undefined ? { email: input.email } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
     }),
   }),
 );

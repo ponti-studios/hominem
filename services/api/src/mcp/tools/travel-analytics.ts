@@ -45,7 +45,7 @@ registerTool(
     name: 'travel_stats',
     title: 'Summarize travel statistics',
     description:
-      'Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline. Prerequisites: none. Produces: journey and place UUIDs for the returned trip summaries.',
+      'Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline, or ask where they went or which trips they took (this returns counts and totals only; use travel_journey_list). Prerequisites: none. Produces: journey and place UUIDs for the returned trip summaries.',
     inputSchema: travelStatsInputSchema,
     outputSchema: travelStatsOutputSchema,
   },
@@ -57,7 +57,7 @@ registerTool(
     name: 'travel_search',
     title: 'Search travel records',
     description:
-      'Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available. Prerequisites: a search query. Produces: matching UUIDs grouped by entity type.',
+      'Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available, or the user asks about their notes (use note_list). Prerequisites: a search query. Produces: matching UUIDs grouped by entity type.',
     inputSchema: travelSearchInputSchema,
     outputSchema: travelSearchOutputSchema,
   },

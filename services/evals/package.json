@@ -1,0 +1,22 @@
+{
+  "name": "@hominem/evals",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eval": "tsx runner/cli.ts",
+    "eval:check": "tsx runner/mcp-tool-catalog.ts && tsx runner/cli.ts check",
+    "eval:catalog:update": "tsx runner/mcp-tool-catalog.ts --write",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "format": "oxfmt . --write '!**/*.html' '!**/*.generated.json' '!runs' '!node_modules'",
+    "format:check": "oxfmt . --check '!**/*.html' '!**/*.generated.json' '!runs' '!node_modules'"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "promptfoo": "0.124.1",
+    "tsx": "^4.23.15",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

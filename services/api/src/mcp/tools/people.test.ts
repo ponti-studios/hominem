@@ -316,6 +316,35 @@ describe('person_create / person_update', () => {
     expect(readded.person).toMatchObject({ email: 'mary.again@example.com' });
   });
 
+  it('stores notes on create, replaces them on update, and clears them with null', async () => {
+    const { person: created } = toolOutput(
+      await callTool(userId, 'person_create', {
+        displayName: 'Dorothy Vaughan',
+        notes: 'Cousin, lives in Rome',
+      }),
+      personCreateToolOutputSchema,
+    );
+    const lookup = async () =>
+      toolOutput(
+        await callTool(userId, 'people_lookup', { query: 'Dorothy' }),
+        peopleLookupOutputSchema,
+      ).people[0];
+
+    expect(await lookup()).toMatchObject({ notes: 'Cousin, lives in Rome' });
+
+    await callTool(userId, 'person_update', {
+      personId: created.id,
+      notes: 'Cousin, moved to Milan',
+    });
+    expect(await lookup()).toMatchObject({
+      displayName: 'Dorothy Vaughan',
+      notes: 'Cousin, moved to Milan',
+    });
+
+    await callTool(userId, 'person_update', { personId: created.id, notes: null });
+    expect(await lookup()).toMatchObject({ notes: null });
+  });
+
   it('rejects an update with nothing to change', async () => {
     await expect(callTool(userId, 'person_update', { personId: adaId })).rejects.toThrow();
   });
