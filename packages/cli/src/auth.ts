@@ -10,12 +10,13 @@ import {
   healthFromError,
   shouldNotify,
 } from './health.js';
+import { escapeXml } from './launchd.js';
 import { notify, openUrl, syncRclone } from './system.js';
 
 const CALLBACK_TIMEOUT_MS = 10 * 60 * 1000;
 
 function page(message: string): string {
-  return `<!doctype html><meta charset="utf-8"><title>hominem</title><p>${message}</p>`;
+  return `<!doctype html><meta charset="utf-8"><title>hominem</title><p>${escapeXml(message)}</p>`;
 }
 
 // Resolves with the auth code Google redirects back with. The server only moves bytes: what each

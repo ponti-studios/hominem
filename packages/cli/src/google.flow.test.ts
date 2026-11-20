@@ -4,6 +4,7 @@ import {
   checkLive,
   classifyRefreshFailure,
   isFresh,
+  isQuotaError,
   refreshToken,
   type TokenFile,
 } from './google.js';
@@ -94,5 +95,20 @@ describe('checkLive', () => {
 
   it('exports checkLive for the shell', () => {
     expect(typeof checkLive).toBe('function');
+  });
+});
+
+describe('isQuotaError', () => {
+  const body = (reason: string) => JSON.stringify({ error: { errors: [{ reason }] } });
+
+  it('treats usage-limit reasons as quota, not a dead login', () => {
+    expect(isQuotaError(body('userRateLimitExceeded'))).toBe(true);
+    expect(isQuotaError(body('storageQuotaExceeded'))).toBe(true);
+  });
+
+  it('leaves real permission failures and junk bodies as not quota', () => {
+    expect(isQuotaError(body('insufficientFilePermissions'))).toBe(false);
+    expect(isQuotaError('not json')).toBe(false);
+    expect(isQuotaError('{}')).toBe(false);
   });
 });

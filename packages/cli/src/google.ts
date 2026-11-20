@@ -169,9 +169,32 @@ export async function checkLive(overrides: Partial<Deps> = {}): Promise<void> {
     headers: { Authorization: `Bearer ${access}` },
   });
   if (!response.ok) {
+    const quota = response.status === 403 && isQuotaError(await response.text().catch(() => ''));
     const code =
-      response.status === 401 || response.status === 403 ? 'API_UNAUTHORIZED' : 'API_FAILED';
+      !quota && (response.status === 401 || response.status === 403)
+        ? 'API_UNAUTHORIZED'
+        : 'API_FAILED';
     throw new GoogleAuthError(code, `Drive API returned ${response.status}`);
+  }
+}
+
+const QUOTA_REASONS = new Set([
+  'userRateLimitExceeded',
+  'rateLimitExceeded',
+  'dailyLimitExceeded',
+  'quotaExceeded',
+  'storageQuotaExceeded',
+]);
+
+// A 403 can mean "slow down" rather than "signed out"; only the error reason tells them apart.
+export function isQuotaError(body: string): boolean {
+  try {
+    const parsed = z
+      .object({ error: z.object({ errors: z.array(z.object({ reason: z.string() })) }) })
+      .safeParse(JSON.parse(body));
+    return parsed.success && parsed.data.error.errors.some((e) => QUOTA_REASONS.has(e.reason));
+  } catch {
+    return false;
   }
 }
 

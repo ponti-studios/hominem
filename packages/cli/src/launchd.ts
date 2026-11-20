@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
 import { promisify } from 'node:util';
 
-import { LAUNCH_AGENT_LABEL, LAUNCH_AGENT_LOG, LAUNCH_AGENT_PATH } from './paths.js';
+import { HOMINEM_HOME, LAUNCH_AGENT_LABEL, LAUNCH_AGENT_LOG, LAUNCH_AGENT_PATH } from './paths.js';
 
 const run = promisify(execFile);
 
@@ -11,8 +11,13 @@ export function escapeXml(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-export function renderPlist(input: { label: string; binary: string; log: string }): string {
-  const { label, binary, log } = input;
+export function renderPlist(input: {
+  label: string;
+  binary: string;
+  log: string;
+  home: string;
+}): string {
+  const { label, binary, log, home } = input;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -32,6 +37,11 @@ export function renderPlist(input: { label: string; binary: string; log: string 
         <integer>9</integer>
         <key>Minute</key>
         <integer>0</integer>
+    </dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOMINEM_HOME</key>
+        <string>${escapeXml(home)}</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
@@ -56,7 +66,12 @@ export async function installAgent(): Promise<string> {
   await mkdir(dirname(LAUNCH_AGENT_LOG), { recursive: true });
   await writeFile(
     LAUNCH_AGENT_PATH,
-    renderPlist({ label: LAUNCH_AGENT_LABEL, binary: process.execPath, log: LAUNCH_AGENT_LOG }),
+    renderPlist({
+      label: LAUNCH_AGENT_LABEL,
+      binary: process.execPath,
+      log: LAUNCH_AGENT_LOG,
+      home: HOMINEM_HOME,
+    }),
   );
   await run('launchctl', ['bootout', domain(), LAUNCH_AGENT_PATH]).catch(() => undefined);
   await run('launchctl', ['bootstrap', domain(), LAUNCH_AGENT_PATH]);

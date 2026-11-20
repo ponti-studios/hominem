@@ -40,6 +40,7 @@ async function main(argv: string[]): Promise<number> {
 try {
   process.exitCode = await main(process.argv.slice(2));
 } catch (error) {
-  console.error(error instanceof Error ? error.message : error);
+  // Strip line breaks so a user-supplied value in the message can't forge extra log lines.
+  console.error(String(error instanceof Error ? error.message : error).replace(/[\r\n]+/g, ' '));
   process.exitCode = 1;
 }

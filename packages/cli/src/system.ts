@@ -35,7 +35,11 @@ export async function syncRclone(): Promise<string> {
     return 'Could not find the rclone config file; skipped rclone sync.';
 
   const [client, token] = await Promise.all([loadClient(), loadToken()]);
-  const current = await readFile(confPath, 'utf8').catch(() => '');
+  const current = await readFile(confPath, 'utf8').catch((error: NodeJS.ErrnoException) => {
+    // Only a missing file is an empty config; anything else must not be overwritten.
+    if (error.code === 'ENOENT') return '';
+    throw error;
+  });
   if (current.startsWith('RCLONE_ENCRYPT_V0:')) {
     return 'rclone config is encrypted; skipped rclone sync.';
   }
