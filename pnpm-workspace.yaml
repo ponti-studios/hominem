@@ -28,7 +28,7 @@ catalog:
   resend: 6.35.0
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
-  '@ponti-studios/ui': 1.8.0
+  '@ponti-studios/ui': 3.0.0
   typescript: 7.0.2
   vite: 8.3.4
   vitest: 5.0.5
