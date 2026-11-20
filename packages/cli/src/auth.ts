@@ -10,14 +10,15 @@ import {
   healthFromError,
   shouldNotify,
 } from './health.js';
-import { escapeXml } from './launchd.js';
 import { notify, openUrl, syncRclone } from './system.js';
 
 const CALLBACK_TIMEOUT_MS = 10 * 60 * 1000;
 
-function page(message: string): string {
-  return `<!doctype html><meta charset="utf-8"><title>hominem</title><p>${escapeXml(message)}</p>`;
-}
+// Fixed text only: the redirect's query string never gets echoed back into the page.
+const PAGES = {
+  ok: '<!doctype html><meta charset="utf-8"><title>hominem</title><p>Signed in to hominem. You can close this tab.</p>',
+  fail: '<!doctype html><meta charset="utf-8"><title>hominem</title><p>Sign-in failed. Check the terminal, then close this tab.</p>',
+} as const;
 
 // Resolves with the auth code Google redirects back with. The server only moves bytes: what each
 // request means is decided by handleCallback.
@@ -35,10 +36,10 @@ function waitForCode(server: Server, state: string): Promise<string> {
       }
       clearTimeout(timer);
       if (action.kind === 'fail') {
-        res.end(page(`Sign-in failed: ${action.reason}. You can close this tab.`));
+        res.end(PAGES.fail);
         reject(new Error(action.reason));
       } else {
-        res.end(page('Signed in to hominem. You can close this tab.'));
+        res.end(PAGES.ok);
         resolve(action.code);
       }
     });
