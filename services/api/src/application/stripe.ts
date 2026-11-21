@@ -182,7 +182,7 @@ const catalogPriceSchema = z.object({
   metadata: z.record(z.string(), z.string()),
 });
 
-const CATALOG_PRICES = {
+export const CATALOG_PRICES = {
   core: { key: 'hominem_core_monthly', tier: 'core' },
   rhodium: { key: 'hominem_rhodium_monthly', tier: 'rhodium' },
   iridium: { key: 'hominem_iridium_monthly', tier: 'iridium' },

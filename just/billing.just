@@ -43,3 +43,12 @@ stripe-lapse:
         export NODE_EXTRA_CA_CERTS="$HOME/.portless/ca.pem"
     fi
     pnpm --filter @hominem/api stripe-lapse
+
+# Read-only catalog audit: every launch price, its product, and the account default tax
+# category, judged against the same catalog table the app resolves subscriptions from.
+# Prefers the STRIPE_LIVE_SECRET_KEY the operator drops into services/api/.env; falls back
+# to the test STRIPE_SECRET_KEY, where the live-mode finding fails by design (and the
+# account-default one while the test account's default isn't the AIaaS category).
+# No local app or webhook listener needed — it talks to Stripe directly.
+stripe-audit:
+    pnpm --filter @hominem/api stripe-audit

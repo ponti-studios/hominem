@@ -94,6 +94,17 @@ repeatable without dashboard work:
   under the `test_helpers` namespace in current API versions
   (`/v1/test_helpers/test_clocks`), not the `/v1/test_clocks` path older
   docs use.
+- `just billing stripe-audit` — the read-only catalog audit. Fetches the
+  account tax settings and every launch price with its expanded product over
+  GETs only, then judges them against the same catalog table the app resolves
+  subscriptions from. It prefers `STRIPE_LIVE_SECRET_KEY` in the ignored API
+  `.env` — where the live key for the production audit is dropped by hand —
+  and falls back to `STRIPE_SECRET_KEY`, so the same command proves the
+  pipeline against the Test Mode catalog: there the live-mode finding fails
+  by design (and the account-default one fails for as long as the test
+  account's default isn't the AIaaS category), while every price and product
+  finding must pass. It never prints key material and needs no local app or
+  webhook listener.
 
 The setup doctor runs inside `stripe-test` as well, so a run never starts
 against a half-configured environment. The hosted-page automation prints
@@ -231,6 +242,8 @@ only; it does not satisfy the inclusive-price matrix above.
 Before enabling Managed Payments for live subscriptions, confirm the tested
 code is deployed, production lookup-key Prices are active and correctly
 classified, the production webhook receives and applies subscription events,
-and every required end-to-end scenario above has an explicit result. Do not
+and every required end-to-end scenario above has an explicit result. `just
+billing stripe-audit` with `STRIPE_LIVE_SECRET_KEY` set is how the catalog
+half of this gate is confirmed; it exits nonzero on any failed finding. Do not
 bulk-migrate existing subscribers or alter their current Prices as part of
 this verification.
