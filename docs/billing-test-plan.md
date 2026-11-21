@@ -66,6 +66,31 @@ For Portless or a branch-prefixed worktree, forward to that worktree's API
 origin instead of port 4040. Verify the listener and API are both using the
 same Test Mode sandbox.
 
+## Tooling
+
+The `just billing` recipes automate the local loop above and keep it
+repeatable without dashboard work:
+
+- `just billing stripe-setup` — the doctor. It fails with the exact fix for
+  each missing piece: the CLI not installed or not paired (`stripe login`),
+  no Test Mode key in the ignored API `.env` (a live key is refused
+  outright), a configured `STRIPE_API_BASE_URL` fake, or a missing webhook
+  secret.
+- `just billing stripe-listen` — forwards the subscription lifecycle events
+  to the local API's `/webhooks/stripe/billing`; set the printed `whsec_...`
+  as `BILLING_STRIPE_WEBHOOK_SECRET` and restart the API.
+- `just billing stripe-test <tier>` — seeds a disposable
+  `stripe-<tier>-e2e@test.hominem.dev` account, signs in over the real OTP
+  flow, starts the app's own checkout, completes Stripe's hosted page with
+  the standard test card, then asserts the webhook-delivered subscription
+  (tier, active status, catalog price, no founding seat) and the AI-token
+  allowance the app itself reports. Exit 0 means every assertion passed.
+
+The setup doctor runs inside `stripe-test` as well, so a run never starts
+against a half-configured environment. The hosted-page automation prints
+the page text and saves a screenshot when it cannot complete, so a Stripe
+layout change is diagnosable from the run itself.
+
 ## Automated checks
 
 Run the API and its dependents through the repository validation workflow

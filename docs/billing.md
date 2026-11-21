@@ -144,6 +144,11 @@ complete Checkout with a Stripe test card. Verify the Checkout line item amount 
 subscription tier/status, then exercise a tier change and cancellation. Never use a live key or
 card for this test. The local fake supports Thames top-ups, not subscription billing.
 
+The `just billing` recipes automate this loop: `stripe-setup` is the doctor that refuses a
+half-configured or live-key environment, `stripe-listen` forwards the events, and
+`stripe-test <tier>` completes the hosted checkout with the test card and asserts the delivered
+entitlement — see Tooling in [`billing-test-plan.md`](billing-test-plan.md).
+
 Register the production webhook endpoint in Stripe and put its signing secret in
 `BILLING_STRIPE_WEBHOOK_SECRET` (or reuse `STRIPE_WEBHOOK_SECRET`).
 
