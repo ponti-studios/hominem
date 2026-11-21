@@ -7,7 +7,8 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 
 const DEFAULT_BASE = 'https://api.stripe.com/v1';
-const MANAGED_PAYMENTS_API_VERSION = '2026-09-30.endive';
+/** The one API version this codebase talks: Managed Payments requires 2025-03-31.basil or newer. */
+export const STRIPE_API_VERSION = '2026-09-30.endive';
 const INTEGRATION_IDENTIFIER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
 function integrationIdentifier(): string {
@@ -400,7 +401,7 @@ export function createStripeClient(
           'POST',
           '/checkout/sessions',
           form,
-          MANAGED_PAYMENTS_API_VERSION,
+          STRIPE_API_VERSION,
         ),
       );
     },

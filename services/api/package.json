@@ -52,7 +52,8 @@
     "telegram:set-webhook": "tsx scripts/set-telegram-webhook.ts",
     "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts",
     "stripe-setup": "tsx scripts/stripe-setup.ts",
-    "stripe-test": "tsx scripts/stripe-test.ts"
+    "stripe-test": "tsx scripts/stripe-test.ts",
+    "stripe-lapse": "tsx scripts/stripe-lapse.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.12",

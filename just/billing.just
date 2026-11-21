@@ -25,4 +25,21 @@ stripe-listen:
 # test card, then asserts the webhook-delivered entitlement and allowance. Requires stripe-setup
 # green and stripe-listen running. Tier: core, rhodium or iridium.
 stripe-test tier:
+    #!/usr/bin/env bash
+    # Node's fetch does not read the macOS keychain, so hand it the portless CA when present.
+    if [ -f "$HOME/.portless/ca.pem" ]; then
+        export NODE_EXTRA_CA_CERTS="$HOME/.portless/ca.pem"
+    fi
     pnpm --filter @hominem/api stripe-test {{ tier }}
+
+# One-command Test Clock lapse verification: seeds a disposable account, starts a Core
+# subscription under a Stripe Test Clock, cancels through the real app, then advances the clock
+# past the period end and asserts the fallback to Taster. Requires stripe-setup green and
+# stripe-listen running.
+stripe-lapse:
+    #!/usr/bin/env bash
+    # Node's fetch does not read the macOS keychain, so hand it the portless CA when present.
+    if [ -f "$HOME/.portless/ca.pem" ]; then
+        export NODE_EXTRA_CA_CERTS="$HOME/.portless/ca.pem"
+    fi
+    pnpm --filter @hominem/api stripe-lapse

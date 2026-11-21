@@ -85,11 +85,34 @@ repeatable without dashboard work:
   the standard test card, then asserts the webhook-delivered subscription
   (tier, active status, catalog price, no founding seat) and the AI-token
   allowance the app itself reports. Exit 0 means every assertion passed.
+- `just billing stripe-lapse` — the cancellation and lapse leg. Seeds a
+  disposable account, starts a Core subscription under a Stripe Test Clock
+  using the same metadata contract a checkout produces, cancels through the
+  real `/billing/cancel`, then advances the clock past the period end and
+  asserts the paid period was retained (no early downgrade, no resume action
+  offered by the app) and the account fell back to Taster. Test clocks live
+  under the `test_helpers` namespace in current API versions
+  (`/v1/test_helpers/test_clocks`), not the `/v1/test_clocks` path older
+  docs use.
 
 The setup doctor runs inside `stripe-test` as well, so a run never starts
 against a half-configured environment. The hosted-page automation prints
 the page text and saves a screenshot when it cannot complete, so a Stripe
 layout change is diagnosable from the run itself.
+
+Two one-time prerequisites sit outside the recipes, because no recipe can
+fix them mid-run:
+
+- The hosted-page driver runs on `playwright-core`, which ships no browser.
+  Install its headless shell once: `pnpm --filter @hominem/api exec
+  playwright-core install chromium-headless-shell`.
+- Complete Managed Payments onboarding in the Test Mode dashboard
+  (Settings → Managed Payments). Checkout sessions request the
+  merchant-of-record flow with `managed_payments[enabled]`, and Stripe
+  accepts them even while onboarding is unfinished — the hosted page then
+  never sends its confirm request, so the Pay click silently does nothing
+  and no error names the cause. No API surface exposes the onboarding
+  state, so the doctor cannot catch it; only the dashboard page can.
 
 ## Automated checks
 

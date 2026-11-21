@@ -11,93 +11,29 @@
  * terminal. Never point it at a live key: the doctor refuses one.
  */
 import 'dotenv/config';
-import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 
-import type { BillingSubscriptionRecord } from '@hominem/db/billing';
-import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/email';
 import { chromium } from 'playwright-core';
+import type { Frame, Locator, Page } from 'playwright-core';
 
-import {
-  diagnoseStripeSetup,
-  type StripeSetupFinding,
-} from '../src/application/stripe-setup-doctor';
+import { diagnoseStripeSetup } from '../src/application/stripe-setup-doctor';
 import {
   verifyStripeTestOutcome,
   type StripeTestTier,
-  type StripeTestFinding,
 } from '../src/application/stripe-test-verify';
 import { gatherStripeSetupFacts } from './stripe-facts';
+import {
+  die,
+  printFindings,
+  readReportedAiTokens,
+  resetDisposableAccount,
+  signIn,
+  waitForBillingRecord,
+} from './stripe-session';
 
-const run = promisify(execFile);
 const TIERS: readonly StripeTestTier[] = ['core', 'rhodium', 'iridium'];
 const SUBSCRIPTION_DEADLINE_MS = 30_000;
-const POLL_INTERVAL_MS = 500;
-
-function die(message: string): never {
-  console.error(`\n✗ ${message}`);
-  process.exit(1);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function printFindings(header: string, findings: StripeSetupFinding[] | StripeTestFinding[]): void {
-  console.log(header);
-  for (const finding of findings) {
-    console.log(
-      `  ${finding.ok ? '✓' : '✗'} ${finding.label}${finding.ok ? '' : ` — ${finding.fix}`}`,
-    );
-  }
-}
-
-/** Signs in over the real OTP flow and returns the session cookie header value. */
-async function signIn(origin: string, email: string): Promise<{ userId: string; cookie: string }> {
-  const send = await fetch(`${origin}/api/auth/email-otp/send-verification-otp`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, type: 'sign-in' }),
-  });
-  if (!send.ok) die(`OTP send failed (${send.status}) — is the API running at ${origin}?`);
-
-  const mailbox = resolveScriptedMailboxPath();
-  const deadline = Date.now() + 15_000;
-  let otp = '';
-  for (;;) {
-    otp = readLatestScriptedOtp(mailbox, email)?.otp ?? '';
-    if (otp) break;
-    if (Date.now() >= deadline) die(`No OTP captured for ${email} in ${mailbox}`);
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  const verify = await fetch(`${origin}/api/auth/sign-in/email-otp`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, otp }),
-  });
-  const body: unknown = await verify.json().catch(() => null);
-  const cookie = verify.headers
-    .getSetCookie()
-    .map((entry) => entry.split(';')[0])
-    .join('; ');
-  const userId = userIdFromSignInResponse(body);
-  if (!verify.ok || !userId || !cookie) {
-    die(`sign-in failed (${verify.status}) for ${email} — ${JSON.stringify(body)}`);
-  }
-  return { userId, cookie };
-}
-
-/** Reads the user id out of a sign-in response without trusting its shape. */
-function userIdFromSignInResponse(body: unknown): string | null {
-  if (typeof body !== 'object' || body === null || !('user' in body)) return null;
-  const { user } = body;
-  if (typeof user !== 'object' || user === null || !('id' in user)) return null;
-  const { id } = user;
-  return typeof id === 'string' && id ? id : null;
-}
 
 /** Starts the app's own checkout and returns the hosted Stripe URL it redirects to. */
 async function startCheckout(
@@ -107,7 +43,7 @@ async function startCheckout(
 ): Promise<string> {
   const response = await fetch(`${origin}/billing/checkout`, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, origin },
     body: `tier=${tier}`,
     redirect: 'manual',
   });
@@ -120,21 +56,54 @@ async function startCheckout(
   return location;
 }
 
-/** Fills the first locator that is present and editable. Hosted-page labels vary over time. */
-async function tryFill(
-  candidates: () => Promise<{ fill: (value: string) => Promise<void> } | null>[],
-  value: string,
-): Promise<boolean> {
+/** The hosted page puts the card form either on its main page (Managed Payments) or inside
+ * an iframe (plain Checkout, Link). One candidate per live frame, so any layout works.
+ * Every candidate resolves to a locator; presence is probed by count() in the helpers. */
+function frameCandidates(
+  page: Page,
+  build: (frame: Frame) => Locator,
+): Array<() => Promise<Locator>> {
+  return page.frames().map((frame) => () => Promise.resolve(build(frame)));
+}
+
+/** The input names Stripe uses across its page variants, falling back to the accessible
+ * label scoped to text inputs — decorative icons share the CVC label, and an unscoped
+ * label match turns that shared name into an ambiguous two-element locator. */
+function fieldIn(frame: Frame, names: readonly string[], label: RegExp): Locator {
+  const byName = frame.locator(names.map((name) => `input[name="${name}"]`).join(', '));
+  return byName.or(frame.getByRole('textbox', { name: label }));
+}
+
+/** Fills the first present candidate with the value. Names and labels drift over time. */
+async function tryFill(candidates: Array<() => Promise<Locator>>, value: string): Promise<boolean> {
   for (const candidate of candidates) {
     const locator = await candidate();
+    if ((await locator.count().catch(() => 0)) === 0) continue;
     if (
-      locator &&
-      (await locator.fill(value).then(
+      await locator.fill(value).then(
         () => true,
         () => false,
-      ))
+      )
     )
       return true;
+  }
+  return false;
+}
+
+/** Types into the first present candidate, key by key: Stripe's card inputs are driven by
+ * key events, so typing is what a real shopper's input looks like to them. */
+async function tryType(candidates: Array<() => Promise<Locator>>, value: string): Promise<boolean> {
+  for (const candidate of candidates) {
+    const locator = await candidate();
+    if ((await locator.count().catch(() => 0)) === 0) continue;
+    if (
+      await locator.pressSequentially(value, { delay: 40 }).then(
+        () => true,
+        () => false,
+      )
+    ) {
+      return true;
+    }
   }
   return false;
 }
@@ -147,39 +116,145 @@ async function completeHostedCheckout(
 ): Promise<void> {
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  // Whether the page's own confirm call fired. It separates a click that never submits
+  // (a required field, or Managed Payments onboarding unfinished) from a payment Stripe
+  // accepted but never finished, when a run has to fail.
+  let confirmSent = false;
+  // Everything the page says and every POST it sends, so a silent no-op names its cause.
+  const consoleLines: string[] = [];
+  const postLog: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'POST') return;
+    if (request.url().includes('/confirm')) confirmSent = true;
+    postLog.push(request.url().slice(0, 120));
+  });
+  page.on('console', (msg) => {
+    if (msg.type() === 'error' || msg.type() === 'warning') {
+      consoleLines.push(`${msg.type()}: ${msg.text().slice(0, 200)}`);
+    }
+  });
+  page.on('pageerror', (error) => {
+    consoleLines.push(`pageerror: ${String(error.message).slice(0, 300)}`);
+  });
+  // Whether Link's save-info box was checked when Pay was clicked; checked, the click
+  // opens Link's phone-verification flow instead of confirming the payment.
+  let saveInfoChecked = false;
+  // The submit button, never the "Pay with card"-style payment selectors above it.
+  const payButton = page
+    .getByRole('button', { name: /^(pay|subscribe|complete purchase|submit)\b(?! with\b)/i })
+    .first();
   try {
     await page.goto(hostedUrl, { waitUntil: 'domcontentloaded' });
 
-    const emailInput = page.locator('input[name="email"]');
-    if (await emailInput.count()) await emailInput.fill(email);
+    await payButton.waitFor({ state: 'visible', timeout: 30_000 });
 
-    const frame = page.frameLocator('iframe[title*="payment input frame" i]').first();
-    const cardFilled = await tryFill(
-      [
-        () => Promise.resolve(frame.getByLabel('Card number')),
-        () => Promise.resolve(page.getByLabel('Card number')),
-      ],
+    // Managed Payments' own setup wizard asks to confirm the page sells through Link; that
+    // branding is the only client-visible merchant-of-record signal, so a page without it
+    // means the run just verified the wrong checkout shape.
+    const pageText = (
+      await Promise.all(
+        page.frames().map((frame) =>
+          frame
+            .locator('body')
+            .innerText()
+            .catch(() => Promise.resolve('')),
+        ),
+      )
+    ).join('\n');
+    const soldThrough = /^.*sold through.*$/im.exec(pageText);
+    if (!soldThrough) {
+      console.error(`  page text at load: ${pageText.slice(0, 400)}`);
+      die(
+        'hosted page does not sell through Link — Managed Payments is not applied to this session',
+      );
+    }
+    console.log(`  hosted page branding: ${soldThrough[0].trim()}`);
+
+    await tryFill(
+      frameCandidates(page, (frame) => fieldIn(frame, ['email'], /^Email/i)),
+      email,
+    );
+    let cardFilled = await tryType(
+      frameCandidates(page, (frame) =>
+        fieldIn(frame, ['cardNumber', 'cardnumber'], /card number/i),
+      ),
       '4242424242424242',
     );
+    if (!cardFilled) {
+      // The card iframe can attach a beat after the button; one retry before giving up.
+      await page.waitForTimeout(2_000);
+      cardFilled = await tryType(
+        frameCandidates(page, (frame) =>
+          fieldIn(frame, ['cardNumber', 'cardnumber'], /card number/i),
+        ),
+        '4242424242424242',
+      );
+    }
     if (!cardFilled) throw new Error('card number field not found');
-    await tryFill(
-      [
-        () => Promise.resolve(frame.getByLabel(/expir/i)),
-        () => Promise.resolve(page.getByLabel(/expir/i)),
-      ],
+    const expiryFilled = await tryType(
+      frameCandidates(page, (frame) => fieldIn(frame, ['cardExpiry', 'exp-date'], /MM|expir/i)),
       '12/34',
     );
-    await tryFill(
-      [
-        () => Promise.resolve(frame.getByLabel('CVC')),
-        () => Promise.resolve(frame.getByLabel(/cvc|security code/i)),
-      ],
+    if (!expiryFilled) throw new Error('card expiry field not found');
+    const cvcFilled = await tryType(
+      frameCandidates(page, (frame) => fieldIn(frame, ['cardCvc', 'cvc'], /cvc|security code/i)),
       '424',
     );
+    if (!cvcFilled) throw new Error('card cvc field not found');
+    // The postal code below is British: put the country in step first. A country change
+    // re-renders the billing fields and clears a postal code filled before it, and the
+    // page then refuses the submit silently on the empty required field. Skip the select
+    // when the country already matches: even a no-op select fires a change event.
+    for (const frame of page.frames()) {
+      const country = frame
+        .locator('select[name="billingCountry"]')
+        .or(frame.getByRole('combobox', { name: /country/i }));
+      if ((await country.count().catch(() => 0)) === 0) continue;
+      const current = await country.inputValue().catch(() => '');
+      if (current !== 'GB') await country.selectOption('GB').catch(() => {});
+    }
+    // Managed Payments also requires the cardholder name and billing postal code; plain
+    // Checkout may not show either, so their absence is logged, not an error.
+    const nameFilled = await tryFill(
+      frameCandidates(page, (frame) =>
+        fieldIn(frame, ['billingName', 'cardholderName'], /name on card|cardholder/i),
+      ),
+      'Stripe Test',
+    );
+    console.log(`  cardholder name ${nameFilled ? 'filled' : 'field not found'}`);
+    const postalFilled = await tryFill(
+      frameCandidates(page, (frame) =>
+        fieldIn(frame, ['billingPostalCode', 'postal', 'postalCode'], /postal|zip|postcode/i),
+      ),
+      'SW1A 1AA',
+    );
+    console.log(`  postal code ${postalFilled ? 'filled' : 'field not found'}`);
+    // The wizard's test step also mentions a phone number for Managed Payments payments;
+    // fill one when the page asks so a required field never blocks the confirm call.
+    await tryFill(
+      frameCandidates(page, (frame) => fieldIn(frame, ['phone', 'billingPhone'], /phone/i)),
+      '+442079460958',
+    );
+    // Never save the card into Link — a saved card would drag later runs into an
+    // OTP-gated flow this script cannot complete.
+    for (const frame of page.frames()) {
+      const saveInfo = frame
+        .locator('input[name="enableStripePass"]')
+        .or(frame.getByRole('checkbox', { name: /save my information/i }));
+      if ((await saveInfo.count().catch(() => 0)) > 0) {
+        saveInfoChecked = await saveInfo.isChecked().catch(() => false);
+        if (saveInfoChecked) await saveInfo.uncheck().catch(() => {});
+      }
+    }
 
-    const payButton = page
-      .getByRole('button', { name: /pay|subscribe|complete purchase|submit/i })
-      .first();
+    // Name the exact element the run is about to click, so a wrong-button click is visible.
+    const buttonName = await payButton
+      .evaluate((el) => `${el.tagName}: ${el.textContent?.trim() ?? ''}`)
+      .catch(() => Promise.resolve('unreadable'));
+    console.log(`  pay button resolved to: ${buttonName}`);
+    // The confirm handler only engages once the page has digested the last input; give
+    // Stripe's validation a beat before clicking, like a real shopper would.
+    await page.waitForTimeout(5_000);
     await payButton.click();
     await page.waitForURL((url) => url.href.startsWith(`${origin}/billing/done`), {
       timeout: 90_000,
@@ -191,34 +266,50 @@ async function completeHostedCheckout(
       .locator('body')
       .innerText()
       .catch(() => Promise.resolve(''));
-    console.error(`  page text at failure: ${text.slice(0, 400)}`);
-    die(`hosted checkout did not complete: ${error} — screenshot saved to ${path}`);
+    console.error(`  page text at failure: ${text.slice(0, 1600)}`);
+    const fieldErrors = await page
+      .getByText(/incomplete|invalid|incorrect|declined|try again/i)
+      .allInnerTexts()
+      .catch((): string[] => []);
+    console.error(`  field errors: ${JSON.stringify(fieldErrors)}`);
+    // The values the key fields actually held, so a silently skipped or cleared required
+    // field is visible even though input values never appear in page text.
+    const probes: Array<[string, Locator]> = [
+      ['email', fieldIn(page.mainFrame(), ['email'], /^Email/i)],
+      ['card', fieldIn(page.mainFrame(), ['cardNumber', 'cardnumber'], /card number/i)],
+      ['expiry', fieldIn(page.mainFrame(), ['cardExpiry', 'exp-date'], /MM|expir/i)],
+      ['cvc', fieldIn(page.mainFrame(), ['cardCvc', 'cvc'], /cvc|security code/i)],
+      [
+        'name',
+        fieldIn(page.mainFrame(), ['billingName', 'cardholderName'], /name on card|cardholder/i),
+      ],
+      [
+        'postal',
+        fieldIn(
+          page.mainFrame(),
+          ['billingPostalCode', 'postal', 'postalCode'],
+          /postal|zip|postcode/i,
+        ),
+      ],
+    ];
+    const values = await Promise.all(
+      probes.map(async ([key, locator]) => {
+        const value = await locator.inputValue().catch(() => null);
+        return [key, value] as const;
+      }),
+    );
+    console.error(`  field values at failure: ${JSON.stringify(Object.fromEntries(values))}`);
+    const payDisabled = await payButton.getAttribute('aria-disabled').catch(() => null);
+    console.error(`  pay button aria-disabled at failure: ${payDisabled ?? '(unset)'}`);
+    console.error(`  page console: ${consoleLines.slice(-10).join('\n    ') || '(nothing)'}`);
+    console.error(`  page POSTs: ${postLog.slice(-10).join('\n    ') || '(none)'}`);
+    die(
+      `hosted checkout did not complete: ${error} — confirm request ${
+        confirmSent ? 'sent' : 'never sent'
+      } — save-info checkbox ${saveInfoChecked ? 'was on' : 'was off'} — screenshot saved to ${path}`,
+    );
   } finally {
     await browser.close();
-  }
-}
-
-/** Reads the allowance the app itself renders for the signed-in account, or null. */
-async function readReportedAiTokens(origin: string, cookie: string): Promise<number | null> {
-  const response = await fetch(`${origin}/account/billing`, { headers: { cookie } });
-  const html = await response.text();
-  const match = /([\d,.]+)\s*([KM])?\s*AI tokens\/month/.exec(html);
-  if (!match) return null;
-  const magnitude = match[2] === 'K' ? 1_000 : match[2] === 'M' ? 1_000_000 : 1;
-  const value = Number(match[1].replace(/,/g, ''));
-  return Number.isFinite(value) ? value * magnitude : null;
-}
-
-/** Waits for the billing webhook to land the subscription record. Null once the deadline passes. */
-async function waitForSubscription(userId: string): Promise<BillingSubscriptionRecord | null> {
-  // Imported lazily so the pre-flight doctor runs with zero database side effects.
-  const { dbBillingStore } = await import('../src/application/billing.store');
-  const deadline = Date.now() + SUBSCRIPTION_DEADLINE_MS;
-  for (;;) {
-    const record = await dbBillingStore.get(userId);
-    if (record) return record;
-    if (Date.now() >= deadline) return null;
-    await sleep(POLL_INTERVAL_MS);
   }
 }
 
@@ -242,8 +333,7 @@ async function main(): Promise<void> {
 
   const email = `stripe-${tier}-e2e@test.hominem.dev`;
   console.log(`→ resetting disposable account ${email}`);
-  const packageRoot = join(import.meta.dirname, '..');
-  await run('pnpm', ['test-user', 'reset', '--email', email], { cwd: packageRoot });
+  await resetDisposableAccount(email);
 
   console.log(`→ signing in over the real OTP flow at ${origin}`);
   const { userId, cookie } = await signIn(origin, email);
@@ -255,7 +345,11 @@ async function main(): Promise<void> {
   await completeHostedCheckout(hostedUrl, email, origin);
 
   console.log('→ waiting for the billing webhook to deliver the subscription');
-  const subscription = await waitForSubscription(userId);
+  const subscription = await waitForBillingRecord(
+    userId,
+    (record) => record !== null,
+    SUBSCRIPTION_DEADLINE_MS,
+  );
   if (subscription) {
     console.log(
       `  stored: tier=${subscription.tier} status=${subscription.status} pricePence=${subscription.pricePence} founding=${subscription.founding}`,
