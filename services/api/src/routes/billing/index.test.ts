@@ -242,7 +242,7 @@ describe('GET /account/billing', () => {
     expect(page).toContain('class="billing-page"');
     expect(page).not.toContain('Plans / Monthly');
     expect(page).toContain('background: #0a0a0a; color: #fff');
-    expect(page).toContain('action="/billing/checkout"');
+    expect(page).toContain('<form class="inline" method="post" action="/billing/checkout">');
   });
 
   it('shows the distinctive complimentary Osmium membership', async () => {
@@ -332,15 +332,10 @@ describe('GET /account/usage', () => {
 });
 
 describe('POST /billing/checkout', () => {
-  it('shows the accessible paid-plan country step with covered countries', async () => {
+  it('has no pre-checkout country step: the plan card posts straight to checkout', async () => {
     const response = await app().request('/billing/checkout?tier=core');
-    const page = await response.text();
-    expect(response.status).toBe(200);
-    expect(page).toContain('<label for="billing-country">Country or region</label>');
-    expect(page).toContain('<select id="billing-country" name="country" required>');
-    expect(page).toContain('<option value="GB">United Kingdom</option>');
-    expect(page).toContain('<option value="DE">Germany</option>');
-    expect(page).toContain('action="/billing/checkout"');
+    expect(response.status).toBe(404);
+    expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });
 
   it('refuses checkout for Osmium members', async () => {
@@ -350,19 +345,13 @@ describe('POST /billing/checkout', () => {
       grantedByUserId: 'admin-1',
       grantedAt: '2026-10-26T00:00:00.000Z',
     };
-    const response = await app().request(
-      '/billing/checkout',
-      form({ tier: 'core', country: 'GB' }),
-    );
+    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(403);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });
 
   it('starts a Core subscription at £9.99 when the founding seats are gone', async () => {
-    const response = await app().request(
-      '/billing/checkout',
-      form({ tier: 'core', country: 'GB' }),
-    );
+    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe('https://checkout.stripe.test/cs_1');
     expect(mocks.stripe.createSubscriptionCheckout).toHaveBeenCalledWith(
@@ -371,7 +360,7 @@ describe('POST /billing/checkout', () => {
   });
 
   it('does not issue new Founding Core prices', async () => {
-    await app().request('/billing/checkout', form({ tier: 'core', country: 'GB' }));
+    await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(mocks.stripe.createSubscriptionCheckout).toHaveBeenCalledWith(
       expect.objectContaining({ pricePence: 999, founding: false }),
     );
@@ -379,10 +368,7 @@ describe('POST /billing/checkout', () => {
 
   it('refuses a second subscription for someone already paying', async () => {
     mocks.state.subscription = subscription();
-    const response = await app().request(
-      '/billing/checkout',
-      form({ tier: 'core', country: 'GB' }),
-    );
+    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(409);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });
@@ -397,32 +383,6 @@ describe('POST /billing/checkout', () => {
     const response = await app().request('/billing/checkout', form({ tier: 'ai' }));
     expect(response.status).toBe(400);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
-  });
-
-  it('rejects a country outside Managed Payments tax coverage before creating a Stripe session', async () => {
-    const response = await app().request(
-      '/billing/checkout',
-      form({ tier: 'core', country: 'BR' }),
-    );
-    expect(response.status).toBe(422);
-    expect(await response.text()).toContain(
-      'Paid plans are not available for that billing country',
-    );
-    expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
-  });
-
-  it('requires a billing country before creating a Stripe session', async () => {
-    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
-    expect(response.status).toBe(422);
-    expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
-  });
-
-  it('allows covered UK and Germany billing-country selections to continue to Stripe', async () => {
-    for (const country of ['GB', 'DE']) {
-      const response = await app().request('/billing/checkout', form({ tier: 'core', country }));
-      expect(response.status).toBe(303);
-    }
-    expect(mocks.stripe.createSubscriptionCheckout).toHaveBeenCalledTimes(2);
   });
 });
 

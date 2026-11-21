@@ -149,19 +149,9 @@ Do not grant a new founding seat to an ordinary test account.
 
 ### Managed Payments and tax
 
-- Verify the pre-Checkout billing-country step allows countries on the current
-  Managed Payments tax-coverage list and rejects an uncovered country before
-  creating a Stripe Checkout Session. Include UK and Germany in the Test Mode
-  coverage checks.
-- A pre-Checkout country choice does **not** prove the final tax location is
-  restricted. Stripe Managed Payments Checkout collects and updates the
-  billing address, and Checkout has no allowed-country restriction for billing
-  addresses. Keep live activation blocked until Stripe confirms a hard
-  pre-charge restriction for the final billing country, or the product owner
-  replaces this launch requirement.
 - Verify all public and legacy Test Mode catalog Prices are tax-inclusive and
   the advertised total remains £9.99 / £19.99 / £39.99 / £7.99 respectively.
-  For UK and Germany, check the tax breakdown and confirm tax is included in
+  Check the tax breakdown for a UK test address and confirm tax is included in
   that total rather than added on top.
 - Verify the Test Mode products have the intended AIaaS tax code and that
   Managed Payments accepts the subscription Checkout request.
@@ -174,9 +164,10 @@ Do not grant a new founding seat to an ordinary test account.
   are unaffected by subscription Managed Payments parameters.
 
 Tax results in a sandbox are a functional check, not evidence of tax
-registration or legal compliance. Get the appropriate tax review before
-production rollout. The historical VAT-on-top invoice below used a
-tax-exclusive Price and does not satisfy the inclusive-price test.
+registration or legal compliance. A tax adviser reviews cross-border coverage
+after launch; that review is a follow-up, not a pre-launch gate. The
+historical VAT-on-top invoice below used a tax-exclusive Price and does not
+satisfy the inclusive-price test.
 
 ## Verified baseline
 
@@ -194,6 +185,4 @@ code is deployed, production lookup-key Prices are active and correctly
 classified, the production webhook receives and applies subscription events,
 and every required end-to-end scenario above has an explicit result. Do not
 bulk-migrate existing subscribers or alter their current Prices as part of
-this verification. Stripe Checkout currently has no billing-country allowlist;
-until Stripe confirms a hard pre-charge restriction on the final tax country,
-live Managed Payments activation is blocked.
+this verification.

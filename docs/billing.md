@@ -150,21 +150,13 @@ Register the production webhook endpoint in Stripe and put its signing secret in
 The full repeatable verification matrix, including checkout, tax, webhook, tier-change, and
 cancellation scenarios, is in [`billing-test-plan.md`](billing-test-plan.md).
 
-### Managed Payments tax-country gate
+### Managed Payments tax
 
-Paid checkout asks the customer for a billing country before creating a Stripe Checkout Session and
-rejects countries outside the server-side allowlist in
-`services/api/src/application/managed-payments-tax-countries.ts`. That list mirrors Stripe's
-[Managed Payments tax-coverage list](https://docs.stripe.com/payments/managed-payments/tax-compliance)
-and should be rechecked before release. Free registration is unchanged.
-
-This pre-Checkout selection is not a hard restriction on the final tax location: Stripe Managed
-Payments Checkout collects and updates the customer's billing address, and Stripe documents no
-allowed-country parameter for billing addresses. The customer can change that address in hosted
-Checkout. **Keep live Managed Payments activation blocked** until Stripe provides a hard pre-charge
-restriction for the final billing country, or a new product/tax decision explicitly replaces this
-gate. Do not treat an app-side country choice or a post-payment check as proof that unsupported
-countries cannot be charged.
+Stripe Managed Payments calculates and remits tax for the countries it supports. Hominem does not
+gate billing countries in the app: hosted Checkout collects and updates the customer's billing
+address, and no app-side choice can restrict the final tax location. A tax adviser reviews
+cross-border coverage after launch; that review is a follow-up, not an activation gate for Managed
+Payments.
 
 ## Rules for changes
 
