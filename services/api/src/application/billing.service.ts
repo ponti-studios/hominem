@@ -283,7 +283,7 @@ async function applySubscription(
   });
   if (wantsFounding && !saved.founding) {
     const pricePence = pricePenceFor('core', false);
-    await deps.stripe.updateSubscriptionPlan(facts.stripeSubscriptionId, pricePence, 'core');
+    await deps.stripe.updateSubscriptionPlan(facts.stripeSubscriptionId, pricePence, 'core', false);
     saved = await deps.store.save({ ...base, pricePence, founding: false });
   }
   return saved;
@@ -320,7 +320,7 @@ export async function handleBillingEvent(
 export async function changePlan(
   deps: BillingDeps,
   userId: string,
-  tier: BillingTier,
+  tier: Extract<BillingTier, 'core' | 'rhodium' | 'iridium'>,
   now: Date = clock(deps),
 ): Promise<BillingSubscriptionRecord> {
   if (await deps.store.getOsmiumMembership(userId)) {
@@ -335,7 +335,12 @@ export async function changePlan(
     throw new ValidationError('There is no paid subscription to change.');
   }
   const pricePence = pricePenceFor(tier, subscription.founding);
-  await deps.stripe.updateSubscriptionPlan(subscription.stripeSubscriptionId, pricePence, tier);
+  await deps.stripe.updateSubscriptionPlan(
+    subscription.stripeSubscriptionId,
+    pricePence,
+    tier,
+    subscription.founding,
+  );
   return deps.store.save({
     userId: subscription.userId,
     tier,

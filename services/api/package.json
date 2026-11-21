@@ -50,7 +50,10 @@
     "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts",
     "rulings:worker": "tsx scripts/rulings-worker.ts",
     "telegram:set-webhook": "tsx scripts/set-telegram-webhook.ts",
-    "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts"
+    "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts",
+    "stripe-setup": "tsx scripts/stripe-setup.ts",
+    "stripe-test": "tsx scripts/stripe-test.ts",
+    "stripe-lapse": "tsx scripts/stripe-lapse.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.12",
@@ -101,6 +104,7 @@
     "@vitest/coverage-v8": "5.0.5",
     "lightningcss": "^1.33.0",
     "msw": "2.15.0",
+    "playwright-core": "1.64.1",
     "rolldown": "^1.2.14",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.23.15",
