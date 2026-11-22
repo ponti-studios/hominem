@@ -6,30 +6,38 @@ export const kindLabel: Record<DecisionKind, string> = {
   quiet: 'No action',
 };
 
+const timeFormat = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  timeZone: 'UTC',
+});
+
+const dateLongFormat = new Intl.DateTimeFormat('en-GB', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+});
+
+const dateShortFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+
+const factNumberFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
+
 export function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'UTC',
-  }).format(new Date(iso));
+  return timeFormat.format(new Date(iso));
 }
 
 export function formatDateLong(iso: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(iso));
+  return dateLongFormat.format(new Date(iso));
 }
 
 export function formatDateShort(iso: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  }).format(new Date(iso));
+  return dateShortFormat.format(new Date(iso));
 }
 
 export function formatRelative(iso: string, now: string): string {
@@ -64,7 +72,7 @@ export function formatFactValue(value: unknown): string {
   if (value === null || value === undefined) return '—';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'number') {
-    return new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 }).format(value);
+    return factNumberFormat.format(value);
   }
   if (typeof value === 'string') {
     if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return formatDateShort(value);
