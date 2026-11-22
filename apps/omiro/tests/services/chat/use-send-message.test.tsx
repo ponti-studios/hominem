@@ -262,6 +262,80 @@ describe('useSendMessage', () => {
     });
   });
 
+  it('adopts the persisted user message id on generation.accepted so retry and edit target it', async () => {
+    const { result, queryClient } = renderHookWithQueryClient(() => useSendMessageWithRuntime());
+
+    let sendPromise: Promise<void> | undefined;
+    act(() => {
+      sendPromise = result.current.sendChatMessage({ message: 'Hello there' });
+    });
+    await waitFor(() => expect(mockConsumeSseXhr).toHaveBeenCalledOnce());
+    expect(result.current.generation).toMatchObject({ stage: 'preparing' });
+
+    const acceptedUserMessage = {
+      id: 'user-2',
+      chatId: CHAT_ID,
+      userId: 'user-1',
+      role: 'user',
+      content: 'Hello there',
+      files: null,
+      toolCalls: null,
+      reasoning: null,
+      parentMessageId: null,
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    } satisfies ChatMessageDto;
+
+    act(() => {
+      pending?.onEvent({
+        version: 1,
+        generationId: 'uuid-1',
+        sequence: 1,
+        type: 'generation.accepted',
+        payload: {
+          type: 'generation.accepted',
+          chatId: CHAT_ID,
+          chat: {
+            id: CHAT_ID,
+            userId: 'user-1',
+            title: 'Chat',
+            archivedAt: null,
+            createdAt: '2026-01-01',
+            updatedAt: '2026-01-01',
+          },
+          userMessage: acceptedUserMessage,
+        },
+      });
+    });
+    await waitFor(() =>
+      expect(result.current.generation).toMatchObject({ userMessageId: 'user-2' }),
+    );
+
+    await act(async () => {
+      pending?.onEvent({
+        version: 1,
+        generationId: 'uuid-1',
+        sequence: 2,
+        type: 'generation.failed',
+        payload: { type: 'generation.failed', message: 'generation failed' },
+      });
+      pending?.resolve();
+      await sendPromise?.catch(() => undefined);
+    });
+    await waitFor(() => expect(result.current.generation?.stage).toBe('failed'));
+
+    // The server persisted the message at accept, so Retry must regenerate in
+    // place (no retryInput) and Edit must still find the message by its id.
+    expect(result.current.generation).toMatchObject({
+      stage: 'failed',
+      userMessageId: 'user-2',
+    });
+    expect(result.current.generation?.retryInput).toBeUndefined();
+    expect(rows(queryClient)).toEqual([
+      expect.objectContaining({ role: 'user', id: 'user-2', message: 'Hello there' }),
+    ]);
+  });
+
   it('turns a durable generation failure into the failed generation state', async () => {
     const { result } = renderHookWithQueryClient(useSendMessageWithRuntime);
     let sendPromise: Promise<void> | undefined;

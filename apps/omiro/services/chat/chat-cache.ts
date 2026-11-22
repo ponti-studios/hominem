@@ -369,9 +369,13 @@ export function handleChatGenerationEvent({
     const handOver = () => {
       void invalidateChatQueries(queryClient, chatId).then(() => {
         const knownIds = getLiveChat(chatId).turn?.knownIds;
-        const adopted = (
-          queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId)) ?? []
-        ).find((item) => item.role === 'assistant' && !knownIds?.has(item.id));
+        const items = queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId)) ?? [];
+        // A cold adopt has no baseline id set, so every assistant message looks
+        // unknown. The reply that just paused is the newest persisted one.
+        const candidates = items.filter(
+          (item) => item.role === 'assistant' && !knownIds?.has(item.id),
+        );
+        const adopted = candidates[candidates.length - 1];
         clearStreamingMessageText(streamingIdFor(generationId));
         dropLiveReply(chatId, generationId, adopted?.id);
       });

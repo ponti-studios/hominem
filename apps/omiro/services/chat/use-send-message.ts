@@ -206,7 +206,7 @@ export function useSendMessage({
     if (lastInputRef.current) {
       void sendChatMessage(lastInputRef.current).catch(() => undefined);
     }
-  }, [chatId, generationRef, queryClient, regenerateGeneration, sendChatMessage, setGeneration]);
+  }, [chatId, generationRef, regenerateGeneration, sendChatMessage, setGeneration]);
 
   return {
     cancelGeneration: generationRuntime.cancelGeneration,
