@@ -1,6 +1,10 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.mjs"],
+      "project": ["scripts/**/*.mjs"]
+    },
     "apps/omiro": {
       "entry": ["app/**/*.{ts,tsx}"],
       "project": ["**/*.{ts,tsx}"]
@@ -10,21 +14,35 @@
       "project": ["app/**/*.{ts,tsx}", "tests/**/*.ts"]
     },
     "services/api": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**/*.{ts,tsx}"]
+      "entry": ["src/index.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"]
+    },
+    "services/evals": {
+      "entry": [
+        "runner/cli.ts",
+        "runner/mcp-tool-catalog.ts",
+        "**/*.suite.ts",
+        "assertions/*.ts",
+        "providers/*.ts",
+        "seed/**/*.mts"
+      ],
+      "project": ["**/*.{ts,tsx,mts}"]
     },
     "packages/*": {
       "project": ["src/**/*.{ts,tsx}"]
     }
   },
   "ignoreDependencies": [
+    "@expo/plist",
     "babel-preset-expo",
-    "tw-animate-css",
-    "tailwindcss",
+    "expo-build-properties",
+    "expo-splash-screen",
     "expo-updates",
-    "@expo/plist"
+    "kysely-codegen",
+    "tailwindcss",
+    "tw-animate-css"
   ],
-  "ignoreBinaries": [],
-  "ignoreUnresolved": ["^\\.\\/\\+types\\/"],
-  "ignore": ["apps/omiro/components/**", "apps/omiro/services/**", "apps/omiro/modules/**"]
+  "ignoreBinaries": ["eas"],
+  "ignore": ["packages/*/build/**"],
+  "ignoreUnresolved": ["^\\./\\+types/", "^@hominem/(finance-services/rulings|db/types)$"]
 }

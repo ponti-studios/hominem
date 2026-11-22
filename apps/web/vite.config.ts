@@ -110,7 +110,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         '@ponti-studios/ui/primitives',
         '@ponti-studios/ui/tokens',
         '@ponti-studios/ui/utilities',
-        '@radix-ui/react-alert-dialog',
         '@radix-ui/react-dropdown-menu',
         '@radix-ui/react-slot',
         '@tanstack/react-query',

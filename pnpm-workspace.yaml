@@ -17,7 +17,6 @@ catalog:
   clsx: 2.1.1
   hono: 4.13.13
   ioredis: 6.0.0
-  jiti: 2.7.0
   kysely: 0.29.7
   lucide-react: 1.62.0
   pdf2json: 4.1.0
