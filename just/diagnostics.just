@@ -8,3 +8,7 @@ usage:
 
 smoke:
     pnpm --filter @hominem/api exec tsx scripts/speech-smoke-test.ts
+
+# Repo-wide unused files/exports/dependencies and unresolved imports (knip).
+knip *args:
+    pnpm exec knip {{ args }}

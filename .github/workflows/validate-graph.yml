@@ -1,0 +1,64 @@
+name: validate-graph
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'knip.json'
+      - 'turbo.json'
+      - 'tsconfig*.json'
+      - '.npmrc'
+      - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/workflows/validate-graph.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'knip.json'
+      - 'turbo.json'
+      - 'tsconfig*.json'
+      - '.npmrc'
+      - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/workflows/validate-graph.yml'
+
+concurrency:
+  group: validate-graph-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  knip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.18.0'
+
+      # The @hominem/api/types path aliases resolve against emitted
+      # declarations, so the graph check needs the build graph first.
+      - name: build
+        run: pnpm build
+
+      - name: knip
+        run: pnpm exec knip
