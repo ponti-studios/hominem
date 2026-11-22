@@ -105,13 +105,6 @@ export const travelIdeaListInputSchema = z.object({
   type: z.string().optional(),
 });
 
-export const pageSchema = z.object({
-  items: z.array(row),
-  total: z.number().int(),
-  limit: z.number().int(),
-  offset: z.number().int(),
-  truncated: z.boolean(),
-});
 export const travelJourneyListOutputSchema = z.object({
   journeys: z.array(row),
   total: z.number().int(),

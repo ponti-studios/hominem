@@ -83,7 +83,7 @@ export async function loadToken(): Promise<TokenFile> {
   return tokenFileSchema.parse(JSON.parse(raw));
 }
 
-export async function saveToken(token: TokenFile, path = TOKEN_PATH): Promise<void> {
+async function saveToken(token: TokenFile, path = TOKEN_PATH): Promise<void> {
   await writeFileAtomic(
     path,
     `${JSON.stringify(token, null, 2)}
@@ -155,7 +155,7 @@ export async function refreshToken(
 }
 
 // Returns a usable access token, refreshing and saving when needed.
-export async function accessToken(overrides: Partial<Deps> = {}): Promise<string> {
+async function accessToken(overrides: Partial<Deps> = {}): Promise<string> {
   const deps = { ...defaultDeps, ...overrides };
   const token = await loadToken();
   return isFresh(token, deps.now()) ? token.token : (await refreshToken(token, deps)).token;

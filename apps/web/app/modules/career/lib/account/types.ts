@@ -4,7 +4,7 @@ import type {
 } from '~/modules/career/lib/types/records';
 import type { CareerProfileRecord } from '~/modules/career/lib/types/records';
 
-export interface AccountPageUser {
+interface AccountPageUser {
   id: string;
   name?: string | null;
   email?: string | null;
@@ -26,12 +26,6 @@ export interface ProfileLoaderData {
   socialLinks: CareerSocialLinksRecord | null;
   documents: AccountDocumentFile[];
   certifications: CareerCertificationRecord[];
-}
-
-/** Loader data for /account — identity, visibility, and administration only. */
-export interface AccountSettingsLoaderData {
-  user: AccountPageUser;
-  currentProfile: CareerProfileRecord;
 }
 
 export interface BasicInfoFormValues {

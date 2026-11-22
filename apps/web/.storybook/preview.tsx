@@ -5,7 +5,6 @@ import { mswLoader } from 'msw-storybook-addon/csf3';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 
-import { TooltipProvider } from '~/components/ui/tooltip';
 import { HonoProvider } from '~/lib/api/provider';
 
 import '../app/app.css';
@@ -28,11 +27,9 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <HonoProvider baseUrl="/">
-        <TooltipProvider>
-          <StoryContentContext.Provider value={children}>
-            <RouterProvider router={router} />
-          </StoryContentContext.Provider>
-        </TooltipProvider>
+        <StoryContentContext.Provider value={children}>
+          <RouterProvider router={router} />
+        </StoryContentContext.Provider>
       </HonoProvider>
     </QueryClientProvider>
   );

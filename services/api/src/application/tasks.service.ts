@@ -2,9 +2,9 @@ import { db } from '@hominem/db/core';
 import { TaskRepository, type CreateTaskBatchInput, type TaskRecord } from '@hominem/db/tasks';
 import { runInTransaction } from '@hominem/db/transaction';
 
-export type TaskDraft = CreateTaskBatchInput['tasks'][number];
+type TaskDraft = CreateTaskBatchInput['tasks'][number];
 
-export interface TaskDraftGroup {
+interface TaskDraftGroup {
   title: string;
   tasks: TaskDraft[];
 }
@@ -14,7 +14,7 @@ export interface PersistExtractedTasksInput {
   tasks?: TaskDraft[];
 }
 
-export interface PersistedTaskGroup {
+interface PersistedTaskGroup {
   parent: TaskRecord;
   tasks: TaskRecord[];
 }

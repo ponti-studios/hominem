@@ -11,7 +11,6 @@ import {
   rememberInputSchema,
   rememberOutputSchema,
   searchMemoriesInputSchema,
-  searchMemoriesOutputSchema,
 } from '../../schemas/memory.schema';
 import { registerTool } from '../tool-registry';
 
@@ -98,7 +97,7 @@ registerTool(
       'depend on remembered personal context, rather than assuming none exists. If no keyword ' +
       'match is found, returns the full recent memory list instead so nothing is missed.',
     inputSchema: searchMemoriesInputSchema,
-    outputSchema: searchMemoriesOutputSchema,
+    outputSchema: listMemoriesOutputSchema,
     readOnly: true,
     scopes: ['memory:read'],
     resultCap: 50,

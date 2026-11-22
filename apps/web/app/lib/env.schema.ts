@@ -14,10 +14,3 @@ export const webSchema = runtimeSchema.extend({
     z.url().optional().default('https://us.i.posthog.com'),
   ),
 });
-
-export const webClientSchema = webSchema.pick({
-  VITE_PUBLIC_API_URL: true,
-  VITE_CAREER_PDF_WORKER_URL: true,
-  VITE_POSTHOG_PROJECT_TOKEN: true,
-  VITE_POSTHOG_HOST: true,
-});

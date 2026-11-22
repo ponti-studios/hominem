@@ -114,7 +114,7 @@ export const deliveryIntentSchema = z.discriminatedUnion('kind', [
 
 export type DeliveryIntent = z.infer<typeof deliveryIntentSchema>;
 
-export const evaluationSchema = z.object({
+const evaluationSchema = z.object({
   ownerId: idSchema,
   triggerId: idSchema,
   goalId: idSchema,

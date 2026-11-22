@@ -30,7 +30,7 @@ export class StripeError extends Error {
   }
 }
 
-export interface CheckoutInput {
+interface CheckoutInput {
   userId: string;
   email: string;
   amountPence: number;
@@ -74,7 +74,7 @@ export interface StripeClient {
 }
 
 /** A subscription Checkout, or the subscription itself, reduced to what the billing rules read. */
-export interface SubscriptionCheckoutInput {
+interface SubscriptionCheckoutInput {
   userId: string;
   email: string;
   tier: 'core' | 'rhodium' | 'iridium';

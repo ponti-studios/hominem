@@ -26,7 +26,7 @@ import {
 export const MAX_BUDGETS_IN_DELETE_PREVIEW = 500;
 
 /** The two budgets of record, seeded as the first budget rows. */
-export const BUDGETS_OF_RECORD = [
+const BUDGETS_OF_RECORD = [
   { categoryName: 'Groceries', amountCents: 25_000, cadence: 'monthly' },
   { categoryName: 'Dining Out', amountCents: 30_000, cadence: 'monthly' },
 ] as const satisfies ReadonlyArray<{

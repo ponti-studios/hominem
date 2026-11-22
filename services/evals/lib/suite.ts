@@ -34,18 +34,18 @@ export type Suite = {
   promptFiles: readonly URL[];
 };
 
-export const JUDGE_MIN_SCORE = 0.7;
+const JUDGE_MIN_SCORE = 0.7;
 
 const path = (url: URL): string => url.pathname;
 
-export const rubricAssertion = (rubric: string, showInput = false): Assertion => ({
+const rubricAssertion = (rubric: string, showInput = false): Assertion => ({
   type: 'llm-rubric',
   value: `${rubric}${showInput ? '\n\nThe model was given:\n{{golden.input}}' : ''}\n\nReference output:\n{{expectedOutput}}`,
   threshold: JUDGE_MIN_SCORE,
 });
 
 /** Open-ended replies have no single right answer, so grade against what the reply must do. */
-export const criteriaAssertion = (rubric: string, criteria: readonly string[]): Assertion => ({
+const criteriaAssertion = (rubric: string, criteria: readonly string[]): Assertion => ({
   type: 'llm-rubric',
   value: `${rubric}\n\nThe user wrote:\n{{golden.input}}\n\nThe reply passes only if it satisfies every point below:\n${criteria
     .map((criterion) => `- ${criterion}`)
@@ -64,7 +64,7 @@ export const fileAssertion = (
   ...(metric ? { metric } : {}),
 });
 
-export const judgeProvider = {
+const judgeProvider = {
   id: `openrouter:${judgeModel}`,
   config: { temperature: 0 },
 };
@@ -182,7 +182,7 @@ const graderFiles = [
   '../providers/mcp-live-agent.ts',
 ].map((name) => new URL(name, import.meta.url));
 
-export const suiteMetadata = async (options: {
+const suiteMetadata = async (options: {
   tier: Tier;
   datasetFiles: readonly URL[];
   promptFiles: readonly URL[];
@@ -195,7 +195,7 @@ export const suiteMetadata = async (options: {
   graderHash: await fingerprintGrading(graderFiles, options.gradingSpec),
 });
 
-export type McpCase = {
+type McpCase = {
   /** Stable case id, shown in reports and used to key baselines. */
   id: string;
   category?: string;

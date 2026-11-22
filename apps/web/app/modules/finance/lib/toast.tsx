@@ -1,7 +1,7 @@
 import { cn } from '@ponti-studios/ui/utilities';
 import { useSyncExternalStore } from 'react';
 
-export type ToastOptions = {
+type ToastOptions = {
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive';
@@ -16,10 +16,6 @@ type ToastItem = Required<Pick<ToastOptions, 'title'>> &
 let toasts: ToastItem[] = [];
 const listeners = new Set<() => void>();
 
-function emit() {
-  for (const listener of listeners) listener();
-}
-
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -33,30 +29,6 @@ const EMPTY_TOASTS: ToastItem[] = [];
 
 function getServerSnapshot() {
   return EMPTY_TOASTS;
-}
-
-function dismiss(id: string) {
-  toasts = toasts.filter((t) => t.id !== id);
-  emit();
-}
-
-export function toast(options: ToastOptions | string) {
-  const resolved = typeof options === 'string' ? { title: options } : options;
-  const id = Math.random().toString(36).slice(2, 11);
-  const item: ToastItem = {
-    id,
-    title: resolved.title ?? resolved.description ?? 'Notification',
-    description: resolved.description,
-    variant: resolved.variant ?? 'default',
-    duration: resolved.duration,
-  };
-
-  toasts = [...toasts, item];
-  emit();
-
-  if (item.duration !== 0) {
-    window.setTimeout(() => dismiss(id), item.duration ?? 4000);
-  }
 }
 
 export function Toaster() {

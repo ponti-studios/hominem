@@ -1,4 +1,3 @@
-import type { Tier } from '../lib/suite';
 import type { CaseRecord, SuiteSummary, TrialRecord } from './types';
 
 /** The few fields we read off a promptfoo result row. Loosely typed on purpose. */
@@ -39,7 +38,7 @@ const percentile = (values: readonly number[], fraction: number): number => {
 
 const round = (value: number, places = 4): number => Number(value.toFixed(places));
 
-export function toTrial(raw: RawResult): TrialRecord {
+function toTrial(raw: RawResult): TrialRecord {
   const error =
     raw.response?.error ?? (raw.failureReason === 2 ? (raw.error ?? 'provider error') : undefined);
   const failed = (raw.gradingResult?.componentResults ?? []).filter((component) => !component.pass);
@@ -124,5 +123,3 @@ export function summarize(cases: readonly CaseRecord[]): SuiteSummary {
     ),
   };
 }
-
-export type { Tier };

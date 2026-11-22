@@ -1,12 +1,12 @@
-import { MCP_ENABLED_SCOPES } from '../scopes';
+import { MCP_SCOPES } from '../scopes';
 
-// Only imports tools whose scope is in MCP_ENABLED_SCOPES. Shared by the MCP
+// Only imports tools whose scope is in MCP_SCOPES. Shared by the MCP
 // HTTP server (mcp/routes.ts) and the in-process chat tool adapter
 // (mcp/chat-tool-adapter.ts) so neither one has to run first.
 let registrationPromise: Promise<void> | null = null;
 
 async function registerAll(): Promise<void> {
-  const enabledScopes = new Set<string>(MCP_ENABLED_SCOPES);
+  const enabledScopes = new Set<string>(MCP_SCOPES);
   const isEnabled = (...scopes: string[]) =>
     enabledScopes.size === 0 || scopes.some((scope) => enabledScopes.has(scope));
 

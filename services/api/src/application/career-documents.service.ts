@@ -11,7 +11,7 @@ export interface CareerDocument {
   lastModified: string | null;
 }
 
-export function parseStoredDocument(entry: FileObject): CareerDocument {
+function parseStoredDocument(entry: FileObject): CareerDocument {
   const match = UUID_PREFIX.exec(entry.name);
   const id = match?.[1] ?? entry.name;
   const remainder = match ? entry.name.slice(match[0].length).replace(/^\./, '') : entry.name;

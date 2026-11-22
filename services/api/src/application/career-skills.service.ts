@@ -39,7 +39,7 @@ Rules:
 - Return 10–30 skills. Aim for breadth across technical, leadership, and domain skills where evidence exists.
 - Return valid JSON only: { "skills": [ ... ] }. No markdown, no explanation.`;
 
-export async function deriveSkillsFromCareerHistory(
+async function deriveSkillsFromCareerHistory(
   ownerUserid: string,
   profileId: string,
 ): Promise<DerivedSkill[]> {

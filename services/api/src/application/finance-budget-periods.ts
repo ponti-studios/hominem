@@ -15,7 +15,7 @@ export type BudgetPace = {
 };
 
 /** No pace verdict is returned before 20% of the period has elapsed, on every cadence. */
-export const PACE_GATE_FRACTION = 0.2;
+const PACE_GATE_FRACTION = 0.2;
 
 const DAY_MS = 86_400_000;
 
@@ -31,7 +31,7 @@ function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function parseIsoDate(value: string): Date {
+function parseIsoDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
@@ -76,7 +76,7 @@ export function previousPeriod(cadence: FinanceBudgetCadence, period: BudgetPeri
   return periodFor(cadence, addDays(parseIsoDate(period.startsOn), -1));
 }
 
-export function nextPeriod(cadence: FinanceBudgetCadence, period: BudgetPeriod): BudgetPeriod {
+function nextPeriod(cadence: FinanceBudgetCadence, period: BudgetPeriod): BudgetPeriod {
   return periodFor(cadence, addDays(parseIsoDate(period.endsOn), 1));
 }
 
@@ -102,14 +102,7 @@ export function periodsBetween(
   }
 }
 
-/** Inclusive day count of a period. */
-export function periodDayCount(period: BudgetPeriod): number {
-  const start = parseIsoDate(period.startsOn);
-  const end = parseIsoDate(period.endsOn);
-  return Math.round((end.getTime() - start.getTime()) / DAY_MS) + 1;
-}
-
-export function periodElapsedFraction(period: BudgetPeriod, now: Date): number {
+function periodElapsedFraction(period: BudgetPeriod, now: Date): number {
   const start = parseIsoDate(period.startsOn).getTime();
   const endExclusive = parseIsoDate(period.endsOn).getTime() + DAY_MS;
   return Math.min(1, Math.max(0, (now.getTime() - start) / (endExclusive - start)));

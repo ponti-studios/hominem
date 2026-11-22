@@ -1,7 +1,7 @@
 // Pure chunk bookkeeping for StreamingText. Kept free of React/RN so it can be
 // unit tested in node.
 
-export type Chunk = { id: number; text: string; bornAt: number };
+type Chunk = { id: number; text: string; bornAt: number };
 export type StreamState = { settled: string; chunks: Chunk[]; seen: string; nextId: number };
 
 export function initialState(content: string): StreamState {

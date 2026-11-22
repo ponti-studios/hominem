@@ -8,7 +8,7 @@ const MB = 1024 * KB;
 const DEFAULT_MAX_BYTES = 1 * MB;
 const UPLOAD_MAX_BYTES = 25 * MB;
 
-export function maxBodyBytesFor(method: string, path: string) {
+function maxBodyBytesFor(method: string, path: string) {
   if (method === 'POST' && (path === '/api/files' || path === '/api/files/'))
     return UPLOAD_MAX_BYTES;
   return DEFAULT_MAX_BYTES;

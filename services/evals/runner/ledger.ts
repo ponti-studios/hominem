@@ -5,7 +5,7 @@ import type { RunManifest } from './types';
 
 const packageRoot = new URL('../', import.meta.url).pathname;
 const runsDir = `${packageRoot}runs`;
-export const ledgerFile = `${packageRoot}ledger.csv`;
+const ledgerFile = `${packageRoot}ledger.csv`;
 
 export const ledgerColumns = [
   'runId',

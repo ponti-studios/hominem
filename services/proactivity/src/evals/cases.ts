@@ -1,6 +1,6 @@
 import type { Goal, ProactivityTrigger, StateSnapshot } from '../types.js';
 
-export type ProactivityEvalCategory =
+type ProactivityEvalCategory =
   | 'finance'
   | 'career'
   | 'travel'
@@ -17,7 +17,7 @@ export type ExpectedDecisionKind = 'propose' | 'defer' | 'quiet' | 'none';
  * Holdout cases are reserved for review runs so that tuning cannot leak the
  * whole benchmark into development.
  */
-export type ProactivityEvalSplit = 'regression' | 'holdout';
+type ProactivityEvalSplit = 'regression' | 'holdout';
 
 export type ProactivityEvalCase = {
   id: string;

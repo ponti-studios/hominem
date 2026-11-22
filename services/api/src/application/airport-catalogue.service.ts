@@ -454,11 +454,3 @@ export async function updateTravelAirportCuration(
     return selectAirport(trx, owner, code);
   });
 }
-
-export async function getAirportReferenceProvenance() {
-  const result =
-    await sql<AirportRow>`SELECT source_name AS "sourceName", source_url AS "sourceUrl", retrieved_at AS "retrievedAt", row_count AS "rowCount" FROM app.travel_airport_reference_refresh_log ORDER BY started_at DESC LIMIT 1`.execute(
-      db,
-    );
-  return result.rows[0] ?? { sourceName: null, sourceUrl: null, retrievedAt: null, rowCount: 0 };
-}

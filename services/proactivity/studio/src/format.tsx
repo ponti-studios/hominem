@@ -130,16 +130,6 @@ export function friendlyDefer(reason: string): string {
   return reason;
 }
 
-export function decisionHeadline(decision: {
-  kind: DecisionKind;
-  summary?: string;
-  reason: string;
-}): string {
-  if (decision.kind === 'propose') return decision.summary ?? 'A change worth acting on.';
-  if (decision.kind === 'defer') return friendlyDefer(decision.reason);
-  return decision.reason;
-}
-
 export function matchTarget(
   kind: DecisionKind,
   expected: DecisionKind | null,
@@ -152,14 +142,6 @@ export function IconPlay({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M5 3.5 12 8l-7 4.5v-9Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function IconArrow({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M4 12 12 4M6 4h6v6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" />
     </svg>
   );
 }
@@ -216,15 +198,6 @@ export function IconMail({ size = 14 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <rect x="2" y="3.5" width="12" height="9" stroke="currentColor" strokeWidth="1.2" />
       <path d="m2.5 4 5.5 4.5L13.5 4" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-export function IconClock({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="5.6" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M8 5v3.3l2 1.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="square" />
     </svg>
   );
 }

@@ -86,7 +86,7 @@ export interface BillingLimits {
 const PAID_STATUSES: readonly string[] = ['active', 'trialing'];
 
 /** Whether the subscription is paid up right now: an active (or trialing) period that has not ended. */
-export function subscriptionGrantsAccess(
+function subscriptionGrantsAccess(
   subscription: Pick<BillingSubscriptionRecord, 'status' | 'currentPeriodEnd'>,
   now: Date,
 ): boolean {

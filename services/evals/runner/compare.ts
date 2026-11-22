@@ -2,7 +2,7 @@ import type { Tier } from '../lib/suite';
 import type { SuiteRecord } from './types';
 
 /** Allowed drop in suite pass rate before a non-regression tier fails the gate. */
-export const TIER_TOLERANCE: Record<Tier, number> = {
+const TIER_TOLERANCE: Record<Tier, number> = {
   regression: 0,
   capability: 0.1,
   holdout: 0.05,

@@ -170,7 +170,7 @@ export function normalizeOffset(value: string | null, timezone: string | undefin
   }
 }
 
-export function normalizeOffsets(block: TimeBlock, timezone: string | undefined): TimeBlock {
+function normalizeOffsets(block: TimeBlock, timezone: string | undefined): TimeBlock {
   return {
     ...block,
     start_time: normalizeOffset(block.start_time, timezone),

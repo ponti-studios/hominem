@@ -5,7 +5,7 @@ import type { MiddlewareHandler } from 'hono';
 
 import { isInternalRequest } from './client-ip';
 
-export const ORIGIN_SECRET_HEADER = 'x-origin-secret';
+const ORIGIN_SECRET_HEADER = 'x-origin-secret';
 const HEALTH_PATH = '/healthz';
 const TELEGRAM_WEBHOOK_PATH = '/api/telegram/webhook';
 

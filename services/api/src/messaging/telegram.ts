@@ -27,8 +27,6 @@ export const telegramUpdateSchema = z.object({
 });
 
 export type TelegramUpdate = z.infer<typeof telegramUpdateSchema>;
-export type TelegramMessage = z.infer<typeof telegramMessageSchema>;
-export type TelegramCallbackQuery = z.infer<typeof telegramCallbackQuerySchema>;
 
 type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> };
 
@@ -74,7 +72,7 @@ export function createTelegramClient(input: { botToken: string; fetchImpl?: type
   };
 }
 
-export function splitTelegramText(value: string, limit = 4096): string[] {
+function splitTelegramText(value: string, limit = 4096): string[] {
   const output: string[] = [];
   let current = '';
   const appendLong = (paragraph: string) => {

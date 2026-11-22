@@ -4,7 +4,6 @@ import { billingRules } from './billing.runtime';
 import { assertBillingUsage, billingState } from './billing.service';
 
 export {
-  assertUnderMonthlyUsageLimit,
   getAIUsagePageReport,
   getMonthlyAIUsageReport,
   getMonthlyUsageStatus,

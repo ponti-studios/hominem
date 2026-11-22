@@ -11,7 +11,7 @@ import { MCP_SCOPES } from '../../scopes';
 export const emailSchema = z.string().email();
 export const otpSchema = z.string().length(6);
 
-export type ResumeMode = 'app' | 'oauth';
+type ResumeMode = 'app' | 'oauth';
 export type Resume = { mode: ResumeMode; url: string };
 
 export function getFormValue(form: Record<string, string | File>, name: string) {

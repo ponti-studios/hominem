@@ -92,7 +92,7 @@ export function IconField({
 
 /** Minimal field contract for controlled inputs. Wrap react-hook-form's
  * Controller output in an adapter lambda at the call site. */
-export type FieldBinding = {
+type FieldBinding = {
   value: string;
   name: string;
   onChange: (value: string) => void;

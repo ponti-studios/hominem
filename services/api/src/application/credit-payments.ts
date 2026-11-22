@@ -119,10 +119,7 @@ export async function handleStripeEvent(
  * released, so nothing is charged and Stripe keeps no fee. A payment taken before holds existed
  * (already `succeeded`) is refunded instead. Safe to run twice: the session id keys the ledger.
  */
-export async function settleSession(
-  deps: WebhookDeps,
-  session: CheckoutSession,
-): Promise<WebhookOutcome> {
+async function settleSession(deps: WebhookDeps, session: CheckoutSession): Promise<WebhookOutcome> {
   const userId = session.metadata?.user_id;
   const amountPence = session.amount_total;
 

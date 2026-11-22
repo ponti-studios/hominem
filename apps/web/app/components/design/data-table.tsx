@@ -2,13 +2,13 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 
-export type DataTableSort = {
+type DataTableSort = {
   direction: 'asc' | 'desc' | null;
   onSort: () => void;
   label: string;
 };
 
-export type DataTableColumn<T> = {
+type DataTableColumn<T> = {
   key: string;
   header: string;
   align?: 'left' | 'right';
