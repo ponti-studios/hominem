@@ -5,7 +5,7 @@ import {
   clearStreamingMessageText,
   getStreamingMessageText,
   subscribeToStreamingMessageText,
-} from './streaming-text-store';
+} from '~/services/chat/streaming-text-store';
 
 describe('streaming text store', () => {
   it('accumulates text per message id', () => {

@@ -16,6 +16,5 @@ export const E2E_TESTING = appEnvironment === 'e2e';
 
 export const API_BASE_URL = env.EXPO_PUBLIC_API_BASE_URL;
 export const APP_ENV = appEnvironment;
-export const APP_SCHEME = extra.appScheme || 'hakumi';
 export const APP_NAME = BRAND.appName;
 export const RELEASE_CHANNEL = releaseChannel;

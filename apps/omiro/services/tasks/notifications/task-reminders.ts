@@ -3,7 +3,7 @@ import type { StoredTask } from '../sync/task-mapping';
 // iOS keeps at most 64 local notifications pending; stay under it.
 export const MAX_SCHEDULED = 60;
 // A task placed on a day, not a time, reminds at this hour.
-export const DATE_ONLY_HOUR = 9;
+const DATE_ONLY_HOUR = 9;
 
 export interface PlannedReminder {
   taskId: string;

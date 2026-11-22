@@ -1,5 +1,5 @@
-import { memo, type ReactNode } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { memo } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
 import { Checkbox } from '~/components/ui';
@@ -60,71 +60,3 @@ export const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle 
     </Pressable>
   );
 });
-
-interface TaskListProps {
-  // True when the list is the screen's scroll view under a native header, so
-  // the system insets it below the title and collapses the large title.
-  adjustForHeader?: boolean;
-  contentPaddingBottom?: number;
-  contentPaddingTop?: number;
-  emptyText: string;
-  // Rendered after the last row (and after the empty text).
-  footer?: ReactNode;
-  // True on the app ground (Tasks page), where rows need the card fill to
-  // stand out; false inside a sheet, where rows sit on the ground tone.
-  onGround?: boolean;
-  onOpen: (task: TaskListItem) => void;
-  onRefresh?: () => void;
-  onToggle: (task: TaskListItem) => void;
-  refreshing?: boolean;
-  tasks: TaskListItem[];
-}
-
-function Gap() {
-  return <View style={{ height: 10 }} />;
-}
-
-export function TaskList({
-  adjustForHeader = false,
-  contentPaddingBottom = 0,
-  contentPaddingTop = 0,
-  emptyText,
-  footer,
-  onGround = false,
-  onOpen,
-  onRefresh,
-  onToggle,
-  refreshing = false,
-  tasks,
-}: TaskListProps) {
-  const styles = useStyles((theme) => ({
-    footer: { paddingTop: 10 },
-    empty: {
-      ...theme.textVariants.callout,
-      color: theme.colors.mutedForeground,
-      paddingVertical: 24,
-      textAlign: 'center',
-    },
-  }));
-  return (
-    <FlatList
-      ItemSeparatorComponent={Gap}
-      contentInsetAdjustmentBehavior={adjustForHeader ? 'automatic' : 'never'}
-      ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
-      ListFooterComponent={footer ? <View style={styles.footer}>{footer}</View> : undefined}
-      contentContainerStyle={{ paddingBottom: contentPaddingBottom, paddingTop: contentPaddingTop }}
-      data={tasks}
-      initialNumToRender={10}
-      keyExtractor={(task) => task.id}
-      refreshControl={
-        onRefresh ? <RefreshControl onRefresh={onRefresh} refreshing={refreshing} /> : undefined
-      }
-      removeClippedSubviews
-      renderItem={({ item }) => (
-        <TaskRow item={item} onGround={onGround} onOpen={onOpen} onToggle={onToggle} />
-      )}
-      showsVerticalScrollIndicator={false}
-      testID="unscheduled-task-list"
-    />
-  );
-}

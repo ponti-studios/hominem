@@ -54,7 +54,7 @@ export interface ComposerContextValue {
 }
 
 // Exported so the dev state gallery can feed fixed attach states to the real composer parts.
-export const ComposerContext = createContext<ComposerContextValue | undefined>(undefined);
+const ComposerContext = createContext<ComposerContextValue | undefined>(undefined);
 
 interface ComposerProviderProps {
   children: React.ReactNode;

@@ -3,13 +3,13 @@ import type { TaskListItem } from '~/services/tasks/task-types';
 
 const DAY_MS = 86_400_000;
 // Undated tasks older than this come up in triage as "Still want this?".
-export const STALE_AFTER_DAYS = 14;
+const STALE_AFTER_DAYS = 14;
 
-export function getOpenTasks(tasks: TaskListItem[]) {
+function getOpenTasks(tasks: TaskListItem[]) {
   return tasks.filter((task) => task.status !== 'completed');
 }
 
-export function hasDate(task: Pick<TaskListItem, 'dueAt' | 'startAt'>) {
+function hasDate(task: Pick<TaskListItem, 'dueAt' | 'startAt'>) {
   return Boolean(task.dueAt || task.startAt);
 }
 
@@ -23,7 +23,7 @@ export function getInboxTasks(tasks: TaskListItem[]) {
   return getOpenTasks(tasks).filter((task) => !hasDate(task));
 }
 
-export function startOfDay(date: Date): Date {
+function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
@@ -125,7 +125,7 @@ export function ageLabel(days: number): string {
 }
 
 // How far ahead the Upcoming section looks, and how many rows it shows.
-export const UPCOMING_DAYS = 7;
+const UPCOMING_DAYS = 7;
 export const UPCOMING_VISIBLE = 3;
 
 export interface TaskSections {

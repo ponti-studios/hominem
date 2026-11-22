@@ -1,4 +1,4 @@
-import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import {
   AccessibilityInfo,
@@ -36,7 +36,7 @@ function subscribe(listener: () => void) {
 
 // True when the surface should be real system glass: off under Reduce
 // Transparency, where an opaque fill reads better than a frosted one.
-export function useGlassEnabled() {
+function useGlassEnabled() {
   const reduced = useSyncExternalStore(
     subscribe,
     () => reduceTransparency,
@@ -104,24 +104,5 @@ export function Glass({
     >
       {children}
     </GlassView>
-  );
-}
-
-interface GlassGroupProps extends ViewProps {
-  children: ReactNode;
-  // How close two glass shapes get before they start to merge.
-  spacing?: number;
-}
-
-// Neighbouring glass shapes blend and morph into each other inside a group.
-export function GlassGroup({ children, spacing = 8, ...props }: GlassGroupProps) {
-  const enabled = useGlassEnabled();
-  if (!enabled) {
-    return <View {...props}>{children}</View>;
-  }
-  return (
-    <GlassContainer {...props} spacing={spacing}>
-      {children}
-    </GlassContainer>
   );
 }

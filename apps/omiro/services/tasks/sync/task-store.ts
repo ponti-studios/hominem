@@ -6,8 +6,6 @@ export type OutboxPayload =
   | { kind: 'complete'; completed: boolean }
   | { kind: 'delete' };
 
-export type OutboxKind = OutboxPayload['kind'];
-
 export interface OutboxOp {
   id: number;
   taskId: string;

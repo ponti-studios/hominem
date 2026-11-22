@@ -360,7 +360,6 @@ export function useChatGeneration({
     sendGeneration,
     generation,
     generationRef,
-    resumeGeneration,
     setGeneration,
   };
 }

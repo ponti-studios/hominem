@@ -10,7 +10,7 @@ export interface SpotlightItem {
   updatedAt?: string | null;
 }
 
-export type OmiroSystemModuleType = {
+type OmiroSystemModuleType = {
   // The app path (for example `chat/<id>` or `task/add`) of the quick action or
   // Spotlight result that opened the app before JavaScript was listening.
   consumePendingLink(): string | null;

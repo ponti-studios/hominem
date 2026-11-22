@@ -10,20 +10,16 @@ export const VoiceTranscriberErrorCode = {
   EMPTY_TRANSCRIPT: 'EMPTY_TRANSCRIPT',
 } as const;
 
-export type SpeechRecognitionPermissionStatus =
-  | 'authorized'
-  | 'denied'
-  | 'notDetermined'
-  | 'restricted';
+type SpeechRecognitionPermissionStatus = 'authorized' | 'denied' | 'notDetermined' | 'restricted';
 
-export interface VoiceTranscriptionResult {
+interface VoiceTranscriptionResult {
   rawText: string;
   locale: string;
   engine: 'speech-analyzer';
   isOnDevice: true;
 }
 
-export type VoiceTranscriberModuleType = {
+type VoiceTranscriberModuleType = {
   getPermissions(): Promise<SpeechRecognitionPermissionStatus>;
   requestPermissions(): Promise<SpeechRecognitionPermissionStatus>;
   transcribeFile(audioUri: string): Promise<VoiceTranscriptionResult>;

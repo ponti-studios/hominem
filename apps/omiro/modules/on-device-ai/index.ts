@@ -1,4 +1,4 @@
-export { default, OnDeviceAIErrorCode } from './src/OnDeviceAIModule';
+export { default } from './src/OnDeviceAIModule';
 export type {
   CalendarPermissionStatus,
   CalendarDraft,
@@ -8,6 +8,5 @@ export type {
   CalendarEventPatch,
   CalendarOpening,
   CalendarRecurrenceScope,
-  OnDeviceAIModuleType,
   TaskBusyInterval,
 } from './src/OnDeviceAIModule';
