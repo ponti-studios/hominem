@@ -8,7 +8,6 @@ import { RouteTransition } from '~/components/shell/route-transition';
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog';
 import { userContext } from '~/lib/middleware';
 import { GO_SEQUENCES, domainForPath } from '~/lib/navigation';
-import { Toaster } from '~/modules/finance/lib/toast';
 
 import type { Route } from './+types/layout';
 
@@ -129,7 +128,6 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
         </Dialog>
       ) : null}
       <CommandPalette onClose={closePalette} open={paletteOpen} />
-      <Toaster />
     </div>
   );
 }
