@@ -13,7 +13,7 @@ export const financeAccountUpdateTool = defineMcpTool(
     name: 'finance_account_update',
     title: 'Finance Account Update',
     description:
-      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status, allowedCurrencies and includeInNetWorth. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. includeInNetWorth is independent of status. dryRun projects the change set without applying it.',
+      'Partially update an account addressed by id: name, institution, accountNumber (mask), provider identity (provider, providerAccountId), accountType, status, allowedCurrencies and includeInNetWorth. Omitted fields are unchanged; null clears institution/accountNumber/provider/providerAccountId. Identity — id, transactions, links — never changes, and currencyCode is immutable here. Provider identity is unique per user: clashing with another account is refused with identity_conflict, and a providerAccountId without a provider is refused with identity_requires_provider. includeInNetWorth is independent of status. dryRun projects the change set without applying it.',
     inputSchema: financeAccountUpdateInputSchema,
     outputSchema: financeAccountUpdateOutputSchema,
     readOnly: false,
@@ -40,6 +40,10 @@ export const financeAccountUpdateTool = defineMcpTool(
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.institution !== undefined ? { institution: input.institution } : {}),
         ...(input.accountNumber !== undefined ? { mask: input.accountNumber } : {}),
+        ...(input.provider !== undefined ? { provider: input.provider } : {}),
+        ...(input.providerAccountId !== undefined
+          ? { providerAccountId: input.providerAccountId }
+          : {}),
         ...(input.accountType !== undefined ? { accountType: input.accountType } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),

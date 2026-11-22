@@ -73,6 +73,9 @@ describe('finance account routes', () => {
           lifecycleStatus: 'open',
           includeInNetWorth: true,
           balanceCents: 12345,
+          provider: 'starling',
+          providerAccountId: 'test-primary-uid',
+          accountNumber: null,
         },
       ],
       count: 1,
@@ -114,6 +117,9 @@ describe('finance account routes', () => {
       lifecycleStatus: 'open',
       includeInNetWorth: true,
       balanceCents: 0,
+      provider: null,
+      providerAccountId: null,
+      accountNumber: null,
     }));
     accountService.getFinanceAccountList.mockResolvedValue({
       accounts,

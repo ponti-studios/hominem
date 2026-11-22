@@ -579,6 +579,7 @@ export interface AppFinanceAccounts {
   metadata: Generated<Json>;
   name: string;
   provider: string | null;
+  providerAccountId: string | null;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
 }
@@ -714,6 +715,15 @@ export interface AppFinanceRulingVerdicts {
 
 export interface AppFinanceRunwayPreferences {
   currencyCode: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
+export interface AppFinanceSyncDoctrine {
+  contents: Json;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  fingerprint: string;
+  id: Generated<string>;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
 }
@@ -1867,6 +1877,7 @@ export interface DB {
   'app.financeRulingRulebooks': AppFinanceRulingRulebooks;
   'app.financeRulingVerdicts': AppFinanceRulingVerdicts;
   'app.financeRunwayPreferences': AppFinanceRunwayPreferences;
+  'app.financeSyncDoctrine': AppFinanceSyncDoctrine;
   'app.financeTransactions': AppFinanceTransactions;
   'app.healthActivities': AppHealthActivities;
   'app.healthObservations': AppHealthObservations;
