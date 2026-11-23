@@ -9,13 +9,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: setup-pnpm
-      uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2
-      with:
-        runtime: node@${{ inputs.node-version }}
-        cache: true
-        cache-dependency-path: pnpm-lock.yaml
-
     - name: authenticate-github-packages
       shell: bash
       env:
@@ -25,6 +18,13 @@ runs:
           echo "@ponti-studios:registry=https://npm.pkg.github.com"
           echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}"
         } >> ~/.npmrc
+
+    - name: setup-pnpm
+      uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2
+      with:
+        runtime: node@${{ inputs.node-version }}
+        cache: true
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: install-dependencies
       shell: bash
