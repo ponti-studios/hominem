@@ -5,7 +5,7 @@ on:
 
 permissions:
   contents: read
-  packages: read
+  packages: write
   id-token: write
 
 jobs:
@@ -42,3 +42,19 @@ jobs:
       - name: publish-to-npm
         working-directory: packages/auth
         run: npm publish --provenance --access public
+
+      # The org's pnpm consumers map the whole @ponti-studios scope to GitHub
+      # Packages, so the version needs to exist there too.
+      - name: publish-to-github-packages
+        working-directory: packages/auth
+        env:
+          GH_PACKAGES_TOKEN: ${{ github.token }}
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" >> ~/.npmrc
+          version=$(node -p "require('./package.json').version")
+          if npm view "@ponti-studios/auth@$version" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "@ponti-studios/auth@$version is already on GitHub Packages, skipping."
+          else
+            npm pack --pack-destination "$RUNNER_TEMP" >/dev/null
+            npm publish "$RUNNER_TEMP/ponti-studios-auth-$version.tgz" --registry https://npm.pkg.github.com
+          fi
