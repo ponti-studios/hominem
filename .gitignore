@@ -106,6 +106,7 @@ services/evals/eval-costs/
 
 # local proactivity studio journal
 services/proactivity/.data/
+services/api/.data/
 
 # weekly platform analysis reports (scripts/analysis)
 scripts/analysis/reports/

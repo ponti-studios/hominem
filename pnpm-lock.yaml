@@ -903,6 +903,9 @@ importers:
       '@hominem/finance-services':
         specifier: workspace:*
         version: link:../../packages/finance
+      '@hominem/proactivity':
+        specifier: workspace:*
+        version: link:../proactivity
       '@hominem/queues':
         specifier: workspace:*
         version: link:../../packages/queues
@@ -2781,6 +2784,9 @@ packages:
 
   '@hominem/finance-services@file:packages/finance':
     resolution: {directory: packages/finance, type: directory}
+
+  '@hominem/proactivity@file:services/proactivity':
+    resolution: {directory: services/proactivity, type: directory}
 
   '@hominem/queues@file:packages/queues':
     resolution: {directory: packages/queues, type: directory}
@@ -4699,13 +4705,10 @@ packages:
         optional: true
 
   '@ponti-studios/ui@1.8.0':
-    resolution: {integrity: sha512-1CgxQPeEqg4XjLXNzfHY7xHcbejs4plMcNgq8NJHRediXhsj8g45J57ZIWaKa3g6PRb0gFslrpSl4WYySameiw==}
+    resolution: {integrity: sha512-1CgxQPeEqg4XjLXNzfHY7xHcbejs4plMcNgq8NJHRediXhsj8g45J57ZIWaKa3g6PRb0gFslrpSl4WYySameiw==, tarball: https://npm.pkg.github.com/download/@ponti-studios/ui/1.8.0/1afa719e14328df9d62afeb48325423787927146}
     peerDependencies:
       react: 19.2.8
       react-dom: 19.2.8
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
 
   '@posthog/browser-common@0.9.5':
     resolution: {integrity: sha512-oXnBgZvM8UQ84IcBLfGP0WSGd9rA0PCGR37H8Pw0NszJRwxwbJnFXIUih0pvI/ze2eGmzkIEC9i3SwC+bMAgjQ==}
@@ -14766,6 +14769,7 @@ snapshots:
       '@hominem/db': file:packages/db(react@19.2.8)
       '@hominem/env': file:packages/env(react@19.2.8)
       '@hominem/finance-services': file:packages/finance(react@19.2.8)
+      '@hominem/proactivity': file:services/proactivity(react@19.2.8)
       '@hominem/queues': file:packages/queues(pg@8.23.1)(react@19.2.8)(redis@5.12.1(@opentelemetry/api@1.10.0))(supports-color@8.1.1)
       '@hominem/services': file:packages/services(react@19.2.8)(supports-color@8.1.1)
       '@hominem/storage': file:packages/storage(react@19.2.8)(supports-color@8.1.1)
@@ -14876,6 +14880,14 @@ snapshots:
       '@hominem/utils': file:packages/utils(react@19.2.8)
       csv-parse: 7.0.3
       kysely: 0.29.7
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - pg-native
+      - react
+
+  '@hominem/proactivity@file:services/proactivity(react@19.2.8)':
+    dependencies:
+      '@hominem/ai': file:packages/ai(react@19.2.8)
       zod: 4.6.7
     transitivePeerDependencies:
       - pg-native
@@ -16308,9 +16320,8 @@ snapshots:
       clsx: 2.1.1
       lucide-react: 1.62.0(@types/react@19.2.18)(react@19.2.8)
       react: 19.2.8
-      tailwind-merge: 3.7.0
-    optionalDependencies:
       react-dom: 19.2.8(react@19.2.8)
+      tailwind-merge: 3.7.0
     transitivePeerDependencies:
       - '@date-fns/tz'
       - '@types/react'

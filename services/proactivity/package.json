@@ -13,6 +13,10 @@
     "./openrouter": {
       "types": "./build/openrouter-slot.d.ts",
       "import": "./build/openrouter-slot.js"
+    },
+    "./studio": {
+      "types": "./build/studio.d.ts",
+      "import": "./build/studio.js"
     }
   },
   "scripts": {
