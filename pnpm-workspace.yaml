@@ -95,6 +95,7 @@ peerDependencyRules:
     '@opentelemetry/api': '1.10.0'
     valibot: '1.2.0 || ^1.3.0'
 minimumReleaseAgeExclude:
+  - '@ponti-studios/*'
   - '@expo/cli@57.0.10 || 57.0.14 || 57.0.23 || 57.0.24 || 57.0.25 || 58.1.15'
   - '@expo/config-plugins@57.0.6'
   - '@expo/config@57.0.6 || 58.0.8'
