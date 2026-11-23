@@ -41,7 +41,15 @@ jobs:
 
       - name: publish-to-npm
         working-directory: packages/auth
-        run: npm publish --provenance --access public
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          # Re-running a release shouldn't blow up on a version npm already has.
+          if npm view "@ponti-studios/auth@$version" version >/dev/null 2>&1; then
+            echo "@ponti-studios/auth@$version is already on npm, skipping."
+          else
+            npm publish --provenance --access public
+          fi
 
       # The org's pnpm consumers map the whole @ponti-studios scope to GitHub
       # Packages, so the version needs to exist there too.
