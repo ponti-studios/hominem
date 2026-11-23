@@ -50,6 +50,11 @@ jobs:
       - name: checkout-repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: setup-bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.5'
+
       - name: setup-pnpm-workspace
         uses: ./.github/actions/setup-pnpm-workspace
         with:
