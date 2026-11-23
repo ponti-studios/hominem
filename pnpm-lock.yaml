@@ -563,10 +563,6 @@ importers:
         version: 4.6.7
 
   packages/auth:
-    dependencies:
-      '@hominem/utils':
-        specifier: workspace:*
-        version: link:../utils
     devDependencies:
       '@playwright/test':
         specifier: ^1.64.1
@@ -4703,9 +4699,6 @@ packages:
     peerDependencies:
       react: 19.2.8
       react-dom: 19.2.8
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
 
   '@posthog/browser-common@0.9.5':
     resolution: {integrity: sha512-oXnBgZvM8UQ84IcBLfGP0WSGd9rA0PCGR37H8Pw0NszJRwxwbJnFXIUih0pvI/ze2eGmzkIEC9i3SwC+bMAgjQ==}
@@ -14775,7 +14768,7 @@ snapshots:
       '@hono/zod-validator': 0.9.1(hono@4.13.13)(zod@4.6.7)
       '@modelcontextprotocol/server': 2.4.0
       '@opentelemetry/api': 1.10.0
-      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.64.1)(react@19.2.8)
+      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.64.1)
       '@scalar/hono-api-reference': 0.12.13(hono@4.13.13)
       '@tanstack/react-query': 5.104.5(@types/react@19.2.18)(react@19.2.8)
       better-auth: 1.7.12(@opentelemetry/api@1.10.0)(pg@8.23.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.5)
@@ -16284,13 +16277,9 @@ snapshots:
     dependencies:
       playwright: 1.64.1
 
-  '@ponti-studios/auth@file:packages/auth(@playwright/test@1.64.1)(react@19.2.8)':
-    dependencies:
-      '@hominem/utils': file:packages/utils(react@19.2.8)
+  '@ponti-studios/auth@file:packages/auth(@playwright/test@1.64.1)':
     optionalDependencies:
       '@playwright/test': 1.64.1
-    transitivePeerDependencies:
-      - react
 
   '@ponti-studios/rnkit@https://npm.pkg.github.com/download/@ponti-studios/rnkit/0.1.0/0152c21390c9af1461f56dcf8dc4fdbc981c5dc2(e3f6a5c1099952f2fdb8b3fa56be1a40)':
     dependencies:
@@ -16308,9 +16297,8 @@ snapshots:
       clsx: 2.1.1
       lucide-react: 1.62.0(@types/react@19.2.18)(react@19.2.8)
       react: 19.2.8
-      tailwind-merge: 3.7.0
-    optionalDependencies:
       react-dom: 19.2.8(react@19.2.8)
+      tailwind-merge: 3.7.0
     transitivePeerDependencies:
       - '@date-fns/tz'
       - '@types/react'
