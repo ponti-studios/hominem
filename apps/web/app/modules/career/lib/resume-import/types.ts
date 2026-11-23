@@ -16,7 +16,7 @@ export interface ResumeListItemChange {
   payload: unknown;
 }
 
-export interface ResumeScalarChange {
+interface ResumeScalarChange {
   field: string;
   group: 'basics' | 'social';
   label: string;

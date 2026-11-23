@@ -47,25 +47,3 @@ export function formatApplicationSalary(salary: number | string | null | undefin
   if (typeof salary === 'string') return salary;
   return formatCurrency(salary);
 }
-
-export function getUniqueStatuses(applications: Array<{ status: string }>): string[] {
-  return Array.from(new Set(applications.map((app) => app.status))).sort();
-}
-
-export function getUniqueSources(
-  applications: Array<{ source?: string | null | undefined }>,
-): string[] {
-  return Array.from(
-    new Set(
-      applications.map((app) => app.source).filter((source): source is string => Boolean(source)),
-    ),
-  ).sort();
-}
-
-export function hasActiveFilters(filters: {
-  search?: string;
-  status?: string;
-  source?: string;
-}): boolean {
-  return !!(filters.search || filters.status || filters.source);
-}

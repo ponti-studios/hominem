@@ -24,7 +24,7 @@ export function devBase(url: string | undefined): string | undefined {
   return env.NODE_ENV === 'production' ? undefined : url;
 }
 
-export function creditConfig(): CreditConfig {
+function creditConfig(): CreditConfig {
   return {
     mode: env.CREDIT_MODE,
     testers: parseTesters(env.CREDIT_TESTERS),

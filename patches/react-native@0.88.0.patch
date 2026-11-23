@@ -1,0 +1,61 @@
+diff --git a/React-Core-prebuilt.podspec b/React-Core-prebuilt.podspec
+index 81ffdbd933d9ac4ff7efd12d4574a93ef961cdbd..f0ceff7b03ecc42ac619882550c8c30fed6d6203 100644
+--- a/React-Core-prebuilt.podspec
++++ b/React-Core-prebuilt.podspec
+@@ -46,6 +46,9 @@ Pod::Spec.new do |s|
+   # tarball lays the framework contents at the root; the local tar.gz has a different
+   # structure) and flatten ReactNativeHeaders' headers into a top-level Headers/ dir
+   # so CocoaPods exposes them on the header search path.
++  patched_shadow_view_mutation_header = File.expand_path(
++    'ReactCommon/react/renderer/mounting/ShadowViewMutation.h', __dir__
++  )
+   s.prepare_command = <<~'CMD'
+     CURRENT_PATH=$(pwd)
+     XCFRAMEWORK_PATH="${CURRENT_PATH}/React.xcframework"
+@@ -69,6 +72,8 @@ Pod::Spec.new do |s|
+       exit 1
+     fi
+     cp -R "$RNH_HEADERS_PATH/." Headers
++    cp "__PATCHED_SHADOW_VIEW_MUTATION_HEADER__" \
++      Headers/react/renderer/mounting/ShadowViewMutation.h
+     rm -rf "$RNH_XCFRAMEWORK_PATH"
+ 
+     mkdir -p "${XCFRAMEWORK_PATH}"
+@@ -76,6 +81,9 @@ Pod::Spec.new do |s|
+       ! -name "$(basename "$XCFRAMEWORK_PATH")" ! -name "Headers" \
+       -exec mv {} "$XCFRAMEWORK_PATH" \;
+   CMD
++  s.prepare_command = s.prepare_command.gsub(
++    '__PATCHED_SHADOW_VIEW_MUTATION_HEADER__', patched_shadow_view_mutation_header
++  )
+ 
+   # If we are passing a local tarball, we don't want to switch between Debug and Release
+   if !ENV["RCT_TESTONLY_RNCORE_TARBALL_PATH"]
+diff --git a/ReactCommon/react/renderer/mounting/ShadowViewMutation.h b/ReactCommon/react/renderer/mounting/ShadowViewMutation.h
+index f74bf8551d08475db4625a655dd476c8d193a0f8..1edcaecf2846bd7745efa1bf02082175cad3d984 100644
+--- a/ReactCommon/react/renderer/mounting/ShadowViewMutation.h
++++ b/ReactCommon/react/renderer/mounting/ShadowViewMutation.h
+@@ -47,6 +47,7 @@ struct ShadowViewMutation final {
+    * Creates and returns an `Insert` mutation.
+    * @deprecated Pass parentTag instead of parentShadowView.
+    */
++  [[deprecated("Pass parentTag instead of parentShadowView.")]]
+   static ShadowViewMutation InsertMutation(const ShadowView &parentShadowView, ShadowView childShadowView, int index)
+   {
+     return InsertMutation(parentShadowView.tag, childShadowView, index);
+@@ -61,6 +62,7 @@ struct ShadowViewMutation final {
+    * Creates and returns a `Remove` mutation.
+    * @deprecated Pass parentTag instead of parentShadowView.
+    */
++  [[deprecated("Pass parentTag instead of parentShadowView.")]]
+   static ShadowViewMutation RemoveMutation(const ShadowView &parentShadowView, ShadowView childShadowView, int index)
+   {
+     return RemoveMutation(parentShadowView.tag, childShadowView, index);
+@@ -75,6 +77,7 @@ struct ShadowViewMutation final {
+    * Creates and returns an `Update` mutation.
+    * @deprecated Pass parentTag instead of parentShadowView.
+    */
++  [[deprecated("Pass parentTag instead of parentShadowView.")]]
+   static ShadowViewMutation
+   UpdateMutation(ShadowView oldChildShadowView, ShadowView newChildShadowView, const ShadowView &parentShadowView)
+   {

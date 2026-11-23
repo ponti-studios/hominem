@@ -11,14 +11,14 @@ import {
   type FinanceBillWriteInput,
 } from '@hominem/db/finance';
 
-export type BillLastPaid = {
+type BillLastPaid = {
   transactionId: string;
   postedOn: string;
   amount: number;
   currencyCode: string;
 };
 
-export type BillPaygStatus = {
+type BillPaygStatus = {
   latestBalanceCents: number;
   latestCheckedAt: string;
   supplyStatus: FinanceBillSupplyStatus;

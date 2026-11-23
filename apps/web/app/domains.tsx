@@ -3,7 +3,7 @@ import { Briefcase, Library, ListTodo, Wallet, type LucideIcon } from 'lucide-re
 // The platform's domain registry. One list drives the sidebar, the topbar
 // breadcrumbs, the command palette, and intent-prefetch. `enabled` is false
 // until a domain's routes actually exist in this app.
-export type SubNavItem = {
+type SubNavItem = {
   label: string;
   path: string;
   end?: boolean;

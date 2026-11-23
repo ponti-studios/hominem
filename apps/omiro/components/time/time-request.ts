@@ -63,7 +63,7 @@ function formatEventLine(event: CalendarEventSummary) {
   return `${day}, ${when}  ${event.title}`;
 }
 
-export function formatScheduleAnswer(events: CalendarEventSummary[]) {
+function formatScheduleAnswer(events: CalendarEventSummary[]) {
   return events.length > 0 ? events.map(formatEventLine).join('\n') : 'Nothing is scheduled then.';
 }
 

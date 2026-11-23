@@ -12,7 +12,7 @@ import { createStripeClient, type StripeSubscriptionsClient } from './stripe';
  * The monthly caps. The numbers come from the "Hominem — Paid Tier Plan" sheet; the defaults here
  * are overridable so the sheet can change without a deploy of new rules.
  */
-export function billingConfig(): BillingConfig {
+function billingConfig(): BillingConfig {
   return {
     chatMessages: {
       taster: env.BILLING_TASTER_CHAT_MESSAGES,

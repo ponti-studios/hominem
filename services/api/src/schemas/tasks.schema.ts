@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const TaskPriority = z.enum(['low', 'medium', 'high']);
+const TaskPriority = z.enum(['low', 'medium', 'high']);
 
 const TaskParticipantSchema = z.uuid();
 
@@ -96,7 +96,7 @@ export const CreateTaskBatchSchema = z
     message: 'At least one task or group is required',
   });
 
-export const TaskRecordSchema = z.object({
+const TaskRecordSchema = z.object({
   id: z.uuid(),
   ownerUserId: z.uuid(),
   title: z.string(),
@@ -119,17 +119,17 @@ export const TaskRecordSchema = z.object({
   artifactType: z.enum(['task', 'task_list']),
 });
 
-export const TaskListRecordSchema = TaskRecordSchema.extend({
+const TaskListRecordSchema = TaskRecordSchema.extend({
   childCount: z.number().int(),
 });
 
-export const TaskParticipantOutputSchema = z.object({
+const TaskParticipantOutputSchema = z.object({
   personId: z.uuid(),
   displayName: z.string(),
   email: z.string().nullable(),
 });
 
-export const taskListResultSchema = z.object({
+const taskListResultSchema = z.object({
   tasks: z.array(TaskListRecordSchema),
 });
 
@@ -187,12 +187,6 @@ export const TaskListQuerySchema = z.object({
 export const TaskChangesQuerySchema = z.object({
   since: z.string().max(100).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional().default(500),
-});
-
-export const taskChangesResultSchema = z.object({
-  tasks: z.array(TaskRecordSchema),
-  cursor: z.string().nullable(),
-  hasMore: z.boolean(),
 });
 
 export const TaskParamSchema = z.object({ id: z.uuid() });

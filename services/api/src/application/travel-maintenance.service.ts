@@ -371,43 +371,6 @@ export async function mergeTravelPlace(
   });
 }
 
-export async function mergeTravelAirports(
-  owner: string,
-  input: { fromId: string; intoId: string; dryRun: boolean },
-) {
-  return runInTransaction(async (trx) => {
-    const found =
-      await sql<Row>`SELECT * FROM app.travel_airports WHERE owner_userid = ${owner} AND id = ANY(${[input.fromId, input.intoId]})`.execute(
-        trx,
-      );
-    const from = found.rows.find((row) => row.id === input.fromId);
-    const into = found.rows.find((row) => row.id === input.intoId);
-    if (!from || !into) return { merged: false, reason: 'notFound' };
-    const count = await sql<{
-      count: number;
-    }>`SELECT count(*) AS count FROM app.travel_transport WHERE owner_userid = ${owner} AND (origin = ${String(from.code)} OR destination = ${String(from.code)})`.execute(
-      trx,
-    );
-    if (input.dryRun)
-      return {
-        merged: true,
-        dryRun: true,
-        legsRepointed: Number(count.rows[0]?.count ?? 0),
-        deleted: from,
-      };
-    await sql`UPDATE app.travel_transport SET origin = ${String(into.code)} WHERE owner_userid = ${owner} AND origin = ${String(from.code)}`.execute(
-      trx,
-    );
-    await sql`UPDATE app.travel_transport SET destination = ${String(into.code)} WHERE owner_userid = ${owner} AND destination = ${String(from.code)}`.execute(
-      trx,
-    );
-    await sql`DELETE FROM app.travel_airports WHERE owner_userid = ${owner} AND id = ${input.fromId}`.execute(
-      trx,
-    );
-    return { merged: true, deleted: from, legsRepointed: Number(count.rows[0]?.count ?? 0) };
-  });
-}
-
 export async function refreshTravelPlaces(owner: string, dryRun: boolean) {
   return runInTransaction(async (trx) => {
     const result = await sql<Row>`SELECT p.id, p.name, p.first_visited, p.last_visited,

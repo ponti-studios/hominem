@@ -1,4 +1,4 @@
-import { createBox, createText, useTheme } from '@shopify/restyle';
+import { useTheme } from '@shopify/restyle';
 import { useMemo } from 'react';
 import {
   StyleSheet,
@@ -9,9 +9,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { darkTheme, fontFamilies, lightTheme, type Theme, type TypographyVariant } from './theme';
+import { darkTheme, fontFamilies, lightTheme, type Theme } from './theme';
 
-export type { Theme, TypographyVariant };
+export type { Theme };
 export { fontFamilies, lightTheme, darkTheme };
 
 export type ColorMode = 'light' | 'dark';
@@ -23,9 +23,6 @@ export function useColorMode(): ColorMode {
 export function useAppTheme(): Theme {
   return useTheme<Theme>();
 }
-
-export const Box = createBox<Theme>();
-export const Text = createText<Theme>();
 
 type NamedStyles = Record<string, ViewStyle | TextStyle | ImageStyle>;
 

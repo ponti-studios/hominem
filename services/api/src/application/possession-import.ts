@@ -43,7 +43,7 @@ const parseNumber = (value: string | undefined): number | null => {
 // Weights and volumes are physical: negatives are data errors, not values. Null means blank
 // (unknown); a present-but-unusable value (text, negative) is reported so the import report
 // can flag it instead of silently storing null.
-export function parseNonNegative(
+function parseNonNegative(
   value: string | undefined,
   pushWarning: (message: string) => void,
   label: string,
@@ -221,7 +221,7 @@ function hostnameOf(source: string): string | null {
   }
 }
 
-export function merchantFrom(source: string | undefined): string | null {
+function merchantFrom(source: string | undefined): string | null {
   const text = clean(source);
   if (!text) return null;
   if (!/^https?:\/\//i.test(text)) return text;

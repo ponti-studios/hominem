@@ -98,8 +98,6 @@ export const searchMemoriesInputSchema = z.object({
     .describe('Maximum matching memories to return, from 1 to 50.'),
 });
 
-export const searchMemoriesOutputSchema = listMemoriesOutputSchema;
-
 // ── forget_memory ────────────────────────────────────────────────────
 
 export const forgetMemoryInputSchema = z.object({

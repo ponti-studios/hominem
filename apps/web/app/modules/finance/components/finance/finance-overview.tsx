@@ -25,21 +25,30 @@ type FinanceOverviewProps = {
   accounts: AccountListOutput['accounts'];
 };
 
+// Intl construction is the expensive half of formatting and these run per
+// row/tick, so hold one formatter instance per distinct input.
+const dayMonther = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+
 function formatDay(value: string) {
   const day = new Date(`${value}T12:00:00`);
-  return Number.isNaN(day.getTime())
-    ? value
-    : day.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return Number.isNaN(day.getTime()) ? value : dayMonther.format(day);
 }
 
+const accountBalanceFormatters = new Map<string, Intl.NumberFormat>();
+
 function formatAccountBalance(amount: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  let formatter = accountBalanceFormatters.get(currency);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    accountBalanceFormatters.set(currency, formatter);
+  }
+  return formatter.format(amount);
 }
 
 export function FinanceOverview({ accounts }: FinanceOverviewProps) {

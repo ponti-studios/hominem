@@ -4,7 +4,7 @@ import type { StoredTask } from '../sync/task-mapping';
 
 export const MORNING_BRIEF_KEY = 'morning_brief_enabled';
 // The brief lands before the 9:00 reminders for day-only tasks.
-export const BRIEF_HOUR = 8;
+const BRIEF_HOUR = 8;
 // Only the next few mornings are scheduled: iOS keeps 64 pending local
 // notifications and task reminders already use 60 (MAX_SCHEDULED).
 export const BRIEF_DAYS = 3;

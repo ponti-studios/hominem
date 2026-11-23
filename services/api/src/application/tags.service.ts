@@ -231,7 +231,7 @@ export async function getEntityDisplayName(
   return row?.name ?? null;
 }
 
-export type TagMutationReason = 'invalid_name' | 'target_exists' | 'unknown_tag';
+type TagMutationReason = 'invalid_name' | 'target_exists' | 'unknown_tag';
 
 export interface TagMutationResult {
   assignmentsMoved: number;

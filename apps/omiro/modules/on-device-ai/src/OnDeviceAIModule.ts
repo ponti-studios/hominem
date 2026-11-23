@@ -1,18 +1,5 @@
 import { requireNativeModule } from 'expo';
 
-// Must stay in sync with the `code` values thrown by OnDeviceAIException in
-// OnDeviceAIModule.swift -- that's the only other place these strings are
-// defined, so a typo on either side would silently break routing.
-export const OnDeviceAIErrorCode = {
-  MISSING_PERMISSION: 'MISSING_PERMISSION',
-  INVALID_RECURRENCE_RULE: 'INVALID_RECURRENCE_RULE',
-  INVALID_DATE_RANGE: 'INVALID_DATE_RANGE',
-  CALENDAR_UNAVAILABLE: 'CALENDAR_UNAVAILABLE',
-  EVENT_NOT_FOUND: 'EVENT_NOT_FOUND',
-  EVENT_READ_ONLY: 'EVENT_READ_ONLY',
-  CALENDAR_WRITE_FAILED: 'CALENDAR_WRITE_FAILED',
-} as const;
-
 export type CalendarPermissionStatus = 'authorized' | 'denied' | 'notDetermined';
 
 export interface CalendarEventSummary {
@@ -66,7 +53,7 @@ export type CalendarEventPatch = {
 
 export type CalendarRecurrenceScope = 'thisEvent' | 'futureEvents';
 
-export type OnDeviceAIModuleType = {
+type OnDeviceAIModuleType = {
   getCalendarPermissions(): Promise<CalendarPermissionStatus>;
   requestCalendarPermissions(): Promise<CalendarPermissionStatus>;
   listCalendarEventSummaries(startDate: string, endDate: string): Promise<CalendarEventSummary[]>;

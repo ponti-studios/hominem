@@ -9,7 +9,7 @@ import { useSyncExternalStore } from 'react';
 // or doubled the provisional bubble. Here the persisted list is only ever what
 // the server says, the live turn is only ever what this device is doing right
 // now, and `deriveChatRows` merges the two by id.
-export const STREAMING_ID_PREFIX = 'streaming-';
+const STREAMING_ID_PREFIX = 'streaming-';
 
 export function streamingIdFor(generationId: string) {
   return `${STREAMING_ID_PREFIX}${generationId}`;
@@ -18,9 +18,9 @@ export function streamingIdFor(generationId: string) {
 // pending: sent, no word yet (the thinking placeholder shows). streaming: words
 // arriving. done: committed. idle: ended without a final message (cancelled, or
 // paused on a confirmation), so no placeholder.
-export type LiveReply = 'pending' | 'streaming' | 'done' | 'idle';
+type LiveReply = 'pending' | 'streaming' | 'done' | 'idle';
 
-export interface LiveTurn {
+interface LiveTurn {
   generationId: string;
   // Persisted ids at the moment the turn began. While the reply streams, any
   // other persisted assistant message is this very reply landing early (a
@@ -73,7 +73,7 @@ export function getLiveChat(chatId: string): LiveChat {
   return read(chatId);
 }
 
-export function subscribeToLiveChat(chatId: string, listener: () => void) {
+function subscribeToLiveChat(chatId: string, listener: () => void) {
   let set = listeners.get(chatId);
   if (!set) {
     set = new Set();

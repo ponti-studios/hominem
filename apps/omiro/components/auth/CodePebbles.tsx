@@ -18,7 +18,7 @@ import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useShakeAnimation } from '~/services/motion/use-shake-animation';
 
-export const CODE_LENGTH = 6;
+const CODE_LENGTH = 6;
 const GAP = 6;
 const DEAL_DELAY_MS = 160;
 const DEAL_STAGGER_MS = 45;

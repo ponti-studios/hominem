@@ -95,7 +95,7 @@ const DISCOVERY_HELPERS = new Set(['search_tools', 'get_tool_details']);
  * from (a later attempt at the same tool succeeded) does not count against the run, and neither
  * do errors from the discovery helpers.
  */
-export function unrecoveredFailures(calls: NonNullable<McpTrace['calls']>): string[] {
+function unrecoveredFailures(calls: NonNullable<McpTrace['calls']>): string[] {
   const latest = new Map<string, (typeof calls)[number]>();
   for (const call of calls) {
     if (call.status === 'requested' || DISCOVERY_HELPERS.has(call.tool)) continue;

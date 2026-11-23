@@ -39,14 +39,14 @@ import {
 // provider error), and per-turn usage rides on the last chunk the way a
 // real usage trailer does. The real OpenRouterChatModel stays in the loop,
 // so route tests exercise the production provider path end to end.
-export type ScriptedToolCallDelta = {
+type ScriptedToolCallDelta = {
   index: number;
   id?: string;
   name?: string;
   argumentsFragment?: string;
 };
 
-export type ScriptedChunk = {
+type ScriptedChunk = {
   content?: string | null;
   reasoning?: string | null;
   toolCalls?: readonly ScriptedToolCallDelta[];

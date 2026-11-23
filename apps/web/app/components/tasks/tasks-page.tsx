@@ -1,5 +1,5 @@
 import { Inbox, TriangleAlert } from 'lucide-react';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { useState } from 'react';
 
 import {
@@ -87,7 +87,7 @@ export function TasksPage() {
           {!isPending && !error && filteredTasks.length > 0 ? (
             <List.Items ariaLabel="Tasks">
               {filteredTasks.map((task, i) => (
-                <motion.li
+                <m.li
                   key={task.id}
                   animate={{ opacity: 1, y: 0 }}
                   initial={{ opacity: 0, y: 10 }}
@@ -133,7 +133,7 @@ export function TasksPage() {
                       </>
                     }
                   />
-                </motion.li>
+                </m.li>
               ))}
             </List.Items>
           ) : null}

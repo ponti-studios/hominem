@@ -1,3 +1,4 @@
+import { LazyMotion, domMax } from 'motion/react';
 import type React from 'react';
 import {
   data,
@@ -98,9 +99,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <HonoProvider baseUrl={apiBaseUrl}>
       <AnalyticsProvider>
-        <UpdateGuard logo={WEB_BRAND.logoPath} appName={WEB_BRAND.appName}>
-          <Outlet />
-        </UpdateGuard>
+        <LazyMotion features={domMax} strict>
+          <UpdateGuard logo={WEB_BRAND.logoPath} appName={WEB_BRAND.appName}>
+            <Outlet />
+          </UpdateGuard>
+        </LazyMotion>
       </AnalyticsProvider>
     </HonoProvider>
   );

@@ -16,6 +16,3 @@ export const generationActivePhaseSchema = generationPhaseSchema.exclude([
   'cancelled',
   'failed',
 ]);
-
-export type GenerationPhase = z.infer<typeof generationPhaseSchema>;
-export type GenerationActivePhase = z.infer<typeof generationActivePhaseSchema>;

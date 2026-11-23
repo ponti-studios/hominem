@@ -3,7 +3,7 @@ import type { DecisionKind, StudioOwner } from './contract.js';
 
 const DAY_MS = 86_400_000;
 
-export const OWNER: StudioOwner = {
+const OWNER: StudioOwner = {
   id: 'maya',
   name: 'Maya Chen',
   firstName: 'Maya',
@@ -71,7 +71,7 @@ function fact(
   };
 }
 
-export function mondayOf(now: Date): Date {
+function mondayOf(now: Date): Date {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const day = start.getUTCDay();
   start.setUTCDate(start.getUTCDate() + (day === 0 ? -6 : 1 - day));

@@ -361,7 +361,7 @@ export const careerEducationDeleteSchema = z.object({ id: z.string().uuid() });
 
 // -- Skills --
 
-export const careerSkillSchema = z.object({
+const careerSkillSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   category: z.string().nullable(),
@@ -474,7 +474,7 @@ export const careerProjectDeleteSchema = z.object({ id: z.string().uuid() });
 
 // -- Testimonials --
 
-export const careerTestimonialSchema = z.object({
+const careerTestimonialSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   title: z.string().nullable(),
@@ -514,7 +514,7 @@ export const careerTestimonialDeleteSchema = z.object({ id: z.string().uuid() })
 
 // -- Certifications --
 
-export const careerCertificationSchema = z.object({
+const careerCertificationSchema = z.object({
   id: z.string().uuid(),
   positionId: z.string().uuid().nullable(),
   name: z.string(),
@@ -580,8 +580,8 @@ export const careerSocialLinksSaveSchema = z.object({
 
 // -- Worklog --
 
-export const careerWorklogImpactStatusSchema = z.enum(['open', 'closed']);
-export const careerWorklogSensitivitySchema = z.enum(['public_safe', 'internal', 'mixed']);
+const careerWorklogImpactStatusSchema = z.enum(['open', 'closed']);
+const careerWorklogSensitivitySchema = z.enum(['public_safe', 'internal', 'mixed']);
 
 function isIsoCalendarDate(value: string) {
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -594,7 +594,7 @@ const careerWorklogDateSchema = z
   .refine(isIsoCalendarDate, 'Invalid ISO date.');
 
 /** A light pointer to the artifact that backs an entry; the URL may be absent for private systems. */
-export const careerWorklogEvidenceSchema = z.object({
+const careerWorklogEvidenceSchema = z.object({
   kind: z.enum(['ticket', 'pr', 'doc', 'link', 'other']),
   label: z.string().trim().min(1),
   url: z.string().min(1).nullable().default(null),
@@ -950,7 +950,7 @@ export const careerSlugAvailabilityOutputSchema = z.object({
 
 // Public portfolio projections: only fields the public page renders. Compensation,
 // contact details, hidden items, and private evidence never leave the API.
-export const careerPublicPositionSchema = z.object({
+const careerPublicPositionSchema = z.object({
   id: z.string().uuid(),
   company: z.string(),
   title: z.string(),
@@ -961,7 +961,7 @@ export const careerPublicPositionSchema = z.object({
   isCurrent: z.boolean(),
 });
 
-export const careerPublicProjectSchema = z.object({
+const careerPublicProjectSchema = z.object({
   id: z.string().uuid(),
   organization: z.string().nullable(),
   title: z.string(),
@@ -976,7 +976,7 @@ export const careerPublicProjectSchema = z.object({
   isFeatured: z.boolean(),
 });
 
-export const careerPublicSkillSchema = z.object({
+const careerPublicSkillSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   category: z.string().nullable(),

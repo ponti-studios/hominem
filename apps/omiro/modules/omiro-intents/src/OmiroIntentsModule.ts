@@ -1,8 +1,8 @@
 import { requireNativeModule } from 'expo';
 
-export type IntentName = 'AddNoteIntent' | 'StartChatIntent';
+type IntentName = 'AddNoteIntent' | 'StartChatIntent';
 
-export type OmiroIntentsModuleType = {
+type OmiroIntentsModuleType = {
   donate(intentName: IntentName): Promise<boolean>;
 };
 

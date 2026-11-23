@@ -2,7 +2,7 @@ import type { DeliveryIntent, Evidence, ProactivityDecision } from '../types.js'
 
 export type DecisionKind = 'propose' | 'defer' | 'quiet';
 
-export type ResultSource = 'model' | 'preflight' | 'cached';
+type ResultSource = 'model' | 'preflight' | 'cached';
 
 export type StudioOwner = {
   id: string;
@@ -21,7 +21,7 @@ export type StudioGoal = {
   lastCheckedAt: string | null;
 };
 
-export type StudioOutcomeCounts = {
+type StudioOutcomeCounts = {
   propose: number;
   defer: number;
   quiet: number;
@@ -59,7 +59,7 @@ export type StudioResult = {
   error: string | null;
 };
 
-export type StudioPreset = {
+type StudioPreset = {
   id: string;
   label: string;
   hint: string;
@@ -122,9 +122,4 @@ export type StudioView = {
   presets: StudioPreset[];
   stats: StudioStats;
   storyDayIndex: number;
-};
-
-export type StudioApiError = {
-  error: string;
-  detail?: string;
 };

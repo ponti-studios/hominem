@@ -9,6 +9,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: authenticate-github-packages
+      shell: bash
+      env:
+        GH_PACKAGES_TOKEN: ${{ github.token }}
+      run: |
+        {
+          echo "@ponti-studios:registry=https://npm.pkg.github.com"
+          echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}"
+        } >> ~/.npmrc
+
     - name: setup-pnpm
       uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2
       with:

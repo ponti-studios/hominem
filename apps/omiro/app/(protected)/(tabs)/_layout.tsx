@@ -1,5 +1,6 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 
+import { SideDrawer } from '~/components/navigation/side-drawer';
 import { fontFamilies, useAppTheme } from '~/components/theme';
 
 // The app's one navigation shell: the system tab bar, on the system's own
@@ -9,28 +10,30 @@ import { fontFamilies, useAppTheme } from '~/components/theme';
 export default function TabsLayout() {
   const { mutedForeground, primary } = useAppTheme().colors;
   return (
-    <NativeTabs
-      iconColor={{ default: mutedForeground, selected: primary }}
-      labelStyle={{
-        default: { color: mutedForeground, fontFamily: fontFamilies.sans },
-        selected: { color: primary, fontFamily: fontFamilies.sans },
-      }}
-      tintColor={primary}
-    >
-      <NativeTabs.Trigger name="chat">
-        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} />
-        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="notes">
-        <NativeTabs.Trigger.Icon sf={{ default: 'note.text', selected: 'note.text' }} />
-        <NativeTabs.Trigger.Label>Notes</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="tasks">
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'checkmark.circle', selected: 'checkmark.circle.fill' }}
-        />
-        <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <SideDrawer>
+      <NativeTabs
+        iconColor={{ default: mutedForeground, selected: primary }}
+        labelStyle={{
+          default: { color: mutedForeground, fontFamily: fontFamilies.sans },
+          selected: { color: primary, fontFamily: fontFamilies.sans },
+        }}
+        tintColor={primary}
+      >
+        <NativeTabs.Trigger name="chat">
+          <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} />
+          <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="notes">
+          <NativeTabs.Trigger.Icon sf={{ default: 'note.text', selected: 'note.text' }} />
+          <NativeTabs.Trigger.Label>Notes</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="tasks">
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'checkmark.circle', selected: 'checkmark.circle.fill' }}
+          />
+          <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    </SideDrawer>
   );
 }

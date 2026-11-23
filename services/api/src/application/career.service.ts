@@ -766,7 +766,7 @@ export async function removeCareerApplicationFile(
   return true;
 }
 
-export function toSkillDto(skill: {
+function toSkillDto(skill: {
   id: string;
   name: string;
   category: string | null;
@@ -796,7 +796,7 @@ export function toSkillDto(skill: {
   };
 }
 
-export function toEngagementDto(
+function toEngagementDto(
   engagement: CareerEngagementRecord,
 ): z.infer<typeof careerEngagementSchema> {
   return careerEngagementSchema.parse({
@@ -821,7 +821,7 @@ export function toEngagementDto(
   });
 }
 
-export function toProjectDto(project: CareerProjectRecord): z.infer<typeof careerProjectSchema> {
+function toProjectDto(project: CareerProjectRecord): z.infer<typeof careerProjectSchema> {
   return careerProjectSchema.parse({
     id: project.id,
     organization: project.organization,

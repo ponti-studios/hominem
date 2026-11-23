@@ -1,0 +1,72 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Side drawer evidence (@ponti-studios/rnkit Drawer):
+#   - menu button opens it, scrim tap closes it
+#   - edge pull opens it, a drag back closes it
+#   - a row navigates and closes the drawer
+#   - the pull does not fight the native back swipe on a pushed screen
+
+- runFlow: ../subflows/reset-to-home.yaml
+
+# Menu button opens, scrim closes.
+- tapOn:
+    text: 'Menu'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: 'side-drawer-notes'
+- takeScreenshot: omiro-drawer-open-button
+- tapOn:
+    id: 'side-drawer-close'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: 'side-drawer-notes'
+
+# Edge pull opens, a drag back closes.
+- swipe:
+    start: 3%, 50%
+    end: 80%, 50%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: 'side-drawer-notes'
+- takeScreenshot: omiro-drawer-open-edge
+- swipe:
+    start: 85%, 50%
+    end: 10%, 50%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: 'side-drawer-notes'
+
+# A row navigates and closes the drawer.
+- tapOn:
+    text: 'Menu'
+- tapOn:
+    id: 'side-drawer-tasks'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: 'side-drawer-tasks'
+- takeScreenshot: omiro-drawer-navigated-tasks
+
+# On a pushed chat the same edge swipe is the native back swipe: it pops the
+# screen and does not open the drawer.
+- tapOn:
+    text: 'Chat'
+- tapOn:
+    point: 50%, 30%
+- waitForAnimationToEnd:
+    timeout: 3000
+- swipe:
+    start: 2%, 50%
+    end: 80%, 50%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: 'side-drawer-notes'
+- assertVisible: 'Search chats'

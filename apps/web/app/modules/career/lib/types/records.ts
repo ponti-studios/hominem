@@ -3,9 +3,9 @@
 type Generated<T> = T;
 type ColumnType<Select, _Insert = Select, _Update = Select> = Select;
 type Json = unknown;
-export type AppCareerApplicationStageKind = 'APPLICATION' | 'OFFER' | 'OUTCOME' | 'SCREEN';
+type AppCareerApplicationStageKind = 'APPLICATION' | 'OFFER' | 'OUTCOME' | 'SCREEN';
 
-export type AppCareerApplicationStatus =
+type AppCareerApplicationStatus =
   | 'ACCEPTED'
   | 'APPLIED'
   | 'OFFER'
@@ -21,31 +21,11 @@ export type AppCareerEngagementKind =
   | 'OTHER'
   | 'VOLUNTEER';
 
-export type AppCareerOfferDecision = 'ACCEPTED' | 'DECLINED' | 'NEGOTIATING' | 'PENDING';
+type AppCareerOfferDecision = 'ACCEPTED' | 'DECLINED' | 'NEGOTIATING' | 'PENDING';
 
 export type AppCareerProjectStatus = 'BACKLOG' | 'CANCELED' | 'DONE' | 'IN_PROGRESS';
 
-export type AppCareerWorklogImpactStatus = 'closed' | 'open';
-
-export type AppCareerWorklogSensitivity = 'internal' | 'mixed' | 'public_safe';
-
-export interface AppCareerApplicationFiles {
-  applicationId: string;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  fileName: string;
-  fileType: string | null;
-  fileUrl: string;
-  id: Generated<string>;
-}
-
-export interface AppCareerApplicationNotes {
-  applicationId: string;
-  content: string;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-}
-
-export interface AppCareerApplications {
+interface AppCareerApplications {
   appliedAt: ColumnType<string, Date | string, Date | string> | null;
   company: string;
   coverLetterUrl: string | null;
@@ -73,7 +53,7 @@ export interface AppCareerApplications {
   updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
-export interface AppCareerApplicationsOffers {
+interface AppCareerApplicationsOffers {
   applicationId: string;
   baseSalary: number | null;
   bonus: number | null;
@@ -89,7 +69,7 @@ export interface AppCareerApplicationsOffers {
   totalComp: number | null;
 }
 
-export interface AppCareerApplicationStages {
+interface AppCareerApplicationStages {
   applicationId: string;
   createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
   enteredAt: ColumnType<string, Date | string, Date | string> | null;
@@ -101,7 +81,7 @@ export interface AppCareerApplicationStages {
   stageOrder: number;
 }
 
-export interface AppCareerCertifications {
+interface AppCareerCertifications {
   category: string | null;
   createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
@@ -118,21 +98,7 @@ export interface AppCareerCertifications {
   updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
-export interface AppCareerEducation {
-  activities: string | null;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  degree: string | null;
-  endDate: ColumnType<string, Date | string, Date | string> | null;
-  fieldOfStudy: string | null;
-  id: Generated<string>;
-  notes: string | null;
-  ownerUserid?: string;
-  school: string;
-  startDate: ColumnType<string, Date | string, Date | string> | null;
-  updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppCareerEngagements {
+interface AppCareerEngagements {
   address: string | null;
   company: string;
   contactName: string | null;
@@ -157,7 +123,7 @@ export interface AppCareerEngagements {
   url: string | null;
 }
 
-export interface AppCareerProfile {
+interface AppCareerProfile {
   availabilityStatus: Generated<boolean>;
   birthDate?: ColumnType<string, Date | string, Date | string> | null;
   copyright: string | null;
@@ -187,7 +153,7 @@ export interface AppCareerProfile {
   websites: string | null;
 }
 
-export interface AppCareerProjects {
+interface AppCareerProjects {
   createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
   endDate: ColumnType<string, Date | string, Date | string> | null;
@@ -209,24 +175,7 @@ export interface AppCareerProjects {
   videoUrl: string | null;
 }
 
-export interface AppCareerSkills {
-  aiDerived: Generated<boolean>;
-  category: string | null;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  description: string | null;
-  id: Generated<string>;
-  isVisible: Generated<boolean>;
-  level: number | null;
-  name: string;
-  ownerUserid?: string;
-  proof: string | null;
-  sortOrder: Generated<number>;
-  updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  worklogEntryIds: Generated<Json>;
-  yearsOfExperience: number | null;
-}
-
-export interface AppCareerSocialLinks {
+interface AppCareerSocialLinks {
   createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
   github: string | null;
   id?: string;
@@ -237,60 +186,14 @@ export interface AppCareerSocialLinks {
   website: string | null;
 }
 
-export interface AppCareerTestimonials {
-  avatarUrl: string | null;
-  company: string | null;
-  content: string;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  isVerified: Generated<boolean>;
-  isVisible: Generated<boolean>;
-  linkedinUrl: string | null;
-  name: string;
-  ownerUserid?: string;
-  rating: number | null;
-  sortOrder: Generated<number>;
-  title: string | null;
-  updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppCareerWorklogEntries {
-  action: string | null;
-  area: string | null;
-  createdAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-  engagementId: string;
-  evidence: Generated<Json>;
-  id: Generated<string>;
-  impact: string | null;
-  impactStatus: Generated<AppCareerWorklogImpactStatus>;
-  knownLimits: string | null;
-  loggedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  occurredEnd: ColumnType<string, Date | string, Date | string> | null;
-  occurredStart: Generated<ColumnType<string, Date | string, Date | string>>;
-  ownerUserid?: string;
-  problem: string | null;
-  projectId: string | null;
-  publicBullet: string | null;
-  rawNote: string;
-  sensitivity: Generated<AppCareerWorklogSensitivity>;
-  tags: Generated<Json>;
-  updatedAt?: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
 export type CareerProfileRecord = AppCareerProfile;
 export type CareerEngagementRecord = AppCareerEngagements;
-export type CareerEducationRecord = AppCareerEducation;
 export type CareerApplicationRecord = AppCareerApplications;
-export type CareerApplicationStageRecord = AppCareerApplicationStages;
-export type CareerOfferRecord = AppCareerApplicationsOffers;
+type CareerApplicationStageRecord = AppCareerApplicationStages;
+type CareerOfferRecord = AppCareerApplicationsOffers;
 export type CareerProjectRecord = AppCareerProjects;
-export type CareerSkillRecord = AppCareerSkills;
-export type CareerTestimonialRecord = AppCareerTestimonials;
 export type CareerCertificationRecord = AppCareerCertifications;
 export type CareerSocialLinksRecord = AppCareerSocialLinks;
-export type CareerWorklogEntry = AppCareerWorklogEntries;
-export type CareerApplicationFileRecord = AppCareerApplicationFiles;
-export type CareerApplicationNoteRecord = AppCareerApplicationNotes;
 
 export type CareerApplicationWithRelations = CareerApplicationRecord & {
   currentStage: string | null;

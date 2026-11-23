@@ -231,7 +231,7 @@ export async function getAIUsageTimeseries(input: {
   };
 }
 
-export interface AIUsagePageReport {
+interface AIUsagePageReport {
   range: { from: string; to: string };
   monthly: MonthlyUsageStatus;
   summary: AIUsageSummaryRecord;
@@ -247,7 +247,7 @@ export interface AIUsagePageReport {
   };
 }
 
-export interface AIUsageAggregatedPoint {
+interface AIUsageAggregatedPoint {
   bucketStart: string;
   bucketEnd: string;
   requestCount: number;

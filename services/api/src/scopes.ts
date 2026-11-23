@@ -28,9 +28,3 @@ export const MCP_SCOPES = [
   'travel:read',
   'travel:write',
 ] as const;
-
-export type McpScope = (typeof MCP_SCOPES)[number];
-
-// Scopes that actually get MCP tools registered. Defaults to all of them -
-// trim this list if you only want a subset registered.
-export const MCP_ENABLED_SCOPES: readonly McpScope[] = MCP_SCOPES;

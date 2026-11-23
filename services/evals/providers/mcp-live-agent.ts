@@ -44,7 +44,7 @@ type ToolResult = {
 };
 type TraceCall = NonNullable<McpTrace['calls']>[number];
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -59,7 +59,7 @@ export function resolveApiBase(raw = process.env.HOMINEM_EVAL_API_URL ?? DEFAULT
 }
 
 // Streamable-HTTP replies come back as SSE (`data: {...}`) or plain JSON. Accept both.
-export function parseRpcBody(text: string): unknown {
+function parseRpcBody(text: string): unknown {
   const data = text
     .split('\n')
     .filter((line) => line.startsWith('data:'))
@@ -111,7 +111,7 @@ export class McpClient {
 }
 
 // Turns an MCP tools/call result into what the model and grader see.
-export function toolOutput(result: unknown): {
+function toolOutput(result: unknown): {
   output: unknown;
   failed: boolean;
   confirmation: boolean;

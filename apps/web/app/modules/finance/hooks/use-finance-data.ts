@@ -3,7 +3,6 @@ import type {
   AccountGetOutput,
   AccountListOutput,
   AccountWithTransactions,
-  InstitutionsListOutput,
   TransactionListOutput,
 } from '@hominem/rpc/finance';
 import type { SortOption } from '@ponti-studios/ui/hooks';
@@ -70,13 +69,6 @@ export const useFinanceAccounts = ({ initialData }: UseFinanceAccountsOptions = 
     accountsMap,
   };
 };
-
-export const useFinancialInstitutions = () =>
-  useFinanceQuery<InstitutionsListOutput>(['finance', 'institutions', 'list'], ({ finance }) =>
-    finance.institutions.list
-      .$get({ query: {} })
-      .then((r: { json: () => Promise<InstitutionsListOutput> }) => r.json()),
-  );
 
 export function useAllAccounts(options?: { initialData?: AccountAllOutput }) {
   const allAccountsQuery = useFinanceQuery<AccountAllOutput>(

@@ -242,7 +242,6 @@ export type CollectionSummary = z.output<typeof collectionSummarySchema>;
 export type CollectionMember = z.output<typeof collectionMemberSchema>;
 export type CollectionItem = z.output<typeof collectionItemSchema>;
 export type CollectionDetail = z.output<typeof collectionDetailSchema>;
-export type CollectionMembershipLink = z.output<typeof collectionMembershipLinkSchema>;
 export type CreateCollectionInput = z.output<typeof createCollectionInputSchema>;
 export type UpdateCollectionInput = z.output<typeof updateCollectionInputSchema>;
 export type DeleteCollectionInput = z.output<typeof deleteCollectionInputSchema>;

@@ -21,7 +21,7 @@ const TEXT_EXTRACTED_MIME_TYPES = new Set([
   'text/csv',
 ]);
 
-export const DOCUMENT_ANALYSIS_TIMEOUT_MS = 15_000;
+const DOCUMENT_ANALYSIS_TIMEOUT_MS = 15_000;
 const DOCUMENT_ANALYSIS_POLL_MS = 500;
 
 function hasExtractedText(file: ChatMessageFileRecord): boolean {

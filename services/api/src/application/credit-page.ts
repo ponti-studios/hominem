@@ -4,7 +4,7 @@
  */
 import { creditPenceFor, TOP_UP_POUNDS } from './credit';
 
-export function pounds(pence: number): string {
+function pounds(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
 }
 

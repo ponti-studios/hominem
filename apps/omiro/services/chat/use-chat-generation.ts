@@ -19,6 +19,7 @@ import {
   takeGenerationHandoff,
   type PendingGenerationHandoff,
 } from './generation-handoff';
+import { toMessageOutput } from './use-chat-messages';
 
 const resumingGenerationIds = new Set<string>();
 
@@ -126,6 +127,19 @@ export function useChatGeneration({
         const currentState = { ...currentGeneration };
         if (state.lastDurableSequence > 0) {
           delete currentState.retryInput;
+        }
+        // generation.accepted swaps the optimistic user message for the
+        // persisted one in the query cache. Carry the persisted id forward so
+        // Edit and Retry keep finding the message they target.
+        if (
+          'payload' in event &&
+          event.type === 'generation.accepted' &&
+          event.payload.userMessage
+        ) {
+          const accepted = toMessageOutput(event.payload.userMessage);
+          if (accepted) {
+            currentState.userMessageId = accepted.id;
+          }
         }
         const error =
           'event' in event
@@ -360,7 +374,6 @@ export function useChatGeneration({
     sendGeneration,
     generation,
     generationRef,
-    resumeGeneration,
     setGeneration,
   };
 }

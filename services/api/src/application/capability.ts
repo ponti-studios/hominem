@@ -26,13 +26,13 @@ export type Capability = (typeof CAPABILITIES)[number];
 type ScopeAction = 'read' | 'write';
 type Scope = `${Capability}:${ScopeAction}`;
 
-export type CapabilityDependency = {
+type CapabilityDependency = {
   tool: string;
   reason: string;
   provides: readonly string[];
 };
 
-export type CapabilityGuidance = {
+type CapabilityGuidance = {
   whenToUse?: string;
   whenNotToUse?: string;
   examples?: readonly string[];
@@ -83,9 +83,6 @@ export interface CapabilityDefinition<
     input: ChatMessageJsonObject,
   ) => Promise<ChatMessageJsonObject | null>;
 }
-
-export type CapabilityInput<T extends CapabilityDefinition> = z.infer<T['inputSchema']>;
-export type CapabilityOutput<T extends CapabilityDefinition> = z.infer<T['outputSchema']>;
 
 export function defineCapability<const T extends CapabilityDefinition>(definition: T): T {
   return definition;

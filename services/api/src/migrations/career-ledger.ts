@@ -16,10 +16,10 @@ import type { CareerWorklogEvidence } from '@hominem/db/career';
 import { db, runInTransaction, sql, type DbHandle } from '@hominem/db/core';
 
 export const LEDGER_LOGGED_AT = '2026-10-20T12:00:00.000Z';
-export const LEDGER_OCCURRED_START = '2026-09-29';
-export const LEDGER_OCCURRED_END = '2026-10-19';
-export const VOY_ENGAGEMENT = { company: 'Voy', title: 'Lead Product Engineer' } as const;
-export const WORKED_EXAMPLE_SKILL = 'React Native';
+const LEDGER_OCCURRED_START = '2026-09-29';
+const LEDGER_OCCURRED_END = '2026-10-19';
+const VOY_ENGAGEMENT = { company: 'Voy', title: 'Lead Product Engineer' } as const;
+const WORKED_EXAMPLE_SKILL = 'React Native';
 
 type LedgerEntrySpec = {
   id: string;
@@ -40,13 +40,13 @@ type LedgerEntrySpec = {
   projectId: null;
 };
 
-export type LedgerEntryPlan = LedgerEntrySpec & {
+type LedgerEntryPlan = LedgerEntrySpec & {
   ownerUserid: string;
   engagementId: string;
   existing: boolean;
 };
 
-export type LedgerMigrationPlan = {
+type LedgerMigrationPlan = {
   ownerUserId: string;
   engagementId: string;
   skill: {
@@ -161,9 +161,7 @@ function fail(message: string): never {
  * entries are missing — all before any write. Throws rather than guessing when
  * either lookup is missing or ambiguous.
  */
-export async function planCareerLedgerMigration(
-  handle: DbHandle = db,
-): Promise<LedgerMigrationPlan> {
+async function planCareerLedgerMigration(handle: DbHandle = db): Promise<LedgerMigrationPlan> {
   const engagements = await handle
     .selectFrom('app.careerEngagements')
     .select(['id', 'ownerUserid'])

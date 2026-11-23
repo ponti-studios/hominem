@@ -5,16 +5,8 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
-export function createErrorResponse<T>(error: string): ApiResponse<T> {
+function createErrorResponse<T>(error: string): ApiResponse<T> {
   return { success: false, error };
-}
-
-export function createSuccessResponse<T>(data?: T, message?: string): ApiResponse<T> {
-  return {
-    success: true,
-    data,
-    ...(message && { message }),
-  };
 }
 
 /** A text field's value, or `undefined` when it is absent or a file upload. */
@@ -32,10 +24,6 @@ export function formChoice<TChoice extends string>(
 ): TChoice {
   const value = formText(formData, key);
   return choices.find((choice) => choice === value) ?? fallback;
-}
-
-export function isApiResponse(value: unknown): value is ApiResponse {
-  return typeof value === 'object' && value !== null && 'success' in value;
 }
 
 export function parseFormData<T>(formData: FormData, key: string): T | ApiResponse {

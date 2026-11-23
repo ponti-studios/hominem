@@ -13,7 +13,7 @@ export const chatToolPlanSchema = z.object({
 });
 
 export type ChatToolPlan = z.infer<typeof chatToolPlanSchema>;
-export type ChatToolPlanStep = ChatToolPlan['steps'][number];
+type ChatToolPlanStep = ChatToolPlan['steps'][number];
 
 export type ToolPlanValidation = { ok: true; plan: ChatToolPlan } | { ok: false; errors: string[] };
 

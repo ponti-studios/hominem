@@ -167,7 +167,7 @@ export const possessionHistoryInputSchema = possessionIdParamSchema.extend({
 export const possessionHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
 });
-export const vesselWeightRowSchema = z.object({
+const vesselWeightRowSchema = z.object({
   vessel: z.string(),
   contentsKg: z.number(),
   tareKg: z.number(),
@@ -194,7 +194,7 @@ export const vesselWeightReportSchema = z.object({
   markers: z.object({ count: z.number(), weightKg: z.number() }),
   truncated: z.boolean(),
 });
-export const possessionFindingSchema = z.object({
+const possessionFindingSchema = z.object({
   code: z.string(),
   severity: z.enum(['error', 'warning']),
   possessionId: z.uuid().nullable(),

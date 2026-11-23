@@ -10,7 +10,7 @@ export function CancelRow({ onCancel, testID }: { onCancel?: () => void; testID:
   );
 }
 
-export function CancelButton({ onCancel, testID }: { onCancel?: () => void; testID: string }) {
+function CancelButton({ onCancel, testID }: { onCancel?: () => void; testID: string }) {
   return (
     <Button
       label="Dismiss"

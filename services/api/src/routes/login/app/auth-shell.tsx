@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import styles from './auth-shell.module.css';
 
-export type AuthAside = {
+type AuthAside = {
   headline: string;
   body: string;
   /** Small line pinned to the bottom of the panel; defaults to the current host. */
@@ -141,55 +141,6 @@ export function AuthAlert({ children }: AuthCardCopyProps) {
   );
 }
 
-type AuthFieldProps = {
-  children: ReactNode;
-  label: string;
-  htmlFor?: string;
-};
-
-export function AuthField({ children, label, htmlFor }: AuthFieldProps) {
-  return (
-    <div className="grid gap-2 text-left">
-      <label className="text-[13px] font-medium text-auth-text" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const inputClassName =
-  'h-12 w-full rounded-[10px] border border-auth-border bg-auth-card px-3.5 text-base text-auth-text outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-auth-muted focus:border-auth-primary focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--auth-primary)_22%,transparent)]';
-
-export function AuthTextInput(props: {
-  autoComplete?: string;
-  autoFocus?: boolean;
-  id?: string;
-  name?: string;
-  placeholder?: string;
-  ref?: React.Ref<HTMLInputElement>;
-  required?: boolean;
-  type?: 'text' | 'email';
-  value?: string;
-  onChange?: (value: string) => void;
-}) {
-  return (
-    <input
-      autoComplete={props.autoComplete}
-      autoFocus={props.autoFocus}
-      className={inputClassName}
-      id={props.id}
-      name={props.name}
-      placeholder={props.placeholder}
-      onChange={props.onChange ? (event) => props.onChange?.(event.target.value) : undefined}
-      ref={props.ref}
-      required={props.required}
-      type={props.type ?? 'text'}
-      value={props.value}
-    />
-  );
-}
-
 export function AuthPrimaryButton(props: {
   children: ReactNode;
   name?: string;
@@ -249,18 +200,6 @@ export function AuthSecondaryButton(props: {
       name={props.name}
       type={props.type ?? 'submit'}
       value={props.value}
-    >
-      {props.children}
-    </button>
-  );
-}
-
-// Kept for the settings "Sign out" danger button and similar destructive rows.
-export function AuthDangerButton(props: { children: ReactNode; type?: 'submit' | 'button' }) {
-  return (
-    <button
-      className="m-0 w-full cursor-pointer rounded-lg border border-[color-mix(in_srgb,var(--auth-danger)_35%,transparent)] bg-transparent p-3 text-left text-sm font-semibold text-auth-danger transition-colors duration-150 hover:bg-auth-danger-background"
-      type={props.type ?? 'submit'}
     >
       {props.children}
     </button>

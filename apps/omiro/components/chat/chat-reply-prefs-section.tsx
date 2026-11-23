@@ -1,6 +1,6 @@
 import { REPLY_MODELS } from '@hominem/ai/reply-models';
 import { REPLY_LENGTHS, REPLY_STYLES } from '@hominem/ai/reply-profile';
-import { ChoicePickerView, FormGroup } from '@hominem/rn-kit';
+import { ChoicePickerView, FormGroup } from '@ponti-studios/rnkit';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ChatSheetCloseButton } from '~/components/chat/chat-sheet-close-button';
@@ -76,7 +76,7 @@ export function ChatReplyPrefsSection({ onOpen }: { onOpen: (kind: ChatReplyPick
 
 /**
  * One of the three pickers, drawn inside the settings sheet. The options and wording come from
- * @hominem/ai and the picker layout from @hominem/rn-kit, the same as Thames; this file only wires
+ * @hominem/ai and the picker layout from @ponti-studios/rnkit, the same as Thames; this file only wires
  * them to omiro's theme and storage.
  */
 export function ChatReplyPicker({

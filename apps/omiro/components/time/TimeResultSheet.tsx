@@ -15,7 +15,7 @@ type ResultState = Extract<
   { kind: 'answer' | 'event-choice' | 'availability' | 'draft' }
 >;
 
-export function isResultState(state: TimeInteractionState): state is ResultState {
+function isResultState(state: TimeInteractionState): state is ResultState {
   return (
     state.kind === 'answer' ||
     state.kind === 'availability' ||

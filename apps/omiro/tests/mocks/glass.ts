@@ -18,9 +18,6 @@ interface PressableProps extends SurfaceProps {
 export const glassModuleMock = {
   Glass: ({ children, testID }: SurfaceProps) =>
     createElement('div', { 'data-testid': testID }, children),
-  GlassGroup: ({ children, testID }: SurfaceProps) =>
-    createElement('div', { 'data-testid': testID }, children),
-  useGlassEnabled: () => false,
 };
 
 export const pressableScaleModuleMock = {

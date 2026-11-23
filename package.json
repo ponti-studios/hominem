@@ -43,7 +43,6 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
     "@types/react": "catalog:",
-    "@xmldom/xmldom": "0.9.12",
     "knip": "^6.42.1",
     "oxfmt": "0.74.0",
     "oxlint": "^1.89.0",

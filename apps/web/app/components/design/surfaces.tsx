@@ -1,4 +1,5 @@
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
+import { useId } from 'react';
 
 import { cn } from '~/lib/utils';
 
@@ -13,7 +14,7 @@ export function SectionCard({
   index?: number;
 }) {
   return (
-    <motion.section
+    <m.section
       animate={{ opacity: 1, y: 0 }}
       className={cn('hairline overflow-hidden rounded-sm bg-card', className)}
       initial={{ opacity: 0, y: 16 }}
@@ -25,7 +26,7 @@ export function SectionCard({
       }}
     >
       {children}
-    </motion.section>
+    </m.section>
   );
 }
 
@@ -99,6 +100,9 @@ export function FilterTabs<T extends string>({
   onChange: (value: T) => void;
   ariaLabel: string;
 }) {
+  // Unique per instance: two FilterTabs on one page must not fight over the
+  // same shared-layout highlight.
+  const activeLayoutId = useId();
   return (
     <div
       aria-label={ariaLabel}
@@ -119,9 +123,9 @@ export function FilterTabs<T extends string>({
             type="button"
           >
             {selected ? (
-              <motion.span
+              <m.span
                 className="absolute inset-0 rounded-full bg-primary"
-                layoutId="segmented-active"
+                layoutId={activeLayoutId}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             ) : null}

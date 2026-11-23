@@ -375,8 +375,6 @@ export function createStudioService(options: StudioServiceOptions) {
   };
 }
 
-export type StudioService = ReturnType<typeof createStudioService>;
-
 function toTrigger(event: WorldEvent, ownerId: string): ProactivityTrigger {
   return {
     kind: 'critical-change',

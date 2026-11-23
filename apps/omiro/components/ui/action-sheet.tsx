@@ -9,7 +9,7 @@ import { PressableScale } from '~/components/ui/pressable-scale';
 
 type IconName = SymbolViewProps['name'];
 
-export interface ActionSheetOption {
+interface ActionSheetOption {
   key: string;
   label: string;
   icon: IconName;

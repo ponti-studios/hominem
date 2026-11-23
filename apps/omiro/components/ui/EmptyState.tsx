@@ -75,4 +75,3 @@ function EmptyState({ action, description, sfSymbol, title, tone = 'violet' }: E
 }
 
 export { EmptyState };
-export type { EmptyStateTone };

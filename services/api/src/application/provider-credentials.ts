@@ -25,9 +25,9 @@ import {
 export const DEVICE_LIMIT = 3;
 export const MINTS_PER_HOUR = 5;
 /** A grant smaller than this is not worth a key; the person is treated as out of budget. */
-export const MIN_GRANT_USD = 0.05;
+const MIN_GRANT_USD = 0.05;
 /** The same floor in credit mode, where the balance is in pence and can be small but real. */
-export const MIN_CREDIT_GRANT_USD = 0.01;
+const MIN_CREDIT_GRANT_USD = 0.01;
 
 export interface CredentialRow {
   id: string;
@@ -42,7 +42,7 @@ export interface CredentialRow {
   disabledAt: Date | null;
 }
 
-export type NewCredential = Pick<
+type NewCredential = Pick<
   CredentialRow,
   'userId' | 'deviceId' | 'keyHash' | 'period' | 'limitUsd' | 'createdAt'
 >;
@@ -81,7 +81,7 @@ export type MintOutcome =
   | { kind: 'capped' }
   | { kind: 'rate_limited' };
 
-export function periodOf(date: Date): string {
+function periodOf(date: Date): string {
   return date.toISOString().slice(0, 7);
 }
 
@@ -203,7 +203,7 @@ export const BUDGET_DEADLINE_MS = 8_000;
  * (a key made last month can keep spending after the month turns over, and the provider's
  * monthly usage is this month's), and those revoked since the month began.
  */
-export function keysCountingThisMonth(rows: CredentialRow[], now: Date): CredentialRow[] {
+function keysCountingThisMonth(rows: CredentialRow[], now: Date): CredentialRow[] {
   const period = periodOf(now);
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   return rows.filter(

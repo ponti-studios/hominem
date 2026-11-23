@@ -1,6 +1,6 @@
 // What the UI knows about a task. Tasks are owned by the app: they live in
 // the local database and sync with the server (see `sync/`).
-export type TaskStatus = 'pending' | 'completed';
+type TaskStatus = 'pending' | 'completed';
 
 // Priority is not a feature; the field stays so existing UI code keeps its shape.
 export type TaskPriority = 'none' | 'high' | 'medium' | 'low';

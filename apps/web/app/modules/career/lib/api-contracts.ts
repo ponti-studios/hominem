@@ -20,7 +20,7 @@ export type UploadResumeApiResponse = {
   retryable?: boolean;
 };
 
-export const jobAnalysisSchema = z.object({
+const jobAnalysisSchema = z.object({
   requiredSkills: z.array(z.string()).describe('Top 5 required skills from the job posting'),
   qualifications: z.array(z.string()).describe('Top 3 most important qualifications'),
   cultureKeywords: z.array(z.string()).describe('Company culture keywords from the posting'),

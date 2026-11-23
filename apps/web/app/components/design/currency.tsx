@@ -6,11 +6,24 @@ type CurrencyProps = {
   className?: string;
 };
 
+// Intl.NumberFormat construction is expensive and Currency renders per ledger
+// row, so hold one formatter per currency code at module scope.
+const formatters = new Map<string, Intl.NumberFormat>();
+
+function formatterFor(currencyCode: string) {
+  let formatter = formatters.get(currencyCode);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+    });
+    formatters.set(currencyCode, formatter);
+  }
+  return formatter;
+}
+
 export function Currency({ amount, currencyCode, className }: CurrencyProps) {
-  const formatter = new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: currencyCode,
-  });
+  const formatter = formatterFor(currencyCode);
   const formattedAmount = formatter.format(amount);
   const parts = formatter.formatToParts(amount);
   const numericPartTypes = new Set(['integer', 'group', 'decimal', 'fraction']);

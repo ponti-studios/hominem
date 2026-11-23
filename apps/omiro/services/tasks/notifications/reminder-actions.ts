@@ -6,7 +6,7 @@ export const REMINDER_CATEGORY = 'task-reminder';
 
 export const REMINDER_ACTION = { complete: 'complete', snooze: 'snooze' } as const;
 
-export const SNOOZE_MINUTES = 60;
+const SNOOZE_MINUTES = 60;
 
 // Moves a task an hour on from `now`. A time block keeps its length.
 export function snoozePatch(task: Pick<StoredTask, 'startAt' | 'dueAt'>, now: Date): TaskPatch {

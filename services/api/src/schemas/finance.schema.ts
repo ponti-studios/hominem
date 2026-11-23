@@ -77,7 +77,7 @@ export const financeNetWorthOutputSchema = z.object({
 
 // -- finance_recent_transactions --
 
-export const financeTransactionSchema = z.object({
+const financeTransactionSchema = z.object({
   id: z.string(),
   accountId: z.string(),
   accountName: z.string(),
@@ -644,7 +644,7 @@ export const financeBudgetBreakdownOutputSchema = z.object({
 
 // -- finance_budget_* (stored budgets, one per category, each with its own cadence) --
 
-export const financeBudgetCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual']);
+const financeBudgetCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual']);
 const budgetCategoryIdSchema = z.union([
   z.string().uuid(),
   z.string().regex(/^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$/),
@@ -654,7 +654,7 @@ const primaryCurrencySchema = accountCurrencySchema
   .refine((code) => code.toUpperCase() !== 'XXX', 'invalid_currency')
   .describe('ISO 4217 currency code, e.g. GBP. Every budget is denominated in this currency.');
 
-export const financeBudgetStatusSchema = z.object({
+const financeBudgetStatusSchema = z.object({
   id: z.string(),
   categoryId: z.string(),
   categoryName: z.string(),
@@ -1510,7 +1510,7 @@ export const financeAccountUpdateOutputSchema = z.object({
 
 // -- finance_bill_* (the Bills register: reference data plus read-time derivation) --
 
-export const financeBillKindSchema = z.enum([
+const financeBillKindSchema = z.enum([
   'electricity',
   'heating',
   'water',
@@ -1521,7 +1521,7 @@ export const financeBillKindSchema = z.enum([
   'other',
 ]);
 
-export const financeBillPaymentMethodSchema = z.enum([
+const financeBillPaymentMethodSchema = z.enum([
   'direct_debit',
   'pay_as_you_go',
   'card',
@@ -1529,27 +1529,17 @@ export const financeBillPaymentMethodSchema = z.enum([
   'other',
 ]);
 
-export const financeBillAmountModelSchema = z.enum(['fixed', 'variable', 'top_up']);
+const financeBillAmountModelSchema = z.enum(['fixed', 'variable', 'top_up']);
 
-export const financeBillCadenceSchema = z.enum([
-  'weekly',
-  'monthly',
-  'quarterly',
-  'annual',
-  'one_off',
-]);
+const financeBillCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual', 'one_off']);
 
-export const financeBillStatusSchema = z.enum(['active', 'paused', 'closed']);
+const financeBillStatusSchema = z.enum(['active', 'paused', 'closed']);
 
-export const financeBillTypeSchema = z.enum(['suggested', 'confirmed', 'cancelled']);
+const financeBillTypeSchema = z.enum(['suggested', 'confirmed', 'cancelled']);
 
-export const financeBillSupplyStatusSchema = z.enum(['connected', 'disconnected', 'unknown']);
+const financeBillSupplyStatusSchema = z.enum(['connected', 'disconnected', 'unknown']);
 
-export const financeBillBalanceSourceSchema = z.enum([
-  'agent_portal',
-  'user_report',
-  'meter_photo',
-]);
+const financeBillBalanceSourceSchema = z.enum(['agent_portal', 'user_report', 'meter_photo']);
 
 const financeBillStoredSchema = z.object({
   id: z.string(),
@@ -1598,7 +1588,7 @@ const financeBillPaygSchema = z.object({
   isLow: z.boolean(),
 });
 
-export const financeBillDetailSchema = financeBillStoredSchema.extend({
+const financeBillDetailSchema = financeBillStoredSchema.extend({
   nextDueDate: z
     .string()
     .nullable()

@@ -108,9 +108,19 @@ export function ChatScreen({ id }: { id: string }) {
     [editMessage],
   );
 
-  const activeGeneration = generation;
-  const cancelActiveGeneration = cancelGeneration;
-  const dismissActiveGeneration = dismissGeneration;
+  const failedMessageText =
+    generation?.stage === 'failed' && generation.userMessageId
+      ? messages.find((message) => message.id === generation.userMessageId)?.message
+      : undefined;
+  // Hands the failed message back to the composer: it reopens with the text
+  // restored, ready to edit and send again.
+  const editFailedMessage = useCallback(() => {
+    if (failedMessageText) {
+      writeChatDraft(chatId, failedMessageText);
+    }
+    dismissGeneration();
+  }, [chatId, dismissGeneration, failedMessageText]);
+
   // The assistant is waiting on a yes/no for a tool call: that decision takes
   // over the composer until it is answered.
   const pendingToolCall = messages
@@ -128,19 +138,6 @@ export function ChatScreen({ id }: { id: string }) {
       approved,
     });
   };
-  const failedMessageText =
-    activeGeneration?.stage === 'failed' && activeGeneration.userMessageId
-      ? messages.find((message) => message.id === activeGeneration.userMessageId)?.message
-      : undefined;
-  // Hands the failed message back to the composer: it reopens with the text
-  // restored, ready to edit and send again.
-  const editFailedMessage = useCallback(() => {
-    if (failedMessageText) {
-      writeChatDraft(chatId, failedMessageText);
-    }
-    dismissActiveGeneration();
-  }, [chatId, dismissActiveGeneration, failedMessageText]);
-
   // A chat still on the default title is named from its first user message.
   const derivedSource = useMemo(
     () =>
@@ -257,7 +254,7 @@ export function ChatScreen({ id }: { id: string }) {
             onEdit={handleEditMessage}
             onRegenerate={regenerateMessage}
             onRetry={retryFailedMessage}
-            generation={activeGeneration}
+            generation={generation}
             topInset={headerHeight}
             bottomInset={dockHeight}
           />
@@ -276,11 +273,11 @@ export function ChatScreen({ id }: { id: string }) {
             onRespondToToolCall={(approved) => {
               void respondToToolCall(approved);
             }}
-            generation={activeGeneration}
+            generation={generation}
             failedMessageText={failedMessageText}
             onEditFailedMessage={editFailedMessage}
             onCancelGeneration={() => {
-              void cancelActiveGeneration();
+              void cancelGeneration();
             }}
             onRetryGeneration={retryActiveGeneration}
             search={search}

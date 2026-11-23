@@ -9,7 +9,7 @@ export type FinanceClient = HonoClient['api']['finance'];
 
 // Keeping the accessor here means the ported hooks and components do not care
 // where the client comes from.
-export function useFinanceApiClient(): FinanceClient {
+function useFinanceApiClient(): FinanceClient {
   return useApiClient().api.finance;
 }
 

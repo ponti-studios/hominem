@@ -93,7 +93,7 @@ export function rateLimit(options: RateLimitOptions): MiddlewareHandler {
 
 // OTP sends cost real money (Resend) and let a stranger spam someone's inbox, so they get a
 // per-email cap on top of the per-IP one. The email is hashed so it never lands in Redis keys/logs.
-export const OTP_LIMITS = {
+const OTP_LIMITS = {
   perEmail10Min: { limit: 3, windowSec: 600 },
   perEmailDay: { limit: 10, windowSec: 86_400 },
   perIpHour: { limit: 20, windowSec: 3600 },

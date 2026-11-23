@@ -1,21 +1,10 @@
 import { requireNativeModule } from 'expo';
 
-// Must stay in sync with the `code` values thrown by RemindersException in
-// RemindersModule.swift -- that's the only other place these strings are
-// defined, so a typo on either side would silently break routing.
-export const RemindersErrorCode = {
-  MISSING_PERMISSION: 'MISSING_PERMISSION',
-  REMINDER_NOT_FOUND: 'REMINDER_NOT_FOUND',
-  REMINDERS_LIST_UNAVAILABLE: 'REMINDERS_LIST_UNAVAILABLE',
-  REMINDER_WRITE_FAILED: 'REMINDER_WRITE_FAILED',
-  INVALID_DATE_RANGE: 'INVALID_DATE_RANGE',
-} as const;
-
 export type RemindersPermissionStatus = 'authorized' | 'denied' | 'notDetermined';
 
-export type ReminderPriority = 'none' | 'high' | 'medium' | 'low';
+type ReminderPriority = 'none' | 'high' | 'medium' | 'low';
 
-export type ReminderStatus = 'pending' | 'completed';
+type ReminderStatus = 'pending' | 'completed';
 
 export interface ReminderRecord {
   id: string;
@@ -40,7 +29,7 @@ export interface ReminderInput {
   location?: string | null;
 }
 
-export type RemindersModuleType = {
+type RemindersModuleType = {
   getAuthorizationStatus(): Promise<RemindersPermissionStatus>;
   requestAccess(): Promise<RemindersPermissionStatus>;
   listReminders(): Promise<ReminderRecord[]>;

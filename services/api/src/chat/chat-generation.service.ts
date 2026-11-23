@@ -29,10 +29,3 @@ export const chatGenerationService = createChatGenerationService();
 
 export { ChatGenerationInputError } from './chat-generation-errors';
 export { AsyncEventQueue } from './async-event-queue';
-export type {
-  CancelInput,
-  GenerationStartInput,
-  ReplayInput,
-  SendGenerationInput,
-  StartGenerationInput,
-} from './chat-generation-types';

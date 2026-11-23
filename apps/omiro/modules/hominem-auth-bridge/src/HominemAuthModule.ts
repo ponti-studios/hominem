@@ -10,7 +10,7 @@ export type HominemAuthUser = {
   updatedAt?: string | null;
 };
 
-export type HominemAuthModuleType = {
+type HominemAuthModuleType = {
   getSession(baseURL: string): Promise<HominemAuthUser | null>;
   requestOTP(baseURL: string, email: string): Promise<void>;
   verifyOTP(baseURL: string, email: string, otp: string): Promise<HominemAuthUser>;

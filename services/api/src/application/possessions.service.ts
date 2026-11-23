@@ -205,7 +205,7 @@ export const getPossessionHistory = (
   limit: number,
 ): Promise<PossessionEvent[]> => PossessionRepository.history(db, userId, id, limit);
 
-export interface VesselWeightRow {
+interface VesselWeightRow {
   vessel: string;
   contentsKg: number;
   tareKg: number;
@@ -530,8 +530,8 @@ export const removeContainerIfExists = async (userId: string, id: string): Promi
   (await orNull('Container not found', () => removeContainer(userId, id).then(() => true))) ??
   false;
 
-export const VALIDATION_SEVERITIES = ['error', 'warning'] as const;
-export type ValidationSeverity = (typeof VALIDATION_SEVERITIES)[number];
+const VALIDATION_SEVERITIES = ['error', 'warning'] as const;
+type ValidationSeverity = (typeof VALIDATION_SEVERITIES)[number];
 
 export interface PossessionFinding {
   code: string;

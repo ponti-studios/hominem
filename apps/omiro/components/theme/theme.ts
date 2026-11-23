@@ -18,4 +18,3 @@ export const darkTheme = {
 };
 
 export type Theme = typeof lightTheme;
-export type TypographyVariant = keyof typeof textVariants;

@@ -20,7 +20,7 @@ function fallbackId() {
   return `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function createOptimisticMessage(
+function createOptimisticMessage(
   chatId: string,
   messageText: string,
   id = fallbackId(),
@@ -206,7 +206,7 @@ export function useSendMessage({
     if (lastInputRef.current) {
       void sendChatMessage(lastInputRef.current).catch(() => undefined);
     }
-  }, [chatId, generationRef, queryClient, regenerateGeneration, sendChatMessage, setGeneration]);
+  }, [chatId, generationRef, regenerateGeneration, sendChatMessage, setGeneration]);
 
   return {
     cancelGeneration: generationRuntime.cancelGeneration,

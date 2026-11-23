@@ -92,7 +92,7 @@ export function IconField({
 
 /** Minimal field contract for controlled inputs. Wrap react-hook-form's
  * Controller output in an adapter lambda at the call site. */
-export type FieldBinding = {
+type FieldBinding = {
   value: string;
   name: string;
   onChange: (value: string) => void;
@@ -180,6 +180,21 @@ type CurrencyFieldProps = Omit<TextInputProps, 'type'> & {
   currency?: string;
 };
 
+// Intl currency formatting is expensive; the symbol per currency never changes.
+const currencySymbols = new Map<string, string | undefined>();
+
+function currencySymbolFor(currency: string): string | undefined {
+  if (!currencySymbols.has(currency)) {
+    currencySymbols.set(
+      currency,
+      new Intl.NumberFormat(undefined, { style: 'currency', currency })
+        .formatToParts(0)
+        .find((part) => part.type === 'currency')?.value,
+    );
+  }
+  return currencySymbols.get(currency);
+}
+
 export function CurrencyField({
   label,
   name,
@@ -199,11 +214,7 @@ export function CurrencyField({
   ...rest
 }: CurrencyFieldProps) {
   const id = useId();
-  const currencySymbol = currency
-    ? new Intl.NumberFormat(undefined, { style: 'currency', currency })
-        .formatToParts(0)
-        .find((part) => part.type === 'currency')?.value
-    : null;
+  const currencySymbol = currency ? currencySymbolFor(currency) : null;
   return (
     <div className={cn('flex flex-col', className)}>
       <label htmlFor={id} className={labelHidden ? 'sr-only' : formLabelClassName}>

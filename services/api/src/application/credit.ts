@@ -18,17 +18,17 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { CredentialRow, CredentialStore, KeysClient } from './provider-credentials';
 
 /** Thames's profit on each top-up, in pence. */
-export const MARGIN_PENCE = 100;
+const MARGIN_PENCE = 100;
 /** Stripe's UK card fee: 1.5 percent plus 20p. */
-export const STRIPE_FEE_RATE = 0.015;
-export const STRIPE_FEE_FIXED_PENCE = 20;
+const STRIPE_FEE_RATE = 0.015;
+const STRIPE_FEE_FIXED_PENCE = 20;
 /** OpenRouter's fee on the credit Thames buys from it. */
-export const PROVIDER_FEE_RATE = 0.055;
+const PROVIDER_FEE_RATE = 0.055;
 /** The amounts the page offers, in whole pounds. */
 export const TOP_UP_POUNDS: readonly number[] = [10, 20, 50];
 /** Low is under this many pence, or under 15 percent of the last credit added if that is smaller. */
-export const LOW_PENCE = 100;
-export const LOW_FRACTION = 0.15;
+const LOW_PENCE = 100;
+const LOW_FRACTION = 0.15;
 
 export type CreditMode = 'off' | 'test' | 'live';
 
@@ -78,7 +78,7 @@ export function isLow(balancePence: number, lastAddedPence: number): boolean {
 
 // ---- Signed top-up links ----------------------------------------------------------------------
 
-export const LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
+const LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 function sign(secret: string, body: string): string {
   return createHmac('sha256', secret).update(body).digest('base64url');
@@ -255,7 +255,7 @@ export async function creditSnapshot(deps: CreditDeps, userId: string): Promise<
 }
 
 /** What the balance is worth at the provider, in USD. */
-export function balanceUsd(balancePence: number, usdPerPound: number): number {
+function balanceUsd(balancePence: number, usdPerPound: number): number {
   return floor4((balancePence / 100) * usdPerPound);
 }
 

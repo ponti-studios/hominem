@@ -15,7 +15,7 @@ function isReplyStyleId(value: string | undefined): value is ReplyStyleId {
   return REPLY_STYLE_IDS.some((id) => id === value);
 }
 
-export function getChatReplyStyle(): ReplyStyleId {
+function getChatReplyStyle(): ReplyStyleId {
   const stored = storage.getString(REPLY_STYLE_KEY);
   return isReplyStyleId(stored) ? stored : DEFAULT_REPLY_STYLE;
 }
@@ -24,7 +24,7 @@ export function setChatReplyStyle(value: ReplyStyleId) {
   storage.set(REPLY_STYLE_KEY, value);
 }
 
-export function getChatReplyModel(): string {
+function getChatReplyModel(): string {
   const stored = storage.getString(REPLY_MODEL_KEY);
   return stored && isReplyModelId(stored) ? stored : DEFAULT_REPLY_MODEL;
 }
