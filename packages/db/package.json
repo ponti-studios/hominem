@@ -52,6 +52,10 @@
       "types": "./build/tasks.d.ts",
       "default": "./src/tasks.ts"
     },
+    "./goals": {
+      "types": "./build/goals.d.ts",
+      "default": "./src/goals.ts"
+    },
     "./types": {
       "types": "./build/types.d.ts",
       "default": "./src/types.ts"
