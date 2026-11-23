@@ -46,6 +46,8 @@ jobs:
   knip:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      APP_ENV: development
     steps:
       - name: checkout-repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
