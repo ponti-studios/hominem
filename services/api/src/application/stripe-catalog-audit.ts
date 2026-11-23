@@ -11,7 +11,7 @@ import type { StripeTestFinding } from './stripe-test-verify';
 
 export type CatalogPlan = keyof typeof CATALOG_PRICES;
 
-interface CatalogProductSnapshot {
+export interface CatalogProductSnapshot {
   id: string;
   active: boolean;
   taxCode: string | null;
