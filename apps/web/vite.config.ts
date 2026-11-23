@@ -116,7 +116,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         'lucide-react',
         'motion/react',
         'posthog-js',
-        'posthog-js/react',
         'radix-ui',
         'react-hook-form',
         'react-image-crop',
@@ -148,6 +147,13 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules/')) {
+              // @base-ui's path contains /react/, so the rule below would
+              // hoist it into vendor-react. Claim it first: the root design
+              // system imports it statically, so it still loads at first
+              // paint, just as its own cache-stable chunk.
+              if (id.includes('/@base-ui/')) {
+                return 'vendor-base-ui';
+              }
               // react and react-dom split apart to each stay under the chunk size limit
               if (id.includes('/react-dom/')) {
                 return 'vendor-react-dom';

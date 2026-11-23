@@ -17,10 +17,44 @@ import {
   useSaveAffordabilityCurrency,
 } from '~/modules/finance/hooks/use-affordability';
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
 function formatCurrency(amount: number, currencyCode: string): string {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: currencyCode }).format(
-    amount,
-  );
+  let formatter = currencyFormatters.get(currencyCode);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, { style: 'currency', currency: currencyCode });
+    currencyFormatters.set(currencyCode, formatter);
+  }
+  return formatter.format(amount);
+}
+
+const currencyFractionDigitCounts = new Map<string, number>();
+
+function fractionDigitsFor(currencyCode: string): number {
+  let digits = currencyFractionDigitCounts.get(currencyCode);
+  if (digits === undefined) {
+    digits =
+      new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currencyCode,
+      }).resolvedOptions().maximumFractionDigits ?? 2;
+    currencyFractionDigitCounts.set(currencyCode, digits);
+  }
+  return digits;
+}
+
+const plainNumberFormatters = new Map<number, Intl.NumberFormat>();
+
+function plainNumberFor(digits: number): Intl.NumberFormat {
+  let formatter = plainNumberFormatters.get(digits);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+    plainNumberFormatters.set(digits, formatter);
+  }
+  return formatter;
 }
 
 function formatInputValue(value: number | null): string {
@@ -100,12 +134,7 @@ export default function AffordabilityPage() {
   }
 
   const result = affordabilityMutation.data;
-  const currencyFractionDigits = currencyCode
-    ? (new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: currencyCode,
-      }).resolvedOptions().maximumFractionDigits ?? 2)
-    : 2;
+  const currencyFractionDigits = currencyCode ? fractionDigitsFor(currencyCode) : 2;
   const amountStep = 10 ** -currencyFractionDigits;
 
   return (
@@ -220,10 +249,7 @@ export default function AffordabilityPage() {
                     value={
                       context.startingCash === null
                         ? cashBalanceOverride
-                        : new Intl.NumberFormat(undefined, {
-                            minimumFractionDigits: currencyFractionDigits,
-                            maximumFractionDigits: currencyFractionDigits,
-                          }).format(context.startingCash)
+                        : plainNumberFor(currencyFractionDigits).format(context.startingCash)
                     }
                     onChange={(event) => {
                       clearResult();
