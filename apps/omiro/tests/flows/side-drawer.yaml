@@ -52,3 +52,21 @@ appId: com.pontistudios.hakumi.dev
 - assertNotVisible:
     id: 'side-drawer-tasks'
 - takeScreenshot: omiro-drawer-navigated-tasks
+
+# On a pushed chat the same edge swipe is the native back swipe: it pops the
+# screen and does not open the drawer.
+- tapOn:
+    text: 'Chat'
+- tapOn:
+    point: 50%, 30%
+- waitForAnimationToEnd:
+    timeout: 3000
+- swipe:
+    start: 2%, 50%
+    end: 80%, 50%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: 'side-drawer-notes'
+- assertVisible: 'Search chats'
