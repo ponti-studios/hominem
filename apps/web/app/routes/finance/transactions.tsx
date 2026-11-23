@@ -179,8 +179,9 @@ export default function FinanceTransactionsPage() {
     },
     enabled: focusedTransactionId.length > 0 || status !== 'queued' || queuedIds.length > 0,
   });
-  const transactions = transactionQuery.data?.data ?? [];
-  const visibleIds = useMemo(() => transactions.map(({ id }) => id), [transactionQuery.data]);
+  // Memoized: a fresh [] here would re-run the focus effect every render.
+  const transactions = useMemo(() => transactionQuery.data?.data ?? [], [transactionQuery.data]);
+  const visibleIds = useMemo(() => transactions.map(({ id }) => id), [transactions]);
   const visibleIdSet = useMemo(() => new Set(visibleIds), [visibleIds]);
   const selectedIdSet = useMemo(() => new Set(selected), [selected]);
   const allVisibleSelected =

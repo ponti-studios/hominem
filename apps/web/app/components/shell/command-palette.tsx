@@ -123,9 +123,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // Latest-callback ref so the Escape listener subscribes once per open
-  // instead of on every parent render.
+  // instead of on every parent render. Written from an effect so the ref
+  // only ever holds a callback from a committed render.
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   const index = useMemo(() => buildPaletteIndex(), []);
   const financeQuery = normalize(query);
   const financeSearch = normalize(debouncedQuery);
