@@ -1,4 +1,4 @@
-FROM node:26.12.1-alpine AS builder
+FROM node:26.13.1-alpine AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN --mount=type=secret,id=gh_packages_token \
 RUN pnpm --filter @ponti-studios/auth build
 RUN pnpm --filter @hominem/api run build
 
-FROM node:26.12.1-alpine AS release
+FROM node:26.13.1-alpine AS release
 
 WORKDIR /app
 
