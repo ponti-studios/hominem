@@ -60,3 +60,9 @@ export type {
   Reconciliation,
   TransferPair,
 } from './finance-facts.js';
+export type {
+  ProactivityCareerSummary,
+  ProactivityFinanceSummary,
+  ProactivityGoalView,
+  ProactivityOverview,
+} from './overview.js';

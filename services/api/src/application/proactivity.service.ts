@@ -1,24 +1,231 @@
-import { resolve } from 'node:path';
+import { db, sql } from '@hominem/db/core';
+import { GoalsRepository, type GoalRecord } from '@hominem/db/goals';
+import {
+  createCareerContextLoader,
+  createDomainContextAssembler,
+  createFinanceContextLoader,
+  createProactivityEngine,
+  InMemoryJournal,
+  type DeliveryIntent,
+  type EvaluationRun,
+  type Goal,
+  type GoalOutcome,
+  type ProactivityCareerSummary,
+  type ProactivityFinanceSummary,
+  type ProactivityGoalView,
+  type ProactivityOverview,
+  type ProactivityTrigger,
+} from '@hominem/proactivity';
+import { createOpenRouterProactivitySlot } from '@hominem/proactivity/openrouter';
 
-import { createStudioService } from '@hominem/proactivity/studio';
+type Row = Record<string, unknown>;
+const str = (value: unknown): string => String(value ?? '');
+const num = (value: unknown): number => Number(value ?? 0);
 
-let service: ReturnType<typeof createStudioService> | null = null;
+/** Last evaluation per owner. In-memory for now: journal persistence is the
+ * next seam (a real `EvaluationRun` store is an open decision). */
+const lastRuns = new Map<string, EvaluationRun>();
+
+function toGoalView(row: GoalRecord): ProactivityGoalView {
+  return {
+    id: row.id,
+    title: row.title,
+    status: row.status,
+    domains: row.domains,
+    description: row.description,
+    targetAt: row.targetAt,
+  };
+}
+
+async function loadFinance(userId: string): Promise<ProactivityFinanceSummary | null> {
+  const months = await sql<Row>`
+    SELECT to_char(date_trunc('month', posted_on), 'YYYY-MM') AS month,
+           round(sum(amount) FILTER (WHERE transaction_type = 'credit')::numeric, 2) AS income,
+           round((-sum(amount) FILTER (WHERE transaction_type = 'debit'))::numeric, 2) AS spend
+    FROM app.finance_transactions
+    WHERE excluded = false AND transaction_type IN ('credit', 'debit') AND user_id = ${userId}
+      AND posted_on >= date_trunc('month', now()) - interval '5 months'
+    GROUP BY 1 ORDER BY 1
+  `.execute(db);
+  if (months.rows.length === 0) return null;
+
+  const categories = await sql<Row>`
+    SELECT to_char(date_trunc('month', t.posted_on), 'YYYY-MM') AS month,
+           coalesce(c.name, 'Uncategorized') AS category,
+           round((-sum(t.amount))::numeric, 2) AS spend
+    FROM app.finance_transactions t
+    LEFT JOIN app.finance_categories c ON c.id = t.category_id
+    WHERE t.excluded = false AND t.transaction_type = 'debit' AND t.user_id = ${userId}
+      AND t.posted_on >= date_trunc('month', now()) - interval '1 month'
+      AND coalesce(c.name, 'Uncategorized') <> 'Transfers'
+    GROUP BY 1, 2 HAVING sum(t.amount) < -20 ORDER BY 1, spend DESC
+  `.execute(db);
+  const incomeEvents = await sql<Row>`
+    SELECT to_char(posted_on, 'YYYY-MM-DD') AS date, merchant_name AS source,
+           round(amount::numeric, 2) AS amount
+    FROM app.finance_transactions
+    WHERE transaction_type = 'credit' AND excluded = false AND amount > 100 AND user_id = ${userId}
+      AND posted_on >= now() - interval '45 days'
+    ORDER BY posted_on DESC
+  `.execute(db);
+  const recentFlows = await sql<Row>`
+    SELECT to_char(posted_on, 'YYYY-MM-DD') AS date, transaction_type AS direction,
+           merchant_name AS merchant, round(amount::numeric, 2) AS amount
+    FROM app.finance_transactions
+    WHERE transaction_type IN ('credit', 'debit') AND excluded = false AND abs(amount) > 100
+      AND user_id = ${userId} AND posted_on >= now() - interval '60 days'
+    ORDER BY posted_on
+  `.execute(db);
+  const accounts = await sql<Row>`
+    SELECT account_type, count(*) AS accounts FROM app.finance_accounts
+    WHERE lifecycle_status = 'open' AND user_id = ${userId} GROUP BY 1 ORDER BY 2 DESC
+  `.execute(db);
+
+  return {
+    months: months.rows.map((row: Row) => ({
+      month: str(row.month),
+      income: num(row.income),
+      spend: num(row.spend),
+    })),
+    categories: categories.rows.map((row: Row) => ({
+      month: str(row.month),
+      category: str(row.category),
+      spend: num(row.spend),
+    })),
+    incomeEvents: incomeEvents.rows.map((row: Row) => ({
+      date: str(row.date),
+      source: str(row.source),
+      amount: num(row.amount),
+    })),
+    recentFlows: recentFlows.rows.map((row: Row) => ({
+      date: str(row.date),
+      direction: str(row.direction) === 'credit' ? 'credit' : 'debit',
+      merchant: str(row.merchant),
+      amount: num(row.amount),
+    })),
+    openAccountsByType: accounts.rows.map((row: Row) => ({
+      accountType: str(row.accountType),
+      accounts: num(row.accounts),
+    })),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+async function loadCareer(userId: string): Promise<ProactivityCareerSummary | null> {
+  const result = await sql<Row>`
+    SELECT count(*) AS total,
+           to_char(max(applied_at), 'YYYY-MM-DD') AS last_application,
+           count(*) FILTER (WHERE applied_at >= now() - interval '120 days') AS last_120
+    FROM app.career_applications WHERE owner_userid = ${userId}
+  `.execute(db);
+  const row = result.rows[0];
+  if (!row || num(row.total) === 0) return null;
+  return {
+    lastApplicationDate: str(row.lastApplication) || null,
+    totalApplications: num(row.total),
+    applicationsLast120Days: num(row.last120),
+  };
+}
+
+export async function loadOverview(userId: string): Promise<ProactivityOverview> {
+  const [goalRows, finance, career] = await Promise.all([
+    GoalsRepository.listByOwner(db, { userId }),
+    loadFinance(userId),
+    loadCareer(userId),
+  ]);
+  return {
+    goals: goalRows.map(toGoalView),
+    finance,
+    career,
+    lastRun: lastRuns.get(userId) ?? null,
+  };
+}
 
 /**
- * The proactivity studio runs against its synthetic world and a local SQLite
- * journal. Instantiated lazily so importing the routes costs nothing until the
- * dashboard is actually opened.
+ * Evaluate every active goal against real data: a scheduled pass over the
+ * caller's own goals, evidence assembled from their finance and career rows.
+ * Delivery intents are recorded, never sent.
  */
-export function getStudioService(): ReturnType<typeof createStudioService> {
-  if (!service) {
-    service = createStudioService({
-      dbPath: process.env.PROACTIVITY_STUDIO_DB ?? resolve(process.cwd(), '.data', 'studio.db'),
-      model:
-        process.env.PROACTIVITY_STUDIO_MODEL ??
-        process.env.PROACTIVITY_MODEL ??
-        'openai/gpt-5-mini',
-      modelReady: Boolean(process.env.OPENROUTER_API_KEY),
+export async function runEvaluation(
+  userId: string,
+  options: { slot?: ReturnType<typeof createOpenRouterProactivitySlot> } = {},
+): Promise<EvaluationRun> {
+  const [goalRows, finance, career] = await Promise.all([
+    GoalsRepository.listByOwner(db, { userId }),
+    loadFinance(userId),
+    loadCareer(userId),
+  ]);
+  const covered = (domain: string): boolean =>
+    domain === 'finance' ? finance !== null : domain === 'career' ? career !== null : false;
+  const goals: Goal[] = goalRows
+    .filter((row) => row.status === 'active' && row.domains.some(covered))
+    .map((row) => ({
+      id: row.id,
+      ownerId: row.ownerUserId,
+      title: row.title,
+      status: row.status,
+      domains: row.domains,
+    }));
+
+  const slot =
+    options.slot ??
+    createOpenRouterProactivitySlot({
+      model: process.env.PROACTIVITY_MODEL ?? 'openai/gpt-5-mini',
     });
-  }
-  return service;
+  const engine = createProactivityEngine({
+    goals: { list: async () => goals },
+    contexts: createDomainContextAssembler({
+      ...(finance
+        ? {
+            finance: createFinanceContextLoader({
+              ownerId: userId,
+              ...finance,
+              source: 'hominem database',
+            }),
+          }
+        : {}),
+      ...(career
+        ? {
+            career: createCareerContextLoader({
+              lastApplicationDate: career.lastApplicationDate ?? '2025-01-01',
+              totalApplications: career.totalApplications,
+              applicationsLast120Days: career.applicationsLast120Days,
+              source: 'hominem database',
+            }),
+          }
+        : {}),
+    }),
+    slot,
+    deliveryPolicy: {
+      plan: async ({ outcomes }): Promise<DeliveryIntent[]> =>
+        outcomes.flatMap(({ context, decision }: GoalOutcome) =>
+          decision.kind === 'propose'
+            ? [
+                {
+                  kind: 'goal-proposal' as const,
+                  idempotencyKey: `${context.trigger.id}:${context.goal.id}`,
+                  ownerId: context.goal.ownerId,
+                  goalId: context.goal.id,
+                  channel: 'email' as const,
+                  subject: decision.summary,
+                  body: `${decision.reason}\n\nNext step: ${decision.nextStep}`,
+                  sendAt: new Date().toISOString(),
+                },
+              ]
+            : [],
+        ),
+    },
+    journal: new InMemoryJournal(),
+    clock: { now: () => new Date().toISOString() },
+  });
+
+  const trigger: ProactivityTrigger = {
+    kind: 'scheduled-pass',
+    id: `manual-${Date.now()}`,
+    ownerId: userId,
+    asOf: new Date().toISOString(),
+  };
+  const run = await engine.run(trigger);
+  lastRuns.set(userId, run);
+  return run;
 }

@@ -1,6 +1,6 @@
 import { useApiClient } from '@hominem/rpc/react';
+import type { ProactivityOverview } from '@hominem/rpc/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { Chip, PageHeader, SectionCard, Stat } from '~/components/design';
 import { Button } from '~/components/ui/button';
@@ -12,245 +12,225 @@ const DECISION_TONE: Record<string, string> = {
   quiet: 'text-muted-foreground',
 };
 
-const GOAL_STATE_TONE: Record<string, string> = {
-  attention: 'border-amber-400/40 bg-amber-400/10 text-amber-300',
-  waiting: 'text-muted-foreground',
-  'on-track': 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300',
-  unchecked: 'text-muted-foreground',
-};
-
-const EVENT_STATUS_LABEL: Record<string, string> = {
-  pending: 'not run yet',
-  done: 'evaluated',
-  error: 'failed',
-};
+const formatGbp = new Intl.NumberFormat('en-GB', {
+  style: 'currency',
+  currency: 'GBP',
+  maximumFractionDigits: 0,
+});
 
 export function ProactivityDashboard() {
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const [playing, setPlaying] = useState(false);
 
-  const studioQuery = useQuery({
-    queryKey: ['proactivity', 'studio'],
-    queryFn: async () => (await client.api.proactivity.studio.$get()).json(),
+  const overviewQuery = useQuery({
+    queryKey: ['proactivity', 'overview'],
+    queryFn: async () => (await client.api.proactivity.overview.$get()).json(),
   });
 
-  function setView(view: NonNullable<typeof studioQuery.data>) {
-    queryClient.setQueryData(['proactivity', 'studio'], view);
+  const run = useMutation({
+    mutationFn: async () => (await client.api.proactivity.run.$post()).json(),
+    onSuccess: (evaluationRun) => {
+      queryClient.setQueryData<ProactivityOverview>(['proactivity', 'overview'], (current) =>
+        current ? { ...current, lastRun: evaluationRun } : current,
+      );
+    },
+  });
+
+  if (overviewQuery.isPending) {
+    return <p className="p-6 text-sm text-muted-foreground">Loading your goals…</p>;
   }
-
-  const runEvent = useMutation({
-    mutationFn: async (eventId: string) =>
-      (await client.api.proactivity.run.$post({ json: { eventId } })).json(),
-    onSuccess: setView,
-  });
-
-  const inject = useMutation({
-    mutationFn: async (presetId: string) =>
-      (await client.api.proactivity.inject.$post({ json: { presetId } })).json(),
-    onSuccess: (result) => setView(result.view),
-  });
-
-  const reset = useMutation({
-    mutationFn: async () => (await client.api.proactivity.reset.$post()).json(),
-    onSuccess: setView,
-  });
-
-  if (studioQuery.isPending) {
-    return <p className="p-6 text-sm text-muted-foreground">Loading the engine's week…</p>;
-  }
-  if (studioQuery.isError) {
+  if (overviewQuery.isError) {
     return (
       <p className="p-6 text-sm text-destructive">
-        Could not load the proactivity studio: {String(studioQuery.error)}
+        Could not load proactivity: {String(overviewQuery.error)}
       </p>
     );
   }
 
-  const view = studioQuery.data;
-  const pending = view.events.filter((event) => event.status === 'pending');
+  const overview = overviewQuery.data;
+  const lastRun = overview.lastRun;
+  const activeGoals = overview.goals.filter((goal) => goal.status === 'active');
+  const finance = overview.finance;
+  const currentMonth = finance?.months[finance.months.length - 1];
+  const previousMonth = finance?.months[finance.months.length - 2];
+  const currentCategories = currentMonth
+    ? finance?.categories.filter((row) => row.month === currentMonth.month).slice(0, 6)
+    : [];
 
-  async function playPending() {
-    setPlaying(true);
-    try {
-      for (const event of pending) {
-        await runEvent.mutateAsync(event.id);
-      }
-    } finally {
-      setPlaying(false);
-    }
+  function titleFor(goalId: string): string {
+    return overview.goals.find((goal) => goal.id === goalId)?.title ?? goalId;
   }
 
   return (
     <div className="mx-auto max-w-5xl p-6">
       <PageHeader
         eyebrow="Proactivity engine"
-        title="The week, evaluated"
+        title="Your goals, evaluated"
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                playPending();
-              }}
-              disabled={playing || pending.length === 0}
-            >
-              {playing ? 'Playing…' : `Run ${pending.length} pending`}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => reset.mutate()}
-              disabled={reset.isPending}
-            >
-              Reset
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={() => run.mutate()}
+            disabled={run.isPending || activeGoals.length === 0}
+          >
+            {run.isPending ? 'Evaluating…' : 'Evaluate now'}
+          </Button>
         }
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <span className="font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-          {view.weekLabel}
-        </span>
-        <Chip className={view.modelReady ? DECISION_TONE.propose : DECISION_TONE.defer}>
-          {view.modelReady ? `model ready · ${view.model}` : 'no model key — preflight only'}
+        <Chip>
+          {overview.goals.length} goals · {activeGoals.length} active
         </Chip>
+        {finance ? (
+          <Chip>
+            finance: {finance.months.length} months · {finance.recentFlows.length} flows (60d)
+          </Chip>
+        ) : (
+          <Chip className={DECISION_TONE.defer}>no finance data for this account</Chip>
+        )}
+        {overview.career ? (
+          <Chip>career: last application {overview.career.lastApplicationDate ?? '—'}</Chip>
+        ) : (
+          <Chip className={DECISION_TONE.defer}>no career data</Chip>
+        )}
+        {lastRun ? (
+          <Chip>last evaluated {lastRun.processedAt.slice(0, 16).replace('T', ' ')}</Chip>
+        ) : null}
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="proposals" value={String(view.stats.proposals)} sub="propose decisions" />
-        <Stat label="deferred" value={String(view.stats.deferred)} sub="waited, no spam" />
-        <Stat label="checks" value={String(view.stats.checks)} sub="evaluations" />
+        <Stat label="goals" value={String(activeGoals.length)} sub="active in app.goals" />
         <Stat
-          label="model calls"
-          value={String(view.stats.modelCalls)}
-          sub={`avg ${Math.round(view.stats.averageLatencyMs)}ms`}
+          label="evaluations"
+          value={String(lastRun?.evaluations.length ?? 0)}
+          sub="in the last run"
+        />
+        <Stat
+          label="proposals"
+          value={String(
+            lastRun?.evaluations.filter((e) => e.decision.kind === 'propose').length ?? 0,
+          )}
+          sub="propose decisions"
+        />
+        <Stat
+          label="intents"
+          value={String(lastRun?.deliveryIntents.length ?? 0)}
+          sub="recorded, nothing sent"
         />
       </div>
 
-      <div className="mb-6">
-        <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-          Goals
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {view.goals.map((goal) => (
-            <Chip key={goal.id} className={GOAL_STATE_TONE[goal.state]}>
-              {goal.title} · {goal.state}
-            </Chip>
-          ))}
+      <SectionCard className="mb-4">
+        <div className="p-4">
+          <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+            Real data feeding the engine
+          </p>
+          {finance && currentMonth ? (
+            <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-muted-foreground">
+              {previousMonth ? (
+                <span>
+                  {previousMonth.month}: in {formatGbp.format(previousMonth.income)} / out{' '}
+                  {formatGbp.format(previousMonth.spend)}
+                </span>
+              ) : null}
+              <span className="text-foreground">
+                {currentMonth.month}: in {formatGbp.format(currentMonth.income)} / out{' '}
+                {formatGbp.format(currentMonth.spend)}
+              </span>
+              <span>top: {currentCategories.map((row) => row.category).join(', ') || '—'}</span>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No finance transactions for this account, so finance goals cannot be evaluated yet.
+            </p>
+          )}
         </div>
-      </div>
+      </SectionCard>
 
       <div className="mb-2 flex items-center justify-between">
         <p className="font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-          Feed
+          Goals
         </p>
-        <div className="flex flex-wrap gap-2">
-          {inject.isPending ? (
-            <span className="text-xs text-muted-foreground">injecting…</span>
-          ) : null}
-          {view.presets.map((preset) => (
-            <Button
-              key={preset.id}
-              variant="outline"
-              size="xs"
-              title={preset.hint}
-              onClick={() => inject.mutate(preset.id)}
-              disabled={inject.isPending}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
+      </div>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {overview.goals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No goals yet — there is no goal editor in the app at this point (goal lifecycle is an
+            open decision in the PRD).
+          </p>
+        ) : (
+          overview.goals.map((goal) => (
+            <Chip key={goal.id}>
+              {goal.title} · {goal.domains.join('/') || 'no domains'} · {goal.status}
+            </Chip>
+          ))
+        )}
       </div>
 
-      <div className="space-y-4">
-        {view.events.map((event, index) => (
-          <SectionCard key={event.id} index={index}>
-            <div className="flex flex-wrap items-start justify-between gap-3 p-4 pb-0">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-                    {event.at.slice(11, 16)} · {event.domainLabel} · {event.sourceLabel}
+      {lastRun ? (
+        <>
+          <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+            Decisions — run {lastRun.triggerId}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {lastRun.evaluations.map((evaluation) => (
+              <section key={evaluation.goalId} className="hairline rounded-sm bg-card p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="truncate text-xs font-semibold">
+                    {titleFor(evaluation.goalId)}
                   </span>
-                  {event.injected ? <Chip className="py-0 text-[10px]">injected</Chip> : null}
+                  <Chip className={cn('py-0 text-[10px]', DECISION_TONE[evaluation.decision.kind])}>
+                    {evaluation.decision.kind}
+                  </Chip>
                 </div>
-                <h3 className="mt-1 text-sm font-semibold">{event.title}</h3>
-                <p className="text-sm text-muted-foreground">{event.summary}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    'font-mono text-[10px] tracking-[0.14em] uppercase',
-                    event.status === 'error' ? 'text-destructive' : 'text-muted-foreground',
-                  )}
-                >
-                  {EVENT_STATUS_LABEL[event.status] ?? event.status}
-                </span>
-                {event.status === 'pending' ? (
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => runEvent.mutate(event.id)}
-                    disabled={playing || runEvent.isPending}
-                  >
-                    Evaluate
-                  </Button>
-                ) : null}
-              </div>
-            </div>
+                {evaluation.decision.kind === 'propose' ? (
+                  <>
+                    <p className="text-sm font-medium">{evaluation.decision.summary}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {evaluation.decision.reason}
+                    </p>
+                    <p className="mt-2 border-l-2 border-emerald-400/40 pl-2 text-xs">
+                      <span className="font-mono text-[10px] tracking-[0.14em] text-emerald-300 uppercase">
+                        next step
+                      </span>
+                      <br />
+                      {evaluation.decision.nextStep}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{evaluation.decision.reason}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {evaluation.decision.evidenceIds.map((id) => (
+                    <Chip key={id} className="py-0 font-mono text-[10px]">
+                      {id}
+                    </Chip>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
 
-            {event.results.length > 0 ? (
-              <div className="grid gap-3 p-4 sm:grid-cols-2">
-                {event.results.map((result) => (
-                  <div key={result.id} className="hairline rounded-sm bg-background/40 p-3">
-                    <div className="mb-1 flex items-center justify-between gap-2">
-                      <span className="truncate text-xs font-semibold">{result.goalTitle}</span>
-                      <Chip className={cn('py-0 text-[10px]', DECISION_TONE[result.decision.kind])}>
-                        {result.decision.kind}
-                      </Chip>
-                    </div>
-                    <p className="text-sm font-medium">
-                      {result.decision.kind === 'propose'
-                        ? result.decision.summary
-                        : result.decision.reason}
-                    </p>
-                    {result.decision.kind === 'propose' ? (
-                      <>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {result.decision.reason}
-                        </p>
-                        <p className="mt-2 border-l-2 border-emerald-400/40 pl-2 text-xs">
-                          <span className="font-mono text-[10px] tracking-[0.14em] text-emerald-300 uppercase">
-                            next step
-                          </span>
-                          <br />
-                          {result.decision.nextStep}
-                        </p>
-                      </>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap items-center gap-1">
-                      {result.decision.evidenceIds.map((id) => (
-                        <Chip key={id} className="py-0 font-mono text-[10px]">
-                          {id}
-                        </Chip>
-                      ))}
-                    </div>
-                    <p className="mt-2 font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase">
-                      {result.source} · {result.latencyMs}ms{result.held ? ' · held' : ''}
-                    </p>
-                  </div>
+          {lastRun.deliveryIntents.length > 0 ? (
+            <>
+              <p className="mt-6 mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                Delivery intents (recorded, nothing sent)
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {lastRun.deliveryIntents.map((intent) => (
+                  <section key={intent.idempotencyKey} className="hairline rounded-sm bg-card p-3">
+                    <p className="text-sm font-medium">✉ {intent.subject}</p>
+                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{intent.body}</p>
+                  </section>
                 ))}
               </div>
-            ) : (
-              <p className="p-4 pt-2 text-xs text-muted-foreground">
-                Nothing evaluated for this event yet.
-              </p>
-            )}
-          </SectionCard>
-        ))}
-      </div>
+            </>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No evaluation yet — press Evaluate now to run the engine against your real data.
+        </p>
+      )}
     </div>
   );
 }
