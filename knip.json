@@ -7,7 +7,8 @@
     },
     "apps/omiro": {
       "entry": ["app/**/*.{ts,tsx}"],
-      "project": ["**/*.{ts,tsx}"]
+      "project": ["**/*.{ts,tsx}", "plugins/**/*.js"],
+      "expo": { "config": [] }
     },
     "apps/web": {
       "entry": ["app/routes/**/*.{ts,tsx}", "tests/e2e/*.{ts,tsx}"],
@@ -34,10 +35,8 @@
   },
   "ignoreDependencies": [
     "@expo/plist",
-    "babel-preset-expo",
     "expo-build-properties",
     "expo-splash-screen",
-    "expo-updates",
     "kysely-codegen",
     "tailwindcss",
     "tw-animate-css"
