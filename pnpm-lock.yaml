@@ -11,8 +11,8 @@ catalogs:
       specifier: 1.9.0
       version: 1.9.0
     '@ponti-studios/ui':
-      specifier: 1.8.0
-      version: 1.8.0
+      specifier: 3.0.1
+      version: 3.0.1
     '@react-router/dev':
       specifier: 8.5.1
       version: 8.5.1
@@ -403,7 +403,7 @@ importers:
         version: link:../../packages/auth
       '@ponti-studios/ui':
         specifier: 'catalog:'
-        version: 1.8.0(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 3.0.1(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react-native@0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.2.1
         version: 2.2.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -4698,13 +4698,17 @@ packages:
       react-native-reanimated:
         optional: true
 
-  '@ponti-studios/ui@1.8.0':
-    resolution: {integrity: sha512-1CgxQPeEqg4XjLXNzfHY7xHcbejs4plMcNgq8NJHRediXhsj8g45J57ZIWaKa3g6PRb0gFslrpSl4WYySameiw==}
+  '@ponti-studios/ui@3.0.1':
+    resolution: {integrity: sha512-L9wMQ3/MmAnUWoshUrgStXXs5qlKeKzRdoumLEY8zXu/I43CVgH+nAt6G7Wifx2px1UTdFOICfRASombwQzNLg==}
+    hasBin: true
     peerDependencies:
       react: 19.2.8
       react-dom: 19.2.8
+      react-native: '>=0.80'
     peerDependenciesMeta:
       react-dom:
+        optional: true
+      react-native:
         optional: true
 
   '@posthog/browser-common@0.9.5':
@@ -16300,8 +16304,9 @@ snapshots:
       '@shopify/react-native-skia': 2.14.0(71abb9ddf835c6b8287d29423f65fa01)
       react-native-reanimated: 4.7.1(react-native-worklets@0.13.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)(supports-color@8.1.1))(react-native@0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
 
-  '@ponti-studios/ui@1.8.0(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@ponti-studios/ui@3.0.1(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react-native@0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)':
     dependencies:
+      '@babel/runtime': 7.29.7
       '@base-ui/react': 1.9.0(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@radix-ui/colors': 3.0.0
       class-variance-authority: 0.7.1
@@ -16311,6 +16316,7 @@ snapshots:
       tailwind-merge: 3.7.0
     optionalDependencies:
       react-dom: 19.2.8(react@19.2.8)
+      react-native: 0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@date-fns/tz'
       - '@types/react'
