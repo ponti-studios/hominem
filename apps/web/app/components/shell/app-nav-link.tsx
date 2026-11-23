@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { NavLink } from 'react-router';
 
 import { cn } from '~/lib/utils';
@@ -46,7 +46,7 @@ export function AppNavLink({
         {({ isActive }) => (
           <>
             {isActive ? (
-              <motion.span
+              <m.span
                 aria-hidden
                 animate={{ opacity: 1, scale: 1 }}
                 className="absolute inset-0 border-b border-primary"

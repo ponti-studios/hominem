@@ -1,7 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Ellipsis, X } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -133,7 +133,7 @@ export default function FinanceTransactionsPage() {
     },
   });
   const { accountsMap } = useFinanceAccounts();
-  const accounts = [...(accountsMap?.values() ?? [])];
+  const accounts = useMemo(() => [...(accountsMap?.values() ?? [])], [accountsMap]);
   const queuedById = useMemo(() => {
     const result = new Map<string, string>();
     for (const verdict of queue.data?.verdicts ?? []) {
@@ -180,19 +180,24 @@ export default function FinanceTransactionsPage() {
     enabled: focusedTransactionId.length > 0 || status !== 'queued' || queuedIds.length > 0,
   });
   const transactions = transactionQuery.data?.data ?? [];
-  const visibleIds = transactions.map(({ id }) => id);
+  const visibleIds = useMemo(() => transactions.map(({ id }) => id), [transactionQuery.data]);
+  const visibleIdSet = useMemo(() => new Set(visibleIds), [visibleIds]);
+  const selectedIdSet = useMemo(() => new Set(selected), [selected]);
   const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selected.includes(id));
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIdSet.has(id));
   const categoryOptions = options.data?.categories ?? [];
   const tagOptions = options.data?.tags ?? [];
+  const merchantRuleMap = useMemo(() => {
+    const result = new Map<string, string>();
+    for (const rule of rulebook.data?.rulebook?.merchantRules ?? []) {
+      result.set(normalizeMerchant(rule.merchant), rule.category);
+    }
+    return result;
+  }, [rulebook.data]);
   const suggestionFor = (transaction: FinanceTransactionData) => {
     if (transaction.categoryName) return null;
     const merchant = normalizeMerchant(transaction.merchantName || transaction.description || '');
-    return (
-      rulebook.data?.rulebook?.merchantRules.find(
-        (rule) => normalizeMerchant(rule.merchant) === merchant,
-      )?.category ?? null
-    );
+    return merchantRuleMap.get(merchant) ?? null;
   };
   const closeTransaction = useCallback(() => {
     setActiveTransaction(null);
@@ -326,9 +331,13 @@ export default function FinanceTransactionsPage() {
     setSelected([]);
   }, [filterKey]);
 
-  useEffect(() => {
+  const [lastFocusedId, setLastFocusedId] = useState(focusedTransactionId);
+  if (focusedTransactionId !== lastFocusedId) {
+    // Render-time reset (no effect chain): a new focused id re-derives
+    // the dismissal state for it.
+    setLastFocusedId(focusedTransactionId);
     if (!focusedTransactionId) setDismissedTransactionId('');
-  }, [focusedTransactionId]);
+  }
 
   useEffect(() => {
     if (!focusedTransactionId || dismissedTransactionId === focusedTransactionId) return;
@@ -349,7 +358,7 @@ export default function FinanceTransactionsPage() {
   };
 
   return (
-    <motion.main
+    <m.main
       animate={{ opacity: 1, transform: 'translateY(0px)' }}
       className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8"
       data-slot="finance-transactions-page"
@@ -370,7 +379,7 @@ export default function FinanceTransactionsPage() {
 
       <AnimatePresence initial={false}>
         {selected.length > 0 && (
-          <motion.section
+          <m.section
             aria-label="Selected transactions"
             animate={{ opacity: 1, transform: 'translateY(0px)' }}
             className="sticky top-0 z-10 mt-4 flex min-h-14 flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85"
@@ -390,7 +399,7 @@ export default function FinanceTransactionsPage() {
             }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
+              <m.span
                 animate={{ opacity: 1, transform: 'translateY(0px)' }}
                 className="shrink-0 text-sm font-medium tabular-nums"
                 data-slot="finance-selection-count"
@@ -409,7 +418,7 @@ export default function FinanceTransactionsPage() {
                 }}
               >
                 {selected.length} selected
-              </motion.span>
+              </m.span>
             </AnimatePresence>
             {transactions.length > 0 &&
               selected.length < (transactionQuery.data?.filteredCount ?? 0) && (
@@ -502,7 +511,7 @@ export default function FinanceTransactionsPage() {
             >
               <X aria-hidden />
             </Button>
-          </motion.section>
+          </m.section>
         )}
       </AnimatePresence>
 
@@ -519,7 +528,7 @@ export default function FinanceTransactionsPage() {
             onSelect={() =>
               setSelected((current) =>
                 allVisibleSelected
-                  ? current.filter((id) => !visibleIds.includes(id))
+                  ? current.filter((id) => !visibleIdSet.has(id))
                   : [...new Set([...current, ...visibleIds])],
               )
             }
@@ -545,12 +554,12 @@ export default function FinanceTransactionsPage() {
             key={transaction.id}
             transaction={transaction}
             entranceIndex={index < 5 ? index : undefined}
-            selected={selected.includes(transaction.id)}
+            selected={selectedIdSet.has(transaction.id)}
             suggestion={suggestionFor(transaction)}
             queued={queuedById.get(transaction.id) === 'queued'}
             onSelect={() =>
               setSelected((current) =>
-                current.includes(transaction.id)
+                selectedIdSet.has(transaction.id)
                   ? current.filter((id) => id !== transaction.id)
                   : [...current, transaction.id],
               )
@@ -746,6 +755,6 @@ export default function FinanceTransactionsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.main>
+    </m.main>
   );
 }

@@ -4,7 +4,7 @@ import type {
   TransactionOptionsOutput,
 } from '@hominem/rpc/finance';
 import { ArrowUpRight, Check, CornerDownLeft, Filter, Search, Wallet, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
@@ -32,6 +32,19 @@ const KIND_LABEL: Record<string, string> = {
   page: 'Pages',
   action: 'Actions',
 };
+
+const FILTER_KEYS = new Set([
+  'search',
+  'account',
+  'category',
+  'tag',
+  'type',
+  'from',
+  'to',
+  'status',
+  'min',
+  'max',
+]);
 
 function normalize(value: string) {
   return value
@@ -106,8 +119,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [active, setActive] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [wasOpen, setWasOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // Latest-callback ref so the Escape listener subscribes once per open
+  // instead of on every parent render.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const index = useMemo(() => buildPaletteIndex(), []);
   const financeQuery = normalize(query);
   const financeSearch = normalize(debouncedQuery);
@@ -206,29 +224,28 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     }),
     ...navigation,
   ];
-  const activeFilters = [...searchParams.entries()].filter(
-    ([key, value]) =>
-      [
-        'search',
-        'account',
-        'category',
-        'tag',
-        'type',
-        'from',
-        'to',
-        'status',
-        'min',
-        'max',
-      ].includes(key) && value,
-  );
-  const activeFilterCount = activeFilters.filter(([key]) => key !== 'max').length;
+  const activeFilterCount = (() => {
+    let count = 0;
+    for (const [key, value] of searchParams.entries()) {
+      if (value && key !== 'max' && FILTER_KEYS.has(key)) count += 1;
+    }
+    return count;
+  })();
 
-  useEffect(() => {
-    if (!open) return;
+  // Reset transient state the moment the palette opens (render-time
+  // adjustment, not an effect, per React's "you might not need an effect").
+  if (open && !wasOpen) {
+    setWasOpen(true);
     setQuery('');
     setDebouncedQuery('');
     setActive(0);
     setFiltersOpen(false);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
+
+  useEffect(() => {
+    if (!open) return;
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [open]);
 
@@ -237,26 +254,24 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  useEffect(() => setActive(0), [query]);
-
   useEffect(() => {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose, open]);
+  }, [open]);
 
-  useEffect(() => {
-    setActive((current) => Math.min(current, Math.max(results.length - 1, 0)));
-  }, [results.length]);
+  // Clamped during render so a shrinking result list can never leave the
+  // highlight out of bounds — no state-adjustment effect needed.
+  const activeIndex = Math.min(active, Math.max(results.length - 1, 0));
 
   useEffect(() => {
     listRef.current
-      ?.querySelector(`[data-index="${active}"]`)
+      ?.querySelector(`[data-index="${activeIndex}"]`)
       ?.scrollIntoView({ block: 'nearest' });
-  }, [active]);
+  }, [activeIndex]);
 
   function go(path: string) {
     onClose();
@@ -289,7 +304,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       if (results.length) setActive((current) => Math.max(current - 1, 0));
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      const result = results[active];
+      const result = results[activeIndex];
       if (result) go(result.path);
       else if (query.trim()) go(`/finance/transactions?search=${encodeURIComponent(query.trim())}`);
     }
@@ -307,7 +322,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <AnimatePresence>
       {open ? (
-        <motion.div
+        <m.div
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-4 sm:pt-[10vh]"
           exit={{ opacity: 0 }}
@@ -319,7 +334,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             className="absolute inset-0 bg-black/55 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div
+          <m.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-background shadow-2xl sm:max-h-[90dvh]"
             exit={{ opacity: 0, scale: 0.97, y: -8 }}
@@ -337,13 +352,16 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 aria-label="Search transactions, accounts, pages, and actions"
                 autoComplete="off"
                 className="h-16 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActive(0);
+                }}
                 onKeyDown={onKeyDown}
                 placeholder="Search transactions, accounts, pages…"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="palette-list"
-                aria-activedescendant={results.length ? `palette-item-${active}` : undefined}
+                aria-activedescendant={results.length ? `palette-item-${activeIndex}` : undefined}
                 spellCheck={false}
                 value={query}
               />
@@ -374,7 +392,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
             <AnimatePresence initial={false}>
               {filtersOpen && transactionsPath ? (
-                <motion.section
+                <m.section
                   animate={{ opacity: 1, y: 0 }}
                   aria-label="Transaction filters"
                   className="max-h-[55vh] overflow-y-auto border-t border-border px-4 py-4"
@@ -473,7 +491,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       Clear filters
                     </Button>
                   ) : null}
-                </motion.section>
+                </m.section>
               ) : null}
             </AnimatePresence>
 
@@ -517,10 +535,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   <div key={result.key}>
                     {header}
                     <button
-                      aria-selected={position === active}
+                      aria-selected={position === activeIndex}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors',
-                        position === active ? 'bg-muted' : 'bg-transparent',
+                        position === activeIndex ? 'bg-muted' : 'bg-transparent',
                       )}
                       data-index={position}
                       id={`palette-item-${position}`}
@@ -550,7 +568,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                           </span>
                         ) : null}
                       </span>
-                      {position === active ? (
+                      {position === activeIndex ? (
                         <CornerDownLeft aria-hidden className="size-4 shrink-0 text-foreground" />
                       ) : (
                         <ArrowUpRight
@@ -569,8 +587,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               {transactionsPath ? <span>Filters apply to the ledger</span> : null}
               <span className="ml-auto">esc close</span>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       ) : null}
     </AnimatePresence>
   );

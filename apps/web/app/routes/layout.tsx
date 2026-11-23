@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, data, useLocation, useNavigate } from 'react-router';
 
 import { AppSidebar } from '~/components/shell/app-sidebar';
@@ -53,10 +53,10 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let pendingG = false;
+    let gSequenceTimer: ReturnType<typeof setTimeout> | undefined;
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target;
       const typing =
@@ -70,7 +70,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
       if (typing || paletteOpen) return;
       if (pendingG) {
         pendingG = false;
-        if (timerRef.current) clearTimeout(timerRef.current);
+        clearTimeout(gSequenceTimer);
         const path = GO_SEQUENCES[event.key.toLowerCase()];
         if (path) {
           event.preventDefault();
@@ -80,7 +80,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
       }
       if (event.key.toLowerCase() === 'g' && !event.metaKey && !event.ctrlKey && !event.altKey) {
         pendingG = true;
-        timerRef.current = setTimeout(() => {
+        gSequenceTimer = setTimeout(() => {
           pendingG = false;
         }, 800);
       }
@@ -88,9 +88,9 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
-      clearTimeout(timerRef.current);
+      clearTimeout(gSequenceTimer);
     };
-  }, [paletteOpen]);
+  }, [navigate, paletteOpen]);
 
   return (
     <div className="flex h-[100svh] min-h-[100svh] w-full flex-row overflow-hidden bg-transparent text-foreground">
