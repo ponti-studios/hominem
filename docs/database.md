@@ -38,10 +38,9 @@ for service startup and worktree setup.
 Production PostgreSQL is a private Fly service. Its app, region, volume, and
 private hostname are maintained in the private Notion production reference and
 GitHub `Production` environment. They are not
-resolvable from a local machine. Use a temporary `fly proxy` instead of trying
-to connect to it directly or sourcing `packages/db/.env.production`.
-Set `FLY_DB_APP_NAME` from the private production reference before running the
-commands below.
+resolvable from a local machine. Use a temporary `fly proxy` instead of
+trying to connect to it directly. Set `FLY_DB_APP_NAME` from the private
+production reference before running the commands below.
 
 1. Verify the authenticated Fly account and the target app before connecting:
 
