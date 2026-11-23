@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   docker-build:
@@ -31,8 +32,9 @@ jobs:
         env:
           DOCKERFILE: ${{ inputs.dockerfile }}
           BUILD_ARGS: ${{ inputs.build-args }}
+          GH_PACKAGES_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           args=()
           for arg in $BUILD_ARGS; do args+=(--build-arg "$arg"); done
-          docker build --file "$DOCKERFILE" "${args[@]}" --tag "validate:${GITHUB_SHA}" .
+          docker build --secret id=gh_packages_token,env=GH_PACKAGES_TOKEN --file "$DOCKERFILE" "${args[@]}" --tag "validate:${GITHUB_SHA}" .
