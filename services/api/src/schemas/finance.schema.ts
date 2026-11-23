@@ -231,6 +231,9 @@ export const financeAccountsOutputSchema = z.object({
       lifecycleStatus: z.string(),
       includeInNetWorth: z.boolean(),
       balanceCents: z.number().int(),
+      provider: z.string().nullable(),
+      providerAccountId: z.string().nullable(),
+      accountNumber: z.string().nullable(),
     }),
   ),
   count: z.number().int().min(0),
@@ -252,6 +255,9 @@ export const financeMcpAccountsOutputSchema = z.object({
       lifecycleStatus: z.string(),
       includeInNetWorth: z.boolean(),
       balance: z.number(),
+      provider: z.string().nullable(),
+      providerAccountId: z.string().nullable(),
+      accountNumber: z.string().nullable(),
     }),
   ),
   count: z.number().int().min(0),
@@ -295,6 +301,22 @@ export const financeAccountCreateInputSchema = z.object({
     .describe('Currencies this account can hold; currencyCode is always allowed.'),
   institution: z.string().optional().describe('Institution name, e.g. Acme Bank.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
+  provider: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      'Sync provider slug, e.g. starling or plaid; with providerAccountId it is the identity external syncs route by.',
+    ),
+  providerAccountId: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      'Bank-side account id (Starling account/saver UIDs); routing matches this before the name.',
+    ),
   status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
   accountType: accountTypeSchema
     .default('checking')
@@ -315,6 +337,11 @@ export const financeAccountCreateOutputSchema = z.object({
   allowedCurrencies: z.array(z.string()).max(500),
   status: z.string(),
   includeInNetWorth: z.boolean().describe('Stored flag, not the requested one.'),
+  provider: z.string().nullable().describe('Stored sync provider slug, normalized to lowercase.'),
+  providerAccountId: z
+    .string()
+    .nullable()
+    .describe('Stored bank-side account id; null when no identity routing is set.'),
   created: z.boolean(),
   dryRun: z.boolean(),
 });
@@ -1450,6 +1477,8 @@ export const financeCategoryDeleteOutputSchema = z.object({
 const accountUpdateReasonSchema = z
   .enum([
     'currency_immutable',
+    'identity_conflict',
+    'identity_requires_provider',
     'invalid_name',
     'invalid_status_transition',
     'name_conflict',
@@ -1468,6 +1497,20 @@ export const financeAccountUpdateInputSchema = z.object({
     .describe('New display name; must stay unique per owner (case-insensitive).'),
   institution: z.string().nullable().optional().describe('Institution name; null clears it.'),
   accountNumber: z.string().nullable().optional().describe('Mask / last digits; null clears it.'),
+  provider: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Sync provider slug, normalized to lowercase; null clears it. Clearing it with a providerAccountId still set is refused.',
+    ),
+  providerAccountId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Bank-side account id; null clears it. Unique per user alongside provider — clashes are refused with identity_conflict.',
+    ),
   accountType: accountTypeSchema.optional(),
   status: z
     .enum(['open', 'closed', 'historical', 'unknown'])

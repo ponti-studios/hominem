@@ -3071,7 +3071,7 @@
     "type": "function",
     "function": {
       "name": "finance_account_create",
-      "description": "Create a finance account, or return the existing one when the name matches case-insensitively (created: false). Accounts created here are what sheet imports resolve against; the import never auto-creates an unknown account. includeInNetWorth defaults to true; an existing account keeps its stored value. dryRun reports the outcome without writing. Mode: write. Use when: A sheet label or sync source needs an account that does not exist yet. Do not use when: Do not use to rename, close, or merge an existing account.  Produces: account ids, account names.",
+      "description": "Create a finance account, or return the existing one (created: false) — matching by (provider, providerAccountId) when both are given, else by case-insensitive name. Accounts created here are what sheet imports resolve against; the import never auto-creates an unknown account. A name match never stamps a requested provider identity onto the existing account — use finance_account_update for that. includeInNetWorth defaults to true; an existing account keeps its stored value. dryRun reports the outcome without writing. Mode: write. Use when: A sheet label or sync source needs an account that does not exist yet. Do not use when: Do not use to rename, close, or merge an existing account.  Produces: account ids, account names, provider identities.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3101,6 +3101,16 @@
           "accountNumber": {
             "description": "Mask / last digits as displayed elsewhere.",
             "type": "string"
+          },
+          "provider": {
+            "description": "Sync provider slug, e.g. starling or plaid; with providerAccountId it is the identity external syncs route by.",
+            "type": "string",
+            "minLength": 1
+          },
+          "providerAccountId": {
+            "description": "Bank-side account id (Starling account/saver UIDs); routing matches this before the name.",
+            "type": "string",
+            "minLength": 1
           },
           "status": {
             "default": "open",
@@ -3198,7 +3208,7 @@
     "type": "function",
     "function": {
       "name": "finance_account_update",
-      "description": "Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status, allowedCurrencies and includeInNetWorth. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. includeInNetWorth is independent of status. dryRun projects the change set without applying it. Mode: write. Use when: Correcting account metadata or changing the currencies allowed for its transactions. Do not use when: Do not use to change an account currency (immutable) or to delete/merge accounts (out of scope).  Prerequisites: finance_accounts (resolve the account id).",
+      "description": "Partially update an account addressed by id: name, institution, accountNumber (mask), provider identity (provider, providerAccountId), accountType, status, allowedCurrencies and includeInNetWorth. Omitted fields are unchanged; null clears institution/accountNumber/provider/providerAccountId. Identity — id, transactions, links — never changes, and currencyCode is immutable here. Provider identity is unique per user: clashing with another account is refused with identity_conflict, and a providerAccountId without a provider is refused with identity_requires_provider. includeInNetWorth is independent of status. dryRun projects the change set without applying it. Mode: write. Use when: Correcting account metadata or changing the currencies allowed for its transactions. Do not use when: Do not use to change an account currency (immutable) or to delete/merge accounts (out of scope).  Prerequisites: finance_accounts (resolve the account id).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3218,6 +3228,14 @@
           },
           "accountNumber": {
             "description": "Mask / last digits; null clears it.",
+            "type": ["string", "null"]
+          },
+          "provider": {
+            "description": "Sync provider slug, normalized to lowercase; null clears it. Clearing it with a providerAccountId still set is refused.",
+            "type": ["string", "null"]
+          },
+          "providerAccountId": {
+            "description": "Bank-side account id; null clears it. Unique per user alongside provider — clashes are refused with identity_conflict.",
             "type": ["string", "null"]
           },
           "accountType": {
@@ -3271,7 +3289,7 @@
     "type": "function",
     "function": {
       "name": "finance_accounts",
-      "description": "List finance accounts with type, currency, lifecycle status and current balance (posted transactions only). Unlike finance_net_worth this includes accounts left out of net-worth totals, such as credit cards. Mode: read-only. Use when: The user asks which accounts they have, or an account id is needed as a filter. Do not use when: Do not use for net worth totals; use finance_net_worth.  Produces: account ids, account names, account balances.",
+      "description": "List finance accounts with type, currency, lifecycle status and current balance (posted transactions only). Unlike finance_net_worth this includes accounts left out of net-worth totals, such as credit cards. Each account also carries its routing identity: provider, providerAccountId and accountNumber (mask). Mode: read-only. Use when: The user asks which accounts they have, or an account id is needed as a filter. Do not use when: Do not use for net worth totals; use finance_net_worth.  Produces: account ids, account names, account balances, provider identities.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -4145,6 +4163,278 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["category", "limit"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_doctrine_get",
+      "description": "Read the deterministic ingest doctrine: ordered merchant, tag, amount, transfer and income rules plus category tag lenses, applied by external transaction syncs before import. Categories and tags are names, resolved at import time. Mode: read-only. Use when: An external sync needs the current categorization rules, or the user asks what the ingest doctrine is. Do not use when: Do not use to categorize by hand or to file ledger transactions; use the finance transactions tools.  Produces: merchant rules, tag rules, category tag lenses.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_doctrine_import",
+      "description": "Replace the ingest doctrine wholesale — full replace, no merge. The fingerprint is computed server-side; importing identical contents is a no-op. dryRun reports the outcome without writing. Mode: write. Use when: Seeding or revising the deterministic rules an external sync applies at ingest. Do not use when: Do not use for ledger merchant suggestions; that is the rulings rulebook, not the sync doctrine.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "doctrine": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "const": 1,
+                "description": "Doctrine shape version — bump only on a breaking shape change."
+              },
+              "merchantRules": {
+                "maxItems": 5000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern", "category"],
+                  "additionalProperties": false
+                }
+              },
+              "tagRules": {
+                "maxItems": 5000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "tags": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      }
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern", "tags"],
+                  "additionalProperties": false
+                }
+              },
+              "amountRules": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "merchant": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300,
+                      "description": "Exact normalized merchant name."
+                    },
+                    "amountMinorUnits": {
+                      "minItems": 1,
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "description": "Signed minor units (cents/pence) that trigger this rule."
+                    },
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["merchant", "amountMinorUnits", "category"],
+                  "additionalProperties": false
+                }
+              },
+              "transferMerchants": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "exact",
+                      "description": "Match mode for row-class transfer detection; defaults to exact.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "unlessAccountContains": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern"],
+                  "additionalProperties": false
+                }
+              },
+              "incomePatterns": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern"],
+                  "additionalProperties": false
+                }
+              },
+              "coffeePatterns": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "description": "Coffee/tea substrings; inside the Food category these win over other component tags."
+              },
+              "lenses": {
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "matches": {
+                      "maxItems": 5000,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "matchMode": {
+                            "default": "contains",
+                            "description": "How the pattern is matched against the normalized merchant name.",
+                            "type": "string",
+                            "enum": ["exact", "contains", "startsWith"]
+                          },
+                          "pattern": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
+                          "tag": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          }
+                        },
+                        "required": ["matchMode", "pattern", "tag"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["category", "matches"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "version",
+              "merchantRules",
+              "tagRules",
+              "amountRules",
+              "transferMerchants",
+              "incomePatterns",
+              "coffeePatterns",
+              "lenses"
+            ],
+            "additionalProperties": false
+          },
+          "dryRun": {
+            "default": false,
+            "description": "Report the outcome without writing.",
+            "type": "boolean"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["doctrine", "dryRun"],
         "additionalProperties": false
       }
     }
