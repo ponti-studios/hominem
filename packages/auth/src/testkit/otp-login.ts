@@ -1,6 +1,7 @@
-import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/email';
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+
+import { readLatestScriptedOtp, resolveScriptedMailboxPath } from './scripted-mailbox.js';
 
 // Playwright helpers for the API-hosted email-OTP login
 // (services/api/src/routes/login), shared by every consuming app (career,
