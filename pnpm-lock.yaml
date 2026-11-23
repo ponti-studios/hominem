@@ -4699,7 +4699,7 @@ packages:
         optional: true
 
   '@ponti-studios/ui@1.8.0':
-    resolution: {integrity: sha512-1CgxQPeEqg4XjLXNzfHY7xHcbejs4plMcNgq8NJHRediXhsj8g45J57ZIWaKa3g6PRb0gFslrpSl4WYySameiw==}
+    resolution: {integrity: sha512-1CgxQPeEqg4XjLXNzfHY7xHcbejs4plMcNgq8NJHRediXhsj8g45J57ZIWaKa3g6PRb0gFslrpSl4WYySameiw==, tarball: https://npm.pkg.github.com/download/@ponti-studios/ui/1.8.0/1afa719e14328df9d62afeb48325423787927146}
     peerDependencies:
       react: 19.2.8
       react-dom: 19.2.8
