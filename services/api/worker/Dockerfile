@@ -13,7 +13,15 @@ COPY tsconfig.profiles ./tsconfig.profiles
 COPY tsconfig.base.json ./
 COPY tsconfig.json ./
 
-RUN npm install -g pnpm@11.23.0 && \
+# Org packages (@ponti-studios/*) resolve from GitHub Packages, which needs a
+# token for metadata fetches too (pnpm's trust policy reads packuments for the
+# whole lockfile, even entries outside the filtered graph). CI and Fly pass it
+# as a build secret; without it, only npmjs packages resolve.
+RUN --mount=type=secret,id=gh_packages_token \
+    npm install -g pnpm@11.23.0 && \
+    if [ -f /run/secrets/gh_packages_token ]; then \
+      echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/gh_packages_token)" >> ~/.npmrc; \
+    fi && \
     pnpm install --frozen-lockfile --filter @hominem/api...
 
 RUN pnpm --filter @ponti-studios/auth build

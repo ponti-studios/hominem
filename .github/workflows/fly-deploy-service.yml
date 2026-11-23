@@ -27,6 +27,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   deploy:
@@ -68,10 +69,13 @@ jobs:
       - name: deploy-to-fly
         env:
           CONFIG_PATH: ${{ steps.prepare-config.outputs.config_path }}
+          GH_PACKAGES_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           args=(--config "$CONFIG_PATH" --dockerfile "$DOCKERFILE" --app "$APP" --remote-only --ha=false)
           while IFS= read -r line; do
             [[ -n "$line" ]] && args+=(--build-arg "$line")
           done <<<"$BUILD_ARGS"
+          # The image build resolves @ponti-studios/* from GitHub Packages.
+          args+=(--build-secret "gh_packages_token=${GH_PACKAGES_TOKEN}")
           flyctl deploy "${args[@]}"
