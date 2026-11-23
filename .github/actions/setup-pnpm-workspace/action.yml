@@ -16,6 +16,16 @@ runs:
         cache: true
         cache-dependency-path: pnpm-lock.yaml
 
+    - name: authenticate-github-packages
+      shell: bash
+      env:
+        GH_PACKAGES_TOKEN: ${{ github.token }}
+      run: |
+        {
+          echo "@ponti-studios:registry=https://npm.pkg.github.com"
+          echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}"
+        } >> ~/.npmrc
+
     - name: install-dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
