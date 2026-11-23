@@ -919,8 +919,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/utils
       '@hono/node-server':
-        specifier: ^2.1.5
-        version: 2.1.5(hono@4.13.13)
+        specifier: ^2.1.11
+        version: 2.1.11(hono@4.13.13)
       '@hono/zod-validator':
         specifier: 0.9.1
         version: 0.9.1(hono@4.13.13)(zod@4.6.7)
@@ -2810,8 +2810,8 @@ packages:
     peerDependencies:
       hono: ^4
 
-  '@hono/node-server@2.1.5':
-    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
+  '@hono/node-server@2.1.11':
+    resolution: {integrity: sha512-KzKz9vl4vvr1vgLHamj+g5uonbrj5NwAdO3yzOS6cd2HjALVeOgTgeZOyAzNxejbkfOOPIcvuf/Tg8l1pEFLog==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4 || ^5.0.0-0
@@ -14771,7 +14771,7 @@ snapshots:
       '@hominem/storage': file:packages/storage(react@19.2.8)(supports-color@8.1.1)
       '@hominem/telemetry': file:packages/telemetry(react@19.2.8)
       '@hominem/utils': file:packages/utils(react@19.2.8)
-      '@hono/node-server': 2.1.5(hono@4.13.13)
+      '@hono/node-server': 2.1.11(hono@4.13.13)
       '@hono/zod-validator': 0.9.1(hono@4.13.13)(zod@4.6.7)
       '@modelcontextprotocol/server': 2.4.0
       '@opentelemetry/api': 1.10.0
@@ -14992,7 +14992,7 @@ snapshots:
     dependencies:
       hono: 4.13.13
 
-  '@hono/node-server@2.1.5(hono@4.13.13)':
+  '@hono/node-server@2.1.11(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
 
@@ -15373,7 +15373,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.32.1(supports-color@8.1.1)(zod@4.6.7)':
     dependencies:
-      '@hono/node-server': 2.1.5(hono@4.13.13)
+      '@hono/node-server': 2.1.11(hono@4.13.13)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
