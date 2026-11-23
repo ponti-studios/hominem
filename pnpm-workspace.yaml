@@ -38,6 +38,7 @@ overrides:
   '@hono/zod-validator': 0.9.1
   '@opentelemetry/api': 1.10.0
   fast-uri: '>=3.1.5'
+  expo-modules-core: 58.0.26
   ua-parser-js: 1.0.39
   prismjs: '>=1.30.0'
   markdown-it: '>=12.3.2'
@@ -180,3 +181,4 @@ minimumReleaseAgeExclude:
 
 patchedDependencies:
   '@expensify/react-native-live-markdown@0.1.343': patches/@expensify__react-native-live-markdown@0.1.343.patch
+  react-native@0.88.0: patches/react-native@0.88.0.patch

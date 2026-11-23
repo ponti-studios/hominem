@@ -3,6 +3,7 @@ import type { NativeStackHeaderItem, Stack } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 
+import { setSideDrawerOpen } from '~/components/navigation/side-drawer-store';
 import { fontFamilies, useAppTheme } from '~/components/theme';
 import { SETTINGS_ROUTE } from '~/services/navigation/routes';
 
@@ -47,5 +48,17 @@ export const settingsHeaderRightItems = (): NativeStackHeaderItem[] => [
     identifier: 'settings-button',
     label: 'Settings',
     onPress: () => router.push(SETTINGS_ROUTE),
+  },
+];
+
+// The menu button that opens the side drawer, on the left of every tab's header.
+export const menuHeaderLeftItems = (): NativeStackHeaderItem[] => [
+  {
+    type: 'button',
+    accessibilityLabel: 'Menu',
+    icon: { type: 'sfSymbol', name: 'line.3.horizontal' },
+    identifier: 'menu-button',
+    label: 'Menu',
+    onPress: () => setSideDrawerOpen(true),
   },
 ];

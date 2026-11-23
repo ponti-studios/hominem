@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 
 import {
   inlineTitleOptions,
+  menuHeaderLeftItems,
   settingsHeaderRightItems,
   useNativeHeaderOptions,
 } from '~/components/navigation/native-header';
@@ -14,6 +15,7 @@ export default function NotesStackLayout() {
         name="index"
         options={{
           ...inlineTitleOptions,
+          unstable_headerLeftItems: menuHeaderLeftItems,
           unstable_headerRightItems: settingsHeaderRightItems,
           title: 'Notes',
         }}

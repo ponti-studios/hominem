@@ -1,4 +1,4 @@
-import { ShimmerProgressBar as KitShimmerProgressBar } from '@hominem/rn-kit';
+import { ShimmerProgressBar as KitShimmerProgressBar } from '@ponti-studios/rnkit/motion';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 import { useAppTheme } from '~/components/theme';

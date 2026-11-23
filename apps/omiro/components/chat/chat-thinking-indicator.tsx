@@ -1,4 +1,4 @@
-import { ShimmerText as KitShimmerText } from '@hominem/rn-kit';
+import { ShimmerText as KitShimmerText } from '@ponti-studios/rnkit/motion';
 import { useEffect } from 'react';
 import { View, type TextStyle } from 'react-native';
 import Animated, {
