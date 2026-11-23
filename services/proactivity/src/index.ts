@@ -39,3 +39,24 @@ export type {
   StateSnapshot,
 } from './types.js';
 export type { GoalScenario } from './scenarios.js';
+export {
+  adjustMonthlyFlows,
+  buildCareerSnapshot,
+  buildFinanceSnapshots,
+  reconcileTransferPairs,
+} from './finance-facts.js';
+export {
+  createCareerContextLoader,
+  createDomainContextAssembler,
+  createFinanceContextLoader,
+} from './contexts.js';
+export type {
+  AccountFlow,
+  CareerPipelineInput,
+  CategorySpend,
+  FinanceSnapshotInput,
+  IncomeEvent,
+  MonthlyFlow,
+  Reconciliation,
+  TransferPair,
+} from './finance-facts.js';
