@@ -18,6 +18,20 @@ const formatGbp = new Intl.NumberFormat('en-GB', {
   maximumFractionDigits: 0,
 });
 
+const formatRunTime = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** A run's trigger id is an idempotency key, not copy a person should read. */
+function runLabel(triggerId: string): string {
+  if (triggerId.startsWith('scheduled-')) return 'scheduled pass';
+  if (triggerId.startsWith('manual-')) return 'manual run';
+  return 'run';
+}
+
 export function ProactivityDashboard() {
   const client = useApiClient();
   const queryClient = useQueryClient();
@@ -169,7 +183,8 @@ export function ProactivityDashboard() {
       {lastRun ? (
         <>
           <p className="mb-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-            Decisions — run {lastRun.triggerId}
+            Decisions — {runLabel(lastRun.triggerId)} ·{' '}
+            {formatRunTime.format(new Date(lastRun.processedAt))}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {lastRun.evaluations.map((evaluation) => (
