@@ -1,9 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
-import type {
-  ProactivityActionKind,
-  ProactivityOverview,
-  ProactivityPreparedCharge,
-} from '@hominem/rpc/types';
+import type { ProactivityOverview } from '@hominem/rpc/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -11,25 +7,23 @@ import { BlockSkeleton } from '~/components/design';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 
+import {
+  ProactivitySuggestion,
+  type SuggestionModel,
+  type SuggestionState,
+} from './proactivity-suggestion';
+
 type Evaluation = NonNullable<ProactivityOverview['lastRun']>['evaluations'][number];
-type Goal = ProactivityOverview['goals'][number];
 type Filter = 'all' | 'finance' | 'career';
 
 const OVERVIEW_KEY = ['proactivity', 'overview'] as const;
+const DAY_MS = 86_400_000;
 
 const formatRunTime = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'short',
   hour: '2-digit',
   minute: '2-digit',
-});
-
-const formatDay = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-
-const formatGbp = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  maximumFractionDigits: 2,
 });
 
 function relativeTime(iso: string): string {
@@ -48,6 +42,13 @@ function runLabel(triggerId: string): string {
   return 'run';
 }
 
+/** Mirrors the api's task due time so the review shows the real date. */
+function nextMorning(): string {
+  const due = new Date(Date.now() + DAY_MS);
+  due.setUTCHours(9, 0, 0, 0);
+  return due.toISOString();
+}
+
 function stateFor(evaluation: Evaluation, actions: ProactivityOverview['actions']) {
   const open = actions.filter(
     (action) => action.goalId === evaluation.goalId && action.status === 'applied',
@@ -59,42 +60,6 @@ function stateFor(evaluation: Evaluation, actions: ProactivityOverview['actions'
       action.kind === 'finding.snooze' && action.until && Date.parse(action.until) > Date.now(),
   );
   return { task, paused, snoozed, done: Boolean(task || paused) };
-}
-
-function Awaiting({
-  children,
-  tone = 'done',
-}: {
-  children: React.ReactNode;
-  tone?: 'done' | 'quiet';
-}) {
-  return (
-    <div
-      className={cn(
-        'mt-4 flex items-center gap-2.5 rounded-sm px-3.5 py-2.5 text-[13px]',
-        tone === 'done'
-          ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-          : 'bg-muted text-muted-foreground',
-      )}
-    >
-      <CheckGlyph />
-      <span className="min-w-0 flex-1">{children}</span>
-    </div>
-  );
-}
-
-function CheckGlyph() {
-  return (
-    <svg aria-hidden="true" className="size-4 shrink-0" fill="none" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.25" />
-      <path
-        d="M6.4 10.2l2.4 2.4 4.8-5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
 }
 
 function FilterTab({
@@ -129,11 +94,6 @@ export function ProactivityDashboard() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>('all');
-  const [confirming, setConfirming] = useState<{
-    goalId: string;
-    kind: ProactivityActionKind;
-  } | null>(null);
-  const [preparedFor, setPreparedFor] = useState<string | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: OVERVIEW_KEY,
@@ -154,7 +114,7 @@ export function ProactivityDashboard() {
   const applyAction = useMutation({
     mutationFn: async (input: {
       goalId: string;
-      kind: ProactivityActionKind;
+      kind: 'task.create' | 'goal.pause' | 'finding.snooze';
       triggerId: string;
     }) => {
       const response = await client.api.proactivity.actions.$post({
@@ -162,10 +122,7 @@ export function ProactivityDashboard() {
       });
       return response.json();
     },
-    onSuccess: (action) => {
-      updateActions(action);
-      setConfirming(null);
-    },
+    onSuccess: updateActions,
   });
 
   const undoAction = useMutation({
@@ -175,7 +132,7 @@ export function ProactivityDashboard() {
       });
       return response.json();
     },
-    onSuccess: (action) => updateActions(action),
+    onSuccess: updateActions,
   });
 
   const run = useMutation({
@@ -249,6 +206,76 @@ export function ProactivityDashboard() {
     ? `${relativeTime(lastRun.processedAt)} · ${runLabel(lastRun.triggerId)}`
     : 'not yet';
 
+  function suggestionFor(evaluation: Evaluation): {
+    suggestion: SuggestionModel;
+    state: SuggestionState;
+    actionId?: string;
+  } {
+    const goal = goalById.get(evaluation.goalId);
+    const decision = evaluation.decision;
+    const isProposal = decision.kind === 'propose';
+    const state = stateFor(evaluation, overview.actions);
+    const action = state.task ?? state.paused ?? state.snoozed;
+
+    return {
+      actionId: action?.id,
+      state: state.done
+        ? 'applied'
+        : state.snoozed
+          ? 'snoozed'
+          : isProposal
+            ? 'needs-you'
+            : 'waiting',
+      suggestion: {
+        goalTitle: goal?.title ?? 'Goal',
+        summary: isProposal ? decision.summary : 'Nothing new to judge yet.',
+        reason: decision.reason,
+        review: isProposal
+          ? { kind: 'task', title: decision.nextStep, dueAt: nextMorning() }
+          : { kind: 'goal.pause' },
+        preparedCharges:
+          isProposal && goal?.domains.includes('finance') ? overview.preparedCharges : undefined,
+        appliedLabel: state.task
+          ? 'Done — added to your tasks, due tomorrow.'
+          : state.paused
+            ? 'Done — this goal is paused. Resume it anytime.'
+            : undefined,
+        snoozedUntil: state.snoozed?.until ?? undefined,
+      },
+    };
+  }
+
+  function renderSuggestion(evaluation: Evaluation, index: number) {
+    if (!lastRun) return null;
+    const { suggestion, state, actionId } = suggestionFor(evaluation);
+    const isProposal = evaluation.decision.kind === 'propose';
+
+    return (
+      <ProactivitySuggestion
+        busy={applyAction.isPending || undoAction.isPending}
+        defaultOpen={index === 0}
+        key={evaluation.goalId}
+        onApply={() =>
+          applyAction.mutate({
+            goalId: evaluation.goalId,
+            kind: isProposal ? 'task.create' : 'goal.pause',
+            triggerId: lastRun.triggerId,
+          })
+        }
+        onSnooze={() =>
+          applyAction.mutate({
+            goalId: evaluation.goalId,
+            kind: 'finding.snooze',
+            triggerId: lastRun.triggerId,
+          })
+        }
+        onUndo={actionId ? () => undoAction.mutate(actionId) : undefined}
+        state={state}
+        suggestion={suggestion}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <header className="flex items-end justify-between gap-6">
@@ -286,7 +313,7 @@ export function ProactivityDashboard() {
         </span>
       </p>
 
-      <div className="mt-8 flex gap-7 border-b border-[var(--border-default)]">
+      <div className="mt-8 flex gap-7 border-b border-border">
         <FilterTab
           active={filter === 'all'}
           count={counts.all}
@@ -329,7 +356,7 @@ export function ProactivityDashboard() {
         <div className="mt-2">
           {proposing.length > 0 ? (
             <section aria-labelledby="needs-label" className="mt-6">
-              <div className="flex items-baseline justify-between border-b border-[var(--border-default)] pb-2.5 font-mono text-[10px] tracking-[0.17em] text-muted-foreground uppercase">
+              <div className="flex items-baseline justify-between border-b border-border pb-2.5 font-mono text-[10px] tracking-[0.17em] text-muted-foreground uppercase">
                 <span id="needs-label">Needs you</span>
                 <span>
                   {
@@ -340,77 +367,25 @@ export function ProactivityDashboard() {
                   }
                 </span>
               </div>
-              {proposing.map((evaluation, index) => {
-                const goal = goalById.get(evaluation.goalId);
-                if (!goal) return null;
-                return (
-                  <FindingRow
-                    key={evaluation.goalId}
-                    actions={overview.actions}
-                    confirming={confirming}
-                    evaluation={evaluation}
-                    goal={goal}
-                    index={index}
-                    isApplying={applyAction.isPending}
-                    isUndoing={undoAction.isPending}
-                    onApply={(kind) => {
-                      applyAction.mutate({
-                        goalId: evaluation.goalId,
-                        kind,
-                        triggerId: lastRun.triggerId,
-                      });
-                    }}
-                    onConfirm={setConfirming}
-                    onPrepare={() => setPreparedFor(evaluation.goalId)}
-                    onUndo={(actionId) => undoAction.mutate(actionId)}
-                    preparedCharges={overview.preparedCharges}
-                    preparedOpen={preparedFor === evaluation.goalId}
-                  />
-                );
-              })}
+              {proposing.map(renderSuggestion)}
             </section>
           ) : null}
 
           {waiting.length > 0 ? (
             <section aria-labelledby="waiting-label" className="mt-10">
-              <div className="flex items-baseline justify-between border-b border-[var(--border-default)] pb-2.5 font-mono text-[10px] tracking-[0.17em] text-muted-foreground uppercase">
+              <div className="flex items-baseline justify-between border-b border-border pb-2.5 font-mono text-[10px] tracking-[0.17em] text-muted-foreground uppercase">
                 <span id="waiting-label">Waiting</span>
                 <span>{waiting.length}</span>
               </div>
-              {waiting.map((evaluation, index) => {
-                const goal = goalById.get(evaluation.goalId);
-                if (!goal) return null;
-                return (
-                  <FindingRow
-                    key={evaluation.goalId}
-                    actions={overview.actions}
-                    confirming={confirming}
-                    evaluation={evaluation}
-                    goal={goal}
-                    index={index + proposing.length}
-                    isApplying={applyAction.isPending}
-                    isUndoing={undoAction.isPending}
-                    onApply={(kind) => {
-                      applyAction.mutate({
-                        goalId: evaluation.goalId,
-                        kind,
-                        triggerId: lastRun.triggerId,
-                      });
-                    }}
-                    onConfirm={setConfirming}
-                    onPrepare={() => setPreparedFor(evaluation.goalId)}
-                    onUndo={(actionId) => undoAction.mutate(actionId)}
-                    preparedCharges={[]}
-                    preparedOpen={false}
-                  />
-                );
-              })}
+              {waiting.map((evaluation, index) =>
+                renderSuggestion(evaluation, index + proposing.length),
+              )}
             </section>
           ) : null}
         </div>
       )}
 
-      <p className="mt-12 border-t border-[var(--border-default)] pt-4 font-mono text-[10.5px] leading-relaxed tracking-[0.03em] text-muted-foreground">
+      <p className="mt-12 border-t border-border pt-4 font-mono text-[10.5px] leading-relaxed tracking-[0.03em] text-muted-foreground">
         {lastRun ? (
           <>
             Checked {formatRunTime.format(new Date(lastRun.processedAt))} ·{' '}
@@ -421,208 +396,5 @@ export function ProactivityDashboard() {
         Every action is reversible and recorded against the finding that offered it.
       </p>
     </div>
-  );
-}
-
-function FindingRow({
-  actions,
-  confirming,
-  evaluation,
-  goal,
-  index,
-  isApplying,
-  isUndoing,
-  onApply,
-  onConfirm,
-  onPrepare,
-  onUndo,
-  preparedCharges,
-  preparedOpen,
-}: {
-  actions: ProactivityOverview['actions'];
-  confirming: { goalId: string; kind: ProactivityActionKind } | null;
-  evaluation: Evaluation;
-  goal: Goal;
-  index: number;
-  isApplying: boolean;
-  isUndoing: boolean;
-  onApply: (kind: ProactivityActionKind) => void;
-  onConfirm: (value: { goalId: string; kind: ProactivityActionKind } | null) => void;
-  onPrepare: () => void;
-  onUndo: (actionId: string) => void;
-  preparedCharges: ProactivityPreparedCharge[];
-  preparedOpen: boolean;
-}) {
-  const decision = evaluation.decision;
-  const state = stateFor(evaluation, actions);
-  const isProposal = decision.kind === 'propose';
-  const needsConfirm = confirming?.goalId === evaluation.goalId && confirming.kind === 'goal.pause';
-  const stateLabel = state.done
-    ? 'Done'
-    : state.snoozed
-      ? `Snoozed until ${formatDay.format(new Date(state.snoozed.until!))}`
-      : isProposal
-        ? 'Needs you'
-        : 'Waiting';
-  const stateTone = state.done
-    ? 'text-emerald-700 dark:text-emerald-400'
-    : state.snoozed || !isProposal
-      ? 'text-muted-foreground'
-      : 'text-amber-700 dark:text-amber-400';
-
-  const canPrepare = isProposal && preparedCharges.length > 0;
-
-  return (
-    <details
-      className="group border-b border-[var(--border-default)]"
-      ref={(element) => {
-        // Open the first finding once, then leave the row uncontrolled so
-        // applying an action cannot snap it shut.
-        if (element && index === 0 && element.dataset.initialised !== 'true') {
-          element.dataset.initialised = 'true';
-          element.open = true;
-        }
-      }}
-    >
-      <summary className="flex cursor-pointer list-none items-start justify-between gap-5 py-5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground [&::-webkit-details-marker]:hidden">
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] tracking-[0.13em] text-muted-foreground uppercase">
-            {goal.title}
-          </p>
-          <p className="mt-1.5 max-w-[46ch] text-[17px] leading-snug font-semibold tracking-[-0.008em]">
-            {isProposal ? decision.summary : 'Nothing new to judge yet.'}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-3 pt-0.5">
-          <span className={cn('font-mono text-[9.5px] tracking-[0.13em] uppercase', stateTone)}>
-            {stateLabel}
-          </span>
-          <span className="grid size-5 place-items-center rounded-full border border-[var(--border-strong,var(--border-default))] text-xs text-muted-foreground transition-transform group-open:rotate-45">
-            +
-          </span>
-        </div>
-      </summary>
-
-      <div className="max-w-[62ch] pb-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">{decision.reason}</p>
-
-        {state.done ? (
-          <Awaiting>
-            {state.task
-              ? 'Added to your tasks, due tomorrow.'
-              : 'This goal is paused. Nothing is lost; resume it anytime.'}
-            <button
-              className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-50"
-              disabled={isUndoing}
-              onClick={() => onUndo((state.task ?? state.paused)!.id)}
-              type="button"
-            >
-              Undo
-            </button>
-          </Awaiting>
-        ) : state.snoozed ? (
-          <Awaiting tone="quiet">
-            Snoozed until {formatDay.format(new Date(state.snoozed.until!))}. I&rsquo;ll only come
-            back sooner if this changes materially.
-            <button
-              className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-50"
-              disabled={isUndoing}
-              onClick={() => onUndo(state.snoozed!.id)}
-              type="button"
-            >
-              Undo
-            </button>
-          </Awaiting>
-        ) : (
-          <div className="mt-4 overflow-hidden rounded-sm border border-[var(--border-default)]">
-            <div className="border-b border-[var(--border-default)] px-4 py-2.5 font-mono text-[9.5px] tracking-[0.14em] text-muted-foreground uppercase">
-              Do it for me
-            </div>
-            <div className="px-4 py-3.5">
-              <p className="text-[14.5px] leading-snug font-semibold">
-                {isProposal
-                  ? 'Turn the next step into a task.'
-                  : 'Pause this goal while there is nothing to act on.'}
-              </p>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                {isProposal
-                  ? `I'll add "${decision.nextStep}" to your tasks, due tomorrow. You can undo it.`
-                  : 'I will stop checking this goal until you resume it. The goal and its history stay as they are.'}
-              </p>
-              <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                {isProposal ? (
-                  <Button disabled={isApplying} onClick={() => onApply('task.create')} size="sm">
-                    {isApplying ? 'Adding…' : 'Add to tasks'}
-                  </Button>
-                ) : null}
-                <Button
-                  disabled={isApplying}
-                  onClick={() => onConfirm({ goalId: evaluation.goalId, kind: 'goal.pause' })}
-                  size="sm"
-                  variant="outline"
-                >
-                  Pause this goal
-                </Button>
-                <Button
-                  disabled={isApplying}
-                  onClick={() => onApply('finding.snooze')}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Not now
-                </Button>
-                {canPrepare ? (
-                  <Button className="ml-auto" onClick={onPrepare} size="sm" variant="outline">
-                    {preparedOpen ? 'Charges shown' : 'Show the charges'}
-                  </Button>
-                ) : null}
-              </div>
-
-              {needsConfirm ? (
-                <div className="mt-4 border-t border-[var(--border-default)] pt-3.5">
-                  <p className="text-[13px] leading-relaxed text-muted-foreground">
-                    This pauses <span className="font-medium text-foreground">{goal.title}</span>{' '}
-                    until you resume it. Nothing is deleted, and you can undo it.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button disabled={isApplying} onClick={() => onApply('goal.pause')} size="sm">
-                      Yes, pause it
-                    </Button>
-                    <Button onClick={() => onConfirm(null)} size="sm" variant="outline">
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              {canPrepare && preparedOpen ? (
-                <div className="mt-4 border-t border-[var(--border-default)] pt-3">
-                  <ul className="space-y-0">
-                    {preparedCharges.map((charge) => (
-                      <li
-                        className="flex items-baseline justify-between gap-4 border-b border-[var(--border-default)] py-2 text-[13px] text-muted-foreground last:border-0"
-                        key={charge.merchant}
-                      >
-                        <span>
-                          {charge.merchant}
-                          {charge.charges > 1 ? ` · ${charge.charges} charges` : ''}
-                        </span>
-                        <span className="font-medium text-foreground tabular-nums">
-                          {formatGbp.format(charge.amount)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-[11.5px] text-muted-foreground">
-                    November&rsquo;s largest non-transfer charges. Nothing is cancelled or
-                    contacted.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        )}
-      </div>
-    </details>
   );
 }
