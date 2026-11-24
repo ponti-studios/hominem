@@ -30,8 +30,10 @@ mkdir -p "$LOG_DIR" "$HOME/Library/LaunchAgents"
 action="${1:-status}"
 
 install_service() {
-  local node_bin
+  local node_bin prefix roots
   node_bin="$(command -v node)"
+  prefix="${DEV_DASHBOARD_PREFIX:-com.ponti.}"
+  roots="${DEV_DASHBOARD_ROOTS:-$HOME/Developer:$HOME/.local/share/opencode/worktree}"
   mkdir -p "$INSTALL_DIR"
   cp "$REPO/scripts/dev-dashboard.mjs" "$INSTALLED"
   cat >"$PLIST" <<PLIST_EOF
@@ -45,6 +47,11 @@ install_service() {
     <string>$node_bin</string>
     <string>$INSTALLED</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DEV_DASHBOARD_PREFIX</key><string>$prefix</string>
+    <key>DEV_DASHBOARD_ROOTS</key><string>$roots</string>
+  </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>10</integer>
@@ -58,6 +65,7 @@ PLIST_EOF
   launchctl bootstrap "$DOMAIN" "$PLIST"
   echo "installed $LABEL"
   echo "script:  $INSTALLED (updated copy of scripts/dev-dashboard.mjs)"
+  echo "filters: prefix=$prefix roots=$roots"
   echo "url:     $URL"
   echo "log:     $LOG"
 }

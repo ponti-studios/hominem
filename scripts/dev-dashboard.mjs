@@ -20,7 +20,13 @@ import { promisify } from 'node:util';
 const exec = promisify(execFile);
 const PORT = Number(process.env.DEV_DASHBOARD_PORT ?? 4599);
 const AGENTS_DIR = join(homedir(), 'Library', 'LaunchAgents');
-const LABEL_PREFIX = 'com.ponti.';
+const LABEL_PREFIX = process.env.DEV_DASHBOARD_PREFIX ?? 'com.ponti.';
+const WORKTREE_ROOTS = (
+  process.env.DEV_DASHBOARD_ROOTS ??
+  `${homedir()}/Developer:${homedir()}/.local/share/opencode/worktree`
+)
+  .split(':')
+  .filter(Boolean);
 const DOMAIN = `gui/${process.getuid?.() ?? 501}`;
 const TAIL_WINDOW = 256 * 1024;
 
@@ -87,8 +93,93 @@ async function listServices() {
   return services.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Reads the tail of a file without loading the whole thing. */
-async function tailLines(path, lines) {
+function findRepoDirs(root) {
+  const dirs = [];
+  const walk = (dir, depth) => {
+    if (depth > 3 || !existsSync(dir)) return;
+    let entries = [];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+      const full = join(dir, entry.name);
+      if (existsSync(join(full, 'pnpm-workspace.yaml'))) {
+        dirs.push(full);
+        continue;
+      }
+      if (existsSync(join(full, '.git'))) {
+        dirs.push(full);
+        continue;
+      }
+      walk(full, depth + 1);
+    }
+  };
+  walk(root, 1);
+  return dirs;
+}
+
+let worktreeCache = { at: 0, value: [] };
+
+/** Worktrees across the configured roots, marked with whether they have an agent. */
+async function scanWorktrees(services) {
+  if (Date.now() - worktreeCache.at < 5000) {
+    return worktreeCache.value.map((worktree) => ({
+      ...worktree,
+      installed: services.some((service) => service.worktree === worktree.path),
+    }));
+  }
+  const seen = new Set();
+  const worktrees = [];
+  for (const repoDir of [...new Set(WORKTREE_ROOTS.flatMap(findRepoDirs))]) {
+    try {
+      // Only worktrees of the hominem repo: match the origin, or fall back to
+      // the installer being present (a hominem checkouts always carry one once
+      // this lands on main).
+      const remote = await exec('git', ['-C', repoDir, 'remote', 'get-url', 'origin']).catch(
+        () => null,
+      );
+      const originUrl = (remote?.stdout ?? '').trim();
+      const isHominem =
+        /(^|[/:])hominem(\.git)?\/?$/i.test(originUrl) ||
+        existsSync(join(repoDir, 'scripts', 'dev-service.sh'));
+      if (!isHominem) continue;
+      const { stdout } = await exec('git', ['-C', repoDir, 'worktree', 'list', '--porcelain']);
+      let current = null;
+      const flush = () => {
+        if (current && !seen.has(current.path)) {
+          seen.add(current.path);
+          worktrees.push(current);
+        }
+        current = null;
+      };
+      for (const line of stdout.split('\n')) {
+        if (line.startsWith('worktree ')) {
+          flush();
+          current = { path: line.slice('worktree '.length), branch: null };
+        } else if (line.startsWith('branch ') && current) {
+          current.branch = line.slice('branch '.length).replace('refs/heads/', '');
+        }
+      }
+      flush();
+    } catch {
+      // not a git checkout any more; skip
+    }
+  }
+  worktreeCache = { at: Date.now(), value: worktrees };
+  return worktrees.map((worktree) => ({
+    ...worktree,
+    installed: services.some((service) => service.worktree === worktree.path),
+    canInstall: existsSync(join(worktree.path, 'scripts', 'dev-service.sh')),
+  }));
+}
+
+/** Reads the tail of a file without loading the whole thing. */ async function tailLines(
+  path,
+  lines,
+) {
   const size = statSync(path).size;
   const start = Math.max(0, size - TAIL_WINDOW);
   const chunks = [];
@@ -130,6 +221,13 @@ const page = `<!doctype html>
   .svc .name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .svc .line { font-size: 0.6rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .svc .line.stale { color: #fb7185; }
+  .wtitle { padding: 0.7rem 0.9rem 0.35rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; color: #64748b; text-transform: uppercase; border-top: 1px solid #1e293b; }
+  .wt { padding: 0.4rem 0.9rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.65rem; }
+  .wt .meta { min-width: 0; flex: 1; }
+  .wt .name { color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wt .branch { color: #475569; font-size: 0.58rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wt .ok { color: #34d399; font-size: 0.6rem; white-space: nowrap; }
+  .wt button { padding: 0.15rem 0.45rem; font-size: 0.6rem; }
   section { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .bar { display: flex; gap: 0.5rem; align-items: center; padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; flex-wrap: wrap; }
   .badge { font-size: 0.6rem; padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid; }
@@ -159,7 +257,7 @@ const page = `<!doctype html>
   <span class="sub" id="summary">…</span>
 </header>
 <div class="main">
-  <aside id="list"><p class="hint">Loading…</p></aside>
+  <aside><div id="list"><p class="hint">Loading…</p></div><div class="wtitle">Worktrees</div><div id="worktrees"></div></aside>
   <section>
     <div class="bar" id="bar" style="display:none">
       <span class="badge" id="state"></span>
@@ -186,6 +284,7 @@ const page = `<!doctype html>
   let lastLogKey = '';
 
   const listEl = document.getElementById('list');
+  const worktreesEl = document.getElementById('worktrees');
   const logEl = document.getElementById('log');
   const barEl = document.getElementById('bar');
   const summaryEl = document.getElementById('summary');
@@ -259,6 +358,61 @@ const page = `<!doctype html>
     } catch { /* server likely restarting */ }
   }
 
+  async function refreshWorktrees() {
+    try {
+      const res = await fetch('/api/worktrees');
+      const worktrees = await res.json();
+      worktreesEl.innerHTML = '';
+      for (const worktree of worktrees) {
+        const row = document.createElement('div');
+        row.className = 'wt';
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = worktree.path.split('/').filter(Boolean).pop() ?? worktree.path;
+        const branch = document.createElement('div');
+        branch.className = 'branch';
+        branch.textContent = worktree.branch ?? '(detached)';
+        meta.append(name, branch);
+        row.appendChild(meta);
+        if (worktree.installed) {
+          const ok = document.createElement('span');
+          ok.className = 'ok';
+          ok.textContent = 'agent ✓';
+          row.appendChild(ok);
+        } else if (worktree.canInstall) {
+          const button = document.createElement('button');
+          button.textContent = 'start agent';
+          button.onclick = async () => {
+            if (!window.confirm('Start the dev stack for ' + worktree.path + '?')) return;
+            button.disabled = true;
+            button.textContent = 'starting…';
+            await fetch('/api/install', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ path: worktree.path }),
+            });
+            await refreshServices();
+            await refreshWorktrees();
+          };
+          row.appendChild(button);
+        } else {
+          const note = document.createElement('span');
+          note.className = 'branch';
+          note.textContent = 'needs dev scripts';
+          row.appendChild(note);
+        }
+        worktreesEl.appendChild(row);
+      }
+      if (!worktrees.length) {
+        worktreesEl.innerHTML = '<p class="hint">No repos found under the configured roots.</p>';
+      }
+    } catch {
+      /* server restarting */
+    }
+  }
+
   function paint(lines) {
     const filter = filterEl.value.trim().toLowerCase();
     logEl.innerHTML = '';
@@ -296,7 +450,9 @@ const page = `<!doctype html>
   pauseEl.addEventListener('change', () => { if (!pauseEl.checked) refreshLog(true); });
 
   refreshServices();
+  refreshWorktrees();
   setInterval(async () => { await refreshServices(); await refreshLog(false); }, 2000);
+  setInterval(refreshWorktrees, 8000);
 </script>
 </body>
 </html>`;
@@ -318,6 +474,35 @@ const server = createServer(async (request, response) => {
 
   if (request.method === 'GET' && url.pathname === '/api/services') {
     return json(await listServices());
+  }
+
+  if (request.method === 'GET' && url.pathname === '/api/worktrees') {
+    return json(await scanWorktrees(await listServices()));
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/install') {
+    let path = '';
+    try {
+      path = String(JSON.parse(await readBody(request)).path ?? '');
+    } catch {
+      path = '';
+    }
+    const underRoot = WORKTREE_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
+    const script = join(path, 'scripts', 'dev-service.sh');
+    if (!underRoot || !existsSync(script)) {
+      return json({ error: 'not a dev worktree under a configured root' }, 400);
+    }
+    const services = await listServices();
+    if (services.some((service) => service.worktree === path)) {
+      return json({ error: 'an agent already serves this worktree' }, 409);
+    }
+    try {
+      const { stdout } = await exec(script, ['install'], { cwd: path, timeout: 60_000 });
+      worktreeCache = { at: 0, value: [] };
+      return json({ ok: true, output: stdout.trim() });
+    } catch (error) {
+      return json({ error: String(error) }, 500);
+    }
   }
 
   if (request.method === 'GET' && url.pathname === '/api/logs') {
