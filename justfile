@@ -45,3 +45,8 @@ mod ui 'just/ui.just'
 # restarts on crash, logs to ~/Library/Logs/hominem-dev/<worktree>.log.
 dev-service action="status" *args:
     scripts/dev-service.sh {{ action }} {{ args }}
+
+# Docker-Desktop-shaped panel for the launchd services: status, log tails,
+# restart. http://127.0.0.1:4599
+dev-dashboard action="status" *args:
+    scripts/dev-dashboard.sh {{ action }} {{ args }}
