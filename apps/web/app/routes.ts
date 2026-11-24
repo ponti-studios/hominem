@@ -14,6 +14,7 @@ export default [
       route('collections/:collectionId', 'routes/collections/collections.$collectionId.tsx'),
       route('tasks', 'routes/tasks/tasks.tsx'),
       route('tasks/:taskId', 'routes/tasks/tasks.$taskId.tsx'),
+      route('proactivity', 'routes/proactivity/proactivity.tsx'),
 
       // Finance sub-app (docs/web.sub-apps.md)
       route('finance', 'routes/finance/layout.tsx', [

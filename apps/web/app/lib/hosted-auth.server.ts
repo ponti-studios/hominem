@@ -9,6 +9,7 @@ export const webAuthConfig = {
     '/collections',
     '/finance',
     '/career',
+    '/proactivity',
     '/p',
     '/account',
     '/settings',

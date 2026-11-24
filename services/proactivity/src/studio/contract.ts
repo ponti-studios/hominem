@@ -4,6 +4,8 @@ export type DecisionKind = 'propose' | 'defer' | 'quiet';
 
 type ResultSource = 'model' | 'preflight' | 'cached';
 
+export type { ResultSource };
+
 export type StudioOwner = {
   id: string;
   name: string;
@@ -27,6 +29,8 @@ type StudioOutcomeCounts = {
   quiet: number;
   pending: number;
 };
+
+export type { StudioOutcomeCounts };
 
 export type StudioDay = {
   index: number;

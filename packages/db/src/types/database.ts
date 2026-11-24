@@ -755,6 +755,18 @@ export interface AppFinanceTransactions {
   userId: string;
 }
 
+export interface AppGoals {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  description: string | null;
+  domains: Generated<string[]>;
+  id: Generated<string>;
+  ownerUserid: string;
+  status: Generated<string>;
+  targetAt: ColumnType<string, Date | string, Date | string> | null;
+  title: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppHealthActivities {
   activityType: string;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1225,6 +1237,29 @@ export interface AppPossessionVesselConfig {
   markerTokens: Generated<string[]>;
   ownerUserid: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppProactivityActions {
+  appliedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  goalId: string;
+  id: Generated<string>;
+  inverse: Json;
+  kind: string;
+  ownerUserid: string;
+  payload: Json;
+  status: Generated<string>;
+  triggerId: string;
+  undoneAt: ColumnType<string, Date | string, Date | string> | null;
+}
+
+export interface AppProactivityRuns {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  ownerUserid: string;
+  processedAt: ColumnType<string, Date | string, Date | string>;
+  run: Json;
+  triggerId: string;
 }
 
 export interface AppProviderCredentials {
@@ -1788,6 +1823,66 @@ export interface Passkey {
   userId: string;
 }
 
+export interface PgStatStatements {
+  calls: Int8 | null;
+  dbid: number | null;
+  jitDeformCount: Int8 | null;
+  jitDeformTime: number | null;
+  jitEmissionCount: Int8 | null;
+  jitEmissionTime: number | null;
+  jitFunctions: Int8 | null;
+  jitGenerationTime: number | null;
+  jitInliningCount: Int8 | null;
+  jitInliningTime: number | null;
+  jitOptimizationCount: Int8 | null;
+  jitOptimizationTime: number | null;
+  localBlkReadTime: number | null;
+  localBlksDirtied: Int8 | null;
+  localBlksHit: Int8 | null;
+  localBlksRead: Int8 | null;
+  localBlksWritten: Int8 | null;
+  localBlkWriteTime: number | null;
+  maxExecTime: number | null;
+  maxPlanTime: number | null;
+  meanExecTime: number | null;
+  meanPlanTime: number | null;
+  minExecTime: number | null;
+  minmaxStatsSince: ColumnType<string, Date | string, Date | string> | null;
+  minPlanTime: number | null;
+  parallelWorkersLaunched: Int8 | null;
+  parallelWorkersToLaunch: Int8 | null;
+  plans: Int8 | null;
+  query: string | null;
+  queryid: Int8 | null;
+  rows: Int8 | null;
+  sharedBlkReadTime: number | null;
+  sharedBlksDirtied: Int8 | null;
+  sharedBlksHit: Int8 | null;
+  sharedBlksRead: Int8 | null;
+  sharedBlksWritten: Int8 | null;
+  sharedBlkWriteTime: number | null;
+  statsSince: ColumnType<string, Date | string, Date | string> | null;
+  stddevExecTime: number | null;
+  stddevPlanTime: number | null;
+  tempBlkReadTime: number | null;
+  tempBlksRead: Int8 | null;
+  tempBlksWritten: Int8 | null;
+  tempBlkWriteTime: number | null;
+  toplevel: boolean | null;
+  totalExecTime: number | null;
+  totalPlanTime: number | null;
+  userid: number | null;
+  walBuffersFull: Int8 | null;
+  walBytes: Numeric | null;
+  walFpi: Int8 | null;
+  walRecords: Int8 | null;
+}
+
+export interface PgStatStatementsInfo {
+  dealloc: Int8 | null;
+  statsReset: ColumnType<string, Date | string, Date | string> | null;
+}
+
 export interface RateLimit {
   count: number;
   id: string;
@@ -1879,6 +1974,7 @@ export interface DB {
   'app.financeRunwayPreferences': AppFinanceRunwayPreferences;
   'app.financeSyncDoctrine': AppFinanceSyncDoctrine;
   'app.financeTransactions': AppFinanceTransactions;
+  'app.goals': AppGoals;
   'app.healthActivities': AppHealthActivities;
   'app.healthObservations': AppHealthObservations;
   'app.healthProfiles': AppHealthProfiles;
@@ -1912,6 +2008,8 @@ export interface DB {
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.possessionVesselConfig': AppPossessionVesselConfig;
+  'app.proactivityActions': AppProactivityActions;
+  'app.proactivityRuns': AppProactivityRuns;
   'app.providerCredentials': AppProviderCredentials;
   'app.socialContacts': AppSocialContacts;
   'app.socialEngagements': AppSocialEngagements;
@@ -1952,6 +2050,8 @@ export interface DB {
   oauthRefreshToken: OauthRefreshToken;
   oauthResource: OauthResource;
   passkey: Passkey;
+  pgStatStatements: PgStatStatements;
+  pgStatStatementsInfo: PgStatStatementsInfo;
   rateLimit: RateLimit;
   session: Session;
   user: User;

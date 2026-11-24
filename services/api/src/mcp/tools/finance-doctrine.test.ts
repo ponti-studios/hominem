@@ -173,7 +173,7 @@ describe('finance_doctrine_import', () => {
   });
 
   it('rejects a doctrine that does not match the shape', async () => {
-    const bad = doctrineFixture() as Record<string, unknown>;
+    const bad: Record<string, unknown> = doctrineFixture();
     bad.version = 2;
 
     await expect(

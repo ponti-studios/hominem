@@ -60,14 +60,25 @@ enforcement point for this contract.
 - **`GET /api/finance/transactions/list` pages by keyset with `cursor`/`nextCursor`.** It accepts `limit` (1–50, default 20) and an opaque `cursor`, and answers `{ data, filteredCount, totalUserCount, nextCursor }`, with `nextCursor` `null` on the last page. Ordering is the list's existing `posted_on` descending with `id` descending as the unique tiebreaker; a text search keeps its similarity ranking ahead of that pair. The cursor carries the last row's `(rank, posted_on, id)` plus a fingerprint of the account, date, text, tag, category, type and amount filters, so a malformed cursor, one issued by another endpoint, or one replayed against a different filter is a validation error instead of a walk over a different list. The list no longer accepts `offset`; `finance_transaction_search` keeps offset paging on its own contract.
 - **Collections and files page by keyset with `cursor`/`nextCursor`.** `GET /api/collections` and `GET /api/files` accept `limit` (1–50, default 20) and an opaque `cursor`, and answer `{ collections, count, nextCursor }` and `{ files, count, nextCursor }` respectively, with `nextCursor: null` on the last page. They keep their established `created_at` descending order and add `id` descending as the unique tiebreaker: collections over every collection the caller owns or has an accepted membership in, files over the caller's uploads. The cursor names the endpoint that issued it, so a malformed cursor or a cursor from the other endpoint is a validation error.
 
-## Proactivity engine (proposed)
+## Proactivity engine
 
 `@hominem/proactivity` is a standalone, test-covered evaluation engine for
 goal-centered proactivity. It defines the trigger, goal-context, decision,
 evaluation-run, and delivery-intent contracts, and runs the ten cross-domain
-scenario families against a scripted slot. It is deliberately not wired into
-the API, scheduler, or clients yet; the product decisions required before that
-integration are recorded in [the proactivity PRD](./proactivity-engine-prd.md).
+scenario families against a scripted slot. It stays database-free: the API
+application layer owns goals in `app.goals`, assembles each goal's context from
+the owner's own finance and career rows, and journals runs in
+`app.proactivity_runs` — one row per `(owner, trigger id)`, so a replay is
+served from the journal instead of evaluated (and charged) again. The app's
+`/proactivity` route reads that overview, can start a manual pass, and offers
+the actions a finding can carry out: adding a task, pausing a goal, preparing
+the month's largest charges. Approved actions live in
+`app.proactivity_actions` with an inverse, so "Done · Undo" survives a restart
+and a repeat tap cannot write twice; the worker runs the scheduled sweep,
+which is off unless `PROACTIVITY_SCHEDULED_PASS_HOUR` names a UTC hour.
+Delivery intents are recorded and never sent. Cadence, delivery consent, and the critical-change
+catalog remain open product decisions in
+[the proactivity PRD](./proactivity-engine-prd.md).
 
 ## Open decisions
 

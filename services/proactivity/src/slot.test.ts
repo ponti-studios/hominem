@@ -131,6 +131,40 @@ describe('proactivity model slot', () => {
     expect(decision.reason).toContain('monthly groceries');
   });
 
+  it('never exposes the evidence source label in user-facing copy', async () => {
+    const sourcedContext: GoalContext = {
+      ...context,
+      current: {
+        ...context.current,
+        evidence: context.current.evidence.map((item) => ({
+          ...item,
+          source: 'hominem database',
+        })),
+      },
+      previous: context.previous
+        ? {
+            ...context.previous,
+            evidence: context.previous.evidence.map((item) => ({
+              ...item,
+              source: 'hominem database',
+            })),
+          }
+        : null,
+    };
+    const generate = vi.fn().mockResolvedValue({
+      ...proposal,
+      summary: 'ev-after shows the review is booked.',
+      reason: 'The hominem database shows spend rose; per the database, act now.',
+    });
+
+    const decision = await createModelSlot({ generate }).evaluate(sourcedContext);
+    expect(generate).toHaveBeenCalledTimes(1);
+    if (decision.kind !== 'propose') throw new Error('Expected a proposal.');
+    expect(`${decision.summary} ${decision.reason}`).not.toMatch(/database/i);
+    expect(decision.summary).toContain('the latest evidence');
+    expect(decision.reason).toContain('the latest evidence');
+  });
+
   it('retries when the next step recommends an irreversible action', async () => {
     const generate = vi
       .fn()

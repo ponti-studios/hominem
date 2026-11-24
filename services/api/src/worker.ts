@@ -7,6 +7,7 @@ import { QUEUE_NAMES, chatGenerationEffectsQueue, messagingInboundQueue } from '
 import { logger } from '@hominem/telemetry';
 
 import { startHoldSweeper } from './application/credit-settle.runtime';
+import { startProactivityScheduler } from './application/proactivity-schedule.runtime';
 import { env } from './env';
 import { initRuntime } from './runtime';
 import { startAirportCatalogueSyncWorker } from './workers/airport-catalogue-sync';
@@ -30,6 +31,7 @@ const chatGenerationEffectsWorker = await startChatGenerationEffectsWorker();
 const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
 const messagingInboundWorker = startMessagingInboundWorker();
 const stopHoldSweeper = startHoldSweeper();
+const stopProactivityScheduler = startProactivityScheduler();
 const workerVersion = 'worker-v3';
 
 const healthServer = createServer((req, res) => {
@@ -47,6 +49,7 @@ healthServer.listen(env.PORT ?? env.WORKER_PORT ?? 4041);
 runtime.installSignalHandlers(
   async () => {
     stopHoldSweeper();
+    stopProactivityScheduler();
     await Promise.all([
       fileProcessingWorker.close(),
       embeddingGenerationWorker.close(),
