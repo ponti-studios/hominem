@@ -37,6 +37,8 @@ Rules:
   not address a third party.
 - Write for a person, not an engineer: no evidence ids, JSON field names, camelCase, or words like
   "dataQuality" in summary, reason, or nextStep. Put evidence ids only in evidenceIds.
+- Never name where the facts came from: no databases, tables, files, exports, or source labels
+  ("the database", "hominem database"). State the fact itself.
 - When a fact is money, include the currency symbol once (for example, £3,120). When a fact is a
   count, use the unit the evidence supplies. Never round away a meaningful difference.
 - The summary is the one line a person reads first; the reason explains what changed in human terms
@@ -310,12 +312,6 @@ function sanitizeProse(
   context: GoalContext,
   available: Set<string>,
 ): ProactivityDecision {
-  const evidenceById = new Map(
-    [...context.current.evidence, ...(context.previous?.evidence ?? [])].map((item) => [
-      item.id,
-      item,
-    ]),
-  );
   const fieldNames = new Set<string>();
   for (const item of [...context.current.evidence, ...(context.previous?.evidence ?? [])]) {
     for (const key of Object.keys(item.facts)) {
@@ -325,14 +321,16 @@ function sanitizeProse(
 
   const clean = (text: string): string => {
     let out = text;
+    // The model sometimes names where a fact came from ("per the hominem
+    // database"); a person reads that as noise, so name the evidence instead.
+    for (const source of sourceLabels(context)) {
+      out = out.split(`${source} data`).join('the latest evidence');
+      out = out.split(source).join('the latest evidence');
+    }
+    out = out.replace(/\b(?:the\s+)?database\b/gi, 'the latest evidence');
+    out = out.replace(/\bSQL\b/g, 'the latest evidence');
     for (const id of available) {
-      if (!out.includes(id)) continue;
-      const source = evidenceById.get(id)?.source;
-      const label =
-        source && source !== 'eval-fixture' && source !== 'synthetic-fixture' && source !== 'test'
-          ? `${source} data`
-          : 'the latest evidence';
-      out = out.split(id).join(label);
+      if (out.includes(id)) out = out.split(id).join('the latest evidence');
     }
     for (const key of fieldNames) {
       if (out.includes(key)) out = out.split(key).join(humanizeField(key));
@@ -389,7 +387,30 @@ function collectLeakedTerms(
     }
   }
   const keys = [...factKeys].filter((key) => prose.includes(key));
-  return [...new Set([...evidenceIds, ...keys, ...(isoDate ? [isoDate] : [])])];
+  const sources = sourceLabels(context).filter((source) => prose.includes(source));
+  const genericSource = /\b(database|sql)\b/i.test(prose) ? 'database' : null;
+  return [
+    ...new Set([
+      ...evidenceIds,
+      ...keys,
+      ...sources,
+      ...(genericSource ? [genericSource] : []),
+      ...(isoDate ? [isoDate] : []),
+    ]),
+  ];
+}
+
+const FIXTURE_SOURCES = new Set(['eval-fixture', 'synthetic-fixture', 'test']);
+
+/** Evidence source labels a person should never see in prose. */
+function sourceLabels(context: GoalContext): string[] {
+  return [
+    ...new Set(
+      [...context.current.evidence, ...(context.previous?.evidence ?? [])]
+        .map((item) => item.source.trim())
+        .filter((source) => source.length > 0 && !FIXTURE_SOURCES.has(source)),
+    ),
+  ];
 }
 
 const UNSAFE_NEXT_STEP =
