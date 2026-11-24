@@ -40,3 +40,8 @@ mod evals 'just/evals.just'
 mod mcp 'just/mcp.just'
 mod mobile 'just/mobile.just'
 mod ui 'just/ui.just'
+
+# Run this worktree's dev stack as a launchd service: outlives sessions,
+# restarts on crash, logs to ~/Library/Logs/hominem-dev/<worktree>.log.
+dev-service action="status" *args:
+    scripts/dev-service.sh {{ action }} {{ args }}
