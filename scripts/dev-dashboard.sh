@@ -2,9 +2,15 @@
 set -euo pipefail
 
 # The dashboard itself, as a launchd user service: http://127.0.0.1:4599
-# lists every com.ponti.* LaunchAgent, tails their logs, and can restart one.
+# lists every com.ponti.* LaunchAgent, tails their logs, restarts live ones,
+# and reaps stale entries whose worktree no longer exists.
 #
-#   scripts/dev-dashboard.sh install    render + load the LaunchAgent
+# The service never points into a worktree: install copies scripts/
+# dev-dashboard.mjs to ~/.hominem/dev-dashboard/ and runs that copy with an
+# absolute node path, so deleting any worktree cannot break it. Re-run
+# install to update the copy.
+#
+#   scripts/dev-dashboard.sh install    copy + load the LaunchAgent
 #   scripts/dev-dashboard.sh uninstall  stop and remove it
 #   scripts/dev-dashboard.sh status     loaded? running? url?
 #   scripts/dev-dashboard.sh url        print the dashboard URL
@@ -12,6 +18,8 @@ set -euo pipefail
 REPO="$(git rev-parse --show-toplevel)"
 LABEL="com.ponti.hominem-dev.dashboard"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+INSTALL_DIR="$HOME/.hominem/dev-dashboard"
+INSTALLED="$INSTALL_DIR/dashboard.mjs"
 LOG_DIR="$HOME/Library/Logs/hominem-dev"
 LOG="$LOG_DIR/dashboard.log"
 DOMAIN="gui/$(id -u)"
@@ -22,6 +30,10 @@ mkdir -p "$LOG_DIR" "$HOME/Library/LaunchAgents"
 action="${1:-status}"
 
 install_service() {
+  local node_bin
+  node_bin="$(command -v node)"
+  mkdir -p "$INSTALL_DIR"
+  cp "$REPO/scripts/dev-dashboard.mjs" "$INSTALLED"
   cat >"$PLIST" <<PLIST_EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -30,14 +42,9 @@ install_service() {
   <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
-    <string>-lc</string>
-    <string>cd "$REPO" &amp;&amp; exec pnpm exec tsx scripts/dev-dashboard.ts</string>
+    <string>$node_bin</string>
+    <string>$INSTALLED</string>
   </array>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>PATH</key><string>$PATH</string>
-  </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>10</integer>
@@ -47,16 +54,18 @@ install_service() {
 </plist>
 PLIST_EOF
   launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+  sleep 1
   launchctl bootstrap "$DOMAIN" "$PLIST"
   echo "installed $LABEL"
-  echo "url: $URL"
-  echo "log: $LOG"
+  echo "script:  $INSTALLED (updated copy of scripts/dev-dashboard.mjs)"
+  echo "url:     $URL"
+  echo "log:     $LOG"
 }
 
 uninstall_service() {
   launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
   rm -f "$PLIST"
-  echo "removed $LABEL (log kept at $LOG)"
+  echo "removed $LABEL (install copy kept at $INSTALLED; log kept at $LOG)"
 }
 
 case "$action" in
