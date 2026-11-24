@@ -61,8 +61,11 @@ export type {
   TransferPair,
 } from './finance-facts.js';
 export type {
+  ProactivityActionKind,
+  ProactivityActionView,
   ProactivityCareerSummary,
   ProactivityFinanceSummary,
   ProactivityGoalView,
   ProactivityOverview,
+  ProactivityPreparedCharge,
 } from './overview.js';

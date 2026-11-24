@@ -30,9 +30,33 @@ export type ProactivityCareerSummary = {
   applicationsLast120Days: number;
 };
 
+/** A real charge from the current month, offered as prepared reading. */
+export type ProactivityPreparedCharge = {
+  merchant: string;
+  amount: number;
+  charges: number;
+};
+
+export type ProactivityActionKind = 'task.create' | 'goal.pause' | 'finding.snooze';
+
+/** What the person approved, as the app needs to render it. */
+export type ProactivityActionView = {
+  id: string;
+  triggerId: string;
+  goalId: string;
+  kind: ProactivityActionKind;
+  status: 'applied' | 'undone';
+  taskId: string | null;
+  until: string | null;
+  appliedAt: string;
+  undoneAt: string | null;
+};
+
 export type ProactivityOverview = {
   goals: ProactivityGoalView[];
   finance: ProactivityFinanceSummary | null;
   career: ProactivityCareerSummary | null;
   lastRun: EvaluationRun | null;
+  actions: ProactivityActionView[];
+  preparedCharges: ProactivityPreparedCharge[];
 };

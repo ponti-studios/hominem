@@ -131,9 +131,16 @@ describe('proactivity service on real data', () => {
   });
 
   it('reports months net of internal transfer pairs', async () => {
-    const months = (await loadOverview(ownerId)).finance?.months ?? [];
+    const overview = await loadOverview(ownerId);
+    const months = overview.finance?.months ?? [];
     expect(months.at(-2)).toMatchObject({ income: 5000, spend: 1200 });
     expect(months.at(-1)).toMatchObject({ income: 3000, spend: 4500 });
+    expect(overview.preparedCharges[0]).toMatchObject({
+      merchant: 'Agency',
+      amount: 4500,
+      charges: 1,
+    });
+    expect(overview.actions).toEqual([]);
   });
 
   it('keeps other owners separate', async () => {

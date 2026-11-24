@@ -11,3 +11,6 @@ type _RunEndpoint = HonoClient['api']['proactivity']['run']['$post'];
 export type ProactivityRunOutput = InferResponseType<_RunEndpoint, 200>;
 export type ProactivityEvaluation = ProactivityRunOutput['evaluations'][number];
 export type ProactivityIntent = ProactivityRunOutput['deliveryIntents'][number];
+
+export type ProactivityActionKind = ProactivityOverview['actions'][number]['kind'];
+export type ProactivityPreparedCharge = ProactivityOverview['preparedCharges'][number];

@@ -70,10 +70,13 @@ application layer owns goals in `app.goals`, assembles each goal's context from
 the owner's own finance and career rows, and journals runs in
 `app.proactivity_runs` — one row per `(owner, trigger id)`, so a replay is
 served from the journal instead of evaluated (and charged) again. The app's
-`/proactivity` route reads that overview and can start a manual pass; the
-worker runs the scheduled sweep, which is off unless
-`PROACTIVITY_SCHEDULED_PASS_HOUR` names a UTC hour. Delivery intents are
-recorded and never sent. Cadence, delivery consent, and the critical-change
+`/proactivity` route reads that overview, can start a manual pass, and offers
+the actions a finding can carry out: adding a task, pausing a goal, preparing
+the month's largest charges. Approved actions live in
+`app.proactivity_actions` with an inverse, so "Done · Undo" survives a restart
+and a repeat tap cannot write twice; the worker runs the scheduled sweep,
+which is off unless `PROACTIVITY_SCHEDULED_PASS_HOUR` names a UTC hour.
+Delivery intents are recorded and never sent. Cadence, delivery consent, and the critical-change
 catalog remain open product decisions in
 [the proactivity PRD](./proactivity-engine-prd.md).
 

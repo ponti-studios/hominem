@@ -1,5 +1,6 @@
 import { db, sql } from '@hominem/db/core';
 import { GoalsRepository, type GoalRecord } from '@hominem/db/goals';
+import { ProactivityActionsRepository } from '@hominem/db/proactivity';
 import {
   adjustMonthlyFlows,
   createCareerContextLoader,
@@ -13,6 +14,7 @@ import {
   type GoalOutcome,
   type ProactivityCareerSummary,
   type ProactivityDependencies,
+  type ProactivityPreparedCharge,
   type ProactivityFinanceSummary,
   type ProactivityGoalView,
   type ProactivityOverview,
@@ -20,6 +22,7 @@ import {
 } from '@hominem/proactivity';
 import { createOpenRouterProactivitySlot } from '@hominem/proactivity/openrouter';
 
+import { toActionView } from './proactivity-actions.service';
 import { loadLatestRun, postgresJournal } from './proactivity-journal';
 
 type Row = Record<string, unknown>;
@@ -127,13 +130,42 @@ async function loadCareer(userId: string): Promise<ProactivityCareerSummary | nu
   };
 }
 
+/** The current month's largest charges, excluding the Transfers category. */
+async function loadPreparedCharges(userId: string): Promise<ProactivityPreparedCharge[]> {
+  const result = await sql<Row>`
+    SELECT coalesce(t.merchant_name, 'Uncategorized') AS merchant,
+           round((-sum(t.amount))::numeric, 2) AS amount,
+           count(*) AS charges
+    FROM app.finance_transactions t
+    LEFT JOIN app.finance_categories c ON c.id = t.category_id
+    WHERE t.excluded = false AND t.transaction_type = 'debit' AND t.user_id = ${userId}
+      AND t.posted_on >= date_trunc('month', now())
+      AND coalesce(c.name, 'Uncategorized') <> 'Transfers'
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 5
+  `.execute(db);
+  return result.rows.map((row) => ({
+    merchant: str(row.merchant),
+    amount: num(row.amount),
+    charges: num(row.charges),
+  }));
+}
+
 export async function loadOverview(userId: string): Promise<ProactivityOverview> {
-  const [goalRows, finance, career, lastRun] = await Promise.all([
+  const [goalRows, finance, career, lastRun, prepared] = await Promise.all([
     GoalsRepository.listByOwner(db, { userId }),
     loadFinance(userId),
     loadCareer(userId),
     loadLatestRun(userId),
+    loadPreparedCharges(userId),
   ]);
+  const actions = lastRun
+    ? await ProactivityActionsRepository.listForTrigger(db, {
+        userId,
+        triggerId: lastRun.triggerId,
+      })
+    : [];
   return {
     goals: goalRows.map(toGoalView),
     finance: finance
@@ -149,6 +181,8 @@ export async function loadOverview(userId: string): Promise<ProactivityOverview>
       : null,
     career,
     lastRun,
+    actions: actions.map(toActionView),
+    preparedCharges: prepared,
   };
 }
 

@@ -238,6 +238,26 @@ day (`scheduled-<date>` trigger id), run by the worker during
 `PROACTIVITY_SCHEDULED_PASS_HOUR` when that variable is set; unset leaves the
 sweep off, because the product cadence is still open.
 
+### Findings and actions
+
+A finding that only asks the person to "review" something hands the work back;
+the loop is notice → offer → approved action → done or snoozed → the next pass
+sees the new state. The app offers only actions at the level of agency the
+system can actually carry out:
+
+| Level | Meaning                                                  | Status                                                         |
+| ----- | -------------------------------------------------------- | -------------------------------------------------------------- |
+| L2    | change shared state in Hominem: pause a goal, add a task | implemented                                                    |
+| L1    | prepare an external step: a charge list, a draft         | prepared lists implemented; drafts later                       |
+| L3    | act outside Hominem: move money, cancel, book            | needs a connected provider and per-person consent; not enabled |
+
+Every action is confirmed by the person, reversible, and recorded in
+`app.proactivity_actions` with the inverse needed to undo it. An action is
+idempotent per finding and kind, so a repeat tap cannot create a second task
+or pause a goal twice. "Not now" is a snooze recorded in the same ledger, not
+a silent dismissal. The action catalog is built from state the person owns;
+the model chooses prose and a decision, never a free-form write.
+
 Eval flow: scenario fixtures supply the goal, prior/current state, trigger,
 and clock directly to the context/evaluator boundary. Contract assertions
 check evidence references and decision shape; quality grading checks whether
