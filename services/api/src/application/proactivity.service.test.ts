@@ -40,6 +40,8 @@ async function seedFinance(userId: string) {
      VALUES
        ($1, $2,  5000.00, 'credit', 'Employer',  date_trunc('month', now()) - interval '1 month', 'GBP'),
        ($1, $2, -1200.00, 'debit',  'Landlord',  date_trunc('month', now()) - interval '1 month' + interval '4 days', 'GBP'),
+       ($1, $2,   800.00, 'credit', 'From savings', date_trunc('month', now()) - interval '1 month' + interval '9 days', 'GBP'),
+       ($1, $2,  -800.00, 'debit',  'To savings',   date_trunc('month', now()) - interval '1 month' + interval '9 days', 'GBP'),
        ($1, $2,  3000.00, 'credit', 'Employer',  date_trunc('month', now()), 'GBP'),
        ($1, $2, -4500.00, 'debit',  'Agency',    date_trunc('month', now()) + interval '1 day', 'GBP')`,
     [userId, accountId],
@@ -126,6 +128,12 @@ describe('proactivity service on real data', () => {
     expect(overview.finance?.months).toHaveLength(2);
     expect(overview.career).toBeNull();
     expect(overview.lastRun).toEqual(first);
+  });
+
+  it('reports months net of internal transfer pairs', async () => {
+    const months = (await loadOverview(ownerId)).finance?.months ?? [];
+    expect(months.at(-2)).toMatchObject({ income: 5000, spend: 1200 });
+    expect(months.at(-1)).toMatchObject({ income: 3000, spend: 4500 });
   });
 
   it('keeps other owners separate', async () => {

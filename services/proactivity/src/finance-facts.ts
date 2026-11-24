@@ -91,8 +91,10 @@ export type FinanceSnapshotInput = {
 
 /**
  * Builds the previous/current finance snapshots for a goal context: the
- * previous full month against the current (often partial) month, with
- * reconciled transfer pairs reported as their own evidence.
+ * previous full month against the current (often partial) month. Matched
+ * internal transfer pairs are removed from both months before income and spend
+ * are reported, so gross figures are not inflated by money moving between the
+ * owner's own accounts; the reconciliation is reported as its own evidence.
  */
 export function buildFinanceSnapshots(input: FinanceSnapshotInput): {
   previous: StateSnapshot | null;
@@ -104,31 +106,45 @@ export function buildFinanceSnapshots(input: FinanceSnapshotInput): {
   const currentIsPartial = currentMonth.month === input.generatedAt.slice(0, 7);
   const reconciliation = reconcileTransferPairs(input.recentFlows);
   const adjustedMonths = adjustMonthlyFlows(input.months, reconciliation.pairs);
+  // A credit that matched a same-amount debit is money arriving from the
+  // owner's own accounts, not income; keep it out of the income evidence too.
+  const transferCredits = new Set(
+    reconciliation.pairs.map(({ in: credit }) => `${credit.date}|${credit.amount}`),
+  );
+  const externalIncome = input.incomeEvents.filter(
+    (event) => !transferCredits.has(`${event.date}|${event.amount}`),
+  );
+  const previousFlow = previousMonth
+    ? (adjustedMonths.find((month) => month.month === previousMonth.month) ?? previousMonth)
+    : null;
+  const currentFlow =
+    adjustedMonths.find((month) => month.month === currentMonth.month) ?? currentMonth;
 
-  const previous = previousMonth
+  const previous = previousFlow
     ? {
         id: 'snap-fin-previous',
-        asOf: monthEndIso(previousMonth.month),
+        asOf: monthEndIso(previousFlow.month),
         evidence: [
           evidence(
-            `ev-fin-${previousMonth.month}-flows`,
+            `ev-fin-${previousFlow.month}-flows`,
             'finance',
-            monthEndIso(previousMonth.month),
+            monthEndIso(previousFlow.month),
             source,
             {
-              month: previousMonth.month,
-              incomeGbp: round2(previousMonth.income),
-              spendGbp: round2(previousMonth.spend),
-              netGbp: round2(previousMonth.income - previousMonth.spend),
+              month: previousFlow.month,
+              incomeGbp: round2(previousFlow.income),
+              spendGbp: round2(previousFlow.spend),
+              netGbp: round2(previousFlow.income - previousFlow.spend),
               partial: false,
+              adjustedForTransfers: true,
             },
           ),
           evidence(
-            `ev-fin-${previousMonth.month}-categories`,
+            `ev-fin-${previousFlow.month}-categories`,
             'finance',
-            monthEndIso(previousMonth.month),
+            monthEndIso(previousFlow.month),
             source,
-            { top: topCategories(input.categories, previousMonth.month) },
+            { top: topCategories(input.categories, previousFlow.month) },
           ),
         ],
       }
@@ -138,24 +154,22 @@ export function buildFinanceSnapshots(input: FinanceSnapshotInput): {
     id: 'snap-fin-current',
     asOf: input.generatedAt,
     evidence: [
-      evidence(`ev-fin-${currentMonth.month}-flows`, 'finance', input.generatedAt, source, {
-        month: currentMonth.month,
-        incomeGbp: round2(currentMonth.income),
-        spendGbp: round2(currentMonth.spend),
-        netGbp: round2(currentMonth.income - currentMonth.spend),
-        adjustedNetGbp: round2(
-          (adjustedMonths.find((month) => month.month === currentMonth.month)?.income ?? 0) -
-            (adjustedMonths.find((month) => month.month === currentMonth.month)?.spend ?? 0),
-        ),
+      evidence(`ev-fin-${currentFlow.month}-flows`, 'finance', input.generatedAt, source, {
+        month: currentFlow.month,
+        incomeGbp: round2(currentFlow.income),
+        spendGbp: round2(currentFlow.spend),
+        netGbp: round2(currentFlow.income - currentFlow.spend),
         partial: currentIsPartial,
+        adjustedForTransfers: true,
       }),
-      evidence(`ev-fin-${currentMonth.month}-categories`, 'finance', input.generatedAt, source, {
-        top: topCategories(input.categories, currentMonth.month),
+      evidence(`ev-fin-${currentFlow.month}-categories`, 'finance', input.generatedAt, source, {
+        top: topCategories(input.categories, currentFlow.month),
       }),
       evidence('ev-fin-income-recent', 'finance', input.generatedAt, source, {
         windowDays: 45,
-        events: input.incomeEvents.slice(0, 8),
-        totalGbp: round2(input.incomeEvents.reduce((sum, event) => sum + event.amount, 0)),
+        events: externalIncome.slice(0, 8),
+        totalGbp: round2(externalIncome.reduce((sum, event) => sum + event.amount, 0)),
+        excludedTransferCredits: input.incomeEvents.length - externalIncome.length,
       }),
       evidence('ev-fin-transfer-pairs', 'finance', input.generatedAt, source, {
         matchedPairs: reconciliation.pairs.length,

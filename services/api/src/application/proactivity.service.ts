@@ -1,10 +1,12 @@
 import { db, sql } from '@hominem/db/core';
 import { GoalsRepository, type GoalRecord } from '@hominem/db/goals';
 import {
+  adjustMonthlyFlows,
   createCareerContextLoader,
   createDomainContextAssembler,
   createFinanceContextLoader,
   createProactivityEngine,
+  reconcileTransferPairs,
   type DeliveryIntent,
   type EvaluationRun,
   type Goal,
@@ -71,7 +73,7 @@ async function loadFinance(userId: string): Promise<ProactivityFinanceSummary | 
            merchant_name AS merchant, round(amount::numeric, 2) AS amount
     FROM app.finance_transactions
     WHERE transaction_type IN ('credit', 'debit') AND excluded = false AND abs(amount) > 100
-      AND user_id = ${userId} AND posted_on >= now() - interval '60 days'
+      AND user_id = ${userId} AND posted_on >= date_trunc('month', now()) - interval '5 months'
     ORDER BY posted_on
   `.execute(db);
   const accounts = await sql<Row>`
@@ -134,7 +136,17 @@ export async function loadOverview(userId: string): Promise<ProactivityOverview>
   ]);
   return {
     goals: goalRows.map(toGoalView),
-    finance,
+    finance: finance
+      ? {
+          ...finance,
+          // Same reconciliation the engine's snapshots apply, so the series the
+          // app shows cannot disagree with the figures the model reasons about.
+          months: adjustMonthlyFlows(
+            finance.months,
+            reconcileTransferPairs(finance.recentFlows).pairs,
+          ),
+        }
+      : null,
     career,
     lastRun,
   };

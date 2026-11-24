@@ -132,7 +132,24 @@ describe('buildFinanceSnapshots', () => {
     const { current } = buildFinanceSnapshots(input);
     const flowsEvidence = current.evidence.find((e) => e.id === 'ev-fin-2026-11-flows');
     expect(flowsEvidence?.facts.partial).toBe(true);
-    expect(flowsEvidence?.facts.adjustedNetGbp).toBe(Number((7765.06 - 13722.18).toFixed(2)));
+    expect(flowsEvidence?.facts.netGbp).toBe(-5957.12);
+  });
+
+  it('reports previous and current gross figures net of internal transfers', () => {
+    const { previous, current } = buildFinanceSnapshots(input);
+    const october = previous?.evidence.find((e) => e.id === 'ev-fin-2026-10-flows');
+    expect(october?.facts).toMatchObject({
+      incomeGbp: 22889.29,
+      spendGbp: 20250.15,
+      netGbp: 2639.14,
+      adjustedForTransfers: true,
+    });
+    const november = current.evidence.find((e) => e.id === 'ev-fin-2026-11-flows');
+    expect(november?.facts).toMatchObject({
+      incomeGbp: 7765.06,
+      spendGbp: 13722.18,
+      adjustedForTransfers: true,
+    });
   });
 
   it('dates previous evidence at the end of the previous month', () => {
@@ -149,6 +166,19 @@ describe('buildFinanceSnapshots', () => {
     const pairs = current.evidence.find((e) => e.id === 'ev-fin-transfer-pairs');
     expect(pairs?.facts.matchedPairs).toBe(2);
     expect(pairs?.facts.nettedGbp).toBe(6155.26);
+  });
+
+  it('keeps matched transfer credits out of the recent income evidence', () => {
+    const { current } = buildFinanceSnapshots({
+      ...input,
+      incomeEvents: [
+        ...input.incomeEvents,
+        { date: '2026-10-20', source: 'To GBP (Added)', amount: 2465.98 },
+      ],
+    });
+    const income = current.evidence.find((e) => e.id === 'ev-fin-income-recent');
+    expect(income?.facts.totalGbp).toBe(8212.1);
+    expect(income?.facts.excludedTransferCredits).toBe(1);
   });
 
   it('caps category lists at six entries', () => {

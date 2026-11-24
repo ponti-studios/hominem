@@ -83,7 +83,7 @@ export function ProactivityDashboard() {
         </Chip>
         {finance ? (
           <Chip>
-            finance: {finance.months.length} months · {finance.recentFlows.length} flows (60d)
+            finance: {finance.months.length} months · {finance.recentFlows.length} flows (6m)
           </Chip>
         ) : (
           <Chip className={DECISION_TONE.defer}>no finance data for this account</Chip>
