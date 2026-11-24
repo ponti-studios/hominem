@@ -56,6 +56,10 @@
       "types": "./build/goals.d.ts",
       "default": "./src/goals.ts"
     },
+    "./proactivity": {
+      "types": "./build/proactivity.d.ts",
+      "default": "./src/proactivity.ts"
+    },
     "./types": {
       "types": "./build/types.d.ts",
       "default": "./src/types.ts"

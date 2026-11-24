@@ -5,12 +5,12 @@ import {
   createDomainContextAssembler,
   createFinanceContextLoader,
   createProactivityEngine,
-  InMemoryJournal,
   type DeliveryIntent,
   type EvaluationRun,
   type Goal,
   type GoalOutcome,
   type ProactivityCareerSummary,
+  type ProactivityDependencies,
   type ProactivityFinanceSummary,
   type ProactivityGoalView,
   type ProactivityOverview,
@@ -18,13 +18,11 @@ import {
 } from '@hominem/proactivity';
 import { createOpenRouterProactivitySlot } from '@hominem/proactivity/openrouter';
 
+import { loadLatestRun, postgresJournal } from './proactivity-journal';
+
 type Row = Record<string, unknown>;
 const str = (value: unknown): string => String(value ?? '');
 const num = (value: unknown): number => Number(value ?? 0);
-
-/** Last evaluation per owner. In-memory for now: journal persistence is the
- * next seam (a real `EvaluationRun` store is an open decision). */
-const lastRuns = new Map<string, EvaluationRun>();
 
 function toGoalView(row: GoalRecord): ProactivityGoalView {
   return {
@@ -128,16 +126,17 @@ async function loadCareer(userId: string): Promise<ProactivityCareerSummary | nu
 }
 
 export async function loadOverview(userId: string): Promise<ProactivityOverview> {
-  const [goalRows, finance, career] = await Promise.all([
+  const [goalRows, finance, career, lastRun] = await Promise.all([
     GoalsRepository.listByOwner(db, { userId }),
     loadFinance(userId),
     loadCareer(userId),
+    loadLatestRun(userId),
   ]);
   return {
     goals: goalRows.map(toGoalView),
     finance,
     career,
-    lastRun: lastRuns.get(userId) ?? null,
+    lastRun,
   };
 }
 
@@ -148,8 +147,24 @@ export async function loadOverview(userId: string): Promise<ProactivityOverview>
  */
 export async function runEvaluation(
   userId: string,
-  options: { slot?: ReturnType<typeof createOpenRouterProactivitySlot> } = {},
+  options: { slot?: ProactivityDependencies['slot']; trigger?: ProactivityTrigger } = {},
 ): Promise<EvaluationRun> {
+  const trigger: ProactivityTrigger = options.trigger ?? {
+    kind: 'scheduled-pass',
+    id: `manual-${Date.now()}`,
+    ownerId: userId,
+    asOf: new Date().toISOString(),
+  };
+  if (trigger.ownerId !== userId) {
+    throw new Error('Proactivity trigger owner does not match the evaluated owner.');
+  }
+  // Replay before loading anything: a repeat of the same trigger is served from
+  // the journal instead of re-reading the owner's data.
+  const stored = await postgresJournal.find(userId, trigger.id);
+  if (stored) return stored;
+  // The whole pass is stamped as of the trigger, so a scheduled sweep is
+  // reproducible and a manual run's record matches the instant it names.
+  const asOf = trigger.kind === 'critical-change' ? trigger.occurredAt : trigger.asOf;
   const [goalRows, finance, career] = await Promise.all([
     GoalsRepository.listByOwner(db, { userId }),
     loadFinance(userId),
@@ -209,23 +224,16 @@ export async function runEvaluation(
                   channel: 'email' as const,
                   subject: decision.summary,
                   body: `${decision.reason}\n\nNext step: ${decision.nextStep}`,
-                  sendAt: new Date().toISOString(),
+                  sendAt: asOf,
                 },
               ]
             : [],
         ),
     },
-    journal: new InMemoryJournal(),
-    clock: { now: () => new Date().toISOString() },
+    journal: postgresJournal,
+    clock: { now: () => asOf },
   });
 
-  const trigger: ProactivityTrigger = {
-    kind: 'scheduled-pass',
-    id: `manual-${Date.now()}`,
-    ownerId: userId,
-    asOf: new Date().toISOString(),
-  };
   const run = await engine.run(trigger);
-  lastRuns.set(userId, run);
   return run;
 }

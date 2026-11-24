@@ -1239,6 +1239,15 @@ export interface AppPossessionVesselConfig {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppProactivityRuns {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  ownerUserid: string;
+  processedAt: ColumnType<string, Date | string, Date | string>;
+  run: Json;
+  triggerId: string;
+}
+
 export interface AppProviderCredentials {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   deviceId: string;
@@ -1985,6 +1994,7 @@ export interface DB {
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.possessionVesselConfig': AppPossessionVesselConfig;
+  'app.proactivityRuns': AppProactivityRuns;
   'app.providerCredentials': AppProviderCredentials;
   'app.socialContacts': AppSocialContacts;
   'app.socialEngagements': AppSocialEngagements;

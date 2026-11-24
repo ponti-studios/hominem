@@ -209,17 +209,17 @@ flowchart LR
   F --> P
 ```
 
-| Component               | Responsibility                                                                                                                                                     | Boundary                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Change signal           | Describe a successfully committed change, its owner, source, time, and the before/after evidence needed to evaluate it.                                            | Emitted by the application operation that owns the write.                                                 |
-| Trigger coordinator     | Distinguish critical-change requests from scheduled passes and deduplicate repeat requests.                                                                        | API runtime; no client participation.                                                                     |
-| Candidate-goal selector | Choose which active goals could be affected by a signal; scheduled passes select all active goals.                                                                 | Brain-owned goal and signal semantics. Exact selection policy is open.                                    |
-| Context assembler       | Resolve goal-relevant state and evidence into a bounded input, retaining provenance, freshness, and prior/current distinction.                                     | API-owned domain readers; the evaluator does not query databases or call tools directly.                  |
-| Proactivity slot        | Evaluate one goal against supplied context and return propose, defer, or quiet with evidence and uncertainty.                                                      | Replaceable implementation behind a stable contract; no persistence, scheduling, email, or UI dependency. |
-| Evaluation record       | Store the decision and evidence references so results can be inspected, deduplicated, and delivered independently.                                                 | API persistence boundary; storage shape is open.                                                          |
-| Delivery policy         | Choose whether, when, and where a proposal is sent based on the goal and decision. Generate a weekly current-state summary from current evidence and active goals. | API-owned policy and channel adapters; email is the initial example.                                      |
-| Shared API contract     | Let interfaces read goals, current state, and available proposals.                                                                                                 | API/MCP brain; mobile is one consumer.                                                                    |
-| Standalone eval runner  | Supply synthetic goals, prior/current evidence, trigger, and fixed time; invoke the same slot and grade the result.                                                | No UI app, live personal data, or delivery provider.                                                      |
+| Component               | Responsibility                                                                                                                                                     | Boundary                                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Change signal           | Describe a successfully committed change, its owner, source, time, and the before/after evidence needed to evaluate it.                                            | Emitted by the application operation that owns the write.                                                                                                           |
+| Trigger coordinator     | Distinguish critical-change requests from scheduled passes and deduplicate repeat requests.                                                                        | API runtime; no client participation.                                                                                                                               |
+| Candidate-goal selector | Choose which active goals could be affected by a signal; scheduled passes select all active goals.                                                                 | Brain-owned goal and signal semantics. Exact selection policy is open.                                                                                              |
+| Context assembler       | Resolve goal-relevant state and evidence into a bounded input, retaining provenance, freshness, and prior/current distinction.                                     | API-owned domain readers; the evaluator does not query databases or call tools directly.                                                                            |
+| Proactivity slot        | Evaluate one goal against supplied context and return propose, defer, or quiet with evidence and uncertainty.                                                      | Replaceable implementation behind a stable contract; no persistence, scheduling, email, or UI dependency.                                                           |
+| Evaluation record       | Store the decision and evidence references so results can be inspected, deduplicated, and delivered independently.                                                 | API persistence boundary: one `app.proactivity_runs` row per (owner, trigger id); the validated run document is jsonb and the unique pair is the deduplication key. |
+| Delivery policy         | Choose whether, when, and where a proposal is sent based on the goal and decision. Generate a weekly current-state summary from current evidence and active goals. | API-owned policy and channel adapters; email is the initial example.                                                                                                |
+| Shared API contract     | Let interfaces read goals, current state, and available proposals.                                                                                                 | API/MCP brain; mobile is one consumer.                                                                                                                              |
+| Standalone eval runner  | Supply synthetic goals, prior/current evidence, trigger, and fixed time; invoke the same slot and grade the result.                                                | No UI app, live personal data, or delivery provider.                                                                                                                |
 
 Critical-change flow: the owning application operation commits a domain write,
 then emits a signal. The trigger coordinator identifies candidate goals and
@@ -233,7 +233,10 @@ uses the same evaluator and record path. It evaluates every active goal
 against current state. A weekly summary is produced from current evidence and
 goal evaluations, then routed by delivery policy. Whether the weekly summary
 shares a pass with the regular scheduled sweep or runs separately remains
-open.
+open. The application layer implements the sweep as one pass per owner per UTC
+day (`scheduled-<date>` trigger id), run by the worker during
+`PROACTIVITY_SCHEDULED_PASS_HOUR` when that variable is set; unset leaves the
+sweep off, because the product cadence is still open.
 
 Eval flow: scenario fixtures supply the goal, prior/current state, trigger,
 and clock directly to the context/evaluator boundary. Contract assertions
@@ -305,8 +308,10 @@ open question below.
   quiet hours, preferences, opt-outs, escalation, and which goal decisions
   qualify for immediate email.
 - **Engine and state ownership details** — OPEN — USER DECISION REQUIRED.
-  Define the API application boundary, event source, persistence model,
-  idempotency key, and model involvement after reviewing the contract.
+  The API application boundary, the run persistence model
+  (`app.proactivity_runs`) and its `(owner, trigger id)` idempotency key are
+  implemented. What remains open: the event source for critical changes and
+  how much of the evaluation the model owns.
 - **Mobile goal interaction scope** — OPEN — USER DECISION REQUIRED. Viewing
   goals is specified; create, edit, pause, and completion interactions remain
   undecided.

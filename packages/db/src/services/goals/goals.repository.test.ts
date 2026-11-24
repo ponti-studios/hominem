@@ -110,4 +110,15 @@ describe('GoalsRepository', () => {
     const [owner] = await createUsers(1);
     await expect(GoalsRepository.create(db, { userId: owner, title: '   ' })).rejects.toThrow();
   });
+
+  it('lists each owner with an active goal once', async () => {
+    const [owner, other] = await createUsers(2);
+    await GoalsRepository.create(db, { userId: owner, title: 'Active one' });
+    await GoalsRepository.create(db, { userId: owner, title: 'Active two' });
+    await GoalsRepository.create(db, { userId: other, title: 'Paused', status: 'paused' });
+
+    const owners = await GoalsRepository.listActiveOwnerIds(db);
+    expect(owners.filter((id) => id === owner)).toEqual([owner]);
+    expect(owners).not.toContain(other);
+  });
 });

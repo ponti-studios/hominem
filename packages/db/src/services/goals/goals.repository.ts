@@ -68,6 +68,18 @@ export const GoalsRepository = {
     return rows.map(toGoalRecord);
   },
 
+  /** Owners with at least one active goal — the scheduled pass's work list. */
+  async listActiveOwnerIds(handle: DbHandle): Promise<string[]> {
+    const rows = await handle
+      .selectFrom('app.goals')
+      .select('ownerUserid')
+      .distinct()
+      .where('status', '=', 'active')
+      .orderBy('ownerUserid')
+      .execute();
+    return rows.map((row) => row.ownerUserid);
+  },
+
   async getOwned(
     handle: DbHandle,
     input: { id: string; userId: string },

@@ -70,6 +70,13 @@ export const apiSchema = runtimeSchema.extend({
   // no tier has uncapped conversation. Taster's skill-call volume is finite; paid tiers are not
   // capped by domain or by skill volume.
   BILLING_TASTER_CHAT_MESSAGES: z.coerce.number().int().positive().default(50),
+  // Proactivity scheduled pass: the UTC hour (0-23) when the worker sweeps every
+  // active goal. Unset leaves the sweep off; the product cadence is an open
+  // decision, so there is no default hour.
+  PROACTIVITY_SCHEDULED_PASS_HOUR: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.coerce.number().int().min(0).max(23).optional(),
+  ),
   BILLING_TASTER_SKILL_CALLS: z.coerce.number().int().positive().default(500),
   // Dollars per pound, already lowered by a small buffer so a falling pound does not cost Thames.
   CREDIT_USD_PER_POUND: z.coerce.number().positive().default(1.28),
