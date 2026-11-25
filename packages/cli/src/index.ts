@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { AGENT_COMMANDS, runAgent } from './agent/index.js';
 import { checkAuth, googleAuth } from './auth.js';
 import { GoogleAuthError } from './google.js';
 import { installAgent, uninstallAgent } from './launchd.js';
@@ -11,9 +12,25 @@ const USAGE = `hominem — Hominem CLI
   hominem auth sync-rclone     Copy the current token into the rclone remote
   hominem agent install        Install the daily 9:00 auth check (launchd)
   hominem agent uninstall      Remove the daily auth check
+
+  hominem chat "request"       Run the personal agent
+  hominem remember "fact"      Save a durable memory
+  hominem recall "query"       Search durable memory
+  hominem reflect < transcript Extract and save durable conversation facts
+  hominem cadence weekly       Regenerate an open Google Tasks cadence
+  hominem wealth sync          Run the audited finance sync
+  hominem tasks <command...>   Google Tasks API
+  hominem gws <command...>     Google Workspace connector
+  hominem spotify <command...> Spotify connector
+  hominem instagram <command...>
+  hominem ytm <command...>
+  hominem linear <command...>
+  hominem notion <command...>
+  hominem ponti <command...>
 `;
 
 async function main(argv: string[]): Promise<number> {
+  if (AGENT_COMMANDS.has(argv[0] ?? '')) return runAgent(argv);
   const [group, command, ...flags] = argv;
   const key = `${group ?? ''} ${command ?? ''}`.trim();
 

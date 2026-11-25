@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises';
 
 import { z } from 'zod';
 
-import { writeFileAtomic } from './files.js';
-import { CLIENT_SECRET_PATH, TOKEN_PATH } from './paths.js';
+import { writeFileAtomic } from './files.ts';
+import { CLIENT_SECRET_PATH, TOKEN_PATH } from './paths.ts';
 
 // Same full scope set as the Python setup.py default (`--services all`), so
 // the token keeps working for Gmail, Calendar, Drive, Docs, Sheets, Contacts.
@@ -19,6 +19,7 @@ export const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/tasks',
 ];
 
 const clientSecretSchema = z.object({
@@ -55,8 +56,16 @@ export type ClientSecret = z.infer<typeof clientSecretSchema>['installed'];
 export type TokenFile = z.infer<typeof tokenFileSchema>;
 
 export class GoogleAuthError extends Error {
+  readonly code:
+    | 'TOKEN_MISSING'
+    | 'TOKEN_REVOKED'
+    | 'REFRESH_FAILED'
+    | 'API_UNAUTHORIZED'
+    | 'API_FAILED'
+    | 'NETWORK';
+
   constructor(
-    readonly code:
+    code:
       | 'TOKEN_MISSING'
       | 'TOKEN_REVOKED'
       | 'REFRESH_FAILED'
@@ -66,6 +75,7 @@ export class GoogleAuthError extends Error {
     message: string,
   ) {
     super(message);
+    this.code = code;
   }
 }
 

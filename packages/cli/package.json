@@ -8,10 +8,10 @@
     "build": "tsc --noEmit && bun build --compile src/index.ts --outfile build/hominem",
     "dev": "bun run src/index.ts",
     "install:local": "bun run build && mkdir -p ~/.local/bin && cp build/hominem ~/.local/bin/hominem",
-    "test": "vitest run src",
+    "test": "vitest run src && node --test tests/agent/*.test.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit",
-    "format": "oxfmt src --write",
-    "format:check": "oxfmt src --check",
+    "format": "oxfmt src tests/agent --write",
+    "format:check": "oxfmt src tests/agent --check",
     "lint": "oxlint src",
     "lint:fix": "oxlint src --fix"
   },

@@ -3,8 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "./build",
-    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
 }
