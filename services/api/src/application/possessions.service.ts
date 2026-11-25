@@ -1,10 +1,13 @@
 import { db } from '@hominem/db/core';
-import { NotFoundError } from '@hominem/db/errors';
+import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { FileRepository } from '@hominem/db/files';
 import {
   ContainerRepository,
+  PossessionImageRepository,
   PossessionRepository,
   VesselConfigRepository,
   type ContainerRecord,
+  type PossessionImageRecord,
   type Json,
   type PossessionEvent,
   type PossessionEventKind,
@@ -13,6 +16,7 @@ import {
 } from '@hominem/db/possessions';
 import { runInTransaction } from '@hominem/db/transaction';
 
+import { signFileUrl } from '../rpc/routes/file-urls';
 import type {
   ContainerCreateInput,
   ContainerSearchInput,
@@ -646,3 +650,113 @@ export async function validatePossessions(
   const offset = input.offset ?? 0;
   return { findings: findings.slice(offset, offset + limit), total: findings.length };
 }
+
+// ---- Photos --------------------------------------------------------------------------------
+// A photo is a ready image file (uploaded through /api/files/uploads) linked to a possession.
+// Clients get a short-lived signed URL, never the stored one.
+
+export interface PossessionImageDto {
+  id: string;
+  possessionId: string;
+  fileId: string;
+  displayOrder: number;
+  altText: string | null;
+  originalFilename: string | null;
+  url: string;
+  createdAt: string;
+}
+
+const toImageDto = async (image: PossessionImageRecord): Promise<PossessionImageDto> => ({
+  id: image.id,
+  possessionId: image.possessionId,
+  fileId: image.fileId,
+  displayOrder: image.displayOrder,
+  altText: image.altText,
+  originalFilename: image.originalFilename,
+  url: await signFileUrl(image.fileUrl, {
+    mimetype: image.mimetype,
+    ...(image.originalFilename ? { originalName: image.originalFilename } : {}),
+  }),
+  createdAt: image.createdAt,
+});
+
+const requirePossession = async (
+  trx: Parameters<Parameters<typeof runInTransaction>[0]>[0],
+  userId: string,
+  id: string,
+) => {
+  const possession = await PossessionRepository.get(trx, userId, id, { forUpdate: true });
+  if (!possession) throw new NotFoundError('Possession');
+};
+
+export async function listPossessionImages(
+  userId: string,
+  possessionId: string,
+): Promise<PossessionImageDto[]> {
+  if (!(await PossessionRepository.get(db, userId, possessionId))) {
+    throw new NotFoundError('Possession');
+  }
+  const images = await PossessionImageRepository.listByPossessionIds(db, userId, [possessionId]);
+  return Promise.all(images.map(toImageDto));
+}
+
+// Photos for many possessions at once, keyed by possession id (the list endpoint embeds these).
+export async function imagesByPossession(
+  userId: string,
+  possessionIds: string[],
+): Promise<Record<string, PossessionImageDto[]>> {
+  const images = await PossessionImageRepository.listByPossessionIds(db, userId, possessionIds);
+  const dtos = await Promise.all(images.map(toImageDto));
+  const grouped: Record<string, PossessionImageDto[]> = {};
+  for (const dto of dtos) (grouped[dto.possessionId] ??= []).push(dto);
+  return grouped;
+}
+
+export const attachPossessionImage = (
+  userId: string,
+  possessionId: string,
+  input: { fileId: string; altText?: string | undefined },
+): Promise<PossessionImageDto> =>
+  runInTransaction(async (trx) => {
+    await requirePossession(trx, userId, possessionId);
+    const file = await FileRepository.getOwnedOrThrow(trx, input.fileId, userId);
+    if (file.type !== 'image') throw new ValidationError('File is not an image');
+    const { image, created } = await PossessionImageRepository.attach(trx, {
+      userId,
+      possessionId,
+      fileId: input.fileId,
+      altText: input.altText ?? null,
+    });
+    if (created) {
+      await PossessionRepository.recordEvent(trx, userId, possessionId, 'updated', {
+        images: { added: image.fileId },
+      });
+    }
+    return toImageDto(image);
+  });
+
+export const removePossessionImage = (
+  userId: string,
+  possessionId: string,
+  imageId: string,
+): Promise<void> =>
+  runInTransaction(async (trx) => {
+    await requirePossession(trx, userId, possessionId);
+    const { fileId } = await PossessionImageRepository.remove(trx, userId, possessionId, imageId);
+    await PossessionRepository.recordEvent(trx, userId, possessionId, 'updated', {
+      images: { removed: fileId },
+    });
+  });
+
+export const reorderPossessionImages = (
+  userId: string,
+  possessionId: string,
+  imageIds: string[],
+): Promise<void> =>
+  runInTransaction(async (trx) => {
+    await requirePossession(trx, userId, possessionId);
+    await PossessionImageRepository.reorder(trx, userId, possessionId, imageIds);
+    await PossessionRepository.recordEvent(trx, userId, possessionId, 'updated', {
+      images: { reordered: imageIds },
+    });
+  });

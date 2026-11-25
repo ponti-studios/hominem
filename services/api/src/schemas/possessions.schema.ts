@@ -88,6 +88,12 @@ export const containerUpdateSchema = z.object({
 });
 
 export const possessionIdParamSchema = z.object({ id: z.uuid() });
+export const possessionImageParamSchema = z.object({ id: z.uuid(), imageId: z.uuid() });
+export const possessionImageAttachSchema = z.object({
+  fileId: z.uuid(),
+  altText: z.string().trim().max(500).optional(),
+});
+export const possessionImageOrderSchema = z.object({ imageIds: z.array(z.uuid()).max(50) });
 
 export type PossessionCreateInput = z.infer<typeof possessionCreateSchema>;
 export type PossessionUpdateInput = z.infer<typeof possessionUpdateSchema>;
