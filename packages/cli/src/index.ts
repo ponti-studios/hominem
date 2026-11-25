@@ -26,6 +26,7 @@ const USAGE = `hominem — Hominem CLI
   hominem tasks <command...>   Google Tasks API
   hominem gws <command...>     Google Workspace connector
   hominem spotify <command...> Spotify connector
+  hominem starling <command...> Starling connector
   hominem instagram <command...>
   hominem ytm <command...>
   hominem linear <command...>

@@ -7,6 +7,7 @@ import { main as linear } from './connectors/linear-log/linear_log.ts';
 import { main as notion } from './connectors/notion-log/notion_log.ts';
 import { main as ponti } from './connectors/ponti-log/ponti_log.ts';
 import { main as spotify } from './connectors/spotify/spotify.ts';
+import { main as starling } from './connectors/starling/starling.ts';
 import { main as ytm } from './connectors/youtube-music/ytm.ts';
 import { main as knowledge } from './knowledge/main.ts';
 import { main as cadence } from './routines/cadence_regen.ts';
@@ -31,6 +32,7 @@ export const AGENT_COMMANDS = new Set([
   'tasks',
   'gws',
   'spotify',
+  'starling',
   'instagram',
   'ytm',
   'linear',
@@ -64,6 +66,8 @@ export async function runAgent(argv: string[]): Promise<number> {
       return gws(args);
     case 'spotify':
       return spotify(args);
+    case 'starling':
+      return starling(args);
     case 'instagram':
       return instagram(args);
     case 'ytm':
