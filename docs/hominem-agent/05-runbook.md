@@ -73,6 +73,7 @@ missing open tasks, so rerunning it is safe.
 ```bash
 hominem calendar analyze --start 2026-11-26 --end 2026-11-26
 hominem calendar analyze --no-pull
+hominem calendar analyze --start 2026-11-26 --end 2026-11-26 --json
 ```
 
 `calendar analyze` is read-only: it pulls only the primary calendar through
@@ -82,6 +83,10 @@ the logged GWS wrapper, caches events under
 
 `--no-pull` reuses an existing cache. There are no calendar writes in this
 command.
+
+Without `--json`, output is an exception-led human summary. With `--json`,
+stdout is a stable machine envelope containing counts, findings, source,
+run id, and artifact paths; the full report remains in `report.json`.
 
 `knowledge validate` expects `batch.json`, `claims.jsonl`,
 `files.jsonl`, and a `bodies/` directory containing the manifest files.

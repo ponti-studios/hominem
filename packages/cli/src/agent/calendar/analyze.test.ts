@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { analyzeEvents, normalizeEvents } from './analyze.ts';
+import { analyzeEvents, calendarEnvelope, humanCalendar, normalizeEvents } from './analyze.ts';
 
 let dir: string;
 
@@ -109,5 +109,50 @@ describe('calendar analysis', () => {
         },
       ]),
     ).toThrow('has no start/end');
+  });
+
+  it('renders a compact human summary', () => {
+    const report = analyzeEvents(
+      normalizeEvents([
+        {
+          id: 'breakfast',
+          summary: 'Breakfast',
+          start: { dateTime: '2026-11-26T13:00:00Z' },
+          end: { dateTime: '2026-11-26T13:30:00Z' },
+        },
+      ]),
+      '2026-11-26',
+      '2026-11-26',
+    );
+    expect(humanCalendar(report)).toContain('Calendar — 2026-11-26');
+    expect(humanCalendar(report)).toContain('1 event');
+  });
+
+  it('returns a stable JSON envelope with artifact paths', () => {
+    const report = analyzeEvents([], '2026-11-26', '2026-11-26');
+    const envelope = calendarEnvelope(
+      report,
+      'cache',
+      42,
+      '/tmp/cache.json',
+      '/tmp/report.json',
+      '/tmp/report.md',
+    );
+    expect(envelope).toMatchObject({
+      ok: true,
+      event_count: 0,
+      source: 'cache',
+      run_id: 42,
+      summary: {
+        overlaps: 0,
+        duplicates: 0,
+        violations: 0,
+      },
+      artifacts: {
+        cache: '/tmp/cache.json',
+        report_json: '/tmp/report.json',
+        report_markdown: '/tmp/report.md',
+      },
+    });
   });
 });

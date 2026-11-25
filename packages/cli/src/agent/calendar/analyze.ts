@@ -73,6 +73,38 @@ export interface CalendarReport {
   }>;
 }
 
+export interface CalendarEnvelope {
+  ok: true;
+  start: string;
+  end: string;
+  event_count: number;
+  source: 'live' | 'cache';
+  run_id: number;
+  summary: {
+    overlaps: number;
+    duplicates: number;
+    dead_spots: number;
+    slivers: number;
+    sleep_anomalies: number;
+    violations: number;
+    covered_minutes: number;
+    waking_minutes: number;
+  };
+  findings: {
+    overlaps: CalendarReport['overlaps'];
+    duplicates: CalendarReport['duplicates'];
+    dead_spots: CalendarReport['deadSpots'];
+    slivers: CalendarReport['slivers'];
+    sleep_anomalies: CalendarReport['sleepAnomalies'];
+    violations: CalendarReport['violations'];
+  };
+  artifacts: {
+    cache: string;
+    report_json: string;
+    report_markdown: string;
+  };
+}
+
 function dateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
@@ -375,6 +407,95 @@ function markdown(report: CalendarReport): string {
   return `${lines.join('\n')}\n`;
 }
 
+export function humanCalendar(report: CalendarReport): string {
+  const covered = report.dayStats.reduce((total, day) => total + day.coveredMinutes, 0);
+  const waking = report.dayStats.reduce((total, day) => total + day.wakingMinutes, 0);
+  const count =
+    report.overlaps.length +
+    report.duplicates.length +
+    report.deadSpots.length +
+    report.slivers.length +
+    report.sleepAnomalies.length +
+    report.violations.length;
+  const lines = [
+    `Calendar — ${report.start}${report.start === report.end ? '' : ` to ${report.end}`}`,
+    `${report.eventCount} event${report.eventCount === 1 ? '' : 's'} · ${covered}/${waking} waking minutes`,
+  ];
+  if (count === 0) {
+    lines.push('Quiet — no overlaps, duplicates, dead spots, slivers, or sleep anomalies.');
+  } else {
+    const findings = [
+      ...report.overlaps.map(
+        (finding) =>
+          `${finding.date}: overlap — ${finding.a} x ${finding.b} (${finding.minutes}m ${finding.kind})`,
+      ),
+      ...report.duplicates.map(
+        (finding) =>
+          `${finding.start.slice(0, 10)}: duplicate — ${finding.title} (${finding.count}x)`,
+      ),
+      ...report.deadSpots.map(
+        (finding) =>
+          `${finding.date}: dead spot — ${finding.from}–${finding.to} (${finding.minutes}m)`,
+      ),
+      ...report.slivers.map(
+        (finding) =>
+          `${finding.date}: sliver — ${finding.from}–${finding.to} (${finding.minutes}m)`,
+      ),
+      ...report.sleepAnomalies.map(
+        (finding) => `${finding.date}: sleep anomaly — ${finding.hours}h`,
+      ),
+      ...report.violations.map((finding) => `${finding.date}: ${finding.rule} — ${finding.detail}`),
+    ];
+    lines.push(`${count} flag${count === 1 ? '' : 's'}:`);
+    for (const finding of findings.slice(0, 8)) lines.push(`- ${finding}`);
+    if (findings.length > 8) lines.push(`- ${findings.length - 8} more — see the report`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+export function calendarEnvelope(
+  report: CalendarReport,
+  source: 'live' | 'cache',
+  runId: number,
+  cache: string,
+  reportJson: string,
+  reportMarkdown: string,
+): CalendarEnvelope {
+  const covered = report.dayStats.reduce((total, day) => total + day.coveredMinutes, 0);
+  const waking = report.dayStats.reduce((total, day) => total + day.wakingMinutes, 0);
+  return {
+    ok: true,
+    start: report.start,
+    end: report.end,
+    event_count: report.eventCount,
+    source,
+    run_id: runId,
+    summary: {
+      overlaps: report.overlaps.length,
+      duplicates: report.duplicates.length,
+      dead_spots: report.deadSpots.length,
+      slivers: report.slivers.length,
+      sleep_anomalies: report.sleepAnomalies.length,
+      violations: report.violations.length,
+      covered_minutes: covered,
+      waking_minutes: waking,
+    },
+    findings: {
+      overlaps: report.overlaps,
+      duplicates: report.duplicates,
+      dead_spots: report.deadSpots,
+      slivers: report.slivers,
+      sleep_anomalies: report.sleepAnomalies,
+      violations: report.violations,
+    },
+    artifacts: {
+      cache,
+      report_json: reportJson,
+      report_markdown: reportMarkdown,
+    },
+  };
+}
+
 export async function main(args: string[]): Promise<number> {
   if (args[0] !== 'analyze') {
     const choice = await select('Select a calendar action:', [
@@ -386,11 +507,17 @@ export async function main(args: string[]): Promise<number> {
   let start = range.start;
   let end = range.end;
   let noPull = false;
+  let jsonOutput = false;
   let index = args[0] === 'analyze' ? 1 : 0;
   while (index < args.length) {
     const flag = args[index];
     if (flag === '--no-pull') {
       noPull = true;
+      index += 1;
+      continue;
+    }
+    if (flag === '--json') {
+      jsonOutput = true;
       index += 1;
       continue;
     }
@@ -436,14 +563,33 @@ export async function main(args: string[]): Promise<number> {
     }
     const report = analyzeEvents(normalizeEvents(raw), start, end);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'report.json'), JSON.stringify(report, null, 2));
-    writeFileSync(join(dir, 'report.md'), markdown(report));
+    const reportJson = join(dir, 'report.json');
+    const reportMarkdown = join(dir, 'report.md');
+    writeFileSync(reportJson, JSON.stringify(report, null, 2));
+    writeFileSync(reportMarkdown, markdown(report));
     finishRun(runId, {
       status: 'completed',
       exitCode: 0,
       message: `${report.eventCount} events, ${report.overlaps.length} overlaps, ${report.violations.length} violations`,
     });
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    if (jsonOutput) {
+      process.stdout.write(
+        `${JSON.stringify(
+          calendarEnvelope(
+            report,
+            noPull ? 'cache' : 'live',
+            runId,
+            cache,
+            reportJson,
+            reportMarkdown,
+          ),
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      process.stdout.write(humanCalendar(report));
+    }
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

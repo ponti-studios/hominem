@@ -28,7 +28,7 @@ const USAGE = `hominem — Hominem CLI
   hominem notion <command...>
   hominem ponti <command...>
   hominem knowledge validate [batch-dir] [bodies-dir]
-  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull]
+  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull] [--json]
   hominem workflow status [run-id]
   hominem studio nameplate --word WORD --font PATH --texture PATH --preset platinum|gold --output PATH
 `;
