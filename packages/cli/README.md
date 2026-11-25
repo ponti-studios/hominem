@@ -1,7 +1,8 @@
 # @hominem/cli
 
-The `hominem` command provides Google auth and a finance adapter backed by the
-Hominem API.
+The `hominem` command is the Hominem control plane: Google auth, the
+personal agent, connectors, memory, wealth routines, and the daily auth
+health check.
 
 ## Setup
 
@@ -11,6 +12,11 @@ Needs [bun](https://bun.sh) to compile the binary.
 pnpm --filter @hominem/cli build
 pnpm --filter @hominem/cli install:local
 ```
+
+The repository's `post-commit` hook reinstalls this binary after every
+Hominem commit, so `~/.local/bin/hominem` always matches the just-committed
+CLI. Run `scripts/install-git-hooks.sh` once after cloning if
+`core.hooksPath` is not already `.githooks`.
 
 The token and OAuth client live in `$HOMINEM_HOME` (default `~/.hominem`):
 
@@ -28,21 +34,30 @@ optionally names a local JSON doctrine file.
 
 ## Commands
 
-| Command                                                                    | What it does                                                                                                                                               |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hominem auth google`                                                      | Opens Google sign-in, saves the token (atomic write, 0600), and syncs the rclone `gdrive` remote                                                           |
-| `hominem auth hominem`                                                     | Signs in to Hominem with OAuth and stores a private refresh token                                                                                          |
-| `hominem auth check [--notify]`                                            | Live check (refresh + one Drive call). Exit 0 healthy, 1 dead (needs `auth google` again), 2 couldn't check (offline or Google hiccup). Only dead notifies |
-| `hominem auth sync-rclone`                                                 | Writes the current token into the rclone remote by editing `rclone.conf` directly (no secrets in process args)                                             |
-| `hominem agent install`                                                    | Installs the daily 09:00 `auth check --notify` launch agent                                                                                                |
-| `hominem agent uninstall`                                                  | Removes it                                                                                                                                                 |
-| `hominem wealth seed`                                                      | Provision Starling account identities and optionally import the local doctrine                                                                             |
-| `hominem wealth sync [--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run]` | Send raw provider feeds to the server for settled-transaction routing, classification, and import                                                          |
-| `hominem wealth balances`                                                  | Show live Starling balances and Spaces, grouped by currency                                                                                                |
-| `hominem wealth brief`                                                     | Morning brief; keeps the bill snapshot locally (`WEALTH_BRIEF_BILLS_ONLY`, `WEALTH_BRIEF_NO_WRITE_SNAPSHOT`)                                               |
-| `hominem wealth look`                                                      | Forward look from `forward_look_inputs.json` and a live rate from `WEALTH_FX_URL` (Frankfurter by default)                                                 |
-| `hominem wealth close`                                                     | Monthly close markdown from `monthly_close_anchors.json` and the month's check cache (`WEALTH_CLOSE_MONTH`, `WEALTH_CLOSE_OUT`)                            |
-| `hominem wealth integrity`                                                 | Integrity flags from the sync checkpoint, `manual_anchors.json`, `cancellation_watches.json`, and live Plaid and Starling reads                            |
+| Command                                                                                   | What it does                                                                                                                                               |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hominem auth google`                                                                     | Opens Google sign-in, saves the token (atomic write, 0600), and syncs the rclone `gdrive` remote                                                           |
+| `hominem auth hominem`                                                                    | Signs in to Hominem with OAuth and stores a private refresh token                                                                                          |
+| `hominem auth check [--notify]`                                                           | Live check (refresh + one Drive call). Exit 0 healthy, 1 dead (needs `auth google` again), 2 couldn't check (offline or Google hiccup). Only dead notifies |
+| `hominem auth sync-rclone`                                                                | Writes the current token into the rclone remote by editing `rclone.conf` directly (no secrets in process args)                                             |
+| `hominem agent install`                                                                   | Installs the daily 09:00 `auth check --notify` launch agent                                                                                                |
+| `hominem agent uninstall`                                                                 | Removes it                                                                                                                                                 |
+| `hominem wealth seed`                                                                     | Provision Starling account identities and optionally import the local doctrine                                                                             |
+| `hominem wealth sync [--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run]`                | Send raw provider feeds to the server for settled-transaction routing, classification, and import                                                          |
+| `hominem wealth balances`                                                                 | Show live Starling balances and Spaces, grouped by currency                                                                                                |
+| `hominem wealth brief`                                                                    | Morning brief; keeps the bill snapshot locally (`WEALTH_BRIEF_BILLS_ONLY`, `WEALTH_BRIEF_NO_WRITE_SNAPSHOT`)                                               |
+| `hominem wealth look`                                                                     | Forward look from `forward_look_inputs.json` and a live rate from `WEALTH_FX_URL` (Frankfurter by default)                                                 |
+| `hominem wealth close`                                                                    | Monthly close markdown from `monthly_close_anchors.json` and the month's check cache (`WEALTH_CLOSE_MONTH`, `WEALTH_CLOSE_OUT`)                            |
+| `hominem wealth integrity`                                                                | Integrity flags from the sync checkpoint, `manual_anchors.json`, `cancellation_watches.json`, and live Plaid and Starling reads                            |
+| `hominem chat "request"`                                                                  | Runs the personal agent through Pi with audited MCP calls                                                                                                  |
+| `hominem remember` / `recall`                                                             | Writes and searches durable Seme memory                                                                                                                    |
+| `hominem reflect`                                                                         | Extracts durable facts from a transcript and verifies their upsert                                                                                         |
+| `hominem cadence weekly\|monthly`                                                         | Regenerates missing Google Tasks                                                                                                                           |
+| `hominem tasks` / `gws` / `spotify` / `instagram` / `ytm` / `linear` / `notion` / `ponti` | Runs audited external connectors                                                                                                                           |
+| `hominem knowledge validate [batch-dir]`                                                  | Selects a nearby extraction batch when omitted, then validates its JSONL                                                                                   |
+| `hominem workflow status [run-id]`                                                        | Selects a recent workflow run when omitted, then reads its persisted progress                                                                              |
+| `hominem calendar analyze [--start] [--end] [--no-pull] [--json]`                         | Reads the primary calendar; human summary by default, stable machine envelope with `--json`                                                                |
+| `hominem studio nameplate`                                                                | Renders deterministic diamond nameplates with platinum or gold presets                                                                                     |
 
 Sync checkpoints, held rows, and content-free run summaries are kept in
 `$HOMINEM_AGENT_WEALTH_DIR` or `$HOMINEM_HOME/wealth`, scoped to the OAuth
@@ -65,6 +80,11 @@ pnpm --filter @hominem/cli dev -- auth check   # run from source with bun
 pnpm --filter @hominem/cli test
 ```
 
-Code layout: decisions live in pure functions (`health.ts`, `callback.ts`, `rclone-config.ts`, `renderPlist` in `launchd.ts`, `isFresh`/`classifyRefreshFailure` in `google.ts`). Network, clock and token saving are injected via `Deps`, and `auth.ts`/`system.ts` are the thin IO shell.
+Code layout: existing CLI decisions live in pure functions
+(`health.ts`, `callback.ts`, `rclone-config.ts`, `renderPlist` in
+`launchd.ts`, `isFresh`/`classifyRefreshFailure` in `google.ts`).
+`src/agent/` holds the personal-agent command graph, connectors, memory,
+wealth routines, and the built-in SQLite audit layer. Network, clock,
+and token saving are injected where the owning surface already does so.
 
 The token file format matches the Python skill's `setup.py`, so the google-workspace skills keep working from the same token.

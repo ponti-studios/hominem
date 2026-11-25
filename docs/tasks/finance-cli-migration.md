@@ -126,11 +126,15 @@ claim that every gap still exists. The current worktree implements provider
 sync and seed, live balances, shared runway orchestration, the four report
 routines (`hominem wealth brief`, `look`, `close`, and `integrity` over the
 `finance_wealth_*` tools), and the CLI OAuth adapter. Re-sync preserves user
-annotations, and the sync keeps provider IDs. The S2 wealth-manager files exist
-only on `feature/web-perf-cleanup`; integrating that branch must delete
-`packages/cli/src/agent/systems/wealth-manager/` rather than keep both copies.
-The task stays `Proposed` because D11 and the other open decisions are
-unresolved, and the same-path task conflict remains.
+annotations, and the sync keeps provider IDs. This branch merges the committed
+S2 `feature/web-perf-cleanup` state and deletes
+`packages/cli/src/agent/systems/wealth-manager/` and its `wealth_*` tests. The
+Starling and Plaid REST clients moved to `packages/cli/src/agent/connectors/`
+as local transport, without the superseded categorizing pull. The CLI env
+loader is one module, `packages/cli/src/env.ts`. The owner's uncommitted S3
+work, including their same-path draft of this task, stays untouched in their
+checkout and needs manual integration. The task stays `Proposed` because D11
+and the other open decisions are unresolved.
 
 | Gap                                                                                                       | Why it matters                                                                                                               |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { LazyMotion, domMax } from 'motion/react';
 import { http, passthrough } from 'msw';
 import { mswLoader } from 'msw-storybook-addon/csf3';
 import { createContext, useContext, useState, type ReactNode } from 'react';
@@ -27,9 +28,11 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <HonoProvider baseUrl="/">
-        <StoryContentContext.Provider value={children}>
-          <RouterProvider router={router} />
-        </StoryContentContext.Provider>
+        <LazyMotion features={domMax} strict>
+          <StoryContentContext.Provider value={children}>
+            <RouterProvider router={router} />
+          </StoryContentContext.Provider>
+        </LazyMotion>
       </HonoProvider>
     </QueryClientProvider>
   );

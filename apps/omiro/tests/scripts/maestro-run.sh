@@ -42,7 +42,7 @@ status_json="$(curl --fail --silent --show-error --max-time 5 "$API_URL/api/stat
 ai_provider="$(jq -r '.providers.ai // empty' <<<"$status_json")"
 email_provider="$(jq -r '.providers.email // empty' <<<"$status_json")"
 if [[ "$ai_provider" != 'scripted' || "$email_provider" != 'scripted' ]]; then
-  fail "API at $API_URL is not fully scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Set USE_SCRIPTED_AI=true in services/api/src/provider-mode.ts and start the API with ENV=scripted before running this suite."
+  fail "API at $API_URL is not fully scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Start the API with USE_SCRIPTED_AI=true and ENV=scripted (services/api/.env.scripted sets both) before running this suite."
 fi
 
 if [[ -z "$METRO_URL_ENCODED" ]]; then
@@ -56,8 +56,10 @@ if [[ -z "$METRO_URL_ENCODED" ]]; then
 fi
 
 # A cancelled Maestro run can leave its XCTest bridge holding port 7001. Do
-# this for every run, not just auth, before a new bridge is created.
-pkill -f '\.maestro/lib' 2>/dev/null || true
+# this for every run, not just auth, before a new bridge is created. Match only
+# test runs: a classpath-wide `\.maestro/lib` match also kills a `maestro mcp`
+# server that an agent session is connected to.
+pkill -f 'maestro\.cli\.AppKt test' 2>/dev/null || true
 pkill -f 'test-without-building' 2>/dev/null || true
 pkill -f 'maestro-driver-iosUITests-Runner' 2>/dev/null || true
 sleep 1

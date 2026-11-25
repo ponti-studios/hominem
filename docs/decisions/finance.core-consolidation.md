@@ -39,6 +39,10 @@ files are not silently attributed to an OAuth client. These are compatibility
 and data-safety defaults, not a resolution of the remaining product decisions.
 The full currency schema/rate rollout remains separate.
 
+This branch merges the committed S2 `feature/web-perf-cleanup` state and
+deletes the CLI `wealth-manager` directory; no CLI copy of sync, categorization,
+or report logic remains. The owner's uncommitted S3 changes are not merged.
+
 The four owner routines (morning brief, forward look, monthly close, and
 integrity check) now run as owner-scoped, read-only `finance_wealth_*` server
 tools. The CLI supplies only local inputs: the bill snapshot, look inputs,

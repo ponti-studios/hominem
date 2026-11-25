@@ -3,24 +3,34 @@
   "version": "0.0.0",
   "private": true,
   "description": "The hominem command: Google sign-in, token health, and the daily auth check",
+  "bin": {
+    "hominem": "./build/hominem"
+  },
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && bun build --compile src/index.ts --outfile build/hominem",
+    "build": "tsc --noEmit && bun build --compile --loader .py:text src/index.ts --outfile build/hominem",
     "dev": "bun run src/index.ts",
     "install:local": "bun run build && mkdir -p ~/.local/bin && cp build/hominem ~/.local/bin/hominem",
-    "test": "vitest run src",
+    "test": "vitest run src && node --test tests/agent/*.test.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit",
-    "format": "oxfmt src --write",
-    "format:check": "oxfmt src --check",
+    "format": "oxfmt src tests/agent --write",
+    "format:check": "oxfmt src tests/agent --check",
     "lint": "oxlint src",
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
+    "@oclif/core": "^5.1.12",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "oclif": {
+    "bin": "hominem",
+    "commands": "./src/commands",
+    "devPlugins": [],
+    "dirname": "hominem"
   }
 }

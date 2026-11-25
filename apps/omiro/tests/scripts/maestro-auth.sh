@@ -51,8 +51,9 @@ command -v maestro >/dev/null || { echo "maestro not found (expected at ~/.maest
 command -v jq >/dev/null || { echo "jq not found" >&2; exit 1; }
 
 # Keep direct use of this documented bootstrap safe too. The canonical runner
-# performs the same cleanup before its broader preflight.
-pkill -f "\.maestro/lib" 2>/dev/null || true
+# performs the same cleanup before its broader preflight. Only test runs, so a
+# connected `maestro mcp` server survives.
+pkill -f 'maestro\.cli\.AppKt test' 2>/dev/null || true
 pkill -f "test-without-building" 2>/dev/null || true
 pkill -f "maestro-driver-iosUITests-Runner" 2>/dev/null || true
 sleep 1

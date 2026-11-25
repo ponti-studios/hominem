@@ -21,7 +21,7 @@ appId: com.pontistudios.hakumi.dev
 # ~1.2s success moment before the inbox appears.
 - extendedWaitUntil:
     visible:
-      id: inbox-composer-input
+      id: chat-composer-dock
     optional: true
     timeout: 10000
 # The simulator's iCloud account can re-prompt its "Apple Account
@@ -48,7 +48,7 @@ appId: com.pontistudios.hakumi.dev
 - runFlow:
     when:
       notVisible:
-        id: inbox-composer-input
+        id: chat-composer-dock
     commands:
       - tapOn:
           id: chat-back-button
@@ -59,4 +59,4 @@ appId: com.pontistudios.hakumi.dev
       - waitForAnimationToEnd:
           timeout: 3000
 - assertVisible:
-    id: inbox-composer-input
+    id: chat-composer-dock

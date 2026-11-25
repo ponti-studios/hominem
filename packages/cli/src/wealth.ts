@@ -4,11 +4,11 @@ import { join } from 'node:path';
 
 import { z } from 'zod';
 
+import { applyEnvDefaults } from './env.js';
 import { writeFileAtomic } from './files.js';
 import { getHominemAccessToken, HominemAuthError } from './hominem-auth.js';
 import { HominemMcp, HominemMcpError } from './hominem.js';
 import { HOMINEM_HOME } from './paths.js';
-import { applyEnvDefaults } from './wealth-env.js';
 import {
   pullPlaidLiabilities,
   pullPlaidTransactions,
@@ -147,7 +147,7 @@ function plaidConfig() {
 
 export async function seed(args: string[] = []): Promise<number> {
   if (args.length) throw new WealthError('Usage: hominem wealth seed.');
-  await applyEnvDefaults();
+  applyEnvDefaults();
   let doctrine: unknown;
   const path = process.env.WEALTH_SEED_DOCTRINE;
   if (path) {
@@ -188,7 +188,7 @@ export async function seed(args: string[] = []): Promise<number> {
 
 export async function balances(args: string[] = []): Promise<number> {
   if (args.length) throw new WealthError('Usage: hominem wealth balances.');
-  await applyEnvDefaults();
+  applyEnvDefaults();
   const token = await getHominemAccessToken();
   const snapshot = await starlingBalances(starlingConfig());
   const hominem = new HominemMcp({ token: token.access_token, url: `${token.api_url}/api/mcp` });
@@ -232,7 +232,7 @@ function parseArgs(args: string[]) {
 }
 
 export async function sync(args: string[] = []): Promise<number> {
-  await applyEnvDefaults();
+  applyEnvDefaults();
   const { from, until, dryRun } = parseArgs(args);
   const token = await getHominemAccessToken();
   const userKey = getUserKey(token);
@@ -403,7 +403,7 @@ function noArgs(args: string[], command: string) {
 }
 
 async function connect() {
-  await applyEnvDefaults();
+  applyEnvDefaults();
   const token = await getHominemAccessToken();
   return {
     userKey: getUserKey(token),
