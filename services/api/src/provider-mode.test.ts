@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { resolveAiProvider, resolveEmailProvider } from './provider-mode';
 
 describe('provider mode', () => {
-  it('picks the AI provider from the USE_SCRIPTED_AI const, not the environment', () => {
-    expect(['scripted', 'openrouter']).toContain(resolveAiProvider());
+  it('picks the AI provider from USE_SCRIPTED_AI', () => {
+    expect(resolveAiProvider({ USE_SCRIPTED_AI: true })).toBe('scripted');
+    expect(resolveAiProvider({ USE_SCRIPTED_AI: false })).toBe('openrouter');
   });
 
   it('selects the scripted email provider with ENV=scripted', () => {
