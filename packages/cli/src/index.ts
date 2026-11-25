@@ -31,8 +31,6 @@ const USAGE = `hominem — Hominem CLI
   hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull]
   hominem workflow status [run-id]
   hominem studio nameplate --word WORD --font PATH --texture PATH --preset platinum|gold --output PATH
-  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull]
-  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull]
 `;
 
 async function main(argv: string[]): Promise<number> {
