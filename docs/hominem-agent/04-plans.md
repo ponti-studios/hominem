@@ -378,3 +378,24 @@ requires the one-time Tasks-scope reauthorization.
   | `.pylibs/zxingcpp` | Keep vendored as a pinned dependency; becomes a declared dependency of whichever consumer (idea-card/barcode generation) ports first. |
   The archive stays machine-local under `archive/2026-11-21/` as the
   permanent source of record for all of it.
+
+### 8. Jarvis workflow migration — Phase 1 resolved 2026-11-25
+
+The first `.jarvis` slice is now native Hominem code:
+
+- The workflow runtime persists stable worker keys, attempts, results,
+  and failures in the agent database. Concurrency is bounded, completed
+  workers are skipped on resume, and failed workers can be retried.
+- `hominem workflow status <run-id>` reads persisted progress.
+- `hominem knowledge validate <batch-dir>` implements the archived
+  extraction invariants with schema-first JSONL validation: exact file
+  coverage, unique sequential claim IDs, per-file counts, and verbatim
+  best sentences checked against local bodies.
+- Synthetic tests cover concurrency, resume, failed-worker retry,
+  duplicate keys, malformed JSONL, ID sequencing, count drift, and
+  non-verbatim sentences.
+
+The historical `gen`/`make`, cluster, finalize, residue, repair, image,
+and Printify scripts remain archive references until a real model
+worker and a specific studio consumer are ported. No live vault or
+Printify run was attempted in this phase.

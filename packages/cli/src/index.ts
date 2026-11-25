@@ -27,6 +27,8 @@ const USAGE = `hominem — Hominem CLI
   hominem linear <command...>
   hominem notion <command...>
   hominem ponti <command...>
+  hominem knowledge validate <batch-dir> [bodies-dir]
+  hominem workflow status <run-id>
 `;
 
 async function main(argv: string[]): Promise<number> {

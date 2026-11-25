@@ -7,6 +7,7 @@ import { main as notion } from './connectors/notion-log/notion_log.ts';
 import { main as ponti } from './connectors/ponti-log/ponti_log.ts';
 import { main as spotify } from './connectors/spotify/spotify.ts';
 import { main as ytm } from './connectors/youtube-music/ytm.ts';
+import { main as knowledge } from './knowledge/main.ts';
 import { main as cadence } from './routines/cadence_regen.ts';
 import { main as balanceCheck } from './systems/wealth-manager/balance_check.ts';
 import { main as sync } from './systems/wealth-manager/daily_sync.ts';
@@ -16,6 +17,7 @@ import { main as integrity } from './systems/wealth-manager/integrity_check.ts';
 import { main as close } from './systems/wealth-manager/monthly_close.ts';
 import { main as brief } from './systems/wealth-manager/morning_brief.ts';
 import { main as seed } from './systems/wealth-manager/seed.ts';
+import { main as workflow } from './workflows/main.ts';
 
 export const AGENT_COMMANDS = new Set([
   'chat',
@@ -32,6 +34,8 @@ export const AGENT_COMMANDS = new Set([
   'linear',
   'notion',
   'ponti',
+  'knowledge',
+  'workflow',
 ]);
 
 export async function runAgent(argv: string[]): Promise<number> {
@@ -66,6 +70,10 @@ export async function runAgent(argv: string[]): Promise<number> {
       return notion(args);
     case 'ponti':
       return ponti(args);
+    case 'knowledge':
+      return knowledge(args);
+    case 'workflow':
+      return workflow(args);
     default:
       return 2;
   }

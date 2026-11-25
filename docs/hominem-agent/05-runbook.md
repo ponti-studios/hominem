@@ -60,11 +60,22 @@ hominem ytm <command...>
 hominem linear <command...>
 hominem notion <command...>
 hominem ponti <command...>
+hominem knowledge validate <batch-dir> [bodies-dir]
+hominem workflow status <run-id>
 ```
 
 Cadence regeneration discovers the exact `Weekly Cadence` and
 `Monthly Cadence` list IDs from the Google Tasks API. It creates only
 missing open tasks, so rerunning it is safe.
+
+`knowledge validate` expects `batch.json`, `claims.jsonl`,
+`files.jsonl`, and a `bodies/` directory containing the manifest files.
+It checks schemas, exact file coverage, sequential `fNN-NNN` IDs,
+per-file claim counts, and verbatim `best_sentence` values.
+
+The workflow runtime persists stable worker keys, attempts, results, and
+failures in `~/.hominem/agent.db`. Resuming skips completed keys and
+retries only pending or failed workers. `workflow status` is read-only.
 
 ## Machine configuration
 

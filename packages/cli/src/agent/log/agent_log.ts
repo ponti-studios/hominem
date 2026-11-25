@@ -38,6 +38,31 @@ const SCHEMA = `
     message TEXT,
     context TEXT
   );
+  CREATE TABLE IF NOT EXISTS workflow_runs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    context TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS workflow_workers (
+    run_id TEXT NOT NULL,
+    worker_key TEXT NOT NULL,
+    status TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    result TEXT,
+    error TEXT,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    started_at TEXT,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT,
+    PRIMARY KEY (run_id, worker_key),
+    FOREIGN KEY (run_id) REFERENCES workflow_runs(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS workflow_workers_status
+    ON workflow_workers(run_id, status);
   CREATE TABLE IF NOT EXISTS hominem_migrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
@@ -54,10 +79,11 @@ export function connect(path?: string): DatabaseSync {
   mkdirSync(dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(`PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; ${SCHEMA}`);
-  db.prepare(`INSERT OR IGNORE INTO hominem_migrations (name, applied_at) VALUES (?, ?)`).run(
-    '0000_hominem.sql',
-    new Date().toISOString(),
+  const migration = db.prepare(
+    `INSERT OR IGNORE INTO hominem_migrations (name, applied_at) VALUES (?, ?)`,
   );
+  migration.run('0000_hominem.sql', new Date().toISOString());
+  migration.run('0001_workflows.sql', new Date().toISOString());
   return db;
 }
 

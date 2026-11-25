@@ -33,11 +33,17 @@ hominem
   linear
   notion
   ponti
+  knowledge validate
+  workflow status
 ```
 
 Agent modules do not self-execute on import. `src/index.ts` is the only
 production entrypoint, so the Bun-compiled binary cannot accidentally run
 every imported connector at startup.
+
+`src/agent/workflows/runtime.ts` provides bounded, stable-key worker
+execution with persistent resume state. `src/agent/knowledge/validate.ts`
+owns the extracted-claim validation boundary.
 
 ## Audit contract
 
