@@ -52,7 +52,7 @@
  *   PLAID_CLIENT_ID      Plaid Dashboard client identifier
  *   PLAID_SECRET         Plaid environment secret
  *   PLAID_ACCESS_TOKEN   Linked Item access token
- *   PLAID_ENV            sandbox|development|production
+ *   PLAID_ENV            sandbox|production
  *   HOMINEM_AGENT_WEALTH_DIR     state dir (default ~/.hominem/wealth)
  *   WEALTH_SYNC_TODAY    pin the run date (tests / a pinned re-run)
  *

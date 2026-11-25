@@ -180,6 +180,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       `${JSON.stringify(
         {
           environment: status.environment,
+          environmentConfigured: status.environmentConfigured,
           clientIdConfigured: status.clientIdConfigured,
           secretConfigured: status.secretConfigured,
           accessTokenConfigured: status.accessTokenConfigured,
@@ -188,21 +189,25 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         2,
       )}\n`,
     );
-    return status.clientIdConfigured && status.secretConfigured ? 0 : 2;
+    return status.environmentConfigured && status.clientIdConfigured && status.secretConfigured
+      ? 0
+      : 2;
   }
 
   if (action === 'auth') {
     const status = plaidSetupStatus();
-    if (!status.clientIdConfigured || !status.secretConfigured) {
+    if (!status.environmentConfigured || !status.clientIdConfigured || !status.secretConfigured) {
       await openBrowser('https://dashboard.plaid.com/developers/keys').catch(() => undefined);
       process.stderr.write(
-        'Plaid credentials are not configured.\n' +
+        (!status.environmentConfigured
+          ? 'PLAID_ENV is invalid. Use sandbox or production; development is not an API host.\n'
+          : 'Plaid credentials are not configured.\n') +
           '1. Open the Plaid Dashboard and create/select an app.\n' +
           '2. Copy the client_id and the Development secret.\n' +
           '3. Add them to ~/.hominem/env:\n' +
           '   PLAID_CLIENT_ID=...\n' +
           '   PLAID_SECRET=...\n' +
-          '   PLAID_ENV=development\n' +
+          '   PLAID_ENV=sandbox|production\n' +
           '4. Re-run: hominem plaid auth\n',
       );
       return 2;

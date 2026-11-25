@@ -16,7 +16,7 @@ hominem plaid liabilities [--credential-id ID]
 
 - `PLAID_CLIENT_ID`
 - `PLAID_SECRET`
-- `PLAID_ENV` (`sandbox`, `development`, or `production`)
+- `PLAID_ENV` (`sandbox` or `production`)
 - `PLAID_ACCESS_TOKEN` (written by `hominem plaid auth`)
 - `PLAID_ITEM_ID` (written by `hominem plaid auth`)
 

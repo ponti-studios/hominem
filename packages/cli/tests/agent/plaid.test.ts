@@ -99,7 +99,7 @@ function apiEnv(): Record<string, string> {
     PLAID_SECRET: 'test-secret',
     PLAID_ACCESS_TOKEN: 'test-access',
     PLAID_ITEM_ID: 'item-synthetic',
-    PLAID_ENV: 'development',
+    PLAID_ENV: 'sandbox',
     PLAID_API_BASE: `http://127.0.0.1:${port}`,
   };
 }
@@ -108,7 +108,7 @@ test('plaid: status reports configuration without secrets', async () => {
   const result = await runWrapper(PLAID, apiEnv(), ['status']);
   assert.equal(result.status, 0, result.stderr);
   const body = JSON.parse(result.stdout);
-  assert.equal(body.environment, 'development');
+  assert.equal(body.environment, 'sandbox');
   assert.equal(body.clientIdConfigured, true);
   assert.equal(body.secretConfigured, true);
   assert.equal(body.accessTokenConfigured, true);
@@ -146,7 +146,7 @@ test('plaid: link and exchange use mock endpoints and persist secrets only to en
   process.env.HOMINEM_AGENT_ENV_FILE = envFile;
   process.env.PLAID_CLIENT_ID = 'test-client';
   process.env.PLAID_SECRET = 'test-secret';
-  process.env.PLAID_ENV = 'development';
+  process.env.PLAID_ENV = 'sandbox';
   process.env.PLAID_API_BASE = `http://127.0.0.1:${port}`;
 
   const link = await plaidLinkTokenCreate();

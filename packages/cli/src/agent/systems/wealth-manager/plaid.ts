@@ -28,7 +28,7 @@ export interface PlaidConfig {
   clientId?: string;
   secret?: string;
   accessToken?: string;
-  environment?: 'sandbox' | 'development' | 'production';
+  environment?: 'sandbox' | 'production';
   apiBase?: string;
   fetchImpl?: typeof fetch;
 }
@@ -88,16 +88,12 @@ function resolveConfig(cfg: PlaidConfig): Required<
 } {
   applyEnvDefaults();
   const environment =
-    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'development';
-  if (!['sandbox', 'development', 'production'].includes(environment)) {
-    throw new Error('PLAID_ENV must be sandbox, development, or production');
+    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'sandbox';
+  if (environment !== 'sandbox' && environment !== 'production') {
+    throw new Error('PLAID_ENV must be sandbox or production');
   }
   const defaultBase =
-    environment === 'sandbox'
-      ? 'https://sandbox.plaid.com'
-      : environment === 'development'
-        ? 'https://development.plaid.com'
-        : 'https://production.plaid.com';
+    environment === 'sandbox' ? 'https://sandbox.plaid.com' : 'https://production.plaid.com';
   return {
     clientId: cfg.clientId ?? requireEnv('PLAID_CLIENT_ID'),
     secret: cfg.secret ?? requireEnv('PLAID_SECRET'),
@@ -186,19 +182,21 @@ export interface PlaidSetupStatus {
   clientIdConfigured: boolean;
   secretConfigured: boolean;
   accessTokenConfigured: boolean;
-  environment: 'sandbox' | 'development' | 'production';
+  environment: 'sandbox' | 'production' | 'development' | 'invalid';
+  environmentConfigured: boolean;
 }
 
 export function plaidSetupStatus(cfg: PlaidConfig = {}): PlaidSetupStatus {
   applyEnvDefaults();
   const environment =
-    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'development';
+    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'sandbox';
+  const valid = environment === 'sandbox' || environment === 'production';
   return {
     clientIdConfigured: Boolean(cfg.clientId ?? process.env.PLAID_CLIENT_ID),
     secretConfigured: Boolean(cfg.secret ?? process.env.PLAID_SECRET),
     accessTokenConfigured: Boolean(cfg.accessToken ?? process.env.PLAID_ACCESS_TOKEN),
-    environment:
-      environment === 'sandbox' || environment === 'production' ? environment : 'development',
+    environment: valid ? environment : 'invalid',
+    environmentConfigured: valid,
   };
 }
 

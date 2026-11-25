@@ -154,8 +154,8 @@ export YTM_CLI="/path/to/ytm-cli"
 export IG_CLI="/path/to/ig-cli"
 export SEME_MCP_CMD="node /path/to/seme-mcp-server.js"
 export PLAID_CLIENT_ID="your-plaid-client-id"
-export PLAID_SECRET="your-plaid-development-secret"
-export PLAID_ENV="development"
+export PLAID_SECRET="your-plaid-secret"
+export PLAID_ENV="production"
 ```
 
 Google OAuth lives separately in:
