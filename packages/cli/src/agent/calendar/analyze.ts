@@ -293,6 +293,12 @@ export function analyzeEvents(events: CalendarEvent[], start: string, end: strin
     }
   }
 
+  const uniqueViolations = new Map<string, (typeof violations)[number]>();
+  for (const violation of violations) {
+    uniqueViolations.set(`${violation.date}|${violation.rule}|${violation.detail}`, violation);
+  }
+  violations.splice(0, violations.length, ...uniqueViolations.values());
+
   return {
     ok: true,
     start,

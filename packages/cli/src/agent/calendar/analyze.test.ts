@@ -183,4 +183,43 @@ describe('calendar analysis', () => {
       },
     });
   });
+
+  it('does not overlap timed events with all-day birthdays', () => {
+    const events = normalizeEvents([
+      {
+        id: 'birthday',
+        summary: "Bridgette Logan's birthday",
+        start: '2026-12-09',
+        end: '2026-12-10',
+        location: '',
+      },
+      {
+        id: 'grooming',
+        summary: 'Grooming',
+        start: { dateTime: '2026-12-09T09:00:00Z' },
+        end: { dateTime: '2026-12-09T09:30:00Z' },
+      },
+    ]);
+    expect(analyzeEvents(events, '2026-12-09', '2026-12-09').overlaps).toEqual([]);
+  });
+
+  it('deduplicates repeated standing violations', () => {
+    const events = normalizeEvents([
+      {
+        id: 'duplicate-1',
+        summary: 'GTA VI — story mode',
+        start: { dateTime: '2026-12-08T10:00:00Z' },
+        end: { dateTime: '2026-12-08T11:00:00Z' },
+      },
+      {
+        id: 'duplicate-2',
+        summary: 'GTA VI — story mode',
+        start: { dateTime: '2026-12-08T10:00:00Z' },
+        end: { dateTime: '2026-12-08T11:00:00Z' },
+      },
+    ]);
+    const report = analyzeEvents(events, '2026-12-08', '2026-12-08');
+    expect(report.duplicates).toHaveLength(1);
+    expect(report.violations).toHaveLength(1);
+  });
 });
