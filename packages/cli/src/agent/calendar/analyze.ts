@@ -125,7 +125,9 @@ export function normalizeEvents(raw: unknown[]): CalendarEvent[] {
     const event = parsed.data;
     const start = event.start ?? {};
     const end = event.end ?? {};
-    const allDay = typeof start === 'object' && Boolean(start.date);
+    const allDay =
+      (typeof start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(start)) ||
+      (typeof start === 'object' && Boolean(start.date));
     let startDate: Date;
     let endDate: Date;
     if (typeof start === 'string' && typeof end === 'string') {

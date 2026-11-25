@@ -53,6 +53,34 @@ describe('calendar analysis', () => {
     expect(events[0]?.allDay).toBe(false);
   });
 
+  it('does not overlap timed events with a flat all-day event', () => {
+    const events = normalizeEvents([
+      {
+        id: 'birthday',
+        summary: "Bridgette Logan's birthday",
+        start: '2026-12-09',
+        end: '2026-12-10',
+        location: '',
+      },
+      {
+        id: 'sleep',
+        summary: 'Sleep',
+        start: '2026-12-09T22:00:00Z',
+        end: '2026-12-10T06:00:00Z',
+        location: '',
+      },
+      {
+        id: 'grooming',
+        summary: 'Grooming',
+        start: '2026-12-09T09:00:00Z',
+        end: '2026-12-09T09:30:00Z',
+        location: '',
+      },
+    ]);
+    const report = analyzeEvents(events, '2026-12-09', '2026-12-09');
+    expect(report.overlaps).toEqual([]);
+  });
+
   it('finds overlaps, duplicates, dead spots, slivers, and sleep anomalies', () => {
     const events = normalizeEvents([
       {
