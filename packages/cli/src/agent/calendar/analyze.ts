@@ -505,6 +505,23 @@ export function calendarEnvelope(
 }
 
 export async function main(args: string[]): Promise<number> {
+  if (args.includes('--help') || args.includes('-h')) {
+    if (args[0] === 'analyze') {
+      process.stdout.write(
+        'hominem calendar analyze\n\n' +
+          'Read-only primary-calendar review.\n\n' +
+          'Usage:\n' +
+          '  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull] [--json]\n\n' +
+          'Options:\n' +
+          '  --start YYYY-MM-DD  First local calendar date\n' +
+          '  --end YYYY-MM-DD    Last local calendar date\n' +
+          '  --no-pull           Reuse the cached event pull\n' +
+          '  --json              Emit the machine-readable envelope\n' +
+          '  --help, -h          Show this help\n',
+      );
+      return 0;
+    }
+  }
   if (args[0] !== 'analyze') {
     const choice = await select('Select a calendar action:', [
       { value: 'analyze', label: 'analyze — read the primary calendar' },

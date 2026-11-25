@@ -1,6 +1,10 @@
 #!/usr/bin/env bun
+import { parse } from '@oclif/core/parser';
+
+import { main as analyzeCalendar } from './agent/calendar/analyze.js';
 import { AGENT_COMMANDS, runAgent } from './agent/index.js';
 import { checkAuth, googleAuth } from './auth.js';
+import CalendarAnalyze from './commands/calendar/analyze.js';
 import { GoogleAuthError } from './google.js';
 import { installAgent, uninstallAgent } from './launchd.js';
 import { syncRclone } from './system.js';
@@ -34,6 +38,60 @@ const USAGE = `hominem — Hominem CLI
 `;
 
 async function main(argv: string[]): Promise<number> {
+  if (argv[0] === 'calendar') {
+    if (argv[1] === 'analyze') {
+      if (argv.slice(2).includes('--help') || argv.slice(2).includes('-h')) {
+        process.stdout.write(
+          'hominem calendar analyze\n\n' +
+            'Read-only primary-calendar analysis.\n\n' +
+            'Usage:\n' +
+            '  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull] [--json]\n\n' +
+            'Options:\n' +
+            '  --start YYYY-MM-DD  First local calendar date\n' +
+            '  --end YYYY-MM-DD    Last local calendar date\n' +
+            '  --no-pull           Reuse the cached event pull\n' +
+            '  --json              Emit the machine-readable envelope\n' +
+            '  --help, -h          Show this help\n',
+        );
+        return 0;
+      }
+      try {
+        const parsed = await parse(argv.slice(2), {
+          flags: CalendarAnalyze.flags,
+          args: {},
+          strict: false,
+        });
+        const analyzeArgs = ['analyze'];
+        if (typeof parsed.flags.start === 'string') {
+          analyzeArgs.push('--start', parsed.flags.start);
+        }
+        if (typeof parsed.flags.end === 'string') {
+          analyzeArgs.push('--end', parsed.flags.end);
+        }
+        if (parsed.flags['no-pull'] === true) analyzeArgs.push('--no-pull');
+        if (parsed.flags.json === true) analyzeArgs.push('--json');
+        return await analyzeCalendar(analyzeArgs);
+      } catch (error) {
+        console.error(
+          `hominem calendar analyze: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return 2;
+      }
+    }
+    if (argv[1] === '--help' || argv[1] === '-h' || argv.length === 1) {
+      process.stdout.write(
+        'hominem calendar\n\n' +
+          'Read-only Google Calendar analysis.\n\n' +
+          'Actions:\n' +
+          '  analyze  Pull or reuse primary-calendar events and write a report\n\n' +
+          'Usage:\n' +
+          '  hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull] [--json]\n',
+      );
+      return 0;
+    }
+    process.stderr.write(`hominem calendar: unknown action ${argv[1]}\n`);
+    return 2;
+  }
   if (AGENT_COMMANDS.has(argv[0] ?? '')) return runAgent(argv);
   const [group, command, ...flags] = argv;
   const key = `${group ?? ''} ${command ?? ''}`.trim();
