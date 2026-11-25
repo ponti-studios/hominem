@@ -202,7 +202,7 @@ function render(
     ? ` Month ${month} is the last complete month before ${today} — pin WEALTH_CLOSE_MONTH to close another.`
     : '';
   lines.push(
-    `Produced by monthly_close.ts (WYA-230) on ${today}. Source: Hominem finance services ` +
+    `Produced by finance_wealth_close on ${today}. Source: Hominem finance services ` +
       `(${calls} calls).${defaultNote} Definitions: income = Income category, posted and ` +
       'non-excluded; spend = finance_spending_by_category excluding Transfers and ' +
       'Adjustment. Currencies are never blended.',
@@ -222,6 +222,7 @@ function render(
       `| ${currency} | ${money(currency, inc)} | ${money(currency, spent[currency] ?? 0)} | ${money(currency, movement)} | ${rate} |`,
     );
   }
+  if (!currencies.length) lines.push('| — | none posted | none posted | — | — |');
   lines.push('');
   for (const currency of currencies) {
     const inc = income[currency] ?? 0;
@@ -352,17 +353,18 @@ function render(
       );
     }
   }
-  const worth = data.netWorth.totals
-    .map(
-      (total) =>
-        `${total.currencyCode} ${money(total.currencyCode, total.total)} (${total.accountCount} accounts)`,
-    )
-    .join(', ');
+  const worth =
+    data.netWorth.totals
+      .map(
+        (total) =>
+          `${money(total.currencyCode, total.total)} (${total.accountCount} account${total.accountCount === 1 ? '' : 's'})`,
+      )
+      .join(', ') || 'no accounts recorded';
   lines.push(
     `- Current at run time (${(data.netWorth.asOf || '?').slice(0, 10)}): ${worth}. Basis: finance_net_worth, per currency, unconverted.`,
   );
   lines.push(
-    `- ${month} net cash flow (income − spend, plumbing excluded): ${currencies.map((currency) => `${currency} ${money(currency, net[currency] ?? 0)}`).join(', ')}.`,
+    `- ${month} net cash flow (income − spend, plumbing excluded): ${currencies.map((currency) => `${currency} ${money(currency, net[currency] ?? 0)}`).join(', ') || 'none posted'}.`,
     '',
     '## Tax flags',
     '',

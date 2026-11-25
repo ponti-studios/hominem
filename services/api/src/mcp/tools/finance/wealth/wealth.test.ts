@@ -597,6 +597,7 @@ describe('wealth report tools', () => {
     expect(result.md).toContain('Food (GBP): hygiene £70.00 → live £80.00');
     expect(result.md).toContain('Synthetic anchor: GBP £2,200.00. Basis: fixture');
     expect(result.md).toContain('Synthetic tax note');
+    expect(result.md).toContain('$300.00 (2 accounts), £1,300.00 (1 account).');
     expect(result.message).toMatch(/month 2026-10: \d+ hominem calls/);
     expect(result.md).not.toContain('Other Private Merchant');
 
@@ -606,6 +607,30 @@ describe('wealth report tools', () => {
     );
     expect(noInputs.md).toContain('not supplied — no cache diff');
     expect(noInputs.md).toContain('No monthly close anchors supplied');
+  });
+
+  it('states an empty month instead of printing blank figures', async () => {
+    const empty = financeWealthCloseOutputSchema.parse(
+      (await callTool(userId, 'finance_wealth_close', { month: '2020-01', today: date }))
+        .structuredContent,
+    );
+    expect(empty.md).toContain('| — | none posted | none posted | — | — |');
+    expect(empty.md).toContain('net cash flow (income − spend, plumbing excluded): none posted.');
+    expect(empty.md).not.toMatch(/: \.$/m);
+  });
+
+  it('does not flag a missing Plaid watermark when no Plaid data is supplied', async () => {
+    const result = financeWealthIntegrityOutputSchema.parse(
+      (
+        await callTool(userId, 'finance_wealth_integrity', {
+          date,
+          sync_state: { starling_max: date },
+        })
+      ).structuredContent,
+    );
+    expect(result.flags).toContainEqual(
+      expect.objectContaining({ check: 'feed_health', account: 'plaid_max', severity: 'info' }),
+    );
   });
 
   it('checks caller-supplied feed, statement, watch and anchor data', async () => {

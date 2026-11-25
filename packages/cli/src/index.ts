@@ -22,6 +22,33 @@ import {
   wealthErrorMessage,
 } from './wealth.js';
 
+const WEALTH_COMMANDS = new Set([
+  'sync',
+  'seed',
+  'balances',
+  'brief',
+  'look',
+  'close',
+  'integrity',
+]);
+
+const WEALTH_USAGE = `hominem wealth
+
+Personal finance routines. The Hominem API does the finance work; this command
+keeps provider credentials, rates, and local state on this machine.
+Sign in first with \`hominem auth hominem\`. Output is JSON, except balances (text).
+
+Commands:
+  sync [--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run]
+                Send provider transactions to Hominem for routing and import
+  seed          Seed Starling accounts and optional doctrine
+  balances      Show live Starling balances
+  brief         Morning brief (bill snapshot kept locally)
+  look          Forward look with a live USD-to-GBP rate
+  close         Monthly close markdown (WEALTH_CLOSE_MONTH, WEALTH_CLOSE_OUT)
+  integrity     Ledger integrity against live Plaid and Starling feeds
+`;
+
 const USAGE = `hominem — Hominem CLI
 
   hominem auth google          Sign in to Google (opens browser) and sync rclone
@@ -115,6 +142,12 @@ async function main(argv: string[]): Promise<number> {
     return 2;
   }
   if (AGENT_COMMANDS.has(argv[0] ?? '')) return runAgent(argv);
+  if (argv[0] === 'wealth' && !WEALTH_COMMANDS.has(argv[1] ?? '')) {
+    const help = argv[1] === undefined || argv[1] === '--help' || argv[1] === '-h';
+    if (!help) process.stderr.write(`hominem wealth: unknown command ${argv[1]}\n\n`);
+    (help ? process.stdout : process.stderr).write(WEALTH_USAGE);
+    return help ? 0 : 2;
+  }
   const [group, command, ...flags] = argv;
   const key = `${group ?? ''} ${command ?? ''}`.trim();
 

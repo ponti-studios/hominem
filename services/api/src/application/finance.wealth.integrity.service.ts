@@ -41,7 +41,12 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function checkFeedHealth(ctx: Ctx, state: SyncStateFile | undefined, today: string): SyncStateFile {
+function checkFeedHealth(
+  ctx: Ctx,
+  state: SyncStateFile | undefined,
+  today: string,
+  plaid: Plaid | undefined,
+): SyncStateFile {
   if (!state) {
     note(ctx, 'feed_health', null, 'sync state not supplied — has the sync ever run?');
     return {};
@@ -49,6 +54,10 @@ function checkFeedHealth(ctx: Ctx, state: SyncStateFile | undefined, today: stri
   ctx.info.watermarks = state;
   for (const key of ['starling_max', 'plaid_max'] as const) {
     const watermark = state[key];
+    if (!watermark && key === 'plaid_max' && !plaid) {
+      note(ctx, 'feed_health', key, 'skipped: Plaid feed data was not supplied', 'info');
+      continue;
+    }
     if (!watermark) {
       note(ctx, 'feed_health', key, 'watermark missing');
       continue;
@@ -375,7 +384,7 @@ export async function runCheck(
   const accounts = (await reads.listFinanceAccounts()).accounts;
   const summary = await reads.accountSummary();
   const summaries = new Map(summary.accounts.map((account) => [account.accountId, account]));
-  const state = checkFeedHealth(ctx, input.sync_state, date);
+  const state = checkFeedHealth(ctx, input.sync_state, date, input.plaid);
   try {
     checkPlaidDrift(ctx, accounts, summaries, input.plaid, date);
   } catch (error) {

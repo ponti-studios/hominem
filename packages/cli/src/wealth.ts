@@ -399,7 +399,10 @@ function today(): string {
 }
 
 function noArgs(args: string[], command: string) {
-  if (args.length) throw new WealthError(`Usage: hominem wealth ${command}.`);
+  if (args.length)
+    throw new WealthError(
+      `hominem wealth ${command} takes no arguments; see \`hominem wealth --help\`.`,
+    );
 }
 
 async function connect() {
