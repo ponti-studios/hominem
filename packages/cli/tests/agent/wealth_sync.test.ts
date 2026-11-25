@@ -31,7 +31,7 @@ import type {
   SyncDoctrine,
   SyncRow,
 } from '../../src/agent/systems/wealth-manager/types.ts';
-import { makeMockCli, rows, runWrapper, tmpDb } from './helpers.ts';
+import { rows, runWrapper, tmpDb } from './helpers.ts';
 
 const SYNC = 'systems/wealth-manager/daily_sync.ts';
 const TODAY = '2026-11-22';
@@ -303,7 +303,8 @@ let starlingServer: ReturnType<typeof createServer>;
 let starlingPort: number;
 let hominemServer: ReturnType<typeof createServer>;
 let hominemPort: number;
-let plaidCli: string;
+let plaidServer: ReturnType<typeof createServer>;
+let plaidPort: number;
 const starlingQueries: string[] = [];
 const hominem = {
   importRequests: [] as any[],
@@ -521,24 +522,38 @@ beforeEach(async () => {
   await new Promise<void>((resolve) => hominemServer.listen(0, '127.0.0.1', resolve));
   hominemPort = (hominemServer.address() as { port: number }).port;
 
-  plaidCli = makeMockCli(
-    dir,
-    'plaid-mock',
-    `
-const args = process.argv.slice(2);
-if (args[0] !== "transactions-get") {
-  process.stdout.write(JSON.stringify({ ok: false, error: "unknown command " + args[0] }));
-  process.exit(1);
-}
-process.stdout.write(JSON.stringify(${JSON.stringify(PLAID_FIXTURE)}));
-`,
-  );
+  plaidServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+    const send = (code: number, payload: unknown) => {
+      const body = JSON.stringify(payload);
+      res.writeHead(code, {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      });
+      res.end(body);
+    };
+    if (req.method !== 'POST') return send(405, { error: 'method not allowed' });
+    const url = new URL(req.url ?? '/', 'http://plaid');
+    if (url.pathname === '/accounts/get') {
+      return send(200, PLAID_FIXTURE.body);
+    }
+    if (url.pathname === '/transactions/get') {
+      return send(200, {
+        accounts: PLAID_FIXTURE.body.accounts,
+        transactions: PLAID_FIXTURE.body.transactions,
+        total_transactions: PLAID_FIXTURE.body.transactions.length,
+      });
+    }
+    send(404, { error: `no mock route for ${url.pathname}` });
+  });
+  await new Promise<void>((resolve) => plaidServer.listen(0, '127.0.0.1', resolve));
+  plaidPort = (plaidServer.address() as { port: number }).port;
 });
 
 afterEach(async () => {
   await Promise.all([
     new Promise<void>((resolve) => starlingServer.close(() => resolve())),
     new Promise<void>((resolve) => hominemServer.close(() => resolve())),
+    new Promise<void>((resolve) => plaidServer.close(() => resolve())),
   ]);
   rmSync(dir, { recursive: true, force: true });
 });
@@ -549,7 +564,11 @@ const env = (over: Record<string, string | undefined> = {}) => ({
   HOMINEM_AGENT_WEALTH_DIR: join(dir, 'wealth'),
   STARLING_API_TOKEN: 'starling-token',
   STARLING_API_BASE: `http://127.0.0.1:${starlingPort}`,
-  PLAID_CLI: plaidCli,
+  PLAID_CLIENT_ID: 'test-client',
+  PLAID_SECRET: 'test-secret',
+  PLAID_ACCESS_TOKEN: 'test-access',
+  PLAID_ITEM_ID: 'cred-synth',
+  PLAID_API_BASE: `http://127.0.0.1:${plaidPort}`,
   HOMINEM_MCP_URL: `http://127.0.0.1:${hominemPort}`,
   HOMINEM_MCP_TOKEN: 'hmt-test',
   WEALTH_SYNC_TODAY: TODAY,
@@ -568,15 +587,17 @@ test('wealth: missing credentials fail by name (law 4)', async () => {
   assert.match(envelope.error, /STARLING_API_TOKEN is not set/);
 });
 
-test('wealth: unset PLAID_CLI skips the Plaid pull with a named warning', async () => {
-  const { status, envelope } = await run(env({ PLAID_CLI: undefined }));
+test('wealth: unset PLAID_ACCESS_TOKEN skips the Plaid pull with a named warning', async () => {
+  const { status, envelope } = await run(env({ PLAID_ACCESS_TOKEN: undefined }));
   assert.equal(status, 0);
   assert.equal(envelope.ok, true);
   // Starling-only: 5 sent rows, nothing held from Plaid.
   assert.deepEqual(envelope.by_source, { 'Starling API': 5 });
   assert.deepEqual(envelope.new_labels, []);
   // The warning names the variable (law 4: no guessing, no silence).
-  assert.ok(envelope.warnings.some((w: string) => w.includes('plaid source skipped: PLAID_CLI')));
+  assert.ok(
+    envelope.warnings.some((w: string) => w.includes('plaid source skipped: PLAID_ACCESS_TOKEN')),
+  );
   // The plaid source was never invoked — no events rows for it.
   const ev = rows(dbFile, 'events');
   assert.ok(!ev.some((r) => r.connector === 'plaid'));

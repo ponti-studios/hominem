@@ -41,16 +41,18 @@
  *     merchant_category_rules.json) was never salvaged — rows it would
  *     have matched land Uncategorized and queue for a ruling.
  *   - Import chunks at 1000 rows (the schema's per-call max).
- *   - An unset PLAID_CLI skips the Plaid pull with a named warning: no
- *     plaid binary exists on this Mac, and the Starling→Hominem sync
- *     must still run. A set-but-failing CLI fails the run loudly.
+ *   - Missing Plaid credentials or an access token skip the Plaid pull
+ *     with a named warning. A configured but failing Plaid API call
+ *     fails the run loudly.
  *
  * Env (law 4 — a missing variable fails by name):
  *   STARLING_API_TOKEN   Starling bearer token (machine .env)
  *   HOMINEM_MCP_URL      e.g. http://localhost:4040/api/mcp
  *   HOMINEM_MCP_TOKEN    personal hmt_ token
- *   PLAID_CLI            the plaid binary (hatch-only; JSON bridge) —
- *                        unset skips the Plaid pull with a warning
+ *   PLAID_CLIENT_ID      Plaid Dashboard client identifier
+ *   PLAID_SECRET         Plaid environment secret
+ *   PLAID_ACCESS_TOKEN   Linked Item access token
+ *   PLAID_ENV            sandbox|development|production
  *   HOMINEM_AGENT_WEALTH_DIR     state dir (default ~/.hominem/wealth)
  *   WEALTH_SYNC_TODAY    pin the run date (tests / a pinned re-run)
  *
@@ -65,7 +67,7 @@ import { finishRun, logRun } from '../../log/agent_log.ts';
 import { categorize, classifyRow, tagsFor, EMPTY_DOCTRINE } from './categorize.ts';
 import { applyEnvDefaults, envOr } from './env.ts';
 import { HominemMcp, HominemMcpError, type HominemTxn, type ImportTotals } from './hominem.ts';
-import { plaidPull, type PlaidPullResult } from './plaid.ts';
+import { plaidPull, plaidSetupStatus, type PlaidPullResult } from './plaid.ts';
 import { starlingPull, type StarlingItem } from './starling.ts';
 import {
   isoDaysBetween,
@@ -390,16 +392,15 @@ async function runSync(dbPath: string | undefined, runId: number): Promise<SyncE
   const starling = await starlingPull(sSince, today, { dbPath });
   warnings.push(...starling.notes.map((n) => `starling: ${n}`));
 
-  // Plaid is a sourced-on-demand leg: no `plaid` binary exists on this
-  // Mac (2026-11-22 — the bridge is hatch-side), so an unset PLAID_CLI
-  // skips the pull with a named warning and the Starling→Hominem sync
-  // still runs. A set-but-failing CLI still fails the run loudly.
+  // Plaid is a sourced-on-demand native REST leg. Missing setup skips
+  // it with a named warning; configured API failures fail the routine.
   let plaid: PlaidPullResult = { rows: [] };
-  if (process.env.PLAID_CLI) {
+  const plaidStatus = plaidSetupStatus();
+  if (plaidStatus.accessTokenConfigured) {
     plaid = await plaidPull(pSince, today, { dbPath }, doctrine);
   } else {
     warnings.push(
-      'plaid source skipped: PLAID_CLI is not set — point it at the plaid binary to enable the Plaid pull',
+      'plaid source skipped: PLAID_ACCESS_TOKEN is not set — run hominem plaid auth to link an account',
     );
   }
 

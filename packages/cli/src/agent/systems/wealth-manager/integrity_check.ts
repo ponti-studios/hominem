@@ -50,7 +50,7 @@
  *   - Starling reconciliation covers EVERY open Starling account by
  *     identity (the archive checked the one account its label map
  *     knew). Space legs ride the owning account on both sides.
- *   - No plaid binary exists on this Mac: PLAID_CLI unset skips the
+ *   - Missing Plaid access setup: PLAID_ACCESS_TOKEN unset skips the
  *     two Plaid-fed checks with named info notes (same policy as the
  *     sync's Plaid leg). A set-but-failing CLI is fatal inside its
  *     check and surfaces as a flag, never silence.
@@ -200,11 +200,11 @@ async function checkPlaidDrift(
   today: string,
   dbPath: string | undefined,
 ): Promise<void> {
-  if (!process.env.PLAID_CLI) {
+  if (!process.env.PLAID_ACCESS_TOKEN) {
     ctx.note(
       'balance_drift',
       null,
-      'skipped: PLAID_CLI is not set — the plaid binary is hatch-side; point PLAID_CLI at it to enable the drift check',
+      'skipped: PLAID_ACCESS_TOKEN is not set — run hominem plaid auth to enable the drift check',
       'info',
     );
     return;
@@ -431,11 +431,11 @@ async function checkStatementPayments(
   today: string,
   dbPath: string | undefined,
 ): Promise<void> {
-  if (!process.env.PLAID_CLI) {
+  if (!process.env.PLAID_ACCESS_TOKEN) {
     ctx.note(
       'payment_verification',
       null,
-      'skipped: PLAID_CLI is not set — the plaid binary is hatch-side; point PLAID_CLI at it to enable statement verification',
+      'skipped: PLAID_ACCESS_TOKEN is not set — run hominem plaid auth to enable statement verification',
       'info',
     );
     return;

@@ -5,6 +5,7 @@ import { main as gws } from './connectors/gws-log/gws_log.ts';
 import { main as instagram } from './connectors/instagram/instagram.ts';
 import { main as linear } from './connectors/linear-log/linear_log.ts';
 import { main as notion } from './connectors/notion-log/notion_log.ts';
+import { main as plaid } from './connectors/plaid/plaid.ts';
 import { main as ponti } from './connectors/ponti-log/ponti_log.ts';
 import { main as spotify } from './connectors/spotify/spotify.ts';
 import { main as starling } from './connectors/starling/starling.ts';
@@ -38,6 +39,7 @@ export const AGENT_COMMANDS = new Set([
   'linear',
   'notion',
   'ponti',
+  'plaid',
   'knowledge',
   'workflow',
   'studio',
@@ -78,6 +80,8 @@ export async function runAgent(argv: string[]): Promise<number> {
       return notion(args);
     case 'ponti':
       return ponti(args);
+    case 'plaid':
+      return plaid(args);
     case 'knowledge':
       return knowledge(args);
     case 'workflow':

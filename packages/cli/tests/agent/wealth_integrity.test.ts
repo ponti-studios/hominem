@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 
-import { makeMockCli, rows, runWrapper, tmpDb } from './helpers.ts';
+import { rows, runWrapper, tmpDb } from './helpers.ts';
 
 const CHECK = 'systems/wealth-manager/integrity_check.ts';
 const TODAY = '2026-11-22';
@@ -267,8 +267,10 @@ let starlingServer: ReturnType<typeof createServer>;
 let starlingPort: number;
 let hominemServer: ReturnType<typeof createServer>;
 let hominemPort: number;
-let plaidCli: string;
+let plaidServer: ReturnType<typeof createServer>;
+let plaidPort: number;
 let fixturePath: string;
+let liabilitiesCalls: number;
 const state = {
   summary: defaultSummary(),
   searchRows: defaultSearchRows(),
@@ -284,6 +286,7 @@ beforeEach(async () => {
   writeFileSync(join(dir, 'empty.env'), '# empty test env\n');
   fixturePath = join(dir, 'plaid_fixture.json');
   writeFileSync(fixturePath, JSON.stringify(defaultPlaidFixture()));
+  liabilitiesCalls = 0;
   state.summary = defaultSummary();
   state.searchRows = defaultSearchRows();
   state.watchRows = [];
@@ -439,43 +442,55 @@ beforeEach(async () => {
   await new Promise<void>((resolve) => hominemServer.listen(0, '127.0.0.1', resolve));
   hominemPort = (hominemServer.address() as { port: number }).port;
 
-  plaidCli = makeMockCli(
-    dir,
-    'plaid-mock',
-    `
-const fs = require("fs");
-const args = process.argv.slice(2);
-const fx = JSON.parse(fs.readFileSync(process.env.PLAID_FIXTURE, "utf8"));
-if (args[0] === "accounts") {
-  process.stdout.write(JSON.stringify({ ok: true, body: fx.accounts }));
-  process.exit(0);
-}
-if (args[0] === "liabilities") {
-  const cred = args[args.indexOf("--credential-id") + 1];
-  if ((fx.liabilitiesFailFor || []).includes(cred)) {
-    process.stderr.write("NO_LIABILITY_ACCOUNTS: " + cred);
-    process.exit(1);
-  }
-  process.stdout.write(JSON.stringify({ ok: true, body: fx.liabilities[cred] }));
-  process.exit(0);
-}
-if (args[0] === "transactions-get") {
-  const from = args[args.indexOf("--start-date") + 1];
-  const to = args[args.indexOf("--end-date") + 1];
-  const txns = (fx.gapTransactions || []).filter((t) => t.date >= from && t.date <= to);
-  process.stdout.write(JSON.stringify({ ok: true, body: { transactions: txns } }));
-  process.exit(0);
-}
-process.stdout.write(JSON.stringify({ ok: false, error: "unknown command " + args[0] }));
-process.exit(1);
-`,
-  );
+  plaidServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+    let raw = '';
+    req.on('data', (chunk) => (raw += chunk));
+    req.on('end', () => {
+      const send = (code: number, payload: unknown) => {
+        const body = JSON.stringify(payload);
+        res.writeHead(code, {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        });
+        res.end(body);
+      };
+      const url = new URL(req.url ?? '/', 'http://plaid');
+      const fx = JSON.parse(readFileSync(fixturePath, 'utf8'));
+      if (url.pathname === '/accounts/get') return send(200, fx.accounts);
+      if (url.pathname === '/liabilities/get') {
+        liabilitiesCalls += 1;
+        if (liabilitiesCalls > 1) {
+          return send(400, {
+            error_code: 'NO_LIABILITY_ACCOUNTS',
+            error_message: 'NO_LIABILITY_ACCOUNTS: cred-fail',
+          });
+        }
+        return send(200, fx.liabilities['cred-ok']);
+      }
+      if (url.pathname === '/transactions/get') {
+        const body = raw ? JSON.parse(raw) : {};
+        const txns = (fx.gapTransactions ?? []).filter(
+          (transaction: any) =>
+            transaction.date >= body.start_date && transaction.date <= body.end_date,
+        );
+        return send(200, {
+          accounts: fx.accounts.accounts,
+          transactions: txns,
+          total_transactions: txns.length,
+        });
+      }
+      send(404, { error: `no mock route for ${url.pathname}` });
+    });
+  });
+  await new Promise<void>((resolve) => plaidServer.listen(0, '127.0.0.1', resolve));
+  plaidPort = (plaidServer.address() as { port: number }).port;
 });
 
 afterEach(async () => {
   await Promise.all([
     new Promise<void>((resolve) => starlingServer.close(() => resolve())),
     new Promise<void>((resolve) => hominemServer.close(() => resolve())),
+    new Promise<void>((resolve) => plaidServer.close(() => resolve())),
   ]);
   rmSync(dir, { recursive: true, force: true });
 });
@@ -500,8 +515,11 @@ const env = (over: Record<string, string | undefined> = {}) => {
     HOMINEM_AGENT_ENV_FILE: join(dir, 'empty.env'),
     STARLING_API_TOKEN: 'starling-token',
     STARLING_API_BASE: `http://127.0.0.1:${starlingPort}`,
-    PLAID_CLI: plaidCli,
-    PLAID_FIXTURE: fixturePath,
+    PLAID_CLIENT_ID: 'test-client',
+    PLAID_SECRET: 'test-secret',
+    PLAID_ACCESS_TOKEN: 'test-access',
+    PLAID_ITEM_ID: 'cred-ok',
+    PLAID_API_BASE: `http://127.0.0.1:${plaidPort}`,
     HOMINEM_MCP_URL: `http://127.0.0.1:${hominemPort}`,
     HOMINEM_MCP_TOKEN: 'hmt-test',
     WEALTH_SYNC_TODAY: TODAY,
@@ -741,13 +759,13 @@ test('integrity: the window split — >50 rows reconcile through recursive date 
   });
 });
 
-test('integrity: unset PLAID_CLI degrades to named info notes — never fatal, never silent', async () => {
-  const { status, envelope } = await run(env({ PLAID_CLI: undefined }));
+test('integrity: unset PLAID_ACCESS_TOKEN degrades to named info notes — never fatal, never silent', async () => {
+  const { status, envelope } = await run(env({ PLAID_ACCESS_TOKEN: undefined }));
   assert.equal(status, 0);
   assert.equal(envelope.ok, true);
   const infoNotes = envelope.flags.filter((f: any) => f.severity === 'info');
   assert.equal(infoNotes.length, 2);
-  assert.ok(infoNotes.every((f: any) => /PLAID_CLI is not set/.test(f.detail)));
+  assert.ok(infoNotes.every((f: any) => /PLAID_ACCESS_TOKEN is not set/.test(f.detail)));
   assert.deepEqual(infoNotes.map((f: any) => f.check).sort(), [
     'balance_drift',
     'payment_verification',

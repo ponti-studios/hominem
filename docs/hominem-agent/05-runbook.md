@@ -48,6 +48,21 @@ Wealth data stays in Hominem. The CLI never keeps personal finance
 records in the repository. Plaid remains ingest-only; analysis reads
 Hominem.
 
+### Plaid
+
+```bash
+hominem plaid status
+hominem plaid auth
+hominem plaid accounts
+hominem plaid transactions --since 2026-11-20 --until 2026-11-25
+hominem plaid liabilities
+```
+
+`hominem plaid auth` opens Plaid Link, exchanges the public token for an
+access token, and stores the access token and Item ID in `~/.hominem/env`
+with mode `600`. Plaid's client ID and secret do not enter command output
+or audit event values.
+
 ## Cadences and connectors
 
 ```bash
@@ -138,6 +153,9 @@ export PONTI_CLI="/path/to/ponti-mcp-client"
 export YTM_CLI="/path/to/ytm-cli"
 export IG_CLI="/path/to/ig-cli"
 export SEME_MCP_CMD="node /path/to/seme-mcp-server.js"
+export PLAID_CLIENT_ID="your-plaid-client-id"
+export PLAID_SECRET="your-plaid-development-secret"
+export PLAID_ENV="development"
 ```
 
 Google OAuth lives separately in:

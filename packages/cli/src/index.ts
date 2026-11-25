@@ -32,6 +32,7 @@ const USAGE = `hominem — Hominem CLI
   hominem linear <command...>
   hominem notion <command...>
   hominem ponti <command...>
+  hominem plaid <command...> Plaid connector
   hominem knowledge validate [batch-dir] [bodies-dir]
   hominem calendar analyze [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--no-pull] [--json]
   hominem workflow status [run-id]

@@ -1,35 +1,19 @@
 /**
- * Plaid CLI bridge — the hatch box's `plaid` binary is the system of
- * record for the JSON contract below, and no `plaid` binary exists on
- * this Mac (checked 2026-11-22). Law 4 says resolve the binary from env.
- * Every command consumes the same stdout JSON the archived Python
- * consumed:
+ * Native Plaid REST client.
  *
- *   {ok: boolean, body: {institutions, accounts, transactions, …} | string,
- *    output_file?: string}
- *
- * where accounts carry `_plaid_source.credential_id` joining them to
- * `institutions[].credential_id`. A string body is a pointer: read the
- * real payload from `output_file`. This file holds no Plaid credentials —
- * the CLI owns auth (Plaid is INGEST ONLY, Charlie 2026-11-06: feeds
- * transactions into Hominem, never a source for analysis).
- *
- * Commands (each one invocation, one `events` row — law 1):
- *   transactions-get --start-date D --end-date D   the txn feed (the sync)
- *   accounts                                         balances + institutions
- *   liabilities --credential-id C                     card statements (Layer 1)
- *
- * Rows carry the feed mask as their route identity; daily_sync resolves
- * it against Hominem's finance_accounts (the mask is stored there as
- * the account's accountNumber). No mask→label map lives in this repo
- * (Charles's ruling, 2026-11-22: no personal financial data here).
+ * Plaid is INGEST ONLY (Charlie 2026-11-06): this client feeds transactions
+ * into Hominem and never acts as a source for financial analysis. Credentials
+ * and access tokens resolve from the machine environment and are never
+ * written to audit events or command output.
  */
-import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, chmodSync, existsSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
+import { z } from 'zod';
 
 import { logEvent } from '../../log/agent_log.ts';
 import { categorize, classifyRow, tagsFor } from './categorize.ts';
-import { requireEnv } from './env.ts';
+import { applyEnvDefaults, envFilePath, requireEnv } from './env.ts';
 import { round2, type SyncDoctrine, type SyncRow } from './types.ts';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -39,9 +23,14 @@ export interface PlaidPullResult {
 }
 
 export interface PlaidConfig {
-  cli?: string;
   dbPath?: string;
   timeoutMs?: number;
+  clientId?: string;
+  secret?: string;
+  accessToken?: string;
+  environment?: 'sandbox' | 'development' | 'production';
+  apiBase?: string;
+  fetchImpl?: typeof fetch;
 }
 
 export interface PlaidBody {
@@ -76,122 +65,337 @@ export interface PlaidBody {
   };
 }
 
-/**
- * One `plaid <cmd>` invocation: resolve the binary, parse the envelope
- * (a string body points at output_file), log exactly one events row,
- * and throw loudly on any failure shape. Mirrors the archived
- * wrapper's semantics — a set-but-failing CLI is fatal, never silent.
- */
-export async function plaidCommand(
-  cmd: string,
-  cmdArgs: string[],
-  cfg: PlaidConfig = {},
-): Promise<PlaidBody> {
-  const cli = cfg.cli ?? requireEnv('PLAID_CLI');
-  const timeoutMs = cfg.timeoutMs ?? 300_000; // the archived sync's 300s
-  const args = [cmd, ...cmdArgs];
+const linkResponseSchema = z
+  .object({
+    link_token: z.string(),
+    expiration: z.string().optional(),
+  })
+  .passthrough();
+
+const exchangeResponseSchema = z
+  .object({
+    access_token: z.string(),
+    item_id: z.string(),
+  })
+  .passthrough();
+
+function resolveConfig(cfg: PlaidConfig): Required<
+  Pick<PlaidConfig, 'clientId' | 'secret' | 'environment' | 'apiBase' | 'timeoutMs'>
+> & {
+  accessToken?: string;
+  dbPath?: string;
+  fetchImpl: typeof fetch;
+} {
+  applyEnvDefaults();
+  const environment =
+    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'development';
+  if (!['sandbox', 'development', 'production'].includes(environment)) {
+    throw new Error('PLAID_ENV must be sandbox, development, or production');
+  }
+  const defaultBase =
+    environment === 'sandbox'
+      ? 'https://sandbox.plaid.com'
+      : environment === 'development'
+        ? 'https://development.plaid.com'
+        : 'https://production.plaid.com';
+  return {
+    clientId: cfg.clientId ?? requireEnv('PLAID_CLIENT_ID'),
+    secret: cfg.secret ?? requireEnv('PLAID_SECRET'),
+    environment,
+    apiBase: (cfg.apiBase ?? process.env.PLAID_API_BASE ?? defaultBase).replace(/\/$/, ''),
+    timeoutMs: cfg.timeoutMs ?? 300_000,
+    accessToken: cfg.accessToken ?? process.env.PLAID_ACCESS_TOKEN,
+    dbPath: cfg.dbPath,
+    fetchImpl: cfg.fetchImpl ?? fetch,
+  };
+}
+
+async function plaidPost(
+  endpoint: string,
+  input: Record<string, unknown>,
+  cfg: PlaidConfig,
+  service: string,
+): Promise<Record<string, unknown>> {
+  const resolved = resolveConfig(cfg);
+  const body = {
+    client_id: resolved.clientId,
+    secret: resolved.secret,
+    ...input,
+  };
   const tsRequest = new Date().toISOString();
   const tsRequestMs = Date.now();
-
-  const { status, stdout, stderr } = await new Promise<{
-    status: number | null;
-    stdout: string;
-    stderr: string;
-  }>((resolve) => {
-    const proc = spawn(cli, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let out = '';
-    let err = '';
-    const timer = setTimeout(() => proc.kill('SIGKILL'), timeoutMs);
-    proc.stdout!.on('data', (d) => (out += d));
-    proc.stderr!.on('data', (d) => (err += d));
-    proc.on('error', (e) => {
-      clearTimeout(timer);
-      resolve({ status: null, stdout: out, stderr: e.message });
-    });
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      resolve({ status: code, stdout: out, stderr: err });
-    });
-  });
-
-  let data: { ok?: boolean; body?: PlaidBody | string; output_file?: string };
+  let status = 0;
   try {
-    data = JSON.parse(stdout);
-  } catch {
-    logEvent('plaid', args, {
+    const response = await resolved.fetchImpl(resolved.apiBase + endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(resolved.timeoutMs),
+    });
+    status = response.status;
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      throw new Error(
+        typeof payload.error_message === 'string'
+          ? payload.error_message
+          : `Plaid ${endpoint} returned HTTP ${status}`,
+      );
+    }
+    logEvent('plaid', ['POST', endpoint], {
       tsRequest,
       tsRequestMs,
       tsResponse: new Date().toISOString(),
       tsResponseMs: Date.now(),
+      httpStatus: status,
+      service,
+      params: { environment: resolved.environment, hasAccessToken: 'access_token' in input },
+      response: {
+        requestId: typeof payload.request_id === 'string' ? payload.request_id : undefined,
+        itemId: typeof payload.item_id === 'string' ? payload.item_id : undefined,
+        accountCount: Array.isArray(payload.accounts) ? payload.accounts.length : undefined,
+        transactionCount: Array.isArray(payload.transactions)
+          ? payload.transactions.length
+          : undefined,
+        linkTokenCreated: typeof payload.link_token === 'string',
+        exchangeSucceeded: typeof payload.access_token === 'string',
+      },
+      ok: true,
+      isError: false,
+      path: resolved.dbPath,
+    });
+    return payload;
+  } catch (error) {
+    logEvent('plaid', ['POST', endpoint], {
+      tsRequest,
+      tsRequestMs,
+      tsResponse: new Date().toISOString(),
+      tsResponseMs: Date.now(),
+      httpStatus: status || undefined,
+      service,
+      params: { environment: resolved.environment, hasAccessToken: 'access_token' in input },
       ok: false,
       isError: true,
-      exitCode: status ?? undefined,
-      stderr: (stderr || stdout).slice(0, 300),
-      error: 'plaid stdout was not JSON',
-      path: cfg.dbPath,
+      error: { message: error instanceof Error ? error.message : String(error) },
+      path: resolved.dbPath,
     });
-    throw new Error(`plaid ${cmd} failed: ${(stderr || stdout).slice(0, 300)}`);
+    throw error;
   }
+}
 
-  let body: PlaidBody;
-  let bodyError: string | null = null;
-  if (typeof data.body === 'string') {
-    // A string body is a pointer to output_file — or, with no output_file,
-    // the failure message itself (surfaced, never swallowed).
-    if (data.output_file) {
-      try {
-        body =
-          (JSON.parse(readFileSync(data.output_file, 'utf8')) as { body?: PlaidBody }).body ?? {};
-      } catch (err) {
-        bodyError = `plaid output_file unreadable: ${(err as Error).message}`;
-        body = {};
-      }
-    } else {
-      bodyError = `plaid read failed: ${data.body.slice(0, 300)}`;
-      body = {};
-    }
-  } else {
-    body = data.body ?? {};
-  }
+export interface PlaidSetupStatus {
+  clientIdConfigured: boolean;
+  secretConfigured: boolean;
+  accessTokenConfigured: boolean;
+  environment: 'sandbox' | 'development' | 'production';
+}
 
-  // One events row per invocation, whatever the outcome (law 1).
-  const ok = data.ok === true && status === 0 && bodyError === null;
-  logEvent('plaid', args, {
-    tsRequest,
-    tsRequestMs,
-    tsResponse: new Date().toISOString(),
-    tsResponseMs: Date.now(),
-    ok,
-    isError: !ok,
-    error: bodyError ?? undefined,
-    httpStatus: 200,
-    exitCode: status ?? undefined,
-    stderr: stderr.slice(0, 300) || undefined,
-    response: {
-      ok: data.ok,
-      institutions: body.institutions?.length,
-      accounts: body.accounts?.length,
-      transactions: body.transactions?.length,
+export function plaidSetupStatus(cfg: PlaidConfig = {}): PlaidSetupStatus {
+  applyEnvDefaults();
+  const environment =
+    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'development';
+  return {
+    clientIdConfigured: Boolean(cfg.clientId ?? process.env.PLAID_CLIENT_ID),
+    secretConfigured: Boolean(cfg.secret ?? process.env.PLAID_SECRET),
+    accessTokenConfigured: Boolean(cfg.accessToken ?? process.env.PLAID_ACCESS_TOKEN),
+    environment:
+      environment === 'sandbox' || environment === 'production' ? environment : 'development',
+  };
+}
+
+export async function plaidLinkTokenCreate(cfg: PlaidConfig = {}): Promise<{
+  linkToken: string;
+  expiration?: string;
+}> {
+  const payload = await plaidPost(
+    '/link/token/create',
+    {
+      client_name: 'Hominem',
+      country_codes: ['US'],
+      language: 'en',
+      products: ['transactions', 'liabilities'],
+      user: { client_user_id: 'hominem-local' },
     },
-    path: cfg.dbPath,
-  });
+    cfg,
+    'link_token',
+  );
+  const parsed = linkResponseSchema.parse(payload);
+  return { linkToken: parsed.link_token, expiration: parsed.expiration };
+}
 
-  if (status !== 0 && status !== null) {
-    throw new Error(`plaid ${cmd} failed: ${(stderr || stdout).slice(0, 300)}`);
-  }
-  if (bodyError) throw new Error(bodyError);
-  if (!data.ok) {
-    const insts = (body.institutions ?? []).map(
-      (i) => `${i.display_name}: ${i.read_status ?? 'unknown'}`,
-    );
-    throw new Error(`plaid ${cmd} read failed; institutions: ${insts.join(', ')}`);
-  }
-  return body;
+function replaceEnvValue(text: string, key: string, value: string): string {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const line = new RegExp(`^((?:export\\s+)?)${escaped}=.*$`, 'm');
+  const replacement = `${key}=${value}`;
+  if (line.test(text)) return text.replace(line, replacement);
+  return `${text.trimEnd()}${text.trim().length > 0 ? '\n' : ''}${replacement}\n`;
+}
+
+export async function plaidExchangePublicToken(
+  publicToken: string,
+  cfg: PlaidConfig = {},
+): Promise<{ accessToken: string; itemId: string }> {
+  const payload = await plaidPost(
+    '/item/public_token/exchange',
+    { public_token: publicToken },
+    cfg,
+    'exchange',
+  );
+  const parsed = exchangeResponseSchema.parse(payload);
+  const path = envFilePath();
+  mkdirSync(dirname(path), { recursive: true });
+  let text = existsSync(path) ? readFileSync(path, 'utf8') : '';
+  text = replaceEnvValue(text, 'PLAID_ACCESS_TOKEN', parsed.access_token);
+  text = replaceEnvValue(text, 'PLAID_ITEM_ID', parsed.item_id);
+  writeFileSync(path, text, { mode: 0o600 });
+  chmodSync(path, 0o600);
+  process.env.PLAID_ACCESS_TOKEN = parsed.access_token;
+  process.env.PLAID_ITEM_ID = parsed.item_id;
+  return { accessToken: parsed.access_token, itemId: parsed.item_id };
+}
+
+const accountListSchema = z
+  .object({
+    institutions: z
+      .array(
+        z
+          .object({
+            display_name: z.string().optional(),
+            credential_id: z.string().optional(),
+            read_status: z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    accounts: z
+      .array(
+        z
+          .object({
+            account_id: z.string(),
+            name: z.string().optional(),
+            mask: z.string().nullable().optional(),
+            type: z.string().optional(),
+            balances: z
+              .object({
+                current: z.number().nullable().optional(),
+                iso_currency_code: z.string().nullable().optional(),
+              })
+              .passthrough()
+              .optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    item: z.object({ item_id: z.string().optional() }).passthrough().optional(),
+  })
+  .passthrough();
+
+const transactionListSchema = z
+  .object({
+    accounts: z
+      .array(
+        z
+          .object({
+            account_id: z.string(),
+            name: z.string().optional(),
+            mask: z.string().nullable().optional(),
+            type: z.string().optional(),
+            balances: z
+              .object({
+                current: z.number().nullable().optional(),
+                iso_currency_code: z.string().nullable().optional(),
+              })
+              .passthrough()
+              .optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    transactions: z
+      .array(
+        z
+          .object({
+            account_id: z.string(),
+            date: z.string(),
+            pending: z.boolean().optional(),
+            merchant_name: z.string().nullable().optional(),
+            name: z.string().optional(),
+            amount: z.number().optional(),
+            iso_currency_code: z.string().nullable().optional(),
+            unofficial_currency_code: z.string().nullable().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    total_transactions: z.number().optional(),
+  })
+  .passthrough();
+
+const liabilitiesSchema = z
+  .object({
+    accounts: z
+      .array(
+        z
+          .object({
+            account_id: z.string(),
+            name: z.string().optional(),
+            mask: z.string().nullable().optional(),
+            type: z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    liabilities: z
+      .object({
+        credit: z
+          .array(
+            z
+              .object({
+                account_id: z.string(),
+                last_statement_balance: z.number().nullable().optional(),
+                last_statement_issue_date: z.string().nullable().optional(),
+                last_payment_due_date: z.string().nullable().optional(),
+                next_payment_due_date: z.string().nullable().optional(),
+              })
+              .passthrough(),
+          )
+          .optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+function requireAccessToken(cfg: PlaidConfig): string {
+  return cfg.accessToken ?? requireEnv('PLAID_ACCESS_TOKEN');
 }
 
 /** `plaid accounts` — balances per account plus institutions/credentials. */
 export async function plaidAccounts(cfg: PlaidConfig = {}): Promise<PlaidBody> {
-  return await plaidCommand('accounts', [], cfg);
+  const accessToken = requireAccessToken(cfg);
+  const payload = await plaidPost('/accounts/get', { access_token: accessToken }, cfg, 'accounts');
+  const parsed = accountListSchema.parse(payload);
+  const credentialId = process.env.PLAID_ITEM_ID;
+  const institutions = (parsed.institutions ?? []).map((institution) => ({
+    display_name: institution.display_name,
+    credential_id: institution.credential_id,
+    read_status: institution.read_status,
+  }));
+  return {
+    institutions:
+      institutions.length > 0
+        ? institutions
+        : credentialId
+          ? [{ display_name: 'Plaid', credential_id: credentialId, read_status: 'ok' }]
+          : [],
+    accounts: (parsed.accounts ?? []).map((account) => ({
+      account_id: account.account_id,
+      name: account.name,
+      mask: account.mask ?? undefined,
+      type: account.type,
+      balances: account.balances,
+      _plaid_source: { credential_id: credentialId },
+    })),
+  };
 }
 
 /** `plaid liabilities --credential-id C` — card statement state per credential. */
@@ -199,7 +403,25 @@ export async function plaidLiabilities(
   credentialId: string,
   cfg: PlaidConfig = {},
 ): Promise<PlaidBody> {
-  return await plaidCommand('liabilities', ['--credential-id', credentialId], cfg);
+  const accessToken = requireAccessToken(cfg);
+  const payload = await plaidPost(
+    '/liabilities/get',
+    { access_token: accessToken },
+    cfg,
+    'liabilities',
+  );
+  const parsed = liabilitiesSchema.parse(payload);
+  const credit = parsed.liabilities?.credit ?? [];
+  return {
+    institutions: [{ display_name: 'Plaid', credential_id: credentialId, read_status: 'ok' }],
+    accounts: (parsed.accounts ?? []).map((account) => ({
+      account_id: account.account_id,
+      name: account.name,
+      mask: account.mask ?? undefined,
+      type: account.type,
+    })),
+    liabilities: { credit },
+  };
 }
 
 /** `plaid transactions-get` over a raw window — the settled gap read (Layer 1). */
@@ -208,7 +430,74 @@ export async function plaidTransactionsWindow(
   to: string,
   cfg: PlaidConfig = {},
 ): Promise<PlaidBody> {
-  return await plaidCommand('transactions-get', ['--start-date', from, '--end-date', to], cfg);
+  if (!DATE_RE.test(from) || !DATE_RE.test(to)) {
+    throw new Error('Plaid transaction dates must use YYYY-MM-DD');
+  }
+  const accessToken = requireAccessToken(cfg);
+  const accountsPayload = await plaidPost(
+    '/accounts/get',
+    { access_token: accessToken },
+    cfg,
+    'accounts',
+  );
+  const accountsParsed = accountListSchema.parse(accountsPayload);
+  const credentialId = process.env.PLAID_ITEM_ID;
+  const accounts = (accountsParsed.accounts ?? []).map((account) => ({
+    account_id: account.account_id,
+    name: account.name,
+    mask: account.mask ?? undefined,
+    type: account.type,
+    balances: account.balances,
+    _plaid_source: { credential_id: credentialId },
+  }));
+
+  const transactions: PlaidBody['transactions'] = [];
+  let offset = 0;
+  let total = Number.POSITIVE_INFINITY;
+  while (offset < total) {
+    const payload = await plaidPost(
+      '/transactions/get',
+      {
+        access_token: accessToken,
+        start_date: from,
+        end_date: to,
+        options: { count: 500, offset },
+      },
+      cfg,
+      'transactions',
+    );
+    const parsed = transactionListSchema.parse(payload);
+    transactions?.push(
+      ...(parsed.transactions ?? []).map((transaction) => ({
+        account_id: transaction.account_id,
+        date: transaction.date,
+        pending: transaction.pending,
+        merchant_name: transaction.merchant_name ?? undefined,
+        name: transaction.name,
+        amount: transaction.amount,
+        iso_currency_code: transaction.iso_currency_code ?? undefined,
+        unofficial_currency_code: transaction.unofficial_currency_code ?? undefined,
+      })),
+    );
+    total = parsed.total_transactions ?? transactions?.length ?? 0;
+    offset += parsed.transactions?.length ?? 0;
+    if ((parsed.transactions?.length ?? 0) === 0) break;
+  }
+
+  return {
+    institutions:
+      (accountsParsed.institutions ?? []).length > 0
+        ? (accountsParsed.institutions ?? []).map((institution) => ({
+            display_name: institution.display_name,
+            credential_id: institution.credential_id,
+            read_status: institution.read_status,
+          }))
+        : credentialId
+          ? [{ display_name: 'Plaid', credential_id: credentialId, read_status: 'ok' }]
+          : [],
+    accounts,
+    transactions,
+  };
 }
 
 export async function plaidPull(
@@ -217,11 +506,7 @@ export async function plaidPull(
   cfg: PlaidConfig = {},
   doctrine: SyncDoctrine,
 ): Promise<PlaidPullResult> {
-  const body = await plaidCommand(
-    'transactions-get',
-    ['--start-date', since, '--end-date', today],
-    cfg,
-  );
+  const body = await plaidTransactionsWindow(since, today, cfg);
 
   const instNameByCred = new Map<string, string>();
   for (const i of body.institutions ?? [])
