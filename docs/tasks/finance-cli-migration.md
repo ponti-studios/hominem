@@ -1,5 +1,5 @@
 ---
-title: 'Finance CLI migration into the shared finance core'
+title: 'Finance CLI migration and core consolidation'
 status: 'Proposed'
 priority: 'high'
 labels: [finance, cli, mcp, rpc]
@@ -10,25 +10,43 @@ estimated_size: 'XL'
 
 ## Outcome
 
-Hominem finance behavior that the CLI wealth-manager needs (ingest,
-categorization, transfer linking, reports) runs on one shared core. People
-(Web, mobile, RPC) and agents (MCP, CLI agent runners) get the same contracts
-and calculations, and the CLI keeps only machine-local concerns: credentials,
-local state, logging, argument parsing, and output.
-
-The architecture behind this outcome is **not settled**. The boundary,
-sequencing, and product decisions are analyzed in the proposed (not accepted)
+**OPEN — USER DECISION REQUIRED.** The target end state is not decided.
+Phase 0 below can run now and does not depend on any decision. Everything after
+it depends on the open decisions in the proposed (not accepted)
 [finance core consolidation](../decisions/finance.core-consolidation.md)
-decision. Each work item below that depends on an open decision there is
-blocked until the product owner resolves it.
+document.
 
-## Provenance
+Candidate end states. None is a requirement until the product owner picks one:
 
-The first version of this task was written in an unmerged agent session
-(`a2108450…`, checkpoint `9b71619cd`). That session's history has no common
-ancestor with `main`. Its W-002 and W-003 were marked "Implemented" there, but
-that code is not on `main` and has not run in `main`'s CI. This revision
-replaces the earlier version, which is preserved in that checkpoint's history.
+- **Owner's draft:** reusable finance logic moves from the CLI wealth-manager
+  into `@hominem/finance-services`, so any app or agent manages a user's
+  finances through the same package contracts. The CLI keeps credentials,
+  machine-local state, logging, argument parsing, and output.
+- **Server-owned core (O2):** one server-side finance core. Every client,
+  including the CLI, is a remote RPC or MCP client, and provider sync may run as
+  a server job.
+- **Kernel plus server core (O3, the analyst's recommendation):** a pure kernel
+  with no database access, which any client can import, plus one server-side
+  core that does every write.
+- **Land as-is (O0):** the CLI lands as the owner's MCP client, its logic stays
+  local, and only the E5 fix is made.
+
+## Provenance and integration conflict
+
+This file has **two versions**. Neither replaces the other:
+
+- **The owner's draft:** an untracked file at this same path in the owner's main
+  checkout, on `feature/web-perf-cleanup`, with uncommitted edits made on
+  2026-11-25. It is the owner's current intent.
+- **This revision:** written in a separate worktree based on `main` from an
+  architecture analysis. It separates what has shipped from what has not, and
+  turns draft requirements that depend on open decisions into decisions.
+
+Bringing the two lines together will collide on this path: an untracked file
+blocks checkout, and two committed versions give an add/add conflict. The owner
+reconciles the two versions by hand (decision D12). Agent-session snapshot
+commits `5d01d78ce` and `9b71619cd` are older copies of the owner's draft state.
+They are not authoritative.
 
 [finance.pfin-merge](../decisions/finance.pfin-merge.md) remains the historical
 decision for the earlier pfin port. This task does not amend it.
@@ -39,117 +57,125 @@ decision for the earlier pfin port. This task does not amend it.
 - Browser upload of statements stays removed (pfin-merge, product direction).
 - The full multi-currency schema and rate rollout is a **separate**
   implementation
-  ([multi-currency plan](../finance-multi-currency-redesign-plan.md)). This
-  task must not freeze a money contract that contradicts it.
-- "Plaid is ingest-only" is the owner's ruling (recorded 2026-11-06 in CLI code
-  comments). It holds for the owner's routines. Whether it is a product rule for
-  everyone is decision D3.
+  ([multi-currency plan](../finance-multi-currency-redesign-plan.md)). Its money
+  model is examined, not implemented, here.
 - No user identity, account, balance, transaction, merchant, rule, or provider
   credential is hard-coded in shared code or fixtures. Fixtures use synthetic
   identities.
 
+## The owner's draft positions (uncommitted)
+
+The owner's draft states the positions below. They are kept here as stated
+intent. Where evidence challenges one, the decision document records the
+challenge and an open decision. The challenge does not override the position.
+
+| Draft position                                                                                  | Status in the analysis                                              |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| The CLI is a general finance adapter, not a routine for one person                              | Matches neither the S2 code nor any accepted decision yet (D2, D11) |
+| Operations take an explicit owner identity; provider state is isolated per user                 | Goal kept; mechanism challenged for remote clients (A2, D2)         |
+| `personal-finance-v1` 32-category seed for new users, categories only                           | Implemented and tested in S3; list and trigger open (D5)            |
+| Merchant rules are suggestion-only; learned rules are owner-scoped, reversible, with provenance | Conflicts with CLI doctrine auto-categorization (A10, D4, D6)       |
+| Plaid is ingest-only                                                                            | Kept as owner intent; scope across all users open (D3)              |
+| Provider adapters, sync orchestration, and report math move into the package                    | Depends on D1 and D11                                               |
+| Natural-key upserts and the cents contract are the write contract                               | Open (D13, D14)                                                     |
+
 ## Verified state
 
-### On `main`
+The three code states are S1, S2, and S3, as defined in E0 of the
+[decision document](../decisions/finance.core-consolidation.md).
 
-| Capability                                                                                                          | Evidence                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Accounts, transactions, sheet import, runway, reconcile, diagnostics, taxonomy merge, rules CRUD, rulings, reports  | `packages/finance/src/*`                                                                                      |
-| Budgets, bills, rulings execution, doctrine, transaction management in the API layer (calls `@hominem/db` directly) | `services/api/src/application/finance*.ts`                                                                    |
-| Import upsert preserves fields the caller omits                                                                     | `packages/finance/src/sheet-import.ts:813-830`                                                                |
-| Import accepts a stable provider `externalId`                                                                       | `packages/finance/src/sheet-import.ts:61,349-350`                                                             |
-| Pending rows rejected as `pending_row`                                                                              | `packages/finance/src/sheet-import.ts:56,212`                                                                 |
-| Unknown category names are auto-created on import                                                                   | `packages/finance/src/sheet-import.ts:384` (`ensureFinanceCategoryId`)                                        |
-| Sync doctrine store and provider account identity (MCP only)                                                        | [finance-sync-doctrine](finance-sync-doctrine.md), `services/api/src/application/finance.doctrine.service.ts` |
-| `finance_rules` table and CRUD, with **no engine applying it**                                                      | `packages/db/migrations/20261101100000_create_finance_rules.sql:4,14`, `packages/finance/src/rules.ts`        |
-| Runway adapters build budget input separately for MCP and RPC                                                       | `services/api/src/mcp/tools/finance.ts:363-390`, `services/api/src/rpc/routes/finance.ledger.ts:72-84`        |
-| Money conversion assumes two minor units                                                                            | `packages/finance/src/utils.ts:5-7`                                                                           |
-| CLI package                                                                                                         | `packages/cli/src` has no `agent/` or wealth-manager modules                                                  |
+| Capability                                                                                  | S1 `main` (`34bf4a38c`)                                                               | S2 `feature/web-perf-cleanup` (committed)                 | S3 uncommitted (owner's checkout)                                                 |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Accounts, transactions, sheet import, runway, reconcile, diagnostics, taxonomy, rules CRUD  | yes, `packages/finance/src/*`                                                         | yes                                                       | yes                                                                               |
+| Budgets, bills, rulings execution, transaction management in the API layer                  | yes, `services/api/src/application/finance*.ts`                                       | yes (missing #614's doctrine service)                     | same as S2                                                                        |
+| Sync doctrine store, `finance_doctrine_get`, provider account identity (#614)               | yes, `services/api/src/mcp/tools/finance-doctrine.test.ts:79`                         | **no**                                                    | no                                                                                |
+| CLI wealth-manager (14 files) and `wealth_*` tests                                          | no                                                                                    | yes, `packages/cli/src/agent/systems/wealth-manager/`     | yes; `types.ts` becomes a re-export                                               |
+| `ingest/contracts.ts`, `money.ts` (moved `toCents`)                                         | no                                                                                    | no                                                        | yes, untracked, with `ingest/contracts.test.ts`                                   |
+| `seedFinanceCategories` and `personal-finance-v1`                                           | no                                                                                    | no                                                        | yes, untracked, with `category-seed.integration.test.ts`; **no caller**           |
+| CLI depends on `@hominem/finance-services` (`workspace:*`)                                  | no                                                                                    | no                                                        | yes, `packages/cli/package.json`                                                  |
+| `docs/finance-transaction-categorization.md`, `docs/tasks/finance-transactions-redesign.md` | present (the redesign is `Implemented`)                                               | present                                                   | **deleted**; content moved to the new `docs/finance.{transactions,categories}.md` |
+| Import keeps fields the caller omits                                                        | `packages/finance/src/sheet-import.ts:813-830`                                        | same                                                      | same                                                                              |
+| Import accepts a provider `externalId`                                                      | `sheet-import.ts:61,349-350`; the CLI never sends it                                  | CLI: no `externalId` in `toTxn` (`daily_sync.ts:203-220`) | same                                                                              |
+| Pending rows rejected (`pending_row`)                                                       | `sheet-import.ts:56,212`                                                              | same                                                      | same                                                                              |
+| Unknown category names auto-created on import                                               | `sheet-import.ts:384` (`ensureFinanceCategoryId`)                                     | same                                                      | same                                                                              |
+| `finance_rules` stored, **with no engine applying it**                                      | `packages/db/migrations/20261101100000_create_finance_rules.sql:4,14`                 | same                                                      | same                                                                              |
+| MCP and RPC runway build budget input separately                                            | `services/api/src/mcp/tools/finance.ts:363-390`, `rpc/routes/finance.ledger.ts:72-84` | same                                                      | same                                                                              |
+| Money conversion assumes two minor units                                                    | `packages/finance/src/utils.ts:5-7`                                                   | same                                                      | moved to `money.ts` unchanged; `naturalKey` keeps `* 100`                         |
 
-### Only in the unmerged checkpoints
+How the S2 CLI behaves:
 
-- `packages/cli/src/agent/systems/wealth-manager/*` (13 modules, about 5,800
-  lines) and `packages/cli/tests/agent/wealth_*.test.ts`.
-- `packages/finance/src/ingest/contracts.ts`, `money.ts`, `category-seed.ts`
-  (the earlier W-002 and W-003).
-- `docs/finance.transactions.md`, `docs/finance.ingest.md`,
-  `docs/finance.categories.md`.
+- It is a remote MCP client using a personal `hmt_` token (`hominem.ts:5`). The
+  server derives the owner from the token.
+- It evaluates the doctrine locally (`categorize.ts`), sends the computed
+  `category` and `tags` on import (`daily_sync.ts:157,217-218`), and defaults a
+  missing currency to `'USD'` (`daily_sync.ts:214`).
+- `forward_look.ts:115` fetches a live Frankfurter USD→GBP rate and hard-codes
+  GBP/USD timelines.
 
-How the CLI behaves in those checkpoints:
-
-- It is a remote MCP client using a personal `hmt_` token. The server derives
-  the owner from the token (`hominem.ts`).
-- It evaluates the doctrine locally (`categorize.ts`). Its doctrine types are
-  hand-copied from `services/api/src/schemas/finance.doctrine.schema.ts`.
-- Its sync sends no `externalId`, and re-sends `category` and `tags` computed by
-  the doctrine for the overlap window (`daily_sync.ts`, `toTxn`).
-- `forward_look.ts` hard-codes GBP/USD timelines and a live Frankfurter FX rate.
+The draft marks W-002 and W-003 "Implemented". In this revision they count as
+**written and tested locally in S3, not shipped**: they are uncommitted and
+have never run in `main`'s CI. This analysis did not run them, so that the
+owner's checkout stayed untouched.
 
 ## Real gaps
 
-| Gap                                                                                                                                             | Why it matters                                                                                                                |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| G1 The code states are split (`main` vs unmerged checkpoints)                                                                                   | Nothing can be migrated until one base is chosen (D12)                                                                        |
-| G2 Four classification stores (`finance_rules`, rulebooks, doctrine, the CLI engine), and none applies rules to imported transactions on `main` | Different surfaces can classify the same merchant differently. Name-referenced stores drift after a category merge or rename. |
-| G3 Sync sends no provider `externalId`                                                                                                          | Dedupe depends on the description. A descriptor change creates a duplicate.                                                   |
-| G4 Overlap re-sync may overwrite user category or tag edits                                                                                     | Untested. Needs a test before any behavior change (D7).                                                                       |
-| G5 Finance logic is split between `packages/finance` and `services/api/src/application`                                                         | "The package is the authority" is not true yet                                                                                |
-| G6 People and agents get different capabilities (rules, doctrine, category merge, and bills mostly MCP-only; affordability RPC-only)            | Needs a parity rule (D10)                                                                                                     |
-| G7 Money is 2dp `* 100` with a `'USD'` default, `allowedCurrencies`, and primary-currency budgets                                               | Contradicts the approved multi-currency plan. Must not be frozen into new shared contracts.                                   |
-| G8 CLI reports are written for one owner                                                                                                        | Not general until D11 is decided                                                                                              |
-
-## Requirements removed pending decisions
-
-These were acceptance criteria in the earlier version. They depend on product
-decisions nobody has made, so they are now open decisions in the
-[consolidation proposal](../decisions/finance.core-consolidation.md). Each is
-**OPEN — USER DECISION REQUIRED**.
-
-- The 32-category `personal-finance-v1` seed, and when to apply it (D5).
-- "Learned rules" as a new owner-scoped store (D6, after D4 picks one rule
-  model).
-- "The CLI passes an explicit user identity through every finance operation."
-  For a remote MCP client, the server derives identity from the token. An
-  explicit owner ID applies only to in-process server calls. Whether the CLI
-  serves one owner or many is D2.
-- Starling and Plaid adapters inside the DB-bound package. This depends on where
-  sync runs and who holds credentials (D1).
-- Moving morning-brief, integrity, close, and forward-look math into the package
-  (D11).
-- Treating the natural-key and cents contract as the shared ingest contract
-  (conflicts with G3 and G7).
+| Gap                                                                                                       | Why it matters                                                                                                               |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| G1 Three code states (S1, S2, S3) and two versions of this task                                           | S2 lacks #614, which the CLI needs. S3 is uncommitted. Nothing can be consolidated until the owner reconciles them (D12).    |
+| G2 Four classification stores, and none applies rules to imported transactions on `main`                  | Surfaces can classify the same merchant differently. Stores that reference categories by name drift after a merge or rename. |
+| G3 Sync sends no provider `externalId`                                                                    | Dedupe depends on the description, so a descriptor change creates a duplicate. The fix is decision D13.                      |
+| G4 Overlap re-sync may overwrite a user's category or tag edits                                           | Untested. Needs a test before any behavior change (D7).                                                                      |
+| G5 Finance logic is split between `packages/finance` and `services/api/src/application`                   | "The package already owns finance behavior" is not true yet.                                                                 |
+| G6 People and agents get different capabilities                                                           | Whether they must be equal is D10.                                                                                           |
+| G7 Money is 2dp `* 100` with a `'USD'` default, `allowedCurrencies` buckets, and primary-currency budgets | Contradicts the multi-currency plan. When to address it is D14.                                                              |
+| G8 Recorded intent says merchant rules are suggestion-only; the CLI auto-categorizes on import            | Recorded intent and behavior disagree (D6).                                                                                  |
+| G9 The S3 doc move drops the `Implemented` redesign task's record and evidence                            | That history is lost unless the move keeps it (D12).                                                                         |
 
 ## Work sequence
 
-| ID    | Work item                                                                     | Depends on                 | Validation               | Done when                                                                                            |
-| ----- | ----------------------------------------------------------------------------- | -------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| W-000 | Resolve the consolidation proposal's open decisions D1, D2, D4, D12           | product owner              | —                        | The decision doc is accepted, amended, or rejected                                                   |
-| W-001 | Choose the code base and inventory parity against `main`                      | W-000 (D12)                | inventory reviewed       | Every wealth-manager behavior is mapped to an existing `main` function, a gap, or a personal routine |
-| W-002 | Prove or disprove re-sync overwrite (G4)                                      | —                          | finance integration test | A test shows whether re-sent `category`/`tags` replace a user edit                                   |
-| W-003 | Send provider `externalId` from sync (G3)                                     | W-001                      | CLI and import tests     | Rerun after a descriptor change creates no duplicate                                                 |
-| W-004 | Consolidate to one rule model applied server-side on every write path (G2)    | W-000 (D4)                 | DB and integration tests | One store, id-referenced, one engine; merge and rename keep rules valid                              |
-| W-005 | Add a currency-aware minor-unit money value at new shared boundaries (G7)     | —                          | unit tests               | No new `* 100`; scale comes from currency data; no schema change                                     |
-| W-006 | Make finance surfaces thin adapters over one core, runway first (G5, G6)      | W-000 (D10)                | API, RPC, and MCP tests  | MCP and RPC runway share one service call                                                            |
-| W-007 | Land or rework the CLI as a remote client with no DB-bound runtime dependency | W-001, W-003, W-004        | CLI tests in CI          | CLI owns auth, env, state, log, and output only                                                      |
-| W-008 | Decide seed, learning, and reports                                            | W-000 (D5, D6, D11), W-004 | per decision             | Only after the owner decides                                                                         |
+### Phase 0: does not depend on any open decision
+
+| ID    | Work item                                                            | Depends on    | Validation               | Done when                                                                                         |
+| ----- | -------------------------------------------------------------------- | ------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| W-000 | The product owner resolves, amends, or rejects the decision document | product owner | —                        | Each D1–D14 that later work depends on has a recorded answer                                      |
+| W-001 | Reconcile S1/S2/S3 and the two versions of this task                 | W-000 (D12)   | `pnpm run tasks:check`   | One task version is the record. S2 has #614. S3 is committed, revised, or discarded deliberately. |
+| W-002 | Prove or disprove re-sync overwrite (G4)                             | —             | finance integration test | A test shows whether re-sent `category`/`tags` replace a user's edit                              |
+| W-003 | Inventory every wealth-manager behavior against S1                   | W-001         | inventory reviewed       | Each behavior maps to an existing function, a gap, or a personal routine                          |
+
+### Later work: options that depend on decisions, not requirements
+
+Each row lists the options. The option chosen by the decision becomes the work
+item. Until then the row is **OPEN — USER DECISION REQUIRED**.
+
+| Area                       | Decision | Options                                                                                                                                                                        |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Classification rules       | D4, D6   | Keep separate stores; consolidate into `finance_rules` (category ids); consolidate into the doctrine; a new model. Plus: applied server-side, client-side, or suggestion-only. |
+| Ingest identity            | D13      | Keep the pfin-merge natural key only; `externalId` primary with natural-key fallback                                                                                           |
+| Money boundary             | D14      | A currency-aware minor-unit value at new boundaries now; keep `* 100` until the multi-currency rollout; do the rollout first                                                   |
+| Surface parity             | D10      | Every capability on both RPC and MCP unless excluded; per-capability choices; leave as is                                                                                      |
+| Adapter consolidation      | D10, D1  | MCP and RPC call one service per capability (runway first); the package becomes the core; the API application layer becomes the core                                           |
+| Provider adapters and sync | D1       | Stay in the CLI; move into the package with injected credentials; move to a server job                                                                                         |
+| CLI identity               | D2       | Token-derived owner at the server; an explicit owner argument for in-process callers                                                                                           |
+| Category seed              | D5       | Ship `personal-finance-v1` as drafted; revise the list; no seed. Trigger: signup, first import, or explicit                                                                    |
+| Reports                    | D11      | Stay owner routines in the CLI; become product features rebuilt without hard-coded currencies or live FX                                                                       |
+| Pending rows               | D9       | Keep rejecting them; store them with a status                                                                                                                                  |
 
 ## Acceptance criteria
 
-- [ ] Every open decision this task depends on is resolved and recorded in the
-      consolidation decision doc.
-- [ ] One code base is chosen. No "Implemented" claim refers to code that is not
-      on `main`.
-- [ ] A test establishes whether re-sync can overwrite a user's edits, and the
-      behavior matches D7.
-- [ ] Sync dedupes by provider `externalId` when one exists, with the
-      pfin-merge natural key as the fallback.
-- [ ] Exactly one classification rule model is applied on every finance write
-      path, and it survives category merge and rename.
-- [ ] No new shared contract assumes two minor units or defaults the currency.
-- [ ] MCP and RPC call one implementation for each shared capability.
-- [ ] Remote clients never supply an owner ID. Two synthetic users prove
-      cross-user reads and writes are denied.
-- [ ] CLI tests run in `main`'s CI if the CLI lands.
+These criteria are independent of the open decisions. Criteria for the later
+work are added once W-000 records the decisions.
+
+- [ ] Every decision that later work depends on is recorded in the
+      consolidation decision document as accepted, amended, or rejected.
+- [ ] One version of this task is the record, and no "Implemented" claim refers
+      to uncommitted code or code that has not run in `main`'s CI.
+- [ ] A test establishes whether an overlap re-sync can overwrite a user's
+      category or tag edit, and the result is recorded here.
+- [ ] Synthetic fixtures with at least two users prove that cross-user reads and
+      writes are denied for any finance path this task changes.
+- [ ] No personal identity, account, merchant, rule, or credential is hard-coded
+      in shared code or fixtures.
+- [ ] If the CLI lands, its tests run in `main`'s CI.
 - [ ] Full `pnpm run check` passes.
 
 ## Related
@@ -158,5 +184,7 @@ decisions nobody has made, so they are now open decisions in the
 - [finance.pfin-merge](../decisions/finance.pfin-merge.md)
 - [Finance sync doctrine](finance-sync-doctrine.md)
 - [Finance runway budgets](finance-runway-budgets.md)
+- [Finance transactions redesign](finance-transactions-redesign.md)
+- [Finance transaction categorization](../finance-transaction-categorization.md)
 - [Finance multi-currency redesign plan](../finance-multi-currency-redesign-plan.md)
 - [Hominem finance tools spec](../hominem-finance-tools-spec.md)
