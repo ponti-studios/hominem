@@ -9,6 +9,7 @@ import { main as spotify } from './connectors/spotify/spotify.ts';
 import { main as ytm } from './connectors/youtube-music/ytm.ts';
 import { main as knowledge } from './knowledge/main.ts';
 import { main as cadence } from './routines/cadence_regen.ts';
+import { main as studio } from './studio/main.ts';
 import { main as balanceCheck } from './systems/wealth-manager/balance_check.ts';
 import { main as sync } from './systems/wealth-manager/daily_sync.ts';
 import { applyEnvDefaults } from './systems/wealth-manager/env.ts';
@@ -36,6 +37,7 @@ export const AGENT_COMMANDS = new Set([
   'ponti',
   'knowledge',
   'workflow',
+  'studio',
 ]);
 
 export async function runAgent(argv: string[]): Promise<number> {
@@ -74,6 +76,8 @@ export async function runAgent(argv: string[]): Promise<number> {
       return knowledge(args);
     case 'workflow':
       return workflow(args);
+    case 'studio':
+      return studio(args);
     default:
       return 2;
   }

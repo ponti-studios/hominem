@@ -81,6 +81,27 @@ When its ID is omitted, an interactive terminal presents recent runs.
 Non-interactive shells print the available choices and exit without
 guessing.
 
+## Studio nameplates
+
+```bash
+hominem studio nameplate \
+  --word DAKOTA \
+  --font /path/to/AbrilFatface.ttf \
+  --texture /path/to/diamond-texture.png \
+  --preset gold \
+  --output /path/to/dakota-gold.png \
+  --preview /path/to/dakota-gold-preview.jpg
+```
+
+Presets are `platinum` and `gold`. The renderer is bundled into the
+compiled CLI; its only external runtime dependency is Python with Pillow
+13.0.0. Set `HOMINEM_PYTHON` when `python3` is not the intended interpreter.
+The exact seed and dimensions make repeated renders deterministic.
+
+The archived Abril scripts supplied the effect, but not the original font
+and diamond texture. A live DAKOTA render remains blocked until those two
+assets are restored from the `tshirt-designs/brand` workspace.
+
 ## Machine configuration
 
 Create `~/.hominem/env` with the required connector variables. The file is

@@ -399,3 +399,16 @@ The historical `gen`/`make`, cluster, finalize, residue, repair, image,
 and Printify scripts remain archive references until a real model
 worker and a specific studio consumer are ported. No live vault or
 Printify run was attempted in this phase.
+
+### 9. Jarvis image nameplates — resolved 2026-11-25
+
+`build_name_abril.py` and `build_name_abril_gold.py` now share one
+deterministic compositor behind `hominem studio nameplate`. The command
+provides `platinum` and `gold` presets, explicit word/font/texture/output
+inputs, optional JPEG preview output, and closed audit runs. The Python
+renderer is embedded into the compiled CLI and uses pinned Pillow 13.0.0.
+
+Synthetic renders prove repeatability, distinct presets, preview output,
+missing-input refusal, and named subprocess failure. The original
+Abril font and diamond texture were not present in the archive, so a
+live DAKOTA render remains an asset blocker rather than a code blocker.

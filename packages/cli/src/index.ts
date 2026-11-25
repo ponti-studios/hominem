@@ -29,6 +29,7 @@ const USAGE = `hominem — Hominem CLI
   hominem ponti <command...>
   hominem knowledge validate [batch-dir] [bodies-dir]
   hominem workflow status [run-id]
+  hominem studio nameplate --word WORD --font PATH --texture PATH --preset platinum|gold --output PATH
 `;
 
 async function main(argv: string[]): Promise<number> {

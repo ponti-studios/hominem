@@ -5,7 +5,7 @@
   "description": "The hominem command: Google sign-in, token health, and the daily auth check",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && bun build --compile src/index.ts --outfile build/hominem",
+    "build": "tsc --noEmit && bun build --compile --loader .py:text src/index.ts --outfile build/hominem",
     "dev": "bun run src/index.ts",
     "install:local": "bun run build && mkdir -p ~/.local/bin && cp build/hominem ~/.local/bin/hominem",
     "test": "vitest run src && node --test tests/agent/*.test.ts",
