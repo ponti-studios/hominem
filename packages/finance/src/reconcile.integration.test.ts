@@ -1,6 +1,5 @@
-import { ensureIntegrationUsers, isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
-import { createDeterministicIdFactory } from '@hominem/db/test/utils';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
+import { expect } from 'vitest';
 
 import { createAccount, insertTransaction } from './index';
 import {
@@ -8,26 +7,20 @@ import {
   getReconciliationStaleness,
   postReconciliationAdjustment,
 } from './reconcile';
-import { cleanupIntegrationFinanceUser } from './test-utils';
+import { financeIntegrationTest } from './test-utils';
 
-const nextUserId = createDeterministicIdFactory('finance.reconcile.integration');
-const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
+const describeIntegration = (await isIntegrationDatabaseAvailable())
+  ? financeIntegrationTest.describe
+  : financeIntegrationTest.describe.skip;
 
 describeIntegration('finance reconcile integration', () => {
   let ownerId: string;
   let otherUserId: string;
   let ownerAccountId: string;
 
-  beforeEach(async () => {
-    ownerId = nextUserId();
-    otherUserId = nextUserId();
-
-    await cleanupIntegrationFinanceUser(ownerId);
-    await cleanupIntegrationFinanceUser(otherUserId);
-    await ensureIntegrationUsers([
-      { id: ownerId, name: 'Finance Reconcile User' },
-      { id: otherUserId, name: 'Finance Reconcile User' },
-    ]);
+  financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
+    ownerId = financeFixture.ownerId;
+    otherUserId = financeFixture.otherUserId;
 
     const account = await createAccount({
       userId: ownerId,
@@ -45,32 +38,35 @@ describeIntegration('finance reconcile integration', () => {
     });
   });
 
-  it('posts a plug that closes the gap exactly, then reports reconciled', async () => {
-    const posted = await postReconciliationAdjustment({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      targetBalance: -90,
-      date: '2026-02-01',
-    });
+  financeIntegrationTest(
+    'posts a plug that closes the gap exactly, then reports reconciled',
+    async () => {
+      const posted = await postReconciliationAdjustment({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        targetBalance: -90,
+        date: '2026-02-01',
+      });
 
-    expect(posted.ledgerSumBefore).toBe(-100);
-    expect(posted.plug).toBe(10);
-    expect(posted.alreadyReconciled).toBe(false);
-    expect(posted.committed).toBe(true);
-    expect(posted.transactionId).not.toBeNull();
+      expect(posted.ledgerSumBefore).toBe(-100);
+      expect(posted.plug).toBe(10);
+      expect(posted.alreadyReconciled).toBe(false);
+      expect(posted.committed).toBe(true);
+      expect(posted.transactionId).not.toBeNull();
 
-    const again = await postReconciliationAdjustment({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      targetBalance: -90,
-      date: '2026-02-02',
-    });
-    expect(again.alreadyReconciled).toBe(true);
-    expect(again.committed).toBe(false);
-    expect(again.plug).toBe(0);
-  });
+      const again = await postReconciliationAdjustment({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        targetBalance: -90,
+        date: '2026-02-02',
+      });
+      expect(again.alreadyReconciled).toBe(true);
+      expect(again.committed).toBe(false);
+      expect(again.plug).toBe(0);
+    },
+  );
 
-  it('rejects a second same-day adjustment without force', async () => {
+  financeIntegrationTest('rejects a second same-day adjustment without force', async () => {
     await postReconciliationAdjustment({
       userId: ownerId,
       accountId: ownerAccountId,
@@ -98,50 +94,53 @@ describeIntegration('finance reconcile integration', () => {
     expect(forced.plug).toBe(10);
   });
 
-  it('measures the plug as of the reading date, ignoring later rows', async () => {
-    // Ledger: -100 on 01-10. Reading on 02-01 says -90, so the plug is +10.
-    const posted = await postReconciliationAdjustment({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      targetBalance: -90,
-      date: '2026-02-01',
-    });
-    expect(posted.plug).toBe(10);
-    expect(posted.committed).toBe(true);
+  financeIntegrationTest(
+    'measures the plug as of the reading date, ignoring later rows',
+    async () => {
+      // Ledger: -100 on 01-10. Reading on 02-01 says -90, so the plug is +10.
+      const posted = await postReconciliationAdjustment({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        targetBalance: -90,
+        date: '2026-02-01',
+      });
+      expect(posted.plug).toBe(10);
+      expect(posted.committed).toBe(true);
 
-    // A transaction after the reading date must not change the 02-01 gap.
-    await insertTransaction({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      amount: -50,
-      description: 'Later spend',
-      postedOn: '2026-03-01',
-    });
+      // A transaction after the reading date must not change the 02-01 gap.
+      await insertTransaction({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        amount: -50,
+        description: 'Later spend',
+        postedOn: '2026-03-01',
+      });
 
-    const current = await getAccountLedgerBreakdown(ownerId, ownerAccountId);
-    expect(current?.balance).toBe(-140);
+      const current = await getAccountLedgerBreakdown(ownerId, ownerAccountId);
+      expect(current?.balance).toBe(-140);
 
-    // Same reading again on 02-01 is already reconciled — no second plug.
-    const again = await postReconciliationAdjustment({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      targetBalance: -90,
-      date: '2026-02-01',
-    });
-    expect(again.alreadyReconciled).toBe(true);
-    expect(again.committed).toBe(false);
+      // Same reading again on 02-01 is already reconciled — no second plug.
+      const again = await postReconciliationAdjustment({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        targetBalance: -90,
+        date: '2026-02-01',
+      });
+      expect(again.alreadyReconciled).toBe(true);
+      expect(again.committed).toBe(false);
 
-    // A fresh reading on 03-15 plugs only the post-02-01 delta.
-    const fresh = await postReconciliationAdjustment({
-      userId: ownerId,
-      accountId: ownerAccountId,
-      targetBalance: -140,
-      date: '2026-03-15',
-    });
-    expect(fresh.alreadyReconciled).toBe(true);
-  });
+      // A fresh reading on 03-15 plugs only the post-02-01 delta.
+      const fresh = await postReconciliationAdjustment({
+        userId: ownerId,
+        accountId: ownerAccountId,
+        targetBalance: -140,
+        date: '2026-03-15',
+      });
+      expect(fresh.alreadyReconciled).toBe(true);
+    },
+  );
 
-  it('lists never-reconciled accounts first with ledger balances', async () => {
+  financeIntegrationTest('lists never-reconciled accounts first with ledger balances', async () => {
     const stale = await createAccount({
       userId: ownerId,
       name: 'Savings',
@@ -169,7 +168,7 @@ describeIntegration('finance reconcile integration', () => {
     });
   });
 
-  it('breaks one account down by description with sign splits', async () => {
+  financeIntegrationTest('breaks one account down by description with sign splits', async () => {
     await insertTransaction({
       userId: ownerId,
       accountId: ownerAccountId,
@@ -208,7 +207,7 @@ describeIntegration('finance reconcile integration', () => {
     ]);
   });
 
-  it('rejects accounts outside the current user', async () => {
+  financeIntegrationTest('rejects accounts outside the current user', async () => {
     await expect(
       postReconciliationAdjustment({
         userId: otherUserId,
@@ -221,7 +220,7 @@ describeIntegration('finance reconcile integration', () => {
     expect(await getReconciliationStaleness(otherUserId)).toEqual([]);
   });
 
-  it('warns when a credit card target uses the displayed sign', async () => {
+  financeIntegrationTest('warns when a credit card target uses the displayed sign', async () => {
     const card = await createAccount({
       userId: ownerId,
       name: 'Card',
@@ -240,7 +239,7 @@ describeIntegration('finance reconcile integration', () => {
     expect(result.plug).toBe(500);
   });
 
-  it('rejects malformed dates', async () => {
+  financeIntegrationTest('rejects malformed dates', async () => {
     await expect(
       postReconciliationAdjustment({
         userId: ownerId,

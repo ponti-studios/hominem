@@ -1,17 +1,16 @@
 import crypto from 'node:crypto';
 
-import { db } from '@hominem/db/core';
-import { sql } from '@hominem/db/core';
-import { ensureIntegrationUsers, isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
-import { createDeterministicIdFactory } from '@hominem/db/test/utils';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { db, sql } from '@hominem/db/core';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
+import { expect } from 'vitest';
 
 import { findTransferPairs, getValidationGates } from './diagnostics';
 import { createAccount } from './index';
-import { cleanupIntegrationFinanceUser } from './test-utils';
+import { financeIntegrationTest } from './test-utils';
 
-const nextUserId = createDeterministicIdFactory('finance.diagnostics.integration');
-const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
+const describeIntegration = (await isIntegrationDatabaseAvailable())
+  ? financeIntegrationTest.describe
+  : financeIntegrationTest.describe.skip;
 
 describeIntegration('finance diagnostics integration', () => {
   let ownerId: string;
@@ -45,16 +44,9 @@ describeIntegration('finance diagnostics integration', () => {
     `.execute(db);
   }
 
-  beforeEach(async () => {
-    ownerId = nextUserId();
-    otherUserId = nextUserId();
-
-    await cleanupIntegrationFinanceUser(ownerId);
-    await cleanupIntegrationFinanceUser(otherUserId);
-    await ensureIntegrationUsers([
-      { id: ownerId, name: 'Finance Diagnostics User' },
-      { id: otherUserId, name: 'Finance Diagnostics User' },
-    ]);
+  financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
+    ownerId = financeFixture.ownerId;
+    otherUserId = financeFixture.otherUserId;
 
     const checking = await createAccount({
       userId: ownerId,
@@ -71,7 +63,7 @@ describeIntegration('finance diagnostics integration', () => {
     await createAccount({ userId: ownerId, name: 'Empty', accountType: 'cash' });
   });
 
-  it('finds cross-account transfer pairs and excludes lookalikes', async () => {
+  financeIntegrationTest('finds cross-account transfer pairs and excludes lookalikes', async () => {
     await seedTransaction({
       accountId: checkingId,
       amount: -500,
@@ -144,66 +136,69 @@ describeIntegration('finance diagnostics integration', () => {
     );
   });
 
-  it('reports duplicates, sign violations, empty accounts, and coverage', async () => {
-    await seedTransaction({
-      accountId: checkingId,
-      amount: -4.5,
-      transactionType: 'debit',
-      description: 'Coffee',
-      postedOn: '2026-03-01',
-    });
-    await seedTransaction({
-      accountId: checkingId,
-      amount: -4.5,
-      transactionType: 'debit',
-      description: 'COFFEE',
-      postedOn: '2026-03-01',
-    });
-    await seedTransaction({
-      accountId: checkingId,
-      amount: 50,
-      transactionType: 'debit',
-      description: 'Mis-signed',
-      postedOn: '2026-03-02',
-    });
-    await seedTransaction({
-      accountId: savingsId,
-      amount: -25,
-      transactionType: 'credit',
-      description: 'Also mis-signed',
-      postedOn: '2026-03-02',
-    });
-    await seedTransaction({
-      accountId: savingsId,
-      amount: -10,
-      transactionType: 'debit',
-      description: 'Clean',
-      postedOn: '2026-03-03',
-    });
-
-    const gates = await getValidationGates(ownerId);
-    expect(gates.totalTransactions).toBe(5);
-    expect(gates.orphanTransactions).toBe(0);
-    expect(gates.accountsWithNoTransactions).toEqual([
-      { accountId: expect.any(String), accountName: 'Empty' },
-    ]);
-    expect(gates.duplicateGroupCount).toBe(1);
-    expect(gates.duplicateGroups).toEqual([
-      {
+  financeIntegrationTest(
+    'reports duplicates, sign violations, empty accounts, and coverage',
+    async () => {
+      await seedTransaction({
         accountId: checkingId,
-        accountName: 'Checking',
+        amount: -4.5,
+        transactionType: 'debit',
+        description: 'Coffee',
         postedOn: '2026-03-01',
-        absoluteAmount: 4.5,
-        description: 'coffee',
-        count: 2,
-      },
-    ]);
-    expect(gates.signViolationCount).toBe(2);
-    expect(gates.signViolations.map((entry) => entry.amount)).toEqual([50, -25]);
-    expect(gates.uncategorizedTransactions).toBe(5);
-  });
+      });
+      await seedTransaction({
+        accountId: checkingId,
+        amount: -4.5,
+        transactionType: 'debit',
+        description: 'COFFEE',
+        postedOn: '2026-03-01',
+      });
+      await seedTransaction({
+        accountId: checkingId,
+        amount: 50,
+        transactionType: 'debit',
+        description: 'Mis-signed',
+        postedOn: '2026-03-02',
+      });
+      await seedTransaction({
+        accountId: savingsId,
+        amount: -25,
+        transactionType: 'credit',
+        description: 'Also mis-signed',
+        postedOn: '2026-03-02',
+      });
+      await seedTransaction({
+        accountId: savingsId,
+        amount: -10,
+        transactionType: 'debit',
+        description: 'Clean',
+        postedOn: '2026-03-03',
+      });
 
-  it('scopes gates and pairs to the current user', async () => {
+      const gates = await getValidationGates(ownerId);
+      expect(gates.totalTransactions).toBe(5);
+      expect(gates.orphanTransactions).toBe(0);
+      expect(gates.accountsWithNoTransactions).toEqual([
+        { accountId: expect.any(String), accountName: 'Empty' },
+      ]);
+      expect(gates.duplicateGroupCount).toBe(1);
+      expect(gates.duplicateGroups).toEqual([
+        {
+          accountId: checkingId,
+          accountName: 'Checking',
+          postedOn: '2026-03-01',
+          absoluteAmount: 4.5,
+          description: 'coffee',
+          count: 2,
+        },
+      ]);
+      expect(gates.signViolationCount).toBe(2);
+      expect(gates.signViolations.map((entry) => entry.amount)).toEqual([50, -25]);
+      expect(gates.uncategorizedTransactions).toBe(5);
+    },
+  );
+
+  financeIntegrationTest('scopes gates and pairs to the current user', async () => {
     await seedTransaction({
       accountId: checkingId,
       amount: 50,

@@ -1,11 +1,7 @@
 import crypto from 'node:crypto';
 
-import {
-  createDeterministicIdFactory,
-  ensureIntegrationUsers,
-  isIntegrationDatabaseAvailable,
-} from '@hominem/db/test/utils';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
+import { expect } from 'vitest';
 
 import {
   createAccount,
@@ -15,10 +11,11 @@ import {
   exportFinanceData,
   replaceTransactionTags,
 } from './index';
-import { cleanupIntegrationFinanceUser } from './test-utils';
+import { financeIntegrationTest } from './test-utils';
 
-const nextUserId = createDeterministicIdFactory('finance.data-ops.integration');
-const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
+const describeIntegration = (await isIntegrationDatabaseAvailable())
+  ? financeIntegrationTest.describe
+  : financeIntegrationTest.describe.skip;
 
 describeIntegration('finance data ops integration', () => {
   let ownerId: string;
@@ -26,16 +23,9 @@ describeIntegration('finance data ops integration', () => {
   let ownerAccountId: string;
   let otherAccountId: string;
 
-  beforeEach(async () => {
-    ownerId = nextUserId();
-    otherUserId = nextUserId();
-
-    await cleanupIntegrationFinanceUser(ownerId);
-    await cleanupIntegrationFinanceUser(otherUserId);
-    await ensureIntegrationUsers([
-      { id: ownerId, name: 'Finance DataOps User' },
-      { id: otherUserId, name: 'Finance DataOps User' },
-    ]);
+  financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
+    ownerId = financeFixture.ownerId;
+    otherUserId = financeFixture.otherUserId;
 
     const ownerAccount = await createAccount({
       userId: ownerId,
@@ -52,7 +42,7 @@ describeIntegration('finance data ops integration', () => {
     otherAccountId = otherAccount.id;
   });
 
-  it('exports only caller-scoped finance data', async () => {
+  financeIntegrationTest('exports only caller-scoped finance data', async () => {
     const ownerTag = await createBudgetCategory({
       ownerUserid: ownerId,
       name: `Food-${crypto.randomUUID().slice(0, 8)}`,
@@ -86,7 +76,7 @@ describeIntegration('finance data ops integration', () => {
     expect(exported.tags[0]?.ownerUserid).toBe(ownerId);
   });
 
-  it('delete-all summary removes only caller-scoped data', async () => {
+  financeIntegrationTest('delete-all summary removes only caller-scoped data', async () => {
     const ownerTag = await createBudgetCategory({
       ownerUserid: ownerId,
       name: `Transit-${crypto.randomUUID().slice(0, 8)}`,

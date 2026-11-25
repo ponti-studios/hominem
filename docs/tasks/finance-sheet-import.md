@@ -74,7 +74,7 @@ daily wiring, deletes, write-back (Phases 2–4).
 
 ## Evidence (2026-10-11, full repo `pnpm run check:all` exit 0)
 
-- `packages/finance`: `finance.sheet-import.test.ts` 7/7 pass; `tsc -p tsconfig.json`
+- `packages/finance`: `sheet-import.test.ts` 7/7 pass; `tsc -p tsconfig.json`
   clean; `oxlint`, `oxfmt --check` clean.
 - `services/api`: `src/mcp` 27 files / 229 tests pass (incl. new
   `finance-import-crud.test.ts` 9/9); `tsc --noEmit` clean; `oxlint`,

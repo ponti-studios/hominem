@@ -31,5 +31,5 @@ services dependency.
 `pnpm run check` passed the full repo gate on 2026-11-05 (33/33 turbo tasks; `@hominem/api` 154 test
 files / 1397 tests, `@hominem/career` 26 files / 150 tests). `pnpm --filter @hominem/api build` emitted
 the updated `build/rpc/app.d.ts` contract, so clients see the new routes. Ledger behavior itself remains
-covered by `packages/finance/src/finance.reconcile.integration.test.ts` and
-`finance.runway.integration.test.ts`.
+covered by `packages/finance/src/reconcile.integration.test.ts` and
+`runway.integration.test.ts`.

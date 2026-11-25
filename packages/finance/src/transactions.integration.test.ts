@@ -1,6 +1,5 @@
-import { ensureIntegrationUsers, isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
-import { createDeterministicIdFactory } from '@hominem/db/test/utils';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
+import { expect } from 'vitest';
 
 import {
   createAccount,
@@ -11,26 +10,20 @@ import {
   queryTransactions,
   updateTransaction,
 } from './index';
-import { cleanupIntegrationFinanceUser } from './test-utils';
+import { financeIntegrationTest } from './test-utils';
 
-const nextUserId = createDeterministicIdFactory('finance.transactions.integration');
-const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
+const describeIntegration = (await isIntegrationDatabaseAvailable())
+  ? financeIntegrationTest.describe
+  : financeIntegrationTest.describe.skip;
 
 describeIntegration('finance transactions integration', () => {
   let ownerId: string;
   let otherUserId: string;
   let ownerAccountId: string;
 
-  beforeEach(async () => {
-    ownerId = nextUserId();
-    otherUserId = nextUserId();
-
-    await cleanupIntegrationFinanceUser(ownerId);
-    await cleanupIntegrationFinanceUser(otherUserId);
-    await ensureIntegrationUsers([
-      { id: ownerId, name: 'Finance Tx User' },
-      { id: otherUserId, name: 'Finance Tx User' },
-    ]);
+  financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
+    ownerId = financeFixture.ownerId;
+    otherUserId = financeFixture.otherUserId;
 
     const account = await createAccount({
       userId: ownerId,
@@ -40,7 +33,7 @@ describeIntegration('finance transactions integration', () => {
     ownerAccountId = account.id;
   });
 
-  it('creates and queries transactions with stable sort', async () => {
+  financeIntegrationTest('creates and queries transactions with stable sort', async () => {
     const first = await createTransaction({
       userId: ownerId,
       accountId: ownerAccountId,
@@ -63,7 +56,7 @@ describeIntegration('finance transactions integration', () => {
     expect(ordered[1]?.id).toBe(first.id);
   });
 
-  it('enforces owner scope on update/delete', async () => {
+  financeIntegrationTest('enforces owner scope on update/delete', async () => {
     const created = await createTransaction({
       userId: ownerId,
       accountId: ownerAccountId,
@@ -85,7 +78,7 @@ describeIntegration('finance transactions integration', () => {
     expect(stillOwned[0]?.description).toBe('Protected tx');
   });
 
-  it('lists only copilot-sourced external ids for the user', async () => {
+  financeIntegrationTest('lists only copilot-sourced external ids for the user', async () => {
     await insertTransaction({
       userId: ownerId,
       accountId: ownerAccountId,
