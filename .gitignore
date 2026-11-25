@@ -8,6 +8,7 @@ dist
 out/
 output/
 artifacts/
+!docs/artifacts
 web-build/
 storybook-static/
 .react-router/
