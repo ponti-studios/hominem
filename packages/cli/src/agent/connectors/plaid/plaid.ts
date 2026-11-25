@@ -203,7 +203,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
           ? 'PLAID_ENV is invalid. Use sandbox or production; development is not an API host.\n'
           : 'Plaid credentials are not configured.\n') +
           '1. Open the Plaid Dashboard and create/select an app.\n' +
-          '2. Copy the client_id and the Development secret.\n' +
+          '2. Copy the client_id and the Production secret.\n' +
           '3. Add them to ~/.hominem/env:\n' +
           '   PLAID_CLIENT_ID=...\n' +
           '   PLAID_SECRET=...\n' +
