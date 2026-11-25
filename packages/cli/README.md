@@ -13,6 +13,11 @@ pnpm --filter @hominem/cli build
 pnpm --filter @hominem/cli install:local
 ```
 
+The repository's `post-commit` hook reinstalls this binary after every
+Hominem commit, so `~/.local/bin/hominem` always matches the just-committed
+CLI. Run `scripts/install-git-hooks.sh` once after cloning if
+`core.hooksPath` is not already `.githooks`.
+
 The token and OAuth client live in `$HOMINEM_HOME` (default `~/.hominem`):
 
 - `google_client_secret.json` — the Desktop OAuth client (`installed` block)
