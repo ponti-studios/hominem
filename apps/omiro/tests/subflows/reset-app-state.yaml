@@ -26,6 +26,12 @@ appId: com.pontistudios.hakumi.dev
       notVisible:
         id: auth-email-input
     commands:
+      # A fresh install makes iOS ask once whether to open the dev-client link
+      # ("Open in 'Omiro Dev'?"). It covers the screen, so the app never starts
+      # and every auth wait times out until it is answered.
+      - tapOn:
+          text: 'Open'
+          optional: true
       - runFlow:
           when:
             visible: 'Apple[\s\u00A0]+Account Verification'

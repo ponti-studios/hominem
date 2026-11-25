@@ -7,6 +7,11 @@ appId: com.pontistudios.hakumi.dev
 #   - the pull does not fight the native back swipe on a pushed screen
 
 - runFlow: ../subflows/reset-to-home.yaml
+# The menu button is a native header item, so wait for the chat screen to draw it.
+- extendedWaitUntil:
+    visible:
+      text: 'Menu'
+    timeout: 20000
 
 # Menu button opens, scrim closes.
 - tapOn:
