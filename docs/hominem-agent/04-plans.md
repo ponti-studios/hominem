@@ -400,6 +400,22 @@ and Printify scripts remain archive references until a real model
 worker and a specific studio consumer are ported. No live vault or
 Printify run was attempted in this phase.
 
+### 9. Calendar analysis — Phase 1 resolved 2026-11-25
+
+The primary-calendar analyzer is native Hominem code:
+
+- `hominem calendar analyze` pulls primary-calendar events through the
+  logged GWS connector, caches the result, and writes JSON/Markdown
+  findings under `~/.hominem/calendar/runs/`.
+- Synthetic tests cover event normalization, overlaps, duplicates,
+  sleep anomalies, and malformed events.
+- Live read-back passed against the stored Google credential for
+  2026-11-26: six primary-calendar events, no overlaps or duplicates,
+  one title-length violation.
+- No calendar patch or move was attempted.
+
+The old `analyze_calendar.py` source was deleted after migration.
+
 ### 9. Jarvis image nameplates — resolved 2026-11-25
 
 `build_name_abril.py` and `build_name_abril_gold.py` now share one

@@ -1,3 +1,4 @@
+import { main as calendar } from './calendar/main.ts';
 import { chatMain } from './chat.ts';
 import { main as tasks } from './connectors/google-tasks/google_tasks.ts';
 import { main as gws } from './connectors/gws-log/gws_log.ts';
@@ -38,6 +39,7 @@ export const AGENT_COMMANDS = new Set([
   'knowledge',
   'workflow',
   'studio',
+  'calendar',
 ]);
 
 export async function runAgent(argv: string[]): Promise<number> {
@@ -78,6 +80,8 @@ export async function runAgent(argv: string[]): Promise<number> {
       return workflow(args);
     case 'studio':
       return studio(args);
+    case 'calendar':
+      return calendar(args);
     default:
       return 2;
   }

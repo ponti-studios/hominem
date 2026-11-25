@@ -68,6 +68,21 @@ Cadence regeneration discovers the exact `Weekly Cadence` and
 `Monthly Cadence` list IDs from the Google Tasks API. It creates only
 missing open tasks, so rerunning it is safe.
 
+## Calendar analysis
+
+```bash
+hominem calendar analyze --start 2026-11-26 --end 2026-11-26
+hominem calendar analyze --no-pull
+```
+
+`calendar analyze` is read-only: it pulls only the primary calendar through
+the logged GWS wrapper, caches events under
+`~/.hominem/calendar/runs/<start>_to_<end>/`, and writes
+`events-cache.json`, `report.json`, and `report.md`.
+
+`--no-pull` reuses an existing cache. There are no calendar writes in this
+command.
+
 `knowledge validate` expects `batch.json`, `claims.jsonl`,
 `files.jsonl`, and a `bodies/` directory containing the manifest files.
 It checks schemas, exact file coverage, sequential `fNN-NNN` IDs,

@@ -41,6 +41,7 @@ The token and OAuth client live in `$HOMINEM_HOME` (default `~/.hominem`):
 | `hominem tasks` / `gws` / `spotify` / `instagram` / `ytm` / `linear` / `notion` / `ponti` | Runs audited external connectors |
 | `hominem knowledge validate [batch-dir]` | Selects a nearby extraction batch when omitted, then validates its JSONL |
 | `hominem workflow status [run-id]` | Selects a recent workflow run when omitted, then reads its persisted progress |
+| `hominem calendar analyze [--start] [--end] [--no-pull]` | Reads the primary Google calendar, writes a machine report and Markdown summary |
 | `hominem studio nameplate` | Renders deterministic diamond nameplates with platinum or gold presets |
 
 The launch agent must point at the compiled binary: macOS lists background items by executable name, so a `bun`/`node` path would show up as "node" instead of Hominem. `agent install` refuses to run from anything other than `hominem`.
