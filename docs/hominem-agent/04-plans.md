@@ -412,3 +412,5 @@ Synthetic renders prove repeatability, distinct presets, preview output,
 missing-input refusal, and named subprocess failure. The original
 Abril font and diamond texture were not present in the archive, so a
 live DAKOTA render remains an asset blocker rather than a code blocker.
+Both migrated source scripts were deleted after the Hominem port passed
+its render and audit tests.
