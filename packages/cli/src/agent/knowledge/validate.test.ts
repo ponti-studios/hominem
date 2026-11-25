@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { KnowledgeValidationError, validateExtraction } from './validate.ts';
+import { findBatches, KnowledgeValidationError, validateExtraction } from './validate.ts';
 
 let dir: string;
 
@@ -64,6 +64,17 @@ describe('extraction validator', () => {
       bodyCharacters: readFileSync(join(dir, 'bodies/note.md'), 'utf8').length,
       summary: { yours: 1, assistantKept: 0, reference: 0 },
     });
+  });
+
+  it('discovers batches near the current directory without entering ignored roots', () => {
+    writeBatch();
+    mkdirSync(join(dir, 'nested'));
+    mkdirSync(join(dir, 'nested/batch-two'));
+    writeFileSync(join(dir, 'nested/batch-two/batch.json'), '{}');
+    mkdirSync(join(dir, 'node_modules'));
+    mkdirSync(join(dir, 'node_modules/hidden'));
+    writeFileSync(join(dir, 'node_modules/hidden/batch.json'), '{}');
+    expect(findBatches(dir)).toEqual(['.', 'nested/batch-two']);
   });
 
   it('rejects non-verbatim best sentences and per-file count drift', () => {

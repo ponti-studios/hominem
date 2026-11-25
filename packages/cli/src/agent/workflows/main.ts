@@ -1,12 +1,30 @@
-import { getWorkflowStatus } from './runtime.ts';
+import { select } from '../select.ts';
+import { getWorkflowStatus, listWorkflows } from './runtime.ts';
 
 export async function main(args: string[]): Promise<number> {
-  if (args[0] !== 'status' || !args[1] || args.length !== 2) {
-    process.stderr.write('hominem workflow: expected status <run-id>\n');
+  if (args[0] !== 'status' || args.length > 2) {
+    process.stderr.write('hominem workflow: expected status [run-id]\n');
     return 2;
   }
   try {
-    process.stdout.write(`${JSON.stringify(getWorkflowStatus(args[1]), null, 2)}\n`);
+    let id = args[1];
+    if (!id) {
+      const choices = listWorkflows();
+      if (choices.length === 0) {
+        process.stderr.write('No workflow runs are available.\n');
+        return 2;
+      }
+      const selected = await select(
+        'Select a workflow run:',
+        choices.map((choice) => ({
+          value: choice.id,
+          label: `${choice.name} · ${choice.status} · ${choice.id}`,
+        })),
+      );
+      if (!selected) return 2;
+      id = selected;
+    }
+    process.stdout.write(`${JSON.stringify(getWorkflowStatus(id), null, 2)}\n`);
     return 0;
   } catch (error) {
     process.stderr.write(

@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
 import { z } from 'zod';
@@ -66,6 +66,25 @@ export class KnowledgeValidationError extends Error {
       `extraction batch has ${issues.length} validation error${issues.length === 1 ? '' : 's'}`,
     );
   }
+}
+
+export function findBatches(directory: string, maxDepth = 2): string[] {
+  const root = resolve(directory);
+  const found = new Set<string>();
+  const ignored = new Set(['.git', 'node_modules', 'build', 'dist']);
+  const visit = (current: string, depth: number) => {
+    if (depth > maxDepth) return;
+    if (existsSync(join(current, 'batch.json'))) found.add(current);
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (!entry.isDirectory() || ignored.has(entry.name)) continue;
+      visit(join(current, entry.name), depth + 1);
+    }
+  };
+  visit(root, 0);
+  return [...found].sort().map((path) => {
+    const value = relative(root, path);
+    return value ? value : '.';
+  });
 }
 
 function readJson(path: string): unknown {

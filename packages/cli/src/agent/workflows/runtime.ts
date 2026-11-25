@@ -21,6 +21,13 @@ export interface WorkflowStatus<R = unknown> {
   errors: Array<{ key: string; message: string }>;
 }
 
+export interface WorkflowChoice {
+  id: string;
+  name: string;
+  status: string;
+  updatedAt: string;
+}
+
 export interface WorkflowOptions<T, R> {
   name: string;
   items: WorkflowItem<T>[];
@@ -147,6 +154,28 @@ function statusFor<R>(runId: string, path?: string): WorkflowStatus<R> {
 
 export function getWorkflowStatus<R = unknown>(runId: string, path?: string): WorkflowStatus<R> {
   return statusFor(runId, path);
+}
+
+export function listWorkflows(path?: string, limit = 20): WorkflowChoice[] {
+  const db = connect(path);
+  try {
+    return db
+      .prepare(
+        `SELECT id, name, status, updated_at
+         FROM workflow_runs
+         ORDER BY updated_at DESC
+         LIMIT ?`,
+      )
+      .all(limit)
+      .map((row) => ({
+        id: String(row['id']),
+        name: String(row['name']),
+        status: String(row['status']),
+        updatedAt: String(row['updated_at']),
+      }));
+  } finally {
+    db.close();
+  }
 }
 
 export async function runWorkflow<T, R>(

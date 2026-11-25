@@ -60,8 +60,8 @@ hominem ytm <command...>
 hominem linear <command...>
 hominem notion <command...>
 hominem ponti <command...>
-hominem knowledge validate <batch-dir> [bodies-dir]
-hominem workflow status <run-id>
+hominem knowledge validate [batch-dir] [bodies-dir]
+hominem workflow status [run-id]
 ```
 
 Cadence regeneration discovers the exact `Weekly Cadence` and
@@ -76,6 +76,10 @@ per-file claim counts, and verbatim `best_sentence` values.
 The workflow runtime persists stable worker keys, attempts, results, and
 failures in `~/.hominem/agent.db`. Resuming skips completed keys and
 retries only pending or failed workers. `workflow status` is read-only.
+When its ID is omitted, an interactive terminal presents recent runs.
+`knowledge validate` similarly discovers nearby `batch.json` directories.
+Non-interactive shells print the available choices and exit without
+guessing.
 
 ## Machine configuration
 

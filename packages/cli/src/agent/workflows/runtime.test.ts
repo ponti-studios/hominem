@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getWorkflowStatus, runWorkflow } from './runtime.ts';
+import { getWorkflowStatus, listWorkflows, runWorkflow } from './runtime.ts';
 
 let dir: string;
 let path: string;
@@ -85,6 +85,7 @@ describe('workflow runtime', () => {
       },
     });
     expect(maximum).toBe(2);
+    expect(listWorkflows(path).map((run) => run.name)).toEqual(['cluster']);
   });
 
   it('refuses a resume with a changed worker set', async () => {
