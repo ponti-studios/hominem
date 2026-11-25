@@ -29,6 +29,13 @@ describe('handleCallback', () => {
     });
   });
 
+  it('identifies Hominem errors without changing the Google default', () => {
+    expect(handleCallback('/callback?state=s&error=access_denied', 's', 'Hominem')).toEqual({
+      kind: 'fail',
+      reason: 'Hominem returned access_denied',
+    });
+  });
+
   it('does not let an error with the wrong state abort sign-in', () => {
     expect(handleCallback('/callback?state=evil&error=access_denied', 's')).toEqual({
       kind: 'ignore',

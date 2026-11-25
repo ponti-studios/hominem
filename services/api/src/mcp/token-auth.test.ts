@@ -339,8 +339,14 @@ describe('mcp bearer token auth', () => {
       }
 
       const fullyScopedWriterTools = await discoverNames(fullyScopedFinanceWriter, 'finance');
+      const fullWriteScopes = scopesByToken.hmt_finance_full_write_token;
       expect(fullyScopedWriterTools.filter((name) => name.startsWith('finance_'))).toEqual(
-        writeToolNames,
+        financeTools
+          .filter(
+            (tool) =>
+              !tool.readOnly && tool.scopes.every((scope) => fullWriteScopes.includes(scope)),
+          )
+          .map((tool) => tool.name),
       );
     } finally {
       await financeReader.close();

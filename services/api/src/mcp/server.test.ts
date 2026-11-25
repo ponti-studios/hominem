@@ -310,6 +310,37 @@ describe('mcp server transport', () => {
     });
   });
 
+  it.each([
+    'finance_wealth_brief',
+    'finance_wealth_look',
+    'finance_wealth_close',
+    'finance_wealth_integrity',
+  ])('rejects %s without finance:read', async (name) => {
+    const app = createApp();
+    const response = await app.fetch(
+      new Request('http://localhost/api/mcp', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer test-token',
+          'content-type': 'application/json',
+          'x-mcp-scopes': 'career:read',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 101,
+          method: 'tools/call',
+          params: { name, arguments: {} },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'insufficient_scope',
+      required_scopes: ['finance:read'],
+    });
+  });
+
   it('does not authorize a Better Auth cookie session as MCP', async () => {
     const app = createApp({
       ...mcpAuthContext,

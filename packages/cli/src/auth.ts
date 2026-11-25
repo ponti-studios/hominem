@@ -22,14 +22,14 @@ const PAGES = {
 
 // Resolves with the auth code Google redirects back with. The server only moves bytes: what each
 // request means is decided by handleCallback.
-function waitForCode(server: Server, state: string): Promise<string> {
+export function waitForCode(server: Server, state: string, provider = 'Google'): Promise<string> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error('Timed out waiting for the Google redirect.')),
+      () => reject(new Error(`Timed out waiting for the ${provider} redirect.`)),
       CALLBACK_TIMEOUT_MS,
     );
     server.on('request', (req, res) => {
-      const action = handleCallback(req.url ?? '/', state);
+      const action = handleCallback(req.url ?? '/', state, provider);
       if (action.kind === 'ignore') {
         res.writeHead(404).end();
         return;

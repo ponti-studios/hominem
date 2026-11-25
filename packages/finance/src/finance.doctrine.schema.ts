@@ -149,3 +149,16 @@ export const doctrineImportOutputSchema = z.object({
     lenses: z.number().int().nonnegative(),
   }),
 });
+
+export type SyncDoctrine = z.input<typeof syncDoctrineSchema>;
+export type MatchMode = NonNullable<SyncDoctrine['merchantRules'][number]['matchMode']>;
+export type DoctrineRule = Pick<
+  SyncDoctrine['merchantRules'][number],
+  'matchMode' | 'pattern' | 'note'
+>;
+export type MerchantRule = SyncDoctrine['merchantRules'][number];
+export type TagRule = SyncDoctrine['tagRules'][number];
+export type AmountRule = SyncDoctrine['amountRules'][number];
+export type TransferRule = SyncDoctrine['transferMerchants'][number];
+export type IncomePattern = SyncDoctrine['incomePatterns'][number];
+export type DoctrineLens = SyncDoctrine['lenses'][number];

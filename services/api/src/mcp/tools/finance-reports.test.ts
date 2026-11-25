@@ -927,6 +927,12 @@ describe('finance_runway', () => {
       currencyCode: 'USD',
       amount: 100,
     });
+    await saveRunwayBudget({
+      userId,
+      categoryId: category.id!,
+      currencyCode: 'GBP',
+      amount: 900,
+    });
 
     const saved = content(
       await callTool(userId, 'finance_runway', { asOf: '2026-07-31', projectionWeeks: 1 }),
@@ -937,7 +943,7 @@ describe('finance_runway', () => {
       await callTool(userId, 'finance_runway', {
         asOf: '2026-07-31',
         projectionWeeks: 1,
-        monthlyBudgets: [{ category: 'Saved runway cap', amountCents: 50_000 }],
+        monthlyBudgets: [{ category: 'saved runway cap', amountCents: 50_000 }],
       }),
     );
     expect(overridden.weeklyVariableAllowance).toBe(114.99);

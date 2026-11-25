@@ -77,6 +77,8 @@ export interface SheetBatchOptions extends SheetImportOptions {
   dryRun?: boolean;
   /** Explicit confirmation for mode: "replace". */
   iUnderstand?: boolean;
+  /** Allow provider rows to update category, tags, and notes on existing transactions. */
+  overwriteAnnotations?: boolean;
 }
 
 export type SheetRejectionReason =
@@ -122,6 +124,10 @@ export function normalizeSource(value: string | null | undefined): SheetSource {
   const normalized = (value ?? '').trim().toLowerCase();
   if (normalized === 'plaid' || normalized === 'starling') return normalized;
   return 'manual';
+}
+
+function canOverwriteAnnotations(input: SheetTransactionInput, overwriteAnnotations: boolean) {
+  return overwriteAnnotations || normalizeSource(input.source) === 'manual';
 }
 
 export function inferTransactionType(
@@ -745,11 +751,79 @@ async function applyCounterpartLink(
   }
 }
 
+export async function linkTransferPair(
+  userId: string,
+  transactionId: string,
+  counterpartId: string,
+): Promise<boolean> {
+  if (transactionId === counterpartId) return false;
+  return db.transaction().execute(async (trx) => {
+    const rows = await trx
+      .selectFrom('app.financeTransactions')
+      .select([
+        'id',
+        'accountId',
+        'amount',
+        'currencyCode',
+        'postedOn',
+        'categoryId',
+        'counterpartId',
+      ])
+      .where('userId', '=', userId)
+      .where('id', 'in', [transactionId, counterpartId])
+      .orderBy('id')
+      .forUpdate()
+      .execute();
+    if (rows.length !== 2) return false;
+    const [first, second] = rows;
+    if (
+      first.counterpartId ||
+      second.counterpartId ||
+      first.accountId === second.accountId ||
+      first.currencyCode !== second.currencyCode ||
+      Math.round(Number(first.amount) * 100) !== -Math.round(Number(second.amount) * 100) ||
+      Math.abs(Date.parse(String(first.postedOn)) - Date.parse(String(second.postedOn))) >
+        3 * 86_400_000 ||
+      !first.categoryId ||
+      !second.categoryId
+    ) {
+      return false;
+    }
+    const categories = await trx
+      .selectFrom('app.financeCategories')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('name', '=', 'Transfers')
+      .where('id', 'in', [first.categoryId, second.categoryId])
+      .execute();
+    if (
+      !categories.some((category) => category.id === first.categoryId) ||
+      !categories.some((category) => category.id === second.categoryId)
+    ) {
+      return false;
+    }
+    await trx
+      .updateTable('app.financeTransactions')
+      .set({ counterpartId: second.id })
+      .where('userId', '=', userId)
+      .where('id', '=', first.id)
+      .execute();
+    await trx
+      .updateTable('app.financeTransactions')
+      .set({ counterpartId: first.id })
+      .where('userId', '=', userId)
+      .where('id', '=', second.id)
+      .execute();
+    return true;
+  });
+}
+
 export async function upsertSheetTransaction(
   userId: string,
   input: SheetTransactionInput,
   accountMap?: Record<string, string>,
   conflictRetry = 0,
+  overwriteAnnotations = true,
 ): Promise<{ id: string; created: boolean; updated: boolean; accountId: string }> {
   const invalid = validateRow(input);
   if (invalid) throw new Error(invalid);
@@ -780,10 +854,11 @@ export async function upsertSheetTransaction(
     );
   const amount = toNumber(input.amountCents) / 100;
 
-  const existing = await db
+  const identityQuery = db
     .selectFrom('app.financeTransactions')
     .select([
       'id',
+      'externalId',
       'categoryId',
       'counterpartId',
       'excluded',
@@ -800,7 +875,9 @@ export async function upsertSheetTransaction(
       'settledAmount',
       'settledCurrencyCode',
     ])
-    .where('userId', '=', userId)
+    .where('userId', '=', userId);
+
+  let existing = await identityQuery
     .where('externalId', '=', externalId)
     .$if(
       Boolean(input.externalId?.trim()) && !input.externalId?.trim().startsWith('sheet:'),
@@ -810,13 +887,29 @@ export async function upsertSheetTransaction(
     .limit(1)
     .executeTakeFirst();
 
-  const categoryId =
-    input.category === undefined
-      ? existing
-        ? existing.categoryId
-        : await ensureFinanceCategoryId(userId, undefined)
-      : await ensureFinanceCategoryId(userId, input.category);
-  const notes = input.notes === undefined ? (existing?.notes ?? null) : input.notes;
+  if (!existing && input.externalId?.trim() && !externalId.startsWith('sheet:')) {
+    const naturalId = computeSheetExternalId(
+      input.postedOn,
+      resolved.accountId,
+      description,
+      input.amountCents,
+      currencyCode,
+    );
+    existing = await identityQuery
+      .where('externalId', '=', naturalId)
+      .where('accountId', '=', resolved.accountId)
+      .where('source', '=', source)
+      .executeTakeFirst();
+  }
+
+  let categoryId = existing?.categoryId ?? null;
+  if (!existing || (overwriteAnnotations && input.category !== undefined)) {
+    categoryId = await ensureFinanceCategoryId(userId, input.category);
+  }
+  const notes =
+    (overwriteAnnotations || !existing) && input.notes !== undefined
+      ? input.notes
+      : (existing?.notes ?? null);
   const orderNumber =
     input.orderNumber === undefined ? (existing?.orderNumber ?? null) : input.orderNumber;
   const settledAmount =
@@ -839,15 +932,19 @@ export async function upsertSheetTransaction(
   const effectiveSource =
     input.source === undefined || isSheetIdentity ? (existing?.source ?? source) : source;
 
-  const tagIds = await ensureTagIds(userId, parseTags(input.tags));
+  const tagIds =
+    !overwriteAnnotations && existing ? [] : await ensureTagIds(userId, parseTags(input.tags));
 
   if (existing) {
     const excluded = input.excluded ?? existing.excluded;
     const recurring = input.recurring ?? existing.recurring;
     const merchantName = existing.description === description ? existing.merchantName : description;
-    const currentTagIds = await getTransactionTagIds(existing.id, userId);
+    const currentTagIds = overwriteAnnotations
+      ? await getTransactionTagIds(existing.id, userId)
+      : [];
     const currentTagSet = new Set(currentTagIds);
-    const nextTagSet = input.tags === undefined ? currentTagSet : new Set(tagIds);
+    const nextTagSet =
+      !overwriteAnnotations || input.tags === undefined ? currentTagSet : new Set(tagIds);
     let tagsSame = currentTagSet.size === nextTagSet.size;
     if (tagsSame) {
       for (const id of currentTagSet) {
@@ -858,6 +955,7 @@ export async function upsertSheetTransaction(
       }
     }
     const mutableSame =
+      existing.externalId === externalId &&
       existing.categoryId === categoryId &&
       (existing.counterpartId ?? null) ===
         (input.counterpartId === undefined ? existing.counterpartId : counterpartId) &&
@@ -883,10 +981,10 @@ export async function upsertSheetTransaction(
     await db
       .updateTable('app.financeTransactions')
       .set({
-        categoryId,
+        externalId,
+        ...(overwriteAnnotations ? { categoryId, notes } : {}),
         counterpartId: input.counterpartId === undefined ? existing.counterpartId : counterpartId,
         excluded,
-        notes,
         orderNumber,
         transactionType,
         merchantName,
@@ -905,7 +1003,8 @@ export async function upsertSheetTransaction(
     const nextCounterpartId =
       input.counterpartId === undefined ? existing.counterpartId : counterpartId;
     await applyCounterpartLink(userId, existing.id, existing.counterpartId, nextCounterpartId);
-    if (input.tags !== undefined) await setTransactionTags(existing.id, userId, tagIds);
+    if (overwriteAnnotations && input.tags !== undefined)
+      await setTransactionTags(existing.id, userId, tagIds);
     return { id: existing.id, created: false, updated: true, accountId: resolved.accountId };
   }
 
@@ -947,7 +1046,13 @@ export async function upsertSheetTransaction(
         )
         .executeTakeFirst();
       if (raced && conflictRetry < 1)
-        return upsertSheetTransaction(userId, input, accountMap, conflictRetry + 1);
+        return upsertSheetTransaction(
+          userId,
+          input,
+          accountMap,
+          conflictRetry + 1,
+          overwriteAnnotations,
+        );
       throw new ValidationError('external_id_conflict');
     }
     throw error;
@@ -1006,6 +1111,7 @@ async function projectImportSplit(
   userId: string,
   valid: ValidatedSheetRow[],
   mode: 'append' | 'replace',
+  overwriteAnnotations: boolean,
 ): Promise<{ created: number; updated: number }> {
   if (mode === 'replace') return { created: valid.length, updated: 0 };
 
@@ -1013,6 +1119,16 @@ async function projectImportSplit(
     row,
     source: normalizeSource(row.input.source),
     externalId: row.externalId,
+    naturalId:
+      row.input.externalId?.trim() && !row.input.externalId.trim().startsWith('sheet:')
+        ? computeSheetExternalId(
+            row.input.postedOn,
+            row.accountId,
+            row.input.description,
+            row.input.amountCents,
+            row.input.currencyCode.toUpperCase(),
+          )
+        : null,
     lookupKey: row.input.externalId?.trim()?.startsWith('sheet:')
       ? row.externalId
       : row.input.externalId?.trim()
@@ -1024,6 +1140,7 @@ async function projectImportSplit(
     string,
     {
       id: string;
+      externalId: string | null;
       accountId: string;
       source: string | null;
       categoryId: string | null;
@@ -1069,7 +1186,9 @@ async function projectImportSplit(
       .where(
         'externalId',
         'in',
-        chunk.map((key) => key.externalId),
+        chunk.flatMap((key) =>
+          key.naturalId ? [key.externalId, key.naturalId] : [key.externalId],
+        ),
       )
       .execute();
     for (const row of rows) {
@@ -1098,7 +1217,11 @@ async function projectImportSplit(
   let created = 0;
   let updated = 0;
   for (const key of keys) {
-    const found = existing.get(key.lookupKey);
+    const found =
+      existing.get(key.lookupKey) ??
+      (key.naturalId
+        ? existing.get(`${key.row.accountId}|${key.source}|${key.naturalId}`)
+        : undefined);
     if (!found) {
       created += 1;
       continue;
@@ -1123,11 +1246,16 @@ async function projectImportSplit(
     const currentTags = existingTags.get(found.id) ?? new Set<string>();
     const tagsSame =
       tagNames.size === currentTags.size && [...tagNames].every((name) => currentTags.has(name));
-    const unchanged =
-      found.categoryId ===
+    const annotationsSame =
+      !canOverwriteAnnotations(input, overwriteAnnotations) ||
+      (found.categoryId ===
         (input.category === undefined ? found.categoryId : incomingCategoryId(input.category)) &&
+        (found.notes ?? null) === (input.notes === undefined ? found.notes : input.notes) &&
+        tagsSame);
+    const unchanged =
+      annotationsSame &&
+      found.externalId === key.externalId &&
       found.excluded === (input.excluded ?? found.excluded) &&
-      (found.notes ?? null) === (input.notes === undefined ? found.notes : input.notes) &&
       (found.orderNumber ?? null) ===
         (input.orderNumber === undefined ? found.orderNumber : input.orderNumber) &&
       found.recurring === (input.recurring ?? found.recurring) &&
@@ -1146,8 +1274,7 @@ async function projectImportSplit(
       found.settledCurrencyCode === settledCurrencyCode &&
       (input.source === undefined || input.externalId?.trim()?.startsWith('sheet:')
         ? true
-        : found.source === key.source) &&
-      tagsSame;
+        : found.source === key.source);
     if (!unchanged) updated += 1;
   }
   return { created, updated };
@@ -1155,13 +1282,7 @@ async function projectImportSplit(
 
 export async function importSheetTransactions(
   userId: string,
-  options: {
-    transactions: SheetTransactionInput[];
-    mode?: 'append' | 'replace';
-    dryRun?: boolean;
-    accountMap?: Record<string, string>;
-    iUnderstand?: boolean;
-  },
+  options: SheetBatchOptions & { transactions: SheetTransactionInput[] },
 ): Promise<SheetImportSummary> {
   const {
     transactions,
@@ -1169,6 +1290,7 @@ export async function importSheetTransactions(
     dryRun = false,
     accountMap,
     iUnderstand = false,
+    overwriteAnnotations = false,
   } = options;
   const summary: SheetImportSummary = {
     received: transactions.length,
@@ -1186,7 +1308,7 @@ export async function importSheetTransactions(
 
   if (dryRun) {
     summary.upserted += valid.length;
-    const split = await projectImportSplit(userId, valid, mode);
+    const split = await projectImportSplit(userId, valid, mode, overwriteAnnotations);
     summary.created = split.created;
     summary.updated = split.updated;
     return summary;
@@ -1212,7 +1334,13 @@ export async function importSheetTransactions(
 
   for (const row of valid) {
     try {
-      const result = await upsertSheetTransaction(userId, row.input, accountMap);
+      const result = await upsertSheetTransaction(
+        userId,
+        row.input,
+        accountMap,
+        0,
+        canOverwriteAnnotations(row.input, overwriteAnnotations),
+      );
       summary.upserted += 1;
       if (result.created) summary.created += 1;
       else if (result.updated) summary.updated += 1;

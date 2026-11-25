@@ -2,6 +2,7 @@ import { db, pool, sql } from '@hominem/db/core';
 import { parseSheetTransactionsCsv } from '@hominem/finance-services';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { updateFinanceTransactions } from '../../application/finance.transactions-management.service';
 import { callTool, type McpToolResult } from '../tool-registry';
 import './finance';
 
@@ -11,6 +12,7 @@ const checkingId = 'f2000011-0000-4000-8000-000000000001';
 const gbpId = 'f2000011-0000-4000-8000-000000000002';
 const secondCheckingId = 'f2000011-0000-4000-8000-000000000003';
 const thirdCheckingId = 'f2000011-0000-4000-8000-000000000004';
+const otherCheckingId = 'f2000011-0000-4000-8000-000000000005';
 
 type Content = Record<string, unknown> & {
   categories?: Array<{ id: string; name: string }>;
@@ -36,10 +38,12 @@ beforeAll(async () => {
       [id, `Sheet Import User ${id}`, `${id}@test.hominem.dev`, true],
     );
   }
-  await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
-  await db.deleteFrom('app.financeCategories').where('userId', '=', userId).execute();
-  await db.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
-  await db.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
+  for (const id of [userId, otherUserId]) {
+    await db.deleteFrom('app.financeTransactions').where('userId', '=', id).execute();
+    await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
+    await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
+    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
+  }
   await db
     .insertInto('app.financeAccounts')
     .values([
@@ -77,6 +81,16 @@ beforeAll(async () => {
         id: thirdCheckingId,
         userId,
         name: 'Sheet Checking Three',
+        accountType: 'checking',
+        currencyCode: 'USD',
+        lifecycleStatus: 'open',
+        includeInNetWorth: true,
+        metadata: {},
+      },
+      {
+        id: otherCheckingId,
+        userId: otherUserId,
+        name: 'Other Sheet Checking',
         accountType: 'checking',
         currencyCode: 'USD',
         lifecycleStatus: 'open',
@@ -485,6 +499,321 @@ describe('finance_transaction_upsert', () => {
 });
 
 describe('finance_transactions_import', () => {
+  it('preserves user annotations on provider re-sync while applying provider corrections', async () => {
+    const row = {
+      postedOn: '2026-10-25',
+      account: checkingId,
+      description: 'Overlapping feed',
+      amountCents: -1234,
+      currencyCode: 'USD',
+      source: 'plaid',
+      externalId: 'overlapping-feed-1',
+      category: 'Feed category',
+      tags: ['feed-tag'],
+      notes: 'Feed note',
+    };
+    const created = content(
+      await callTool(userId, 'finance_transactions_import', { transactions: [row] }),
+    );
+    expect(created).toMatchObject({ created: 1, updated: 0 });
+    const transaction = await db
+      .selectFrom('app.financeTransactions')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('description', '=', row.description)
+      .executeTakeFirstOrThrow();
+    const initial = content(
+      await callTool(userId, 'finance_transaction_search', { query: row.description }),
+    );
+    expect(initial.transactions).toEqual([
+      expect.objectContaining({
+        id: transaction.id,
+        categoryName: row.category,
+        tags: row.tags,
+        notes: row.notes,
+      }),
+    ]);
+
+    const category = await db
+      .insertInto('app.financeCategories')
+      .values({ userId, name: 'User category' })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    const tag = await db
+      .insertInto('app.tags')
+      .values({
+        ownerUserid: userId,
+        name: 'user-tag',
+        slug: 'user-tag',
+        path: 'user-tag',
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    await updateFinanceTransactions(userId, [transaction.id], {
+      action: 'category',
+      categoryId: category.id,
+      tagIds: [tag.id],
+    });
+    await updateFinanceTransactions(userId, [transaction.id], {
+      action: 'notes',
+      value: 'User note',
+    });
+
+    const replay = {
+      ...row,
+      category: 'Ignored provider category',
+      tags: ['ignored-provider-tag'],
+      notes: 'Ignored provider note',
+    };
+    const preview = content(
+      await callTool(userId, 'finance_transactions_import', {
+        dryRun: true,
+        transactions: [replay],
+      }),
+    );
+    const unchanged = content(
+      await callTool(userId, 'finance_transactions_import', { transactions: [replay] }),
+    );
+    expect(preview).toMatchObject({ created: 0, updated: 0 });
+    expect(unchanged).toMatchObject({ created: 0, updated: 0 });
+
+    const corrected = { ...replay, description: 'Corrected overlapping feed', amountCents: -1500 };
+    const correctionPreview = content(
+      await callTool(userId, 'finance_transactions_import', {
+        dryRun: true,
+        transactions: [corrected],
+      }),
+    );
+    const correction = content(
+      await callTool(userId, 'finance_transactions_import', { transactions: [corrected] }),
+    );
+    expect(correctionPreview).toMatchObject({ created: 0, updated: 1 });
+    expect(correction).toMatchObject({ created: 0, updated: 1 });
+    const result = content(
+      await callTool(userId, 'finance_transaction_search', { query: corrected.description }),
+    );
+    expect(result.transactions).toEqual([
+      expect.objectContaining({
+        id: transaction.id,
+        amount: -15,
+        categoryName: 'User category',
+        tags: ['user-tag'],
+        notes: 'User note',
+      }),
+    ]);
+    expect(
+      await db
+        .selectFrom('app.financeCategories')
+        .select('id')
+        .where('userId', '=', userId)
+        .where('name', '=', replay.category)
+        .execute(),
+    ).toEqual([]);
+    expect(
+      await db
+        .selectFrom('app.tags')
+        .select('id')
+        .where('ownerUserid', '=', userId)
+        .where('name', '=', replay.tags[0]!)
+        .execute(),
+    ).toEqual([]);
+  });
+
+  it('allows explicit provider annotation replacement and retains manual patch semantics', async () => {
+    const row = {
+      postedOn: '2026-10-26',
+      account: checkingId,
+      description: 'Annotation replacement',
+      amountCents: -500,
+      currencyCode: 'USD',
+      source: 'starling',
+      externalId: 'annotation-replacement-1',
+      category: 'Original annotation',
+      tags: ['original-annotation'],
+      notes: 'Original note',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [row] });
+    const clear = { ...row, category: null, tags: [], notes: null };
+    const preview = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [clear],
+        overwriteAnnotations: true,
+        dryRun: true,
+      }),
+    );
+    const update = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [clear],
+        overwriteAnnotations: true,
+      }),
+    );
+    expect(preview).toMatchObject({ created: 0, updated: 1 });
+    expect(update).toMatchObject({ created: 0, updated: 1 });
+    const updated = content(
+      await callTool(userId, 'finance_transaction_search', { query: row.description }),
+    );
+    expect(updated.transactions).toEqual([
+      expect.objectContaining({ categoryName: 'Uncategorized', tags: [], notes: null }),
+    ]);
+
+    const manual = { ...row, source: 'manual', externalId: 'manual-annotation-replacement' };
+    await callTool(userId, 'finance_transactions_import', { transactions: [manual] });
+    const manualUpdate = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [{ ...manual, notes: 'Manual correction' }],
+      }),
+    );
+    expect(manualUpdate).toMatchObject({ created: 0, updated: 1 });
+    const manualResult = await db
+      .selectFrom('app.financeTransactions')
+      .select('notes')
+      .where('userId', '=', userId)
+      .where('externalId', '=', manual.externalId)
+      .executeTakeFirstOrThrow();
+    expect(manualResult.notes).toBe('Manual correction');
+  });
+
+  it('preserves annotations when a provider replay uses the natural key', async () => {
+    const row = {
+      postedOn: '2026-10-29',
+      account: checkingId,
+      description: 'Natural-key provider replay',
+      amountCents: -250,
+      currencyCode: 'USD',
+      source: 'starling',
+      category: 'Natural feed category',
+      tags: ['natural-feed-tag'],
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [row] });
+    const transaction = await db
+      .selectFrom('app.financeTransactions')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('description', '=', row.description)
+      .executeTakeFirstOrThrow();
+    await updateFinanceTransactions(userId, [transaction.id], {
+      action: 'notes',
+      value: 'Natural-key user note',
+    });
+
+    const replay = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [{ ...row, notes: 'Feed note' }],
+      }),
+    );
+    expect(replay).toMatchObject({ created: 0, updated: 0 });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select('notes')
+      .where('id', '=', transaction.id)
+      .where('userId', '=', userId)
+      .executeTakeFirstOrThrow();
+    expect(stored.notes).toBe('Natural-key user note');
+  });
+
+  it('does not overwrite annotations edited while a provider correction is waiting to write', async () => {
+    const row = {
+      postedOn: '2026-10-27',
+      account: checkingId,
+      description: 'Concurrent annotation edit',
+      amountCents: -100,
+      currencyCode: 'USD',
+      source: 'starling',
+      externalId: 'concurrent-annotation-edit',
+      notes: 'Feed note',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [row] });
+    const transaction = await db
+      .selectFrom('app.financeTransactions')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('externalId', '=', row.externalId)
+      .executeTakeFirstOrThrow();
+    const client = await pool.connect();
+    let committed = false;
+    let sync: Promise<McpToolResult> | undefined;
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        'UPDATE app.finance_transactions SET notes = $1 WHERE id = $2 AND user_id = $3',
+        ['Concurrent user note', transaction.id, userId],
+      );
+      const { rows } = await client.query<{ pid: number }>('SELECT pg_backend_pid() AS pid');
+      const blockerPid = rows[0]!.pid;
+      sync = callTool(userId, 'finance_transactions_import', {
+        transactions: [{ ...row, amountCents: -200 }],
+      });
+
+      let blocked = false;
+      const deadline = Date.now() + 5000;
+      while (!blocked && Date.now() < deadline) {
+        const status = await pool.query<{ blocked: boolean }>(
+          'SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE $1 = ANY(pg_blocking_pids(pid))) AS blocked',
+          [blockerPid],
+        );
+        blocked = status.rows[0]!.blocked;
+        if (!blocked) await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(blocked).toBe(true);
+      await client.query('COMMIT');
+      committed = true;
+      expect(content(await sync)).toMatchObject({ created: 0, updated: 1 });
+    } finally {
+      if (!committed) {
+        await client.query('ROLLBACK');
+        if (sync) await sync;
+      }
+      client.release();
+    }
+
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['amount', 'notes'])
+      .where('id', '=', transaction.id)
+      .where('userId', '=', userId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toEqual({ amount: -2, notes: 'Concurrent user note' });
+  });
+
+  it('keeps provider re-syncs and annotation overrides scoped to the owner', async () => {
+    const row = {
+      postedOn: '2026-10-28',
+      account: checkingId,
+      description: 'Owner-scoped provider identity',
+      amountCents: -200,
+      currencyCode: 'USD',
+      source: 'plaid',
+      externalId: 'shared-provider-id',
+      notes: 'First owner',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [row] });
+    const denied = content(
+      await callTool(otherUserId, 'finance_transactions_import', { transactions: [row] }),
+    );
+    expect(denied.rejected).toEqual([{ index: 0, reason: 'unknown_account' }]);
+
+    const otherRow = { ...row, account: otherCheckingId, notes: 'Second owner' };
+    const created = content(
+      await callTool(otherUserId, 'finance_transactions_import', { transactions: [otherRow] }),
+    );
+    expect(created).toMatchObject({ created: 1, updated: 0 });
+    await callTool(otherUserId, 'finance_transactions_import', {
+      transactions: [{ ...otherRow, notes: 'Second owner correction' }],
+      overwriteAnnotations: true,
+    });
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select(['userId', 'notes'])
+      .where('externalId', '=', row.externalId)
+      .where('userId', 'in', [userId, otherUserId])
+      .orderBy('userId')
+      .execute();
+    expect(rows).toEqual([
+      { userId, notes: 'First owner' },
+      { userId: otherUserId, notes: 'Second owner correction' },
+    ]);
+  });
+
   it('rejects unknown item keys individually while importing valid neighbors', async () => {
     const result = content(
       await callTool(userId, 'finance_transactions_import', {

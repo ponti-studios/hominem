@@ -1155,6 +1155,12 @@ export const financeTransactionsImportInputSchema = z.object({
     .describe('Batch of sheet rows, in order, max 1000 per call.'),
   mode: z.enum(['append', 'replace']).default('append'),
   dryRun: z.boolean().default(false).describe('Validate and report without writing.'),
+  overwriteAnnotations: z
+    .boolean()
+    .optional()
+    .describe(
+      'When true, allow existing plaid or starling rows to replace category, tags, and notes. Defaults to false. New rows and manual-source rows retain normal import behavior.',
+    ),
   iUnderstand: z
     .boolean()
     .default(false)

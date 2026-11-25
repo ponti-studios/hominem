@@ -20,3 +20,5 @@ export * from './sheet-import';
 export * from './sheet-push';
 export * from './sheet-verify';
 export * from './import';
+export * from './finance.doctrine.schema';
+export * from './ingest';

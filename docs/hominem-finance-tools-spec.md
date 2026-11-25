@@ -84,14 +84,14 @@ accounts; the daily provider sync will keep surfacing new accounts
 
 **Input**
 
-| field               | type                  | req | notes                                                                           |
-| ------------------- | --------------------- | --- | ------------------------------------------------------------------------------- |
-| `name`              | string                | ✓   | display name, non-empty                                                         |
-| `currencyCode`      | string                | ✓   | ISO 4217                                                                        |
-| `allowedCurrencies` | string[]              |     | additional accepted transaction currencies; primary currency is always included |
-| `institution`       | string                |     | e.g. "Acme Bank"                                                                |
-| `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                         |
-| `status`            | enum `open`\|`closed` |     | default `open`                                                                  |
+| field               | type                  | req | notes                                                                               |
+| ------------------- | --------------------- | --- | ----------------------------------------------------------------------------------- |
+| `name`              | string                | ✓   | display name, non-empty                                                             |
+| `currencyCode`      | string                | ✓   | ISO 4217                                                                            |
+| `allowedCurrencies` | string[]              |     | additional accepted transaction currencies; primary currency is always included     |
+| `institution`       | string                |     | e.g. "Acme Bank"                                                                    |
+| `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                             |
+| `status`            | enum `open`\|`closed` |     | default `open`                                                                      |
 | `includeInNetWorth` | boolean               |     | counts toward net worth; default `true`; an existing account keeps its stored value |
 
 **Behavior.** §1.2 applies (open and closed accounts both match). Returns
@@ -302,9 +302,10 @@ double-counts internal movement (cf. `finance_net_worth`).
 - Deleting a row (§4) clears the link on its counterpart.
 - The target must exist and belong to a different account; violations →
   `invalid_counterpart`.
-- **No auto-detection in v1.** Pairing heuristics are a client concern
-  (the operator proved the manual workflow tonight); the model's job is
-  to hold the link once known.
+- Provider sync may link mutually unique, opposite-amount, same-currency
+  transfers across accounts within three days. It locks and verifies both
+  owner-scoped rows before linking them without rewriting annotations. Other
+  write paths do not auto-detect transfers.
 
 **Acceptance (live).** Link a real pair — the two legs of a dated internal
 transfer (one on each account) — read both back, link
@@ -377,7 +378,7 @@ transferMerchants.
 
 **Ordering is law.** All rule lists are first-match-wins by list order
 (train operators before the generic 'railway' hosting rule). The engine
-order is the sync's contract, not this store's: row-class detection
+order is the server sync's contract: row-class detection
 (transfers/income) runs before categorization, and amount rules fire
 before merchant rules.
 
@@ -389,6 +390,40 @@ archived sync's exact-merchant layer (425 rules in
 carries only the ordered substring rulings that survived inline, so
 rows the exact layer used to catch now queue for a ruling instead of
 being guessed.
+
+### Provider sync and local adapter
+
+`finance_sync` accepts provider feed data, not provider credentials. It resolves
+the authenticated owner's accounts and doctrine, routes and classifies rows,
+and imports settled transactions. Starling feed UIDs and Plaid transaction IDs
+are retained as provider identities; an exact natural-key match can adopt a
+stable ID when it first appears. Existing provider annotations are preserved
+unless an import explicitly requests `overwriteAnnotations`. Unroutable rows
+are held rather than guessed. When the CLI sends multiple batches, linking runs
+after all successful batches have landed.
+
+`finance_seed` provisions Starling identities and optionally imports doctrine.
+A same-named account without the requested identity must be linked explicitly;
+seeding does not claim or stamp it. `finance_balances` normalizes a caller's
+live Starling snapshot and reports cleared balances plus Spaces per currency.
+The CLI obtains provider data locally and authenticates to Hominem with OAuth;
+provider credentials are never sent to these tools. The current two-decimal
+money assumptions are unchanged pending the separate multi-currency rollout.
+
+### Owner report routines
+
+`finance_wealth_brief`, `finance_wealth_look`, `finance_wealth_close`, and
+`finance_wealth_integrity` are read-only `finance:read` tools that compute the
+morning brief, forward look, monthly close markdown, and integrity flags from
+the authenticated owner's ledger. Callers supply machine-local inputs: the
+previous bill snapshot (returned, never stored), look inputs and an optional
+USD-to-GBP rate, close anchors and cache, and integrity's sync checkpoint,
+anchors, watches, raw Plaid accounts, transactions, and liabilities, and raw
+Starling feeds. Starling feeds are normalized with the shared ingest code.
+When Plaid transactions start after an account's latest ledger date
+(`transactions_since`), its drift check is skipped and named rather than
+miscomputed. These routines keep their current GBP/USD assumptions; whether
+they become product features is open decision D11.
 
 **Acceptance.** 7 DB-backed MCP tests (empty read, created with
 canonicalized defaults, unchanged fingerprint, replaced, dryRun
@@ -417,7 +452,7 @@ that total is the invariant §3 must reproduce.
 later acceptance cheap) → §4 → §5 → §6 → §7 → §8.
 
 **Non-goals:** account delete/merge (destructive, no current need);
-automatic transfer detection (v1 stores links, clients propose them);
+general automatic transfer detection outside provider sync;
 raising the search `limit` cap (superseded by §3 for reconciliation;
 fine to raise independently if trivial); any change to natural-key or
 import semantics.

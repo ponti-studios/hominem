@@ -10,13 +10,15 @@ estimated_size: 'XL'
 
 ## Outcome
 
-**OPEN — USER DECISION REQUIRED.** The target end state is not decided.
-Phase 0 below can run now and does not depend on any decision. Everything after
-it depends on the open decisions in the proposed (not accepted)
-[finance core consolidation](../decisions/finance.core-consolidation.md)
-document.
+The owner directed implementation of the server-owned CLI finance migration.
+The CLI keeps provider credentials and machine-local state; the API owns
+ingest, classification, routing, writes, and reports. The broader architecture
+and product decisions in the proposed (not accepted)
+[finance core consolidation](../decisions/finance.core-consolidation.md) remain
+open; the implementation uses reversible compatibility and data-safety
+defaults rather than treating those decisions as settled.
 
-Candidate end states. None is a requirement until the product owner picks one:
+The analysis considered these alternatives before the implementation direction:
 
 - **Owner's draft:** reusable finance logic moves from the CLI wealth-manager
   into `@hominem/finance-services`, so any app or agent manages a user's
@@ -117,14 +119,25 @@ The draft marks W-002 and W-003 "Implemented". In this revision they count as
 have never run in `main`'s CI. This analysis did not run them, so that the
 owner's checkout stayed untouched.
 
-## Real gaps
+## Original gaps and current work
+
+The original inventory below remains evidence of the starting states, not a
+claim that every gap still exists. The current worktree implements provider
+sync and seed, live balances, shared runway orchestration, the four report
+routines (`hominem wealth brief`, `look`, `close`, and `integrity` over the
+`finance_wealth_*` tools), and the CLI OAuth adapter. Re-sync preserves user
+annotations, and the sync keeps provider IDs. The S2 wealth-manager files exist
+only on `feature/web-perf-cleanup`; integrating that branch must delete
+`packages/cli/src/agent/systems/wealth-manager/` rather than keep both copies.
+The task stays `Proposed` because D11 and the other open decisions are
+unresolved, and the same-path task conflict remains.
 
 | Gap                                                                                                       | Why it matters                                                                                                               |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| G1 Three code states (S1, S2, S3) and two versions of this task                                           | S2 lacks #614, which the CLI needs. S3 is uncommitted. Nothing can be consolidated until the owner reconciles them (D12).    |
+| G1 Three code states (S1, S2, S3) and two versions of this task                                           | S2 lacks #614, which the CLI needs. Full CLI integration requires reconciling S3 and the task versions (D12).                |
 | G2 Four classification stores, and none applies rules to imported transactions on `main`                  | Surfaces can classify the same merchant differently. Stores that reference categories by name drift after a merge or rename. |
 | G3 Sync sends no provider `externalId`                                                                    | Dedupe depends on the description, so a descriptor change creates a duplicate. The fix is decision D13.                      |
-| G4 Overlap re-sync may overwrite a user's category or tag edits                                           | Untested. Needs a test before any behavior change (D7).                                                                      |
+| G4 Overlap re-sync may overwrite a user's category or tag edits                                           | Reproduced on the baseline. Provider batches now preserve category, tags, and notes by default; D7 remains open.             |
 | G5 Finance logic is split between `packages/finance` and `services/api/src/application`                   | "The package already owns finance behavior" is not true yet.                                                                 |
 | G6 People and agents get different capabilities                                                           | Whether they must be equal is D10.                                                                                           |
 | G7 Money is 2dp `* 100` with a `'USD'` default, `allowedCurrencies` buckets, and primary-currency budgets | Contradicts the multi-currency plan. When to address it is D14.                                                              |
@@ -133,19 +146,19 @@ owner's checkout stayed untouched.
 
 ## Work sequence
 
-### Phase 0: does not depend on any open decision
+### Reconciliation and safety work
 
-| ID    | Work item                                                            | Depends on    | Validation               | Done when                                                                                         |
-| ----- | -------------------------------------------------------------------- | ------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
-| W-000 | The product owner resolves, amends, or rejects the decision document | product owner | —                        | Each D1–D14 that later work depends on has a recorded answer                                      |
-| W-001 | Reconcile S1/S2/S3 and the two versions of this task                 | W-000 (D12)   | `pnpm run tasks:check`   | One task version is the record. S2 has #614. S3 is committed, revised, or discarded deliberately. |
-| W-002 | Prove or disprove re-sync overwrite (G4)                             | —             | finance integration test | A test shows whether re-sent `category`/`tags` replace a user's edit                              |
-| W-003 | Inventory every wealth-manager behavior against S1                   | W-001         | inventory reviewed       | Each behavior maps to an existing function, a gap, or a personal routine                          |
+| ID    | Work item                                                            | Depends on    | Validation               | Done when                                                                                          |
+| ----- | -------------------------------------------------------------------- | ------------- | ------------------------ | -------------------------------------------------------------------------------------------------- |
+| W-000 | The product owner resolves, amends, or rejects the decision document | product owner | —                        | Each D1–D14 is recorded without assuming implementation accepted it                                |
+| W-001 | Reconcile S1/S2/S3 and the two versions of this task                 | —             | `pnpm run tasks:check`   | One task version is the record. S3 is committed, revised, or discarded deliberately.               |
+| W-002 | Prove or disprove re-sync overwrite (G4)                             | —             | finance integration test | Baseline test confirmed the overwrite; the provider-batch safeguard is covered by regression tests |
+| W-003 | Inventory every wealth-manager behavior against S1                   | —             | inventory reviewed       | Each behavior maps to an existing function, a gap, or a personal routine                           |
 
 ### Later work: options that depend on decisions, not requirements
 
-Each row lists the options. The option chosen by the decision becomes the work
-item. Until then the row is **OPEN — USER DECISION REQUIRED**.
+Each row lists broader options. Current compatibility defaults do not settle
+them; each remains **OPEN — USER DECISION REQUIRED**.
 
 | Area                       | Decision | Options                                                                                                                                                                        |
 | -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -162,14 +175,16 @@ item. Until then the row is **OPEN — USER DECISION REQUIRED**.
 
 ## Acceptance criteria
 
-These criteria are independent of the open decisions. Criteria for the later
-work are added once W-000 records the decisions.
+These criteria cover this migration without treating the broader open decisions
+as accepted.
 
-- [ ] Every decision that later work depends on is recorded in the
-      consolidation decision document as accepted, amended, or rejected.
-- [ ] One version of this task is the record, and no "Implemented" claim refers
-      to uncommitted code or code that has not run in `main`'s CI.
-- [ ] A test establishes whether an overlap re-sync can overwrite a user's
+- [ ] Open decisions and reversible implementation assumptions are identified
+      without claiming product approval.
+- [ ] The same-path task conflict is identified and neither version silently
+      replaces the other.
+- [ ] CLI sync, seed, balances, and report capabilities use the server-owned
+      implementation; provider secrets stay local.
+- [x] A test establishes whether an overlap re-sync can overwrite a user's
       category or tag edit, and the result is recorded here.
 - [ ] Synthetic fixtures with at least two users prove that cross-user reads and
       writes are denied for any finance path this task changes.

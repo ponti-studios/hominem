@@ -3308,6 +3308,245 @@
   {
     "type": "function",
     "function": {
+      "name": "finance_balances",
+      "description": "Normalize a caller-provided Starling balance snapshot and report cleared balances plus Spaces separately by currency. Mode: read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "accounts": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "account": {
+                  "type": "object",
+                  "properties": {
+                    "accountUid": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "accountType": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z]{3}$",
+                      "description": "ISO 4217 currency code, e.g. USD or GBP."
+                    }
+                  },
+                  "required": ["accountUid", "currency"],
+                  "additionalProperties": false
+                },
+                "balance": {
+                  "type": "object",
+                  "properties": {
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z]{3}$",
+                      "description": "ISO 4217 currency code, e.g. USD or GBP."
+                    },
+                    "clearedBalance": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "minorUnits": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["minorUnits"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "effectiveBalance": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "minorUnits": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["minorUnits"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "pendingTransactions": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "minorUnits": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["minorUnits"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "acceptedOverdraft": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "minorUnits": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["minorUnits"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "savingsGoalList": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "savingsGoalUid": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": ["string", "null"]
+                      },
+                      "totalSaved": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "minorUnits": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^-?\\d+(\\.\\d+)?$"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": ["minorUnits"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "target": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "minorUnits": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^-?\\d+(\\.\\d+)?$"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": ["minorUnits"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["account", "balance", "savingsGoalList"],
+              "additionalProperties": false
+            }
+          },
+          "notes": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["at", "accounts", "notes"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "finance_bill_create",
       "description": "Register a bill: reference data about a recurring obligation — who it is with, how it is paid, what it should cost. A bill never creates, moves or edits a transaction; last-paid is derived at read time from matched transactions. A top-up bill carries no cadence, a variable bill carries no expected amount, and a one-off bill carries its due date. Mode: write. Use when: The user names a recurring bill to track, e.g. an energy supplier, broadband, or a pay-as-you-go meter to watch. Do not use when: Do not use for one-off spending or to record a payment — bills are reference data, and they never move money.  Produces: bill with computed next due date.",
       "parameters": {
@@ -4887,6 +5126,288 @@
   {
     "type": "function",
     "function": {
+      "name": "finance_seed",
+      "description": "Provision owner-scoped Starling account identities and optionally import the sync doctrine. Never sends bank credentials. Mode: write.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "accountUid": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "accountType": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z]{3}$",
+                  "description": "ISO 4217 currency code, e.g. USD or GBP."
+                }
+              },
+              "required": ["accountUid", "currency"],
+              "additionalProperties": false
+            }
+          },
+          "doctrine": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "const": 1,
+                "description": "Doctrine shape version — bump only on a breaking shape change."
+              },
+              "merchantRules": {
+                "maxItems": 5000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern", "category"],
+                  "additionalProperties": false
+                }
+              },
+              "tagRules": {
+                "maxItems": 5000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "tags": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      }
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern", "tags"],
+                  "additionalProperties": false
+                }
+              },
+              "amountRules": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "merchant": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300,
+                      "description": "Exact normalized merchant name."
+                    },
+                    "amountMinorUnits": {
+                      "minItems": 1,
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "description": "Signed minor units (cents/pence) that trigger this rule."
+                    },
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["merchant", "amountMinorUnits", "category"],
+                  "additionalProperties": false
+                }
+              },
+              "transferMerchants": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "exact",
+                      "description": "Match mode for row-class transfer detection; defaults to exact.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "unlessAccountContains": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern"],
+                  "additionalProperties": false
+                }
+              },
+              "incomePatterns": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "matchMode": {
+                      "default": "contains",
+                      "description": "How the pattern is matched against the normalized merchant name.",
+                      "type": "string",
+                      "enum": ["exact", "contains", "startsWith"]
+                    },
+                    "pattern": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "note": {
+                      "description": "Provenance for dated rulings — preserved verbatim, never interpreted.",
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": ["matchMode", "pattern"],
+                  "additionalProperties": false
+                }
+              },
+              "coffeePatterns": {
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "description": "Coffee/tea substrings; inside the Food category these win over other component tags."
+              },
+              "lenses": {
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "matches": {
+                      "maxItems": 5000,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "matchMode": {
+                            "default": "contains",
+                            "description": "How the pattern is matched against the normalized merchant name.",
+                            "type": "string",
+                            "enum": ["exact", "contains", "startsWith"]
+                          },
+                          "pattern": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
+                          "tag": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          }
+                        },
+                        "required": ["matchMode", "pattern", "tag"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["category", "matches"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "version",
+              "merchantRules",
+              "tagRules",
+              "amountRules",
+              "transferMerchants",
+              "incomePatterns",
+              "coffeePatterns",
+              "lenses"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["accounts"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "finance_spending_by_category",
       "description": "Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range (defaults to the last 30 days through today). Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit. Mode: read-only.",
       "parameters": {
@@ -4914,6 +5435,220 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["limit"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_sync",
+      "description": "Route and classify settled Starling and Plaid transactions using the authenticated owner’s accounts and doctrine, then append them without overwriting existing annotations. Unmatched accounts are held and rejected rows are reported. Mode: write. Use when: Import settled provider feed data using the owner’s configured accounts and doctrine. Do not use when: Do not send provider credentials; the tool accepts transaction data only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "starling": {
+            "default": [],
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "accountUid": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "currency": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "space": {
+                  "type": ["string", "null"]
+                },
+                "feedItems": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "feedItemUid": {
+                        "type": ["string", "null"]
+                      },
+                      "transactionTime": {
+                        "type": ["string", "null"]
+                      },
+                      "transactedAt": {
+                        "type": ["string", "null"]
+                      },
+                      "counterPartyName": {
+                        "type": ["string", "null"]
+                      },
+                      "reference": {
+                        "type": ["string", "null"]
+                      },
+                      "source": {
+                        "type": ["string", "null"]
+                      },
+                      "status": {
+                        "type": ["string", "null"]
+                      },
+                      "direction": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "object",
+                        "properties": {
+                          "minorUnits": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^-?\\d+$"
+                              }
+                            ]
+                          },
+                          "currency": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": ["minorUnits"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["direction", "amount"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["accountUid", "currency", "space", "feedItems"],
+              "additionalProperties": false
+            }
+          },
+          "plaid": {
+            "type": "object",
+            "properties": {
+              "institutions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "display_name": {
+                      "type": "string"
+                    },
+                    "credential_id": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "accounts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "mask": {
+                      "type": ["string", "null"]
+                    },
+                    "_plaid_source": {
+                      "type": "object",
+                      "properties": {
+                        "credential_id": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["account_id"],
+                  "additionalProperties": false
+                }
+              },
+              "transactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "transaction_id": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "pending": {
+                      "type": "boolean"
+                    },
+                    "merchant_name": {
+                      "type": ["string", "null"]
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "iso_currency_code": {
+                      "type": ["string", "null"]
+                    },
+                    "unofficial_currency_code": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["account_id", "date", "name", "amount"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "windows": {
+            "type": "object",
+            "properties": {
+              "starling_since": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "plaid_since": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "until": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              }
+            },
+            "required": ["starling_since", "plaid_since", "until"],
+            "additionalProperties": false
+          },
+          "dryRun": {
+            "default": false,
+            "type": "boolean"
+          },
+          "linkTransfers": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["starling", "windows", "dryRun", "linkTransfers"],
         "additionalProperties": false
       }
     }
@@ -5348,7 +6083,7 @@
     "type": "function",
     "function": {
       "name": "finance_transactions_import",
-      "description": "Batch upsert for backfills and daily deltas (max 1000 rows per call). Append adds or updates rows and returns row-level rejections. Replace deletes all of this user’s finance transactions before inserting, requires iUnderstand: true, and refuses the whole replace if any row is rejected. dryRun validates and reports the projected result without writing. Mode: write, confirmation required. Use when: Backfilling sheet history or pushing daily deltas. Do not use when: Do not use mode replace without explicit confirmation.  Prerequisites: finance_accounts (build the sheet-label map).",
+      "description": "Batch upsert for backfills and daily deltas (max 1000 rows per call). Append preserves category, tags, and notes on existing plaid or starling rows unless overwriteAnnotations is true; manual rows use explicit patch semantics. Replace deletes all of this user’s finance transactions before inserting, requires iUnderstand: true, and refuses the whole replace if any row is rejected. dryRun validates and reports the projected result without writing. Mode: write, confirmation required. Use when: Backfilling sheet history or pushing daily deltas. Do not use when: Do not use mode replace without explicit confirmation.  Prerequisites: finance_accounts (build the sheet-label map).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5506,6 +6241,10 @@
             "description": "Validate and report without writing.",
             "type": "boolean"
           },
+          "overwriteAnnotations": {
+            "description": "When true, allow existing plaid or starling rows to replace category, tags, and notes. Defaults to false. New rows and manual-source rows retain normal import behavior.",
+            "type": "boolean"
+          },
           "iUnderstand": {
             "default": false,
             "description": "Explicit confirmation for mode: \"replace\", which wipes the store first.",
@@ -5526,6 +6265,671 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["transactions", "mode", "dryRun", "iUnderstand"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_wealth_brief",
+      "description": "Report yesterday’s money movement, budget pacing, anomalies and bill changes. Pass the previous bill snapshot to compare it; the returned snapshot is not stored. Mode: read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "run_id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "bills_only": {
+            "default": false,
+            "type": "boolean"
+          },
+          "snapshot": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "bills": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "provider": {
+                          "type": ["string", "null"]
+                        },
+                        "kind": {
+                          "type": "string"
+                        },
+                        "amount_model": {
+                          "type": "string"
+                        },
+                        "expected_amount": {
+                          "type": ["number", "null"]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "cadence": {
+                          "type": ["string", "null"]
+                        },
+                        "due_day": {
+                          "type": ["number", "null"]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "next_due": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "last_paid_on": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "match_configured": {
+                          "type": "boolean"
+                        },
+                        "created_on": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "provider",
+                        "kind",
+                        "amount_model",
+                        "expected_amount",
+                        "currency",
+                        "cadence",
+                        "due_day",
+                        "status",
+                        "type",
+                        "next_due",
+                        "last_paid_on",
+                        "match_configured",
+                        "created_on"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["bills"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["bills_only"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_wealth_close",
+      "description": "Produce the monthly close Markdown from the caller’s ledger. Optional dated anchors and a hygiene cache are supplied by the caller and are not stored. Mode: read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "anchors": {
+            "type": "object",
+            "properties": {
+              "anchors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "totals": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    },
+                    "blended_gbp": {
+                      "type": "number"
+                    },
+                    "basis": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["date", "label", "basis"],
+                  "additionalProperties": false
+                }
+              },
+              "tax_status": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "cache": {
+            "type": "object",
+            "properties": {
+              "spending": {
+                "type": "object",
+                "properties": {
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "categoryName": {
+                          "type": "string"
+                        },
+                        "currencyCode": {
+                          "type": "string"
+                        },
+                        "spent": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["categoryName", "currencyCode", "spent"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_wealth_integrity",
+      "description": "Check the caller’s ledger against supplied sync watermarks, provider feed snapshots, manual anchors, cancellation watches and card statements. Nothing is stored. Mode: read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "run_id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "sync_state": {
+            "type": "object",
+            "properties": {
+              "starling_max": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "plaid_max": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "manual_anchors": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "cancellation_watches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "escalate_if": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "sweep_from": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "plaid": {
+            "type": "object",
+            "properties": {
+              "accounts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "mask": {
+                      "type": ["string", "null"]
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "balances": {
+                      "type": "object",
+                      "properties": {
+                        "current": {
+                          "type": ["number", "null"]
+                        },
+                        "iso_currency_code": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["account_id"],
+                  "additionalProperties": false
+                }
+              },
+              "transactions": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "pending": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["account_id", "date", "amount"],
+                  "additionalProperties": false
+                }
+              },
+              "transactions_since": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "liabilities": {
+                "type": "object",
+                "properties": {
+                  "accounts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string"
+                        },
+                        "mask": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["account_id"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "liabilities": {
+                    "type": "object",
+                    "properties": {
+                      "credit": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "account_id": {
+                              "type": "string"
+                            },
+                            "last_statement_balance": {
+                              "type": ["number", "null"]
+                            },
+                            "last_statement_issue_date": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "last_payment_due_date": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "next_payment_due_date": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["account_id"],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": ["credit"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["accounts", "liabilities"],
+                "additionalProperties": false
+              },
+              "liabilities_skipped": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "institution": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["accounts", "transactions"],
+            "additionalProperties": false
+          },
+          "starling": {
+            "type": "object",
+            "properties": {
+              "feeds": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "accountUid": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "currency": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "space": {
+                      "type": ["string", "null"]
+                    },
+                    "feedItems": {
+                      "maxItems": 1000,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "feedItemUid": {
+                            "type": ["string", "null"]
+                          },
+                          "transactionTime": {
+                            "type": ["string", "null"]
+                          },
+                          "transactedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "counterPartyName": {
+                            "type": ["string", "null"]
+                          },
+                          "reference": {
+                            "type": ["string", "null"]
+                          },
+                          "source": {
+                            "type": ["string", "null"]
+                          },
+                          "status": {
+                            "type": ["string", "null"]
+                          },
+                          "direction": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "minorUnits": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^-?\\d+$"
+                                  }
+                                ]
+                              },
+                              "currency": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["minorUnits"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["direction", "amount"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["accountUid", "currency", "space", "feedItems"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["feeds"],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_wealth_look",
+      "description": "Project the next 30 days from the caller’s accounts and bills. Supply optional floors, card limits, salary rule and an explicit USD-to-GBP rate; no rate or inputs are persisted. Mode: read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "balance_floors": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": ["number", "null"]
+                }
+              },
+              "credit_limits_usd": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "salary": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Case-insensitive text in a payroll merchant name or description."
+                  },
+                  "min_amount": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "lookback_days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": ["query", "min_amount", "currency", "lookback_days", "label"],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "fx": {
+            "type": "object",
+            "properties": {
+              "rate_usd_to_gbp": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "rate_date": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rate_source": {
+                "type": "string"
+              }
+            },
+            "required": ["rate_usd_to_gbp"],
+            "additionalProperties": false
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
         "additionalProperties": false
       }
     }

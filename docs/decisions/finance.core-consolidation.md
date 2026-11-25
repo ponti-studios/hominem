@@ -5,8 +5,49 @@
 Proposed (2026-11-25). **Not accepted.** This is an evidence-backed
 recommendation for the product owner to accept, amend, or reject. It does not
 supersede [finance.pfin-merge](finance.pfin-merge.md), which stays the
-historical record of the 2026-09-08 decision. Nothing here is approved until the
-open decisions below are resolved and this status changes.
+historical record of the 2026-09-08 decision. The owner directed implementation
+of the server-owned CLI migration; that direction does not accept the broader
+open decisions below.
+
+## Implementation in this worktree
+
+The current worktree shares runway orchestration between MCP and RPC in
+`services/api/src/application/finance.runway.service.ts`, preserving each
+surface's existing budget inputs and response shape.
+
+As a reversible safety default, batch imports preserve category, tags, and
+notes on existing `plaid` and `starling` rows. New rows still receive the
+incoming values. Callers that deliberately want to overwrite those fields may
+set `overwriteAnnotations: true`; manual-source batches, single upserts, and
+confirmed replacements keep their existing behavior. This is not a decision on
+D7: there is no provenance to distinguish a user edit from an earlier import.
+Provider corrections still update the transaction itself.
+
+The baseline overlap test reproduced the overwrite. The migrated sync now
+normalizes and classifies provider data on the server, routes it against the
+authenticated owner's accounts, and retains provider transaction IDs. A
+matching older provider row with the same natural key can adopt its stable ID;
+a changed historical description without an earlier ID cannot be matched
+safely. Transfers link only for mutually unique, opposite-amount matches, and
+the two owner-scoped rows are updated together without rewriting annotations.
+
+The CLI keeps provider credentials and file state locally and uses Hominem
+OAuth instead of a personal MCP token. Seed and live-balance processing call
+server tools. Held transactions are kept in a private, OAuth-client-scoped
+local file and their checkpoints are rewound for retry. Legacy unscoped state
+files are not silently attributed to an OAuth client. These are compatibility
+and data-safety defaults, not a resolution of the remaining product decisions.
+The full currency schema/rate rollout remains separate.
+
+The four owner routines (morning brief, forward look, monthly close, and
+integrity check) now run as owner-scoped, read-only `finance_wealth_*` server
+tools. The CLI supplies only local inputs: the bill snapshot, look inputs,
+close anchors and cache, manual anchors, cancellation watches, the sync
+checkpoint, a live USD-to-GBP rate, and raw Plaid and Starling reads. Starling
+feeds are normalized on the server with the shared ingest code. Moving the
+math server-side removes the duplicated CLI copy; it does not decide D11. The
+reports keep the routines' current GBP/USD assumptions and stay personal
+routines until D11 is decided.
 
 ## Question
 
@@ -133,15 +174,12 @@ MCP tools (`services/api/src/mcp/tools/finance*`) shows:
 | Affordability                 | yes                                                                    | none         |
 | Rulings                       | yes                                                                    | yes          |
 
-Runway shows that duplication happens in the adapters. Both
-`services/api/src/mcp/tools/finance.ts:363-390` and
-`services/api/src/rpc/routes/finance.ledger.ts:72-84` call
-`computeLedgerRunway` directly. Each builds the budget input differently: MCP
-merges per-call overrides and filters by the forecast currency, while RPC
-passes every saved budget. They return the same result today only because
-`runway.ts:443-445` filters again. This breaks the rule in
-`services/api/AGENTS.md:22` that each surface is a thin adapter over one
-application service.
+In S1, the MCP and RPC runway adapters called `computeLedgerRunway` directly
+but built different budget inputs: MCP filtered by forecast currency and
+merged per-call overrides; RPC passed every saved budget. The calculation
+filters by currency, but RPC also returns its full supplied budget list. The
+current worktree moves orchestration into one application service while
+preserving both contracts.
 
 ### E3. Four ways to store classification rules, none applied to transactions on `main`
 
@@ -220,7 +258,8 @@ rejected, and a local rate table instead of a per-request provider call.
   (B15, dated 2026-10-15) is out of date. But the CLI **does** send `category`
   and `tags` that the doctrine computed again (`daily_sync.ts:157-160,217-218`)
   for the overlap window it re-sends. This may overwrite a correction the user
-  made in Web for that row. **No test proves or disproves this.**
+  made in Web for that row. A baseline integration test confirmed the
+  overwrite; the interim batch safeguard above now protects those fields.
 - `ensureFinanceCategoryId` creates a category automatically from any unknown
   name on import (`sheet-import.ts:384-413`). A doctrine typo, or a seeded
   versus unseeded name, therefore creates a new category without telling anyone.

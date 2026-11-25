@@ -1,15 +1,14 @@
 import {
-  computeLedgerRunway,
   findTransferPairs,
   getAccountLedgerBreakdown,
   getReconciliationStaleness,
-  getRunwaySettings,
   getValidationGates,
   postReconciliationAdjustment,
 } from '@hominem/finance-services';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { getFinanceLedgerRunway } from '../../application/finance.runway.service';
 import { NotFoundError } from '../errors';
 import type { AppContext } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
@@ -70,16 +69,5 @@ export const ledgerRoutes = new Hono<AppContext>()
     return c.json({ pairs });
   })
   .get('/runway', authMiddleware, async (c) => {
-    const userId = c.get('auth')!.userId;
-    const settings = await getRunwaySettings(userId);
-    const runway = await computeLedgerRunway({
-      userId,
-      currencyCode: settings.currencyCode,
-      monthlyBudgets: settings.budgets.map(({ category, amount, currencyCode }) => ({
-        category,
-        amount,
-        currencyCode,
-      })),
-    });
-    return c.json({ settings, runway });
+    return c.json(await getFinanceLedgerRunway(c.get('auth')!.userId));
   });
