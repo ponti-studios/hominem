@@ -5,8 +5,7 @@ on:
 
 permissions:
   contents: read
-  packages: read
-  id-token: write
+  packages: write
 
 jobs:
   publish-auth:
@@ -31,14 +30,16 @@ jobs:
           pnpm typecheck --filter @ponti-studios/auth...
           pnpm test --filter @ponti-studios/auth...
 
+      # setup-node writes an npmrc line that reads NODE_AUTH_TOKEN; the token is
+      # the workflow's GITHUB_TOKEN (a context, so it's passed in via env).
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24.18.0'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ponti-studios'
 
-      - name: use-npm-with-trusted-publishing-support
-        run: npm install -g npm@11
-
-      - name: publish-to-npm
+      - name: publish-to-github-packages
         working-directory: packages/auth
-        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: npm publish
