@@ -1,13 +1,28 @@
-import { pool } from '@hominem/db/core';
-import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
-import { Hono } from 'hono';
+import {
+  removeTransactions,
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedTag,
+  seedTagAssignments,
+  seedTransaction,
+  seedTransactions,
+} from '@hominem/finance-services/test/factory';
+import { transactionsByIds } from '@hominem/finance-services/test/readers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 
-import { requestIdMiddleware, type AppContext, type RpcUser } from '../middleware/auth';
-import { apiErrorHandler } from '../middleware/error';
-import { validationErrorMiddleware } from '../middleware/validation';
+import {
+  firstCursor,
+  forgeCursor,
+  listUrl,
+  readPage,
+  walk,
+  type Page,
+} from '../../testkit/fixtures/finance-paging';
+import { financeTestApp } from '../../testkit/fixtures/finance-rpc';
 import { transactionsRoutes } from './finance.transactions';
+
+type TransactionSeed = Omit<Parameters<typeof seedTransaction>[0], 'userId'> & { id: string };
 
 const mainUserId = 'b4000001-0000-4000-8000-000000000001';
 const filterUserId = 'b4000001-0000-4000-8000-000000000002';
@@ -29,175 +44,17 @@ const bulkId = (n: number) => `b4000004-0000-4000-8000-${String(n).padStart(12, 
 const filterTransactionId = (n: number) => `b4000006-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const tieTransactionId = (n: number) => `b4000008-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
-const pageSchema = z.object({
-  data: z.array(
-    z.object({
-      id: z.string().uuid(),
-      userId: z.string(),
-      accountId: z.string().uuid(),
-      amount: z.number(),
-      description: z.string().nullable(),
-      postedOn: z.string(),
-      merchantName: z.string().nullable(),
-      currencyCode: z.string(),
-      accountName: z.string(),
-      transactionType: z.string(),
-      categoryId: z.string().uuid().nullable(),
-      categoryName: z.string().nullable(),
-      tags: z.array(z.string()),
-      notes: z.string().nullable(),
-      counterpartId: z.string().uuid().nullable(),
-      recurring: z.boolean(),
-      pending: z.boolean(),
-      excluded: z.boolean(),
-      source: z.string().nullable(),
-    }),
-  ),
-  filteredCount: z.number().int(),
-  totalUserCount: z.number().int(),
-  nextCursor: z.string().nullable(),
-});
-
-type Page = z.infer<typeof pageSchema>;
-
-function makeUser(id: string): RpcUser {
-  return {
-    id,
-    email: `${id}@test.dev`,
-    name: 'Finance Paging Test User',
-    emailVerified: true,
-    image: null,
-    isAdmin: false,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-  };
-}
-
-function createApp(userId: string) {
-  return new Hono<AppContext>()
-    .onError(apiErrorHandler)
-    .use(requestIdMiddleware)
-    .use(validationErrorMiddleware)
-    .use('*', async (c, next) => {
-      c.set('auth', { user: makeUser(userId), userId, credential: 'session', scopes: [] });
-      await next();
-    })
-    .route('/api/finance/transactions', transactionsRoutes);
-}
-
-const mainApp = createApp(mainUserId);
-const filterApp = createApp(filterUserId);
-const emptyApp = createApp(emptyUserId);
-const tieApp = createApp(tieUserId);
-
-const listUrl = (params: Record<string, string | string[] | undefined>): string => {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined) continue;
-    for (const item of Array.isArray(value) ? value : [value]) search.append(key, item);
-  }
-  const query = search.toString();
-  return `/api/finance/transactions/list${query ? `?${query}` : ''}`;
-};
-
-async function readPage(
-  app: Hono<AppContext>,
-  params: Record<string, string | string[] | undefined> = {},
-): Promise<Page> {
-  const res = await app.request(listUrl(params));
-  expect(res.status).toBe(200);
-  return pageSchema.parse(await res.json());
-}
-
-/** Walks a list with `size` rows per page, returning the ids in order. */
-async function walk(
-  app: Hono<AppContext>,
-  params: Record<string, string | string[] | undefined>,
-  size: number,
-): Promise<string[]> {
-  const ids: string[] = [];
-  let cursor: string | null = null;
-  for (let guard = 0; guard < 100; guard++) {
-    const page = await readPage(app, {
-      ...params,
-      limit: String(size),
-      cursor: cursor ?? undefined,
-    });
-    ids.push(...page.data.map((row) => row.id));
-    if (!page.nextCursor) return ids;
-    cursor = page.nextCursor;
-  }
-  throw new Error('paging did not finish');
-}
-
-function forgeCursor(cursor: string, patch: Record<string, unknown>): string {
-  const payload = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-  return Buffer.from(JSON.stringify({ ...payload, ...patch }), 'utf8').toString('base64url');
-}
-
-async function firstCursor(
-  app: Hono<AppContext>,
-  params: Record<string, string | string[] | undefined> = {},
-): Promise<string> {
-  const page = await readPage(app, { ...params, limit: '1' });
-  if (!page.nextCursor) throw new Error('expected a cursor');
-  return page.nextCursor;
-}
-
-async function removeUsers(ids: string[]) {
-  await pool.query(
-    `DELETE FROM app.tag_assignments WHERE tag_id IN (SELECT id FROM app.tags WHERE owner_userid = ANY($1))`,
-    [ids],
-  );
-  await pool.query(`DELETE FROM app.tags WHERE owner_userid = ANY($1)`, [ids]);
-  await pool.query(`DELETE FROM app.finance_transactions WHERE user_id = ANY($1)`, [ids]);
-  await pool.query(`DELETE FROM app.finance_accounts WHERE user_id = ANY($1)`, [ids]);
-  await pool.query('DELETE FROM "user" WHERE id = ANY($1)', [ids]);
-}
-
-async function insertAccount(id: string, owner: string, name: string) {
-  await pool.query(
-    `INSERT INTO app.finance_accounts (id, user_id, name, account_type, currency_code)
-     VALUES ($1, $2, $3, 'checking', 'USD')`,
-    [id, owner, name],
-  );
-}
-
-interface TransactionRow {
-  id: string;
-  owner: string;
-  accountId: string;
-  postedOn: string;
-  description: string;
-  amount: number;
-}
-
-async function insertTransaction(row: TransactionRow) {
-  await pool.query(
-    `INSERT INTO app.finance_transactions
-       (id, user_id, account_id, amount, transaction_type, description, posted_on,
-        currency_code, source, external_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'USD', 'test', $8)`,
-    [
-      row.id,
-      row.owner,
-      row.accountId,
-      row.amount,
-      row.amount < 0 ? 'debit' : 'credit',
-      row.description,
-      row.postedOn,
-      row.id,
-    ],
-  );
-}
+const mainApp = financeTestApp('transactions', transactionsRoutes, mainUserId);
+const filterApp = financeTestApp('transactions', transactionsRoutes, filterUserId);
+const emptyApp = financeTestApp('transactions', transactionsRoutes, emptyUserId);
+const tieApp = financeTestApp('transactions', transactionsRoutes, tieUserId);
 
 // The main walk: 50 rows share a posted date (so `id` is the only thing that can order them) and
 // five are older, which puts them on the last page at the default and maximum limits.
-const bulkRows: TransactionRow[] = Array.from({ length: 55 }, (_, index) => {
+const bulkRows: TransactionSeed[] = Array.from({ length: 55 }, (_, index) => {
   const n = index + 1;
   return {
     id: bulkId(n),
-    owner: mainUserId,
     accountId: mainAccountId,
     postedOn: n <= 50 ? '2026-03-01' : '2026-02-01',
     description: `bulk-${n}`,
@@ -206,10 +63,9 @@ const bulkRows: TransactionRow[] = Array.from({ length: 55 }, (_, index) => {
 });
 
 // Newest first by posted date, `id` breaking ties: 04-01 rows are r4 then r3.
-const filterRows: TransactionRow[] = [
+const filterRows: TransactionSeed[] = [
   {
     id: filterTransactionId(1),
-    owner: filterUserId,
     accountId: filterAccountAId,
     postedOn: '2026-05-01',
     description: 'Groceries',
@@ -217,7 +73,6 @@ const filterRows: TransactionRow[] = [
   },
   {
     id: filterTransactionId(2),
-    owner: filterUserId,
     accountId: filterAccountBId,
     postedOn: '2026-04-15',
     description: 'Groceries again',
@@ -225,7 +80,6 @@ const filterRows: TransactionRow[] = [
   },
   {
     id: filterTransactionId(3),
-    owner: filterUserId,
     accountId: filterAccountAId,
     postedOn: '2026-04-01',
     description: 'Rent',
@@ -233,7 +87,6 @@ const filterRows: TransactionRow[] = [
   },
   {
     id: filterTransactionId(4),
-    owner: filterUserId,
     accountId: filterAccountAId,
     postedOn: '2026-04-01',
     description: 'Salary',
@@ -241,10 +94,9 @@ const filterRows: TransactionRow[] = [
   },
 ];
 
-const otherRows: TransactionRow[] = [
+const otherRows: TransactionSeed[] = [
   {
     id: 'b4000007-0000-4000-8000-000000000001',
-    owner: otherUserId,
     accountId: otherAccountId,
     postedOn: '2026-06-01',
     description: 'Not mine',
@@ -252,7 +104,6 @@ const otherRows: TransactionRow[] = [
   },
   {
     id: 'b4000007-0000-4000-8000-000000000002',
-    owner: otherUserId,
     accountId: otherAccountId,
     postedOn: '2026-06-02',
     description: 'Also not mine',
@@ -260,10 +111,9 @@ const otherRows: TransactionRow[] = [
   },
 ];
 
-const tieRows: TransactionRow[] = [
+const tieRows: TransactionSeed[] = [
   {
     id: tieTransactionId(1),
-    owner: tieUserId,
     accountId: tieAccountId,
     postedOn: '2026-03-01',
     description: 'Coffee',
@@ -271,7 +121,6 @@ const tieRows: TransactionRow[] = [
   },
   {
     id: tieTransactionId(2),
-    owner: tieUserId,
     accountId: tieAccountId,
     postedOn: '2026-03-01',
     description: 'Coffee Shop',
@@ -279,7 +128,6 @@ const tieRows: TransactionRow[] = [
   },
   {
     id: tieTransactionId(3),
-    owner: tieUserId,
     accountId: tieAccountId,
     postedOn: '2026-03-01',
     description: 'Coffee',
@@ -289,7 +137,6 @@ const tieRows: TransactionRow[] = [
   // through a JavaScript number could disagree with itself and repeat or skip rows mid-walk.
   ...[1, 2, 3, 4].map((n) => ({
     id: tieTransactionId(3 + n),
-    owner: tieUserId,
     accountId: tieAccountId,
     postedOn: '2026-03-01',
     description: `Coffee ${n}`,
@@ -298,41 +145,34 @@ const tieRows: TransactionRow[] = [
 ];
 
 beforeAll(async () => {
-  await removeUsers(owners);
-  for (const id of owners) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, true)`,
-      [id, 'Finance Paging Test User', `${id}@test.dev`],
-    );
-  }
+  await resetUsers(...owners);
+  await seedAccounts(mainUserId, [
+    { id: mainAccountId, name: 'Main Checking' },
+    { id: filterAccountAId, userId: filterUserId, name: 'Filter Checking' },
+    { id: filterAccountBId, userId: filterUserId, name: 'Filter Card' },
+    { id: emptyAccountId, userId: emptyUserId, name: 'Empty Checking' },
+    { id: otherAccountId, userId: otherUserId, name: 'Other Checking' },
+    { id: tieAccountId, userId: tieUserId, name: 'Tie Checking' },
+  ]);
+  await seedTransactions(mainUserId, bulkRows);
+  await seedTransactions(filterUserId, filterRows);
+  await seedTransactions(otherUserId, otherRows);
+  await seedTransactions(tieUserId, tieRows);
 
-  await insertAccount(mainAccountId, mainUserId, 'Main Checking');
-  await insertAccount(filterAccountAId, filterUserId, 'Filter Checking');
-  await insertAccount(filterAccountBId, filterUserId, 'Filter Card');
-  await insertAccount(emptyAccountId, emptyUserId, 'Empty Checking');
-  await insertAccount(otherAccountId, otherUserId, 'Other Checking');
-  await insertAccount(tieAccountId, tieUserId, 'Tie Checking');
-
-  for (const row of [...bulkRows, ...filterRows, ...otherRows, ...tieRows]) {
-    await insertTransaction(row);
-  }
-
-  await pool.query(
-    `INSERT INTO app.tags (id, owner_userid, name, path, slug) VALUES ($1, $2, 'Food', 'Food', 'food')`,
-    [foodTagId, filterUserId],
+  await seedTag({
+    id: foodTagId,
+    ownerUserid: filterUserId,
+    name: 'Food',
+    path: 'Food',
+    slug: 'food',
+  });
+  await seedTagAssignments(
+    foodTagId,
+    filterRows.slice(0, 2).map((row) => row.id),
   );
-  for (const row of filterRows.slice(0, 2)) {
-    await pool.query(
-      `INSERT INTO app.tag_assignments (tag_id, entity_table, entity_id)
-       VALUES ($1, '${FINANCE_TRANSACTION_ENTITY_TYPE}'::regclass, $2)`,
-      [foodTagId, row.id],
-    );
-  }
 });
 
-afterAll(async () => {
-  await removeUsers(owners);
-});
+afterAll(() => removeUsers(...owners));
 
 describe('finance transaction list paging', () => {
   it('defaults to 20 rows and caps a page at 50', async () => {
@@ -421,18 +261,18 @@ describe('finance transaction list paging', () => {
     if (!cursor) throw new Error('expected a cursor');
 
     // Sorts before the cursor (same date, higher id): the ongoing walk must not see it.
-    await insertTransaction({
+    await seedTransaction({
+      userId: mainUserId,
       id: bulkId(99),
-      owner: mainUserId,
       accountId: mainAccountId,
       postedOn: '2026-03-01',
       description: 'inserted-newer',
       amount: -1,
     });
     // Sorts after the cursor (same date, lower id): it must appear exactly once.
-    await insertTransaction({
+    await seedTransaction({
+      userId: mainUserId,
       id: bulkId(0),
-      owner: mainUserId,
       accountId: mainAccountId,
       postedOn: '2026-03-01',
       description: 'inserted-older',
@@ -452,9 +292,7 @@ describe('finance transaction list paging', () => {
     expect(walked.filter((id) => id === bulkId(0))).toHaveLength(1);
     expect(new Set(walked).size).toBe(walked.length);
 
-    await pool.query(`DELETE FROM app.finance_transactions WHERE id = ANY($1)`, [
-      [bulkId(99), bulkId(0)],
-    ]);
+    await removeTransactions(bulkId(99), bulkId(0));
   });
 
   it('preserves the account, date, amount, tag and text filters', async () => {
@@ -533,11 +371,8 @@ describe('finance transaction list paging', () => {
       body: JSON.stringify({ ids: [otherRows[0]!.id], action: { action: 'exclude' } }),
     });
     expect(response.status).toBe(400);
-    const stored = await pool.query<{ excluded: boolean }>(
-      `SELECT excluded FROM app.finance_transactions WHERE id = $1`,
-      [otherRows[0]!.id],
-    );
-    expect(stored.rows[0]?.excluded).toBe(false);
+    const [stored] = await transactionsByIds([otherRows[0]!.id]);
+    expect(stored?.excluded).toBe(false);
   });
 
   it('keeps a stable order when text ranking ties', async () => {

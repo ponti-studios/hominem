@@ -8,6 +8,7 @@ dist
 out/
 output/
 artifacts/
+!docs/artifacts
 web-build/
 storybook-static/
 .react-router/
@@ -59,6 +60,9 @@ credentials/
 
 # user data exports (scratch, contains real PII when run against production)
 .exports/
+
+# machine-local Muse source archive (preserved, never committed)
+archive/2026-11-21/
 
 # debug logs
 npm-debug.log*

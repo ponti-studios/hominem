@@ -1,13 +1,14 @@
 import {
-  getSyncDoctrine,
-  importSyncDoctrine,
-} from '../../../../application/finance.doctrine.service';
-import {
   doctrineGetInputSchema,
   doctrineGetOutputSchema,
   doctrineImportInputSchema,
   doctrineImportOutputSchema,
-} from '../../../../schemas/finance.doctrine.schema';
+} from '@hominem/finance-services/finance.doctrine.schema';
+
+import {
+  getSyncDoctrine,
+  importSyncDoctrine,
+} from '../../../../application/finance.doctrine.service';
 import { defineMcpSlice, defineMcpTool } from '../../../tool-registry';
 
 // The doctrine's lists are bounded by the schema (5000 entries per list); the

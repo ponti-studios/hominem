@@ -2,8 +2,10 @@ import { createHash } from 'node:crypto';
 
 import { db } from '@hominem/db/core';
 import { FinanceDoctrineRepository } from '@hominem/db/finance';
-
-import { doctrineImportInputSchema, syncDoctrineSchema } from '../schemas/finance.doctrine.schema';
+import {
+  doctrineImportInputSchema,
+  syncDoctrineSchema,
+} from '@hominem/finance-services/finance.doctrine.schema';
 
 /**
  * Fingerprints the canonical doctrine. Zod parsing normalizes the contents

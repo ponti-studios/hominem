@@ -1,7 +1,9 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { removeUsers, resetUsers } from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { listedAccounts } from '../../testkit/fixtures/finance-tool-calls';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f2000130-0000-4000-8000-000000000001';
@@ -27,24 +29,13 @@ type Content = {
   }>;
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
-
-async function accountByName(owner: string, name: string) {
-  const rows = content(await callTool(owner, 'finance_accounts', {})).accounts ?? [];
-  return rows.find((row) => row.name === name);
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Account Identity User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  }
+  await resetUsers(userId, otherUserId);
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_account_create provider identity', () => {
   it('creates an account carrying its provider identity, normalized to lowercase', async () => {
@@ -72,7 +63,9 @@ describe('finance_account_create provider identity', () => {
       }),
     );
 
-    const original = await accountByName(userId, 'Test Current');
+    const original = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Current',
+    );
     expect(result.created).toBe(false);
     expect(result.id).toBe(original?.id);
     // The stored name wins; identity routing never renames the account.
@@ -105,8 +98,12 @@ describe('finance_account_create provider identity', () => {
   });
 
   it('lists provider, providerAccountId and accountNumber for external routing', async () => {
-    const current = await accountByName(userId, 'Test Current');
-    const card = await accountByName(userId, 'Test Card');
+    const current = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Current',
+    );
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     expect(current?.provider).toBe('starling');
     expect(current?.providerAccountId).toBe('test-primary-uid');
@@ -124,7 +121,9 @@ describe('finance_account_create provider identity', () => {
       }),
     );
 
-    const ours = await accountByName(userId, 'Test Current');
+    const ours = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Current',
+    );
     expect(result.created).toBe(true);
     expect(result.id).not.toBe(ours?.id);
   });
@@ -132,7 +131,9 @@ describe('finance_account_create provider identity', () => {
 
 describe('finance_account_update provider identity', () => {
   it('stamps identity onto a name-matched account with a full changes audit', async () => {
-    const card = await accountByName(userId, 'Test Card');
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     const result = content(
       await callTool(userId, 'finance_account_update', {
@@ -147,13 +148,17 @@ describe('finance_account_update provider identity', () => {
     expect(result.changes?.provider).toEqual([null, 'plaid']);
     expect(result.changes?.providerAccountId).toEqual([null, 'test-card-uid']);
 
-    const stored = await accountByName(userId, 'Test Card');
+    const stored = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
     expect(stored?.provider).toBe('plaid');
     expect(stored?.providerAccountId).toBe('test-card-uid');
   });
 
   it('refuses an identity another account already holds with identity_conflict', async () => {
-    const card = await accountByName(userId, 'Test Card');
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     const result = content(
       await callTool(userId, 'finance_account_update', {
@@ -167,7 +172,9 @@ describe('finance_account_update provider identity', () => {
     expect(result.reason).toBe('identity_conflict');
     expect(result.changes).toEqual({});
 
-    const stored = await accountByName(userId, 'Test Card');
+    const stored = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
     expect(stored?.provider).toBe('plaid');
   });
 
@@ -191,7 +198,9 @@ describe('finance_account_update provider identity', () => {
   });
 
   it('refuses clearing the provider while a provider id stays set', async () => {
-    const card = await accountByName(userId, 'Test Card');
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     const result = content(
       await callTool(userId, 'finance_account_update', {
@@ -205,7 +214,9 @@ describe('finance_account_update provider identity', () => {
   });
 
   it('clears the whole identity cleanly and reports both halves', async () => {
-    const card = await accountByName(userId, 'Test Card');
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     const result = content(
       await callTool(userId, 'finance_account_update', {
@@ -220,13 +231,17 @@ describe('finance_account_update provider identity', () => {
     expect(result.changes?.provider).toEqual(['plaid', null]);
     expect(result.changes?.providerAccountId).toEqual(['test-card-uid', null]);
 
-    const stored = await accountByName(userId, 'Test Card');
+    const stored = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
     expect(stored?.provider).toBeNull();
     expect(stored?.providerAccountId).toBeNull();
   });
 
   it('dryRun projects an identity change without writing it', async () => {
-    const card = await accountByName(userId, 'Test Card');
+    const card = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
 
     const result = content(
       await callTool(userId, 'finance_account_update', {
@@ -241,7 +256,9 @@ describe('finance_account_update provider identity', () => {
     expect(result.updated).toBe(true);
     expect(result.changes?.provider).toEqual([null, 'starling']);
 
-    const stored = await accountByName(userId, 'Test Card');
+    const stored = (await listedAccounts<NonNullable<Content['accounts']>[number]>(userId)).find(
+      (row) => row.name === 'Test Card',
+    );
     expect(stored?.provider).toBeNull();
     expect(stored?.providerAccountId).toBeNull();
   });

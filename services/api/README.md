@@ -39,9 +39,9 @@ For local Browser chat and auth verification, two switches control the mocks:
 
 - Email: set `ENV=scripted` in the API environment and restart the API.
   Captured OTPs are written to the scripted mailbox.
-- AI: flip the `USE_SCRIPTED_AI` const in `src/provider-mode.ts` (default
-  `false`, so you get real OpenRouter). It's a const, not an env var, so it
-  can change on a running dev server.
+- AI: set `USE_SCRIPTED_AI=true` in the API environment and restart it
+  (default `false`, so you get real OpenRouter). `.env.scripted` sets it for
+  the scripted e2e API.
 
 Scripted AI uses deterministic local responses at
 the OpenRouter HTTP boundary, including collection tool calls and their
@@ -56,7 +56,7 @@ timing needed by the Browser playbook:
 
 These controls only exist in the local scripted provider; they do not alter
 production provider behavior. The scripted provider is rejected when
-`NODE_ENV=production`; leave `USE_SCRIPTED_AI` false and omit `ENV=scripted`
+`NODE_ENV=production`; leave `USE_SCRIPTED_AI` unset and omit `ENV=scripted`
 for normal provider traffic.
 
 ### Testing

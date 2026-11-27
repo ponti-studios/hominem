@@ -1,7 +1,10 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { removeUsers, resetUsers, seedAccounts } from '@hominem/finance-services/test/factory';
+import { transactionsByIds } from '@hominem/finance-services/test/readers';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { upsertTransaction } from '../../testkit/fixtures/finance-tool-calls';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000f0-0000-4000-8000-000000000001';
@@ -18,76 +21,35 @@ type Content = {
   deleted?: unknown[];
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
-
-async function counterpartOf(id: string): Promise<string | null> {
-  const row = await db
-    .selectFrom('app.financeTransactions')
-    .select('counterpartId')
-    .where('id', '=', id)
-    .executeTakeFirstOrThrow();
-  return row.counterpartId;
-}
-
-async function upsert(account: string, description: string, extra?: Record<string, unknown>) {
-  return content(
-    await callTool(userId, 'finance_transaction_upsert', {
-      postedOn: '2026-05-08',
-      account,
-      description,
-      amountCents: -123400,
-      currencyCode: 'USD',
-      ...extra,
-    }),
-  );
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  await pool.query(
-    `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-    [userId, `Counterpart User ${userId}`, `${userId}@test.hominem.dev`, true],
-  );
-  await db.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: checkingId,
-        userId,
-        name: 'Counterpart Checking',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: savingsId,
-        userId,
-        name: 'Counterpart Savings',
-        accountType: 'savings',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-    ])
-    .execute();
+  await resetUsers(userId);
+  await seedAccounts(userId, [
+    { id: checkingId, name: 'Counterpart Checking' },
+    { id: savingsId, name: 'Counterpart Savings', accountType: 'savings' },
+  ]);
 });
+
+afterAll(() => removeUsers(userId));
 
 describe('transfer counterpart linking', () => {
   it('mirrors the link on both rows and reads it back', async () => {
-    const other = await upsert('Counterpart Savings', 'Deposit');
-    const leg = await upsert('Counterpart Checking', 'Transfer -> Savings', {
-      counterpartId: other.id,
+    const other = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Savings',
+      description: 'Deposit',
+    });
+    const leg = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Checking',
+      description: 'Transfer -> Savings',
+      ...{
+        counterpartId: other.id,
+      },
     });
     expect(leg.reason).toBeNull();
 
-    expect(await counterpartOf(leg.id ?? '')).toBe(other.id);
-    expect(await counterpartOf(other.id ?? '')).toBe(leg.id);
+    expect((await transactionsByIds([leg.id ?? '']))[0]?.counterpartId).toBe(other.id);
+    expect((await transactionsByIds([other.id ?? '']))[0]?.counterpartId).toBe(leg.id);
 
     const search = content(
       await callTool(userId, 'finance_transaction_search', { query: 'Transfer -> Savings' }),
@@ -97,31 +59,49 @@ describe('transfer counterpart linking', () => {
   });
 
   it('rejects a counterpart on the same account', async () => {
-    const sameAccount = await upsert('Counterpart Checking', 'Same Account Row');
-    const result = await upsert('Counterpart Checking', 'Same Account Link', {
-      counterpartId: sameAccount.id,
+    const sameAccount = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Checking',
+      description: 'Same Account Row',
+    });
+    const result = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Checking',
+      description: 'Same Account Link',
+      ...{
+        counterpartId: sameAccount.id,
+      },
     });
     expect(result.reason).toBe('invalid_counterpart');
     expect(result.id).toBeNull();
   });
 
   it('rejects a counterpart that does not exist', async () => {
-    const result = await upsert('Counterpart Checking', 'Missing Link', {
-      counterpartId: 'f20000f9-0000-4000-8000-000000000009',
+    const result = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Checking',
+      description: 'Missing Link',
+      ...{
+        counterpartId: 'f20000f9-0000-4000-8000-000000000009',
+      },
     });
     expect(result.reason).toBe('invalid_counterpart');
   });
 
   it('clears the counterpart link when a leg is deleted', async () => {
-    const other = await upsert('Counterpart Savings', 'Delete Deposit');
-    const leg = await upsert('Counterpart Checking', 'Delete Leg', { counterpartId: other.id });
-    expect(await counterpartOf(other.id ?? '')).toBe(leg.id);
+    const other = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Savings',
+      description: 'Delete Deposit',
+    });
+    const leg = await upsertTransaction<Content>(userId, {
+      account: 'Counterpart Checking',
+      description: 'Delete Leg',
+      ...{ counterpartId: other.id },
+    });
+    expect((await transactionsByIds([other.id ?? '']))[0]?.counterpartId).toBe(leg.id);
 
     await callTool(userId, 'finance_transaction_delete', {
       ids: [leg.id ?? ''],
       iUnderstand: true,
     });
-    expect(await counterpartOf(other.id ?? '')).toBeNull();
+    expect((await transactionsByIds([other.id ?? '']))[0]?.counterpartId).toBeNull();
   });
 
   it('surfaces an invalid counterpart as a per-row rejection in a dry run', async () => {

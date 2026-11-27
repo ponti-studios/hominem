@@ -16,6 +16,14 @@ describe('apiSchema OTLP logs endpoint', () => {
   });
 });
 
+describe('apiSchema scripted AI toggle', () => {
+  it('reads USE_SCRIPTED_AI as a boolean string, defaulting to off', () => {
+    expect(apiSchema.shape.USE_SCRIPTED_AI.parse('true')).toBe(true);
+    expect(apiSchema.shape.USE_SCRIPTED_AI.parse('false')).toBe(false);
+    expect(apiSchema.shape.USE_SCRIPTED_AI.parse(undefined)).toBe(false);
+  });
+});
+
 describe('apiSchema PostHog flag settings', () => {
   it('uses the US host when the host is unset or empty, and takes a given one', () => {
     expect(apiSchema.shape.POSTHOG_HOST.parse(undefined)).toBe('https://us.i.posthog.com');

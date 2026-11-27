@@ -8,13 +8,8 @@ const PROVIDERS = {
   ai: 'openrouter',
 } as const;
 
-// Local toggle for canned AI replies (no model, no key, no cost). The dev server runs under
-// `tsx watch`, so flipping this and saving restarts it with the new mode. Keep it `false` when
-// committing: index.ts refuses to boot scripted providers in production.
-const USE_SCRIPTED_AI = false;
-
-export function resolveAiProvider(): AiProvider {
-  return USE_SCRIPTED_AI ? 'scripted' : 'openrouter';
+export function resolveAiProvider(env: Pick<ApiEnv, 'USE_SCRIPTED_AI'>): AiProvider {
+  return env.USE_SCRIPTED_AI ? 'scripted' : PROVIDERS.ai;
 }
 
 export function resolveEmailProvider(env: Pick<ApiEnv, 'ENV' | 'NODE_ENV'>): EmailProvider {

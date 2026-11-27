@@ -18,7 +18,10 @@ No new credentials. The sheet ID is config, not a secret.
    (`packages/finance/src/sheet-csv.ts`): accounting amounts, TRUE/FALSE
    flags, comma tags, Order # into notes.
 4. Call `finance_transactions_import` with `mode: "append"` (never
-   `"replace"` here) and the checked-in account map. Currency allowances are
+   `"replace"` here) and the checked-in account map. A legacy mirror that
+   deliberately treats sheet annotations as authoritative must also set
+   `overwriteAnnotations: true`; otherwise existing provider rows retain their
+   category, tags, and notes. Currency allowances are
    stored per account in `allowedCurrencies`; all other accounts remain strict
    to their `currencyCode`.
 5. On push failure: log loudly (row counts, batch index, tool error) but

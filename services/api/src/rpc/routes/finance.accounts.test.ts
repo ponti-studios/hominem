@@ -1,10 +1,6 @@
-import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AppContext, RpcUser } from '../middleware/auth';
-import { requestIdMiddleware } from '../middleware/auth';
-import { apiErrorHandler } from '../middleware/error';
-import { validationErrorMiddleware } from '../middleware/validation';
+import { FINANCE_ROUTE_USER_ID, financeTestApp } from '../../testkit/fixtures/finance-rpc';
 
 const accountService = vi.hoisted(() => ({ getFinanceAccountList: vi.fn() }));
 const database = vi.hoisted(() => ({ selectFrom: vi.fn() }));
@@ -14,34 +10,7 @@ vi.mock('@hominem/db/core', () => ({ db: database }));
 
 import { accountsRoutes } from './finance.accounts';
 
-const testUser: RpcUser = {
-  id: '11111111-1111-4111-8111-111111111111',
-  email: 'finance-accounts@example.com',
-  name: 'Finance Accounts Test User',
-  emailVerified: true,
-  image: null,
-  isAdmin: false,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-};
-
-function createApp() {
-  const app = new Hono<AppContext>()
-    .onError(apiErrorHandler)
-    .use(requestIdMiddleware)
-    .use(validationErrorMiddleware)
-    .use('*', async (c, next) => {
-      c.set('auth', {
-        user: testUser,
-        userId: testUser.id,
-        credential: 'session',
-        scopes: [],
-      });
-      await next();
-    });
-
-  return app.route('/api/finance/accounts', accountsRoutes);
-}
+const createApp = () => financeTestApp('accounts', accountsRoutes);
 
 describe('finance account routes', () => {
   beforeEach(() => accountService.getFinanceAccountList.mockReset());
@@ -87,7 +56,7 @@ describe('finance account routes', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual(result);
-    expect(accountService.getFinanceAccountList).toHaveBeenCalledWith(testUser.id, {
+    expect(accountService.getFinanceAccountList).toHaveBeenCalledWith(FINANCE_ROUTE_USER_ID, {
       includeClosed: false,
     });
   });
@@ -102,7 +71,7 @@ describe('finance account routes', () => {
     const response = await createApp().request('/api/finance/accounts/list?includeClosed=true');
 
     expect(response.status).toBe(200);
-    expect(accountService.getFinanceAccountList).toHaveBeenCalledWith(testUser.id, {
+    expect(accountService.getFinanceAccountList).toHaveBeenCalledWith(FINANCE_ROUTE_USER_ID, {
       includeClosed: true,
     });
   });

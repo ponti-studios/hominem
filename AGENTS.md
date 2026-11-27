@@ -78,7 +78,8 @@ just db migrate
 - Durable product, architecture, design, security, and operational decisions in the appropriate numbered documentation under the root `docs/` directory.
   - Do not create `docs/` directories inside apps, packages, or services.
 - Keep package READMEs to setup and local entrypoint information; link to the root documentation for governing decisions.
-- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; temporary execution state lives in the task files under `docs/tasks/`.
+- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; temporary execution state lives in Linear (see Work tracking below).
+- **Work tracking lives in Linear, never in `docs/`.** All tasks, plans, to-do lists, status, and step-by-step execution notes go in Linear issues (team `ponti studios`, project matching the area; use child issues for steps). Do not create, update, or move files under `docs/tasks/` or any other `docs/` path for that purpose, and do not keep a local copy of a Linear issue. Docs hold only durable rules, invariants, and decisions. When a task produces a decision, record the decision in the relevant `docs/` file and link the Linear issue for the work.
 - `docs/incidents/` is the one sanctioned exception to that rule: it's where a postmortem's play-by-play actually belongs. But a postmortem is not where a durable rule gets to live — if an incident teaches you something worth keeping, fold it into the relevant subject doc or an ADR in the same change, then let the incident writeup just be the record of what happened.
 - Update the relevant documentation in the same change when a durable implementation decision changes.
 

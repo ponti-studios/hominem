@@ -16,6 +16,10 @@ describe('makePkce', () => {
 });
 
 describe('buildAuthUrl', () => {
+  it('includes Google Tasks in the shared OAuth grant', () => {
+    expect(SCOPES).toContain('https://www.googleapis.com/auth/tasks');
+  });
+
   it('requests offline access with the full scope set and PKCE', () => {
     const url = new URL(
       buildAuthUrl({

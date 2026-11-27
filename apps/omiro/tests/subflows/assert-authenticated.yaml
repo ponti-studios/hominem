@@ -4,4 +4,4 @@ appId: com.pontistudios.hakumi.dev
 # obscure the signed-in root state. This is the final authority for whether a
 # reused keychain session is usable; do not infer it from OTP mailbox output.
 - assertVisible:
-    id: inbox-composer-input
+    id: chat-composer-dock

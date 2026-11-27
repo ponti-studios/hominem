@@ -128,7 +128,7 @@ describe('MCP OAuth integration', () => {
         grant_types: ['authorization_code', 'refresh_token'],
         response_types: ['code'],
         application_type: 'native',
-        scope: 'career:read',
+        scope: 'career:read finance:read finance:write',
         resources: [`${apiUrl}/api/mcp`],
       }),
     });
@@ -175,7 +175,7 @@ describe('MCP OAuth integration', () => {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       redirect_uri: redirectUri,
-      scope: 'openid profile email offline_access career:read',
+      scope: 'openid profile email offline_access career:read finance:read finance:write',
       resource: `${apiUrl}/api/mcp`,
     });
 
@@ -267,7 +267,9 @@ describe('MCP OAuth integration', () => {
       token_type: string;
     }>(tokenResponse);
     expect(token.token_type.toLowerCase()).toBe('bearer');
-    expect(token.scope.split(' ')).toEqual(expect.arrayContaining(['career:read']));
+    expect(token.scope.split(' ')).toEqual(
+      expect.arrayContaining(['career:read', 'finance:read', 'finance:write']),
+    );
 
     async function mcpRequest(accessToken: string, body: Record<string, unknown>) {
       return app.request(`${apiUrl}/api/mcp`, {
@@ -286,15 +288,20 @@ describe('MCP OAuth integration', () => {
       id: 1,
       method: 'initialize',
       params: {
-        protocolVersion: '2026-07-28',
+        protocolVersion: '2025-06-18',
         capabilities: {},
-        clientInfo: { name: 'oauth-integration-test', version: '1.0.0' },
+        clientInfo: { name: 'hominem-wealth-sync', version: '1.0.0' },
       },
     });
     expect(initializeResponse.status).toBe(200);
     await expect(readMcpJson(initializeResponse)).resolves.toMatchObject({
-      result: { serverInfo: { name: 'Hominem MCP' } },
+      result: { protocolVersion: '2025-06-18', serverInfo: { name: 'Hominem MCP' } },
     });
+    const initializedResponse = await mcpRequest(token.access_token, {
+      jsonrpc: '2.0',
+      method: 'notifications/initialized',
+    });
+    expect(initializedResponse.status).toBe(202);
 
     const toolsResponse = await mcpRequest(token.access_token, {
       jsonrpc: '2.0',
@@ -326,6 +333,29 @@ describe('MCP OAuth integration', () => {
         structuredContent: {
           tools: expect.arrayContaining([expect.objectContaining({ name: 'career_engagements' })]),
         },
+      },
+    });
+
+    const financeSyncResponse = await mcpRequest(token.access_token, {
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: {
+        name: 'finance_sync',
+        arguments: {
+          windows: {
+            starling_since: '2026-01-01',
+            plaid_since: '2026-01-01',
+            until: '2026-01-08',
+          },
+          dryRun: true,
+        },
+      },
+    });
+    expect(financeSyncResponse.status).toBe(200);
+    await expect(readMcpJson(financeSyncResponse)).resolves.toMatchObject({
+      result: {
+        structuredContent: { ok: true, added: 0, dryRun: true, held: [] },
       },
     });
 

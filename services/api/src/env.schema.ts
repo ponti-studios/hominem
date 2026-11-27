@@ -76,6 +76,9 @@ export const apiSchema = runtimeSchema.extend({
   // The free credit on joining, in pence, and the most that may be given in a UTC day.
   CREDIT_GRANT_PENCE: z.coerce.number().int().nonnegative().default(100),
   CREDIT_GRANTS_PER_DAY: z.coerce.number().int().nonnegative().default(50),
+  // Canned AI replies (no model, no key, no cost) for local scripted runs. `index.ts` refuses
+  // this in production. Default false: real OpenRouter.
+  USE_SCRIPTED_AI: z.stringbool().default(false),
   // Local fakes for development only (ignored in production): where to reach OpenRouter's key
   // API and Stripe's API instead of the real ones. See scripts/dev-fakes.ts.
   OPENROUTER_KEYS_BASE_URL: z.url().optional(),

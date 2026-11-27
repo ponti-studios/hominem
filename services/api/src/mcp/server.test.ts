@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
 import { authDb, db, pool } from '@hominem/db/core';
+import { ensureAccounts, seedBudgetedCategory } from '@hominem/finance-services/test/factory';
+import { budgetRows } from '@hominem/finance-services/test/readers';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -307,6 +309,37 @@ describe('mcp server transport', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'insufficient_scope',
       required_scopes: ['finance:write'],
+    });
+  });
+
+  it.each([
+    'finance_wealth_brief',
+    'finance_wealth_look',
+    'finance_wealth_close',
+    'finance_wealth_integrity',
+  ])('rejects %s without finance:read', async (name) => {
+    const app = createApp();
+    const response = await app.fetch(
+      new Request('http://localhost/api/mcp', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer test-token',
+          'content-type': 'application/json',
+          'x-mcp-scopes': 'career:read',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 101,
+          method: 'tools/call',
+          params: { name, arguments: {} },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'insufficient_scope',
+      required_scopes: ['finance:read'],
     });
   });
 
@@ -1596,61 +1629,16 @@ describe('delete confirmation from a client without elicitation', () => {
 });
 
 describe('finance budget delete confirmation contract', () => {
-  const categoryId = randomUUID();
-  const budgetId = randomUUID();
-  const categoryName = 'MCP budget confirmation fixture';
+  let categoryId: string;
+  let categoryName: string;
+  let budgetId: string;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    await db
-      .insertInto('app.financeCategories')
-      .values({ id: categoryId, userId: testUser.id, name: categoryName })
-      .execute();
-    await db
-      .insertInto('app.financeBudgets')
-      .values({
-        id: budgetId,
-        userId: testUser.id,
-        categoryId,
-        amountCents: 2500,
-        cadence: 'monthly',
-      })
-      .execute();
+    ({ categoryId, categoryName, budgetId, cleanup } = await seedBudgetedCategory(testUser.id));
   });
 
-  async function createWrapperFixture() {
-    const fixtureCategoryId = randomUUID();
-    const fixtureBudgetId = randomUUID();
-    await db
-      .insertInto('app.financeCategories')
-      .values({
-        id: fixtureCategoryId,
-        userId: testUser.id,
-        name: `MCP wrapper ${fixtureCategoryId}`,
-      })
-      .execute();
-    await db
-      .insertInto('app.financeBudgets')
-      .values({
-        id: fixtureBudgetId,
-        userId: testUser.id,
-        categoryId: fixtureCategoryId,
-        amountCents: 2500,
-        cadence: 'monthly',
-      })
-      .execute();
-    return {
-      budgetId: fixtureBudgetId,
-      cleanup: async () => {
-        await db.deleteFrom('app.financeBudgets').where('id', '=', fixtureBudgetId).execute();
-        await db.deleteFrom('app.financeCategories').where('id', '=', fixtureCategoryId).execute();
-      },
-    };
-  }
-
-  afterAll(async () => {
-    await db.deleteFrom('app.financeBudgets').where('id', '=', budgetId).execute();
-    await db.deleteFrom('app.financeCategories').where('id', '=', categoryId).execute();
-  });
+  afterAll(() => cleanup());
 
   it('types missing ids and previews existing deletions without writing', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'finance:read finance:write');
@@ -1672,9 +1660,7 @@ describe('finance budget delete confirmation contract', () => {
         tool: 'finance_budget_delete',
         preview: expect.objectContaining({ categoryName }),
       });
-      await expect(
-        db.selectFrom('app.financeBudgets').select('id').where('id', '=', budgetId).execute(),
-      ).resolves.toHaveLength(1);
+      await expect(budgetRows(testUser.id, { budgetId: budgetId })).resolves.toHaveLength(1);
 
       const dryRun = await client.callTool({
         name: 'finance_budget_delete',
@@ -1715,20 +1701,14 @@ describe('finance budget delete confirmation contract', () => {
       expect(unknownMergeCategory.isError).toBe(true);
       expect(unknownMergeCategory.structuredContent).toMatchObject({ code: 'unknown_category' });
 
-      await expect(
-        db
-          .selectFrom('app.financeBudgets')
-          .select('id')
-          .where('categoryId', '=', categoryId)
-          .execute(),
-      ).resolves.toHaveLength(1);
+      await expect(budgetRows(testUser.id, { categoryId: categoryId })).resolves.toHaveLength(1);
     } finally {
       await client.close();
     }
   });
 
   it('confirms a wrapped write through the confirm-token arguments object', async () => {
-    const fixture = await createWrapperFixture();
+    const fixture = await seedBudgetedCategory(testUser.id);
     const client = await createModernClientWithoutElicitation(
       createApp(mcpAuthContext),
       'finance:read finance:write',
@@ -1767,7 +1747,7 @@ describe('finance budget delete confirmation contract', () => {
   });
 
   it('confirms a wrapped write through elicitation-capable clients', async () => {
-    const fixture = await createWrapperFixture();
+    const fixture = await seedBudgetedCategory(testUser.id);
     const client = await createElicitingClient(
       createApp(mcpAuthContext),
       'accept',
@@ -1798,24 +1778,12 @@ describe('finance replace from a client without elicitation', () => {
   const accountId = '11111111-1111-4111-8111-111111111b05';
   const counterpartAccountId = '11111111-1111-4111-8111-111111111b06';
 
-  beforeAll(async () => {
-    await pool.query(
-      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
-      [testUser.id, testUser.name, testUser.email, true],
-    );
-    await pool.query(
-      `INSERT INTO app.finance_accounts
-         (id, user_id, name, account_type, currency_code, lifecycle_status, include_in_net_worth)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
-      [accountId, testUser.id, 'B5 Checking', 'checking', 'USD', 'open', true],
-    );
-    await pool.query(
-      `INSERT INTO app.finance_accounts
-         (id, user_id, name, account_type, currency_code, lifecycle_status, include_in_net_worth)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
-      [counterpartAccountId, testUser.id, 'B5 Counterpart', 'checking', 'USD', 'open', true],
-    );
-  });
+  beforeAll(() =>
+    ensureAccounts(testUser.id, [
+      { id: accountId, name: 'B5 Checking' },
+      { id: counterpartAccountId, name: 'B5 Counterpart' },
+    ]),
+  );
 
   it('runs mode replace with iUnderstand and no elicitation handler', async () => {
     const client = await createClient(createApp(), 'finance:write');

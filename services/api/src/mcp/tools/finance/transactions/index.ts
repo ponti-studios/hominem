@@ -4,6 +4,7 @@ import { financeTransactionsImportTool } from './import';
 import { financeTransactionMoveTool } from './move';
 import { financeRecentTransactionsTool } from './recent';
 import { financeTransactionSearchTool } from './search';
+import { financeSyncTool } from './sync';
 import { financeTransactionUpsertTool } from './upsert';
 
 export const financeTransactionsSlice = defineMcpSlice({
@@ -15,5 +16,6 @@ export const financeTransactionsSlice = defineMcpSlice({
     financeTransactionDeleteTool,
     financeTransactionMoveTool,
     financeTransactionsImportTool,
+    financeSyncTool,
   ],
 });

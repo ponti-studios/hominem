@@ -56,6 +56,8 @@
     "*.tsbuildinfo",
     "**/*.test.ts",
     "**/*.test.tsx",
+    // Test helpers import other packages' test folders, which .dockerignore drops.
+    "src/testkit",
     "src/routes/login/app"
   ]
 }
