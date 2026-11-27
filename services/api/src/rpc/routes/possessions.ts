@@ -1,14 +1,19 @@
 import { Hono } from 'hono';
 
 import {
+  attachPossessionImage,
   bulkUpsertPossessions,
   createContainer,
   createPossession,
   getPossessionHistory,
+  imagesByPossession,
   listContainers,
+  listPossessionImages,
   listPossessions,
   removeContainer,
   removePossession,
+  removePossessionImage,
+  reorderPossessionImages,
   updateContainer,
   updatePossession,
   upsertContainer,
@@ -24,6 +29,9 @@ import {
   possessionCreateSchema,
   possessionHistoryQuerySchema,
   possessionIdParamSchema,
+  possessionImageAttachSchema,
+  possessionImageOrderSchema,
+  possessionImageParamSchema,
   possessionListQuerySchema,
   possessionUpdateSchema,
   possessionUpsertSchema,
@@ -37,7 +45,13 @@ export const possessionsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', possessionListQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    return c.json({ possessions: await listPossessions(userId, c.req.valid('query')) });
+    const possessions = await listPossessions(userId, c.req.valid('query'));
+    // Photos ride along as an additive top-level map so old clients keep working.
+    const images = await imagesByPossession(
+      userId,
+      possessions.map((p) => p.id),
+    );
+    return c.json({ possessions, images });
   })
   .post('/', zValidator('json', possessionCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;
@@ -108,6 +122,41 @@ export const possessionsRoutes = new Hono<AppContext>()
       });
     },
   )
+  .get('/:id/images', zValidator('param', possessionIdParamSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json({ images: await listPossessionImages(userId, c.req.valid('param').id) });
+  })
+  .post(
+    '/:id/images',
+    zValidator('param', possessionIdParamSchema),
+    zValidator('json', possessionImageAttachSchema),
+    async (c) => {
+      const userId = c.get('auth')!.userId;
+      const image = await attachPossessionImage(
+        userId,
+        c.req.valid('param').id,
+        c.req.valid('json'),
+      );
+      return c.json({ image }, 201);
+    },
+  )
+  .put(
+    '/:id/images/order',
+    zValidator('param', possessionIdParamSchema),
+    zValidator('json', possessionImageOrderSchema),
+    async (c) => {
+      const userId = c.get('auth')!.userId;
+      const { id } = c.req.valid('param');
+      await reorderPossessionImages(userId, id, c.req.valid('json').imageIds);
+      return c.json({ images: await listPossessionImages(userId, id) });
+    },
+  )
+  .delete('/:id/images/:imageId', zValidator('param', possessionImageParamSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    const { id, imageId } = c.req.valid('param');
+    await removePossessionImage(userId, id, imageId);
+    return c.json({ removed: true });
+  })
   .delete('/:id', zValidator('param', possessionIdParamSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     await removePossession(userId, c.req.valid('param').id);

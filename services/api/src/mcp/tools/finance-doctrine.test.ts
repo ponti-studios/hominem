@@ -137,8 +137,7 @@ describe('finance_doctrine_import', () => {
   });
 
   it('rejects a doctrine that does not match the shape', async () => {
-    const bad = doctrineFixture() as Record<string, unknown>;
-    bad.version = 2;
+    const bad: Record<string, unknown> = { ...doctrineFixture(), version: 2 };
 
     await expect(
       callTool(userId, 'finance_doctrine_import', { doctrine: bad, dryRun: false }),

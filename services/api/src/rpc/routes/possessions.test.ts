@@ -13,6 +13,10 @@ const service = vi.hoisted(() => ({
   getPossessionHistory: vi.fn(),
   vesselWeightReport: vi.fn(),
   validatePossessions: vi.fn(),
+  listPossessionImages: vi.fn(),
+  attachPossessionImage: vi.fn(),
+  reorderPossessionImages: vi.fn(),
+  removePossessionImage: vi.fn(),
 }));
 
 vi.mock('../../application/possessions.service', async (importOriginal) => ({
@@ -23,6 +27,10 @@ vi.mock('../../application/possessions.service', async (importOriginal) => ({
   getPossessionHistory: service.getPossessionHistory,
   vesselWeightReport: service.vesselWeightReport,
   validatePossessions: service.validatePossessions,
+  listPossessionImages: service.listPossessionImages,
+  attachPossessionImage: service.attachPossessionImage,
+  reorderPossessionImages: service.reorderPossessionImages,
+  removePossessionImage: service.removePossessionImage,
 }));
 
 import { possessionsRoutes } from './possessions';
@@ -148,6 +156,76 @@ describe('possessions routes', () => {
     await expect(get('/api/possessions/validate')).resolves.toEqual({
       findings: [],
       total: 0,
+    });
+  });
+  describe('photos', () => {
+    const id = '22222222-2222-4222-8222-222222222222';
+    const imageId = '33333333-3333-4333-8333-333333333333';
+    const fileId = '44444444-4444-4444-8444-444444444444';
+    const json = (method: string, body?: unknown) => ({
+      method,
+      headers: { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+
+    it('requires authentication', async () => {
+      const response = await createApp(false).request(`/api/possessions/${id}/images`);
+      expect(response.status).toBe(401);
+    });
+
+    it('lists photos', async () => {
+      service.listPossessionImages.mockResolvedValue([]);
+      const response = await createApp(true).request(`/api/possessions/${id}/images`);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ images: [] });
+      expect(service.listPossessionImages).toHaveBeenCalledWith(testUser.id, id);
+    });
+
+    it('attaches a photo and answers 201', async () => {
+      service.attachPossessionImage.mockResolvedValue({ id: imageId, fileId });
+      const response = await createApp(true).request(
+        `/api/possessions/${id}/images`,
+        json('POST', { fileId, altText: '  front  ' }),
+      );
+      expect(response.status).toBe(201);
+      expect(await response.json()).toEqual({ image: { id: imageId, fileId } });
+      expect(service.attachPossessionImage).toHaveBeenCalledWith(testUser.id, id, {
+        fileId,
+        altText: 'front',
+      });
+    });
+
+    it('rejects a bad file id before calling the service', async () => {
+      service.attachPossessionImage.mockClear();
+      const response = await createApp(true).request(
+        `/api/possessions/${id}/images`,
+        json('POST', { fileId: 'nope' }),
+      );
+      expect(response.status).toBe(400);
+      expect(service.attachPossessionImage).not.toHaveBeenCalled();
+    });
+
+    it('reorders photos and returns the new list', async () => {
+      service.reorderPossessionImages.mockResolvedValue(undefined);
+      service.listPossessionImages.mockResolvedValue([{ id: imageId }]);
+      const response = await createApp(true).request(
+        `/api/possessions/${id}/images/order`,
+        json('PUT', { imageIds: [imageId] }),
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ images: [{ id: imageId }] });
+      expect(service.reorderPossessionImages).toHaveBeenCalledWith(testUser.id, id, [imageId]);
+    });
+
+    it('removes a photo', async () => {
+      service.removePossessionImage.mockResolvedValue(undefined);
+      const response = await createApp(true).request(
+        `/api/possessions/${id}/images/${imageId}`,
+        json('DELETE'),
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ removed: true });
+      expect(service.removePossessionImage).toHaveBeenCalledWith(testUser.id, id, imageId);
     });
   });
 });
