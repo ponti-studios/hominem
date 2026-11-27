@@ -37,10 +37,10 @@ function message(error: unknown): string {
 function rollInto(start: string, from: string, to: string, months: number): string[] {
   const result: string[] = [];
   let date = start;
-  for (let guard = 0; date < from && guard < 60; guard += 1) date = isoAddMonths(date, months);
-  while (date <= to && date >= from) {
-    result.push(date);
-    date = isoAddMonths(date, months);
+  // Always step from the first date, so a short month's clamp doesn't stick.
+  for (let step = 1; date <= to; step += 1) {
+    if (date >= from) result.push(date);
+    date = isoAddMonths(start, step * months);
   }
   return result;
 }
@@ -148,7 +148,7 @@ async function billEntries(
   return { entries, diag: { bill_count: bills.length, variable_due, topups, inactive } };
 }
 
-async function salaryEntry(
+async function salaryEntries(
   reads: ReportReads,
   asOf: string,
   from: string,
@@ -156,14 +156,14 @@ async function salaryEntry(
   inputs: ForwardLookInputs,
   notes: string[],
   inferences: string[],
-): Promise<TimelineEntry | null> {
+): Promise<TimelineEntry[]> {
   const rule = inputs.salary;
   if (!rule) {
     notes.push(
       'salary: no projection — forward look inputs carry no salary rule ' +
         '(query, min_amount, currency, lookback_days, label)',
     );
-    return null;
+    return [];
   }
   const result = await searchAll(reads, {
     query: rule.query,
@@ -187,11 +187,11 @@ async function salaryEntry(
         `(${rule.currency} >= ${rule.min_amount} in the last ${rule.lookback_days} days) — ` +
         'no salary inflow projected',
     );
-    return null;
+    return [];
   }
   const amount = round2(last.amount);
-  const date = rollInto(last.postedOn, from, to, 1)[0];
-  if (!date) return null;
+  const dates = rollInto(last.postedOn, from, to, 1);
+  if (!dates.length) return [];
   inferences.push(
     `salary: most recent payroll-sized inflow (${last.postedOn}, ${rule.currency} ${amount.toFixed(2)}, ` +
       `found by ledger search "${rule.query}"); monthly projection on the same day-of-month at ` +
@@ -199,14 +199,14 @@ async function salaryEntry(
       `${rows.length === 1 ? ' — a single observation so far' : ''}, and the pinch projection ` +
       'depends on it',
   );
-  return {
+  return dates.map((date) => ({
     date,
     label: rule.label,
     amount,
     currency: rule.currency,
     source: `ledger history: payroll inflow ${last.postedOn} of ${rule.currency} ${amount.toFixed(2)}; projected monthly`,
     inferred: true,
-  };
+  }));
 }
 
 function project(timeline: TimelineEntry[], start: number, days: string[]) {
@@ -432,8 +432,8 @@ export async function runLook(
     sourceErrors.bills = message(error);
   }
   try {
-    const salary = await salaryEntry(reads, asOf, from, to, inputs, notes, inferences);
-    if (salary) addEntry(salary, 'salary');
+    const salary = await salaryEntries(reads, asOf, from, to, inputs, notes, inferences);
+    for (const entry of salary) addEntry(entry, 'salary');
   } catch (error) {
     sourceErrors.salary = message(error);
   }

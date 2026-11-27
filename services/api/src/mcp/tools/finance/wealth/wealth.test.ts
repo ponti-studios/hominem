@@ -472,6 +472,90 @@ describe('wealth report tools', () => {
     }
   });
 
+  it.each([
+    ['both paydays around February', '2027-01-01', '2027-01-31', ['2027-02-01', '2027-03-01']],
+    ['a month-end payday after February', '2027-01-31', '2027-03-01', ['2027-03-31']],
+  ])('projects %s', async (_name, postedOn, asOf, expected) => {
+    const { id } = await seedTransaction({
+      ...SPEND,
+      accountId: checkingId,
+      categoryId: incomeId,
+      postedOn,
+      description: 'Calendar Payroll',
+      merchantName: 'Calendar Payroll',
+      amount: 500,
+      currencyCode: 'GBP',
+    });
+    try {
+      const result = financeWealthLookOutputSchema.parse(
+        (
+          await callTool(userId, 'finance_wealth_look', {
+            as_of: asOf,
+            inputs: {
+              salary: {
+                query: 'Calendar Payroll',
+                min_amount: 400,
+                currency: 'GBP',
+                lookback_days: 90,
+                label: 'Salary',
+              },
+            },
+          })
+        ).structuredContent,
+      );
+      expect(
+        result.sections.timeline_gbp.filter((entry) => entry.inferred).map((entry) => entry.date),
+      ).toEqual(expected);
+    } finally {
+      await removeTransactions(id);
+    }
+  });
+
+  it('dates an overdue month-end bill on its due day after a short month', async () => {
+    const billIds = await seedBills([
+      {
+        userId,
+        name: 'Month End Water',
+        providerName: 'Sample Water',
+        kind: 'other',
+        paymentMethod: 'direct_debit',
+        amountModel: 'fixed',
+        expectedAmountCents: 500,
+        currencyCode: 'GBP',
+        cadence: 'monthly',
+        dueDay: 31,
+        merchantMatch: ['Sample Water'],
+      },
+    ]);
+    // The stored next due date comes out clamped to 28 February.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2027-02-01T12:00:00Z'));
+    try {
+      // Overdue bills are only flagged when there is a snapshot to compare against.
+      const result = financeWealthBriefOutputSchema.parse(
+        (
+          await callTool(userId, 'finance_wealth_brief', {
+            date: '2027-02-01',
+            bills_only: true,
+            snapshot: { bills: [] },
+          })
+        ).structuredContent,
+      );
+      expect(result.sections.bills?.flags).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'bill_overdue',
+            bill: 'Month End Water',
+            due_date: '2027-01-31',
+          }),
+        ]),
+      );
+    } finally {
+      vi.useRealTimers();
+      await removeBills(...billIds);
+    }
+  });
+
   it('counts spending against budgeted tags outside the usual three', async () => {
     const { id } = await seedTransaction({
       ...SPEND,

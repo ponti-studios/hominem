@@ -6,6 +6,7 @@ import {
   createReportReads,
   isoAddMonths,
   isoMinusDays,
+  isoStepDueDate,
   isoPlusDays,
   round2,
   searchAll,
@@ -340,10 +341,10 @@ function billRecord(bill: HominemBillRow): BillRecord {
   };
 }
 
-function stepBack(due: string, cadence: string | null): string | null {
+function stepBack(due: string, cadence: string | null, dueDay: number | null): string | null {
   if (cadence === 'weekly') return isoMinusDays(due, 7);
   const months = BILL_CADENCE_MONTHS[cadence ?? 'monthly'];
-  return months === undefined ? null : isoAddMonths(due, -months);
+  return months === undefined ? null : isoStepDueDate(due, -months, dueDay);
 }
 
 function diffBills(previous: BillRecord[], current: BillRecord[], date: string): BillFlag[] {
@@ -393,7 +394,7 @@ function diffBills(previous: BillRecord[], current: BillRecord[], date: string):
       bill.cadence === 'one_off'
     )
       continue;
-    const lastDue = stepBack(bill.next_due, bill.cadence);
+    const lastDue = stepBack(bill.next_due, bill.cadence, bill.due_day);
     if (!lastDue || lastDue >= date || (bill.created_on && lastDue < bill.created_on)) continue;
     const graceStart = isoMinusDays(lastDue, 3);
     if (bill.last_paid_on === null || bill.last_paid_on < graceStart) {
