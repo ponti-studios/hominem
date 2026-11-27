@@ -247,7 +247,7 @@ export function tagsFor(
 }
 
 export function routeRow(
-  row: SyncRow,
+  row: Pick<SyncRow, 'route'>,
   accounts: FinanceAccountRoute[],
 ): { ok: boolean; account?: FinanceAccountRoute; reason?: string } {
   const route = row.route;
@@ -278,12 +278,21 @@ export function routeRow(
   };
 }
 
-export function starlingItemsToRows(items: StarlingItem[], doctrine: SyncDoctrine): SyncRow[] {
+export function starlingItemsToRows(
+  items: StarlingItem[],
+  doctrine: SyncDoctrine,
+  accounts: FinanceAccountRoute[] = [],
+): SyncRow[] {
   const rows: SyncRow[] = [];
   for (const item of items) {
     if (item.status !== 'SETTLED') continue;
     const uid = item.accountUid ?? '';
     const label = uid ? `Starling ${uid.slice(0, 8)}` : 'Starling (no account uid)';
+    const route: RouteIdentity | undefined = uid
+      ? { provider: 'starling', providerAccountId: uid }
+      : undefined;
+    // Rules like `unlessAccountContains` mean the account's real name, not the placeholder label.
+    const accountName = routeRow({ route }, accounts).account?.name ?? label;
     let merchant = item.merchant;
     let category: string;
     if (item.src === 'INTERNAL_TRANSFER') {
@@ -291,13 +300,13 @@ export function starlingItemsToRows(items: StarlingItem[], doctrine: SyncDoctrin
       if (item.space) merchant = item.space;
     } else {
       category =
-        classifyRow(merchant, toCents(item.amount), label, doctrine) ||
+        classifyRow(merchant, toCents(item.amount), accountName, doctrine) ||
         categorize(merchant, toCents(item.amount), doctrine);
     }
     rows.push({
       date: item.date,
       label,
-      route: uid ? { provider: 'starling', providerAccountId: uid } : undefined,
+      route,
       merchant,
       amount: item.amount,
       currency: item.currency,

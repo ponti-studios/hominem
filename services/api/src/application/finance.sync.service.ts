@@ -109,7 +109,7 @@ export async function financeSync(userId: string, input: z.output<typeof finance
     warnings.push('No open finance accounts are configured; provider rows are held for mapping.');
   }
 
-  const starling = starlingItemsToRows(starlingFeedsToItems(input.starling), doctrine);
+  const starling = starlingItemsToRows(starlingFeedsToItems(input.starling), doctrine, accounts);
   const plaid = input.plaid ? plaidItemsToRows(input.plaid, doctrine) : [];
   const rows = [...starling, ...plaid];
   if (rows.some((row) => !row.externalId)) {

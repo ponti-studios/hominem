@@ -110,6 +110,27 @@ describe('wealth-manager ingest', () => {
     ]);
   });
 
+  it('applies account-name rule exemptions using the mapped Starling account', () => {
+    const item: StarlingItem = {
+      feedItemUid: 'feed-1',
+      date: '2026-01-01',
+      merchant: 'Synth Transfer',
+      amount: -5,
+      currency: 'GBP',
+      direction: 'OUT',
+      status: 'SETTLED',
+      reference: null,
+      accountUid: 'account-a',
+      src: null,
+      space: null,
+    };
+    expect(starlingItemsToRows([item], doctrine, accounts)[0].category).toBe('Transfers');
+    expect(
+      starlingItemsToRows([item], doctrine, [{ ...accounts[0], name: 'Transfer account' }])[0]
+        .category,
+    ).toBe('Food');
+  });
+
   it('normalizes raw Starling feed amounts and retains their bank identity', () => {
     const items = starlingFeedsToItems([
       {
