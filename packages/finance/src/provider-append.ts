@@ -17,6 +17,7 @@ import {
  *   1. same provider ID: already here, leave it alone.
  *   2. same date, amount, currency and description, no provider ID yet: that's
  *      the same transaction from an older import, so stamp the provider ID on it.
+ *      A row's original `sheet:` ID counts too, so editing it doesn't spawn a twin.
  *   3. same date, amount and currency, no provider ID yet: same deal, someone
  *      renamed it or typed it in by hand. Stamp the ID, keep their words.
  *   4. nothing: insert.
@@ -50,6 +51,16 @@ function moneyKey(row: {
   return JSON.stringify([row.accountId, row.postedOn, row.amountCents, row.currencyCode]);
 }
 
+function incomingNaturalId({ input, accountId }: IncomingRow): string {
+  return computeSheetExternalId(
+    input.postedOn,
+    accountId,
+    input.description,
+    input.amountCents,
+    input.currencyCode.toUpperCase(),
+  );
+}
+
 function isUnclaimed(row: StoredRow): boolean {
   return row.externalId === null || row.externalId.startsWith('sheet:');
 }
@@ -58,7 +69,8 @@ async function storedRows(userId: string, incoming: IncomingRow[]): Promise<Stor
   if (!incoming.length) return [];
   const accountIds = [...new Set(incoming.map((row) => row.accountId))];
   const dates = incoming.map((row) => row.input.postedOn).sort();
-  const externalIds = incoming.map((row) => row.externalId);
+  // Provider IDs, plus the `sheet:` IDs an older import would've given these rows.
+  const externalIds = incoming.flatMap((row) => [row.externalId, incomingNaturalId(row)]);
   const rows = await db
     .selectFrom('app.financeTransactions')
     .select([
@@ -74,7 +86,7 @@ async function storedRows(userId: string, incoming: IncomingRow[]): Promise<Stor
     .where('userId', '=', userId)
     .where('accountId', 'in', accountIds)
     // A stored row can drift out of the date window (the user moved it, or the
-    // bank restated it), so provider IDs are looked up regardless of date.
+    // bank restated it), so IDs are looked up regardless of date.
     .where((expression) =>
       expression.or([
         expression.and([
@@ -109,10 +121,12 @@ function planMatches(incoming: IncomingRow[], stored: StoredRow[]) {
       row.amountCents,
       row.currencyCode,
     );
+    // Current values and the original import ID usually agree; edits split them.
+    const naturalIds = new Set([naturalId, row.externalId ?? naturalId]);
     for (const [map, key] of [
-      [unclaimedByNaturalId, naturalId],
-      [unclaimedByMoney, moneyKey(row)],
-    ] as const) {
+      ...[...naturalIds].map((id) => [unclaimedByNaturalId, id] as const),
+      [unclaimedByMoney, moneyKey(row)] as const,
+    ]) {
       const group = map.get(key) ?? [];
       group.push(row);
       map.set(key, group);
@@ -135,17 +149,7 @@ function planMatches(incoming: IncomingRow[], stored: StoredRow[]) {
   }
   const leftover: IncomingRow[] = [];
   for (const row of unseen) {
-    const match = take(
-      unclaimedByNaturalId.get(
-        computeSheetExternalId(
-          row.input.postedOn,
-          row.accountId,
-          row.input.description,
-          row.input.amountCents,
-          row.input.currencyCode.toUpperCase(),
-        ),
-      ),
-    );
+    const match = take(unclaimedByNaturalId.get(incomingNaturalId(row)));
     if (match) adopt.push({ incoming: row, stored: match, exact: true });
     else leftover.push(row);
   }
@@ -183,7 +187,7 @@ export async function appendProviderTransactions(
   const plan = planMatches(identified, await storedRows(userId, identified));
 
   const warnings: string[] = [];
-  const changed = plan.existing.filter(
+  const changed = [...plan.existing, ...plan.adopt.filter(({ exact }) => exact)].filter(
     ({ incoming, stored }) =>
       incoming.input.amountCents !== stored.amountCents ||
       incoming.input.currencyCode.toUpperCase() !== stored.currencyCode,
