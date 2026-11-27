@@ -1171,6 +1171,7 @@ export interface AppPossessionImages {
   altText: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   displayOrder: Generated<number>;
+  fileId: string | null;
   id: Generated<string>;
   originalFilename: string | null;
   ownerUserid: string;
