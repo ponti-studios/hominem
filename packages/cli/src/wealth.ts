@@ -147,8 +147,7 @@ function plaidConfig() {
   } as const;
 }
 
-export async function seed(args: string[] = []): Promise<number> {
-  if (args.length) throw new WealthError('Usage: hominem wealth seed.');
+export async function seed(): Promise<number> {
   applyEnvDefaults();
   let doctrine: unknown;
   const path = process.env.WEALTH_SEED_DOCTRINE;
@@ -188,8 +187,7 @@ export async function seed(args: string[] = []): Promise<number> {
   return result.ok ? 0 : 1;
 }
 
-export async function balances(args: string[] = []): Promise<number> {
-  if (args.length) throw new WealthError('Usage: hominem wealth balances.');
+export async function balances(): Promise<number> {
   applyEnvDefaults();
   const token = await getHominemAccessToken();
   const snapshot = await starlingBalances(starlingConfig());
@@ -207,46 +205,28 @@ export async function balances(args: string[] = []): Promise<number> {
   return 0;
 }
 
-type SyncGroup = 'wealth' | 'finance';
+export interface SyncOptions {
+  bank?: 'starling';
+  from?: string;
+  until?: string;
+  dryRun?: boolean;
+}
 
-function parseArgs(args: string[], group: SyncGroup) {
-  const bankFlag = group === 'finance' ? '[--bank starling] ' : '';
-  const usage = `Usage: hominem ${group} sync ${bankFlag}[--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run].`;
-  let bank: 'starling' | undefined;
-  let from: string | undefined;
+function resolveSyncOptions({ bank, from, until: end, dryRun = false }: SyncOptions) {
   // Bank timestamps are UTC, so "today" has to be too. A local date would cut off evening
   // spending west of Greenwich and leave the checkpoint ahead of the next run's end date.
-  let until = process.env.WEALTH_SYNC_TODAY ?? new Date().toISOString().slice(0, 10);
-  let dryRun = false;
-  for (let index = 0; index < args.length; index += 1) {
-    if (args[index] === '--dry-run') {
-      dryRun = true;
-    } else if (args[index] === '--from' && args[index + 1]) {
-      from = args[++index];
-    } else if (args[index] === '--until' && args[index + 1]) {
-      until = args[++index];
-    } else if (group === 'finance' && args[index] === '--bank' && args[index + 1]) {
-      const value = args[++index];
-      if (value !== 'starling') {
-        throw new WealthError(`Unknown bank "${value}". The only one for now is starling.`);
-      }
-      bank = value;
-    } else {
-      throw new WealthError(usage);
-    }
-  }
-  const parsedUntil = z.iso.date().safeParse(until);
-  const parsedFrom = from === undefined ? undefined : z.iso.date().safeParse(from);
-  if (!parsedUntil.success || (parsedFrom && !parsedFrom.success)) {
+  const until = end ?? process.env.WEALTH_SYNC_TODAY ?? new Date().toISOString().slice(0, 10);
+  const dates = from === undefined ? [until] : [from, until];
+  if (!dates.every((date) => z.iso.date().safeParse(date).success)) {
     throw new WealthError('Sync dates must be valid YYYY-MM-DD calendar dates.');
   }
   if (from && from > until) throw new WealthError('The sync start must not be after its end.');
   return { bank, from, until, dryRun };
 }
 
-export async function sync(args: string[] = [], group: SyncGroup = 'wealth'): Promise<number> {
+export async function sync(options: SyncOptions = {}): Promise<number> {
   applyEnvDefaults();
-  const { bank, from, until, dryRun } = parseArgs(args, group);
+  const { bank, from, until, dryRun } = resolveSyncOptions(options);
   const token = await getHominemAccessToken();
   const dir = wealthDir();
   const userKey = await accountKey(dir, token);
@@ -435,13 +415,6 @@ function today(): string {
   return process.env.WEALTH_SYNC_TODAY ?? new Date().toLocaleDateString('en-CA');
 }
 
-function noArgs(args: string[], command: string) {
-  if (args.length)
-    throw new WealthError(
-      `hominem wealth ${command} takes no arguments; see \`hominem wealth --help\`.`,
-    );
-}
-
 async function connect() {
   applyEnvDefaults();
   const token = await getHominemAccessToken();
@@ -485,8 +458,7 @@ const diagnosticsSchema = z
   })
   .passthrough();
 
-export async function brief(args: string[] = []): Promise<number> {
-  noArgs(args, 'brief');
+export async function brief(): Promise<number> {
   const { userKey, hominem } = await connect();
   const dir = wealthDir();
   const snapshotPath = join(dir, `morning_brief_bills-${userKey}.json`);
@@ -547,8 +519,7 @@ async function fetchFx(): Promise<{ fx?: Record<string, unknown>; note?: string 
   }
 }
 
-export async function look(args: string[] = []): Promise<number> {
-  noArgs(args, 'look');
+export async function look(): Promise<number> {
   const { userKey, hominem } = await connect();
   const inputsPath = join(wealthDir(), 'forward_look_inputs.json');
   const inputs = await readLocal(inputsPath);
@@ -577,8 +548,7 @@ export async function look(args: string[] = []): Promise<number> {
   return ok ? 0 : 1;
 }
 
-export async function close(args: string[] = []): Promise<number> {
-  noArgs(args, 'close');
+export async function close(): Promise<number> {
   const date = today();
   const month =
     process.env.WEALTH_CLOSE_MONTH ??
@@ -617,8 +587,7 @@ export async function close(args: string[] = []): Promise<number> {
   return 0;
 }
 
-export async function integrity(args: string[] = []): Promise<number> {
-  noArgs(args, 'integrity');
+export async function integrity(): Promise<number> {
   const { userKey, hominem } = await connect();
   const dir = wealthDir();
   const date = today();

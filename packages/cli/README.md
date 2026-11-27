@@ -86,12 +86,23 @@ fetches provider and rate data. `WEALTH_SYNC_TODAY` pins the report date.
 
 The launch agent must point at the compiled binary: macOS lists background items by executable name, so a `bun`/`node` path would show up as "node" instead of Hominem. `agent install` refuses to run from anything other than `hominem`.
 
+Run `hominem help` to list everything, or add `--help` to a command to see its
+flags. A mistyped command or flag exits 2. Connector commands (`tasks`,
+`starling` and friends) print their own usage.
+
 ## Development
 
 ```bash
 pnpm --filter @hominem/cli dev -- auth check   # run from source with bun
 pnpm --filter @hominem/cli test
 ```
+
+Each command is an oclif class in `src/commands/`, where the file path is the
+command (`finance/sync.ts` is `hominem finance sync`). Add new ones to
+`src/commands/index.ts` too: the compiled binary can't scan folders, and a test
+fails if you forget. Topic descriptions live under `oclif` in `package.json`.
+Commands that hand raw arguments to their own parser extend
+`PassthroughCommand`.
 
 Code layout: existing CLI decisions live in pure functions
 (`health.ts`, `callback.ts`, `rclone-config.ts`, `renderPlist` in

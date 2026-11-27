@@ -143,7 +143,7 @@ describe('wealth sync client', () => {
     await writeSyncState(home, { starling_max: '2026-02-18', plaid_max: '2026-01-01' });
     vi.resetModules();
     const { sync } = await import('./wealth.js');
-    expect(await sync(['--bank', 'starling'], 'finance')).toBe(0);
+    expect(await sync({ bank: 'starling' })).toBe(0);
     expect(windows).toEqual([
       '2026-02-04T00:00:00+00:00 2026-02-20T23:59:59.999+00:00',
       '2026-02-04T00:00:00+00:00 2026-02-20T23:59:59.999+00:00',
@@ -182,19 +182,11 @@ describe('wealth sync client', () => {
     vi.resetModules();
     const { sync } = await import('./wealth.js');
     try {
-      expect(await sync(['--bank', 'starling'], 'finance')).toBe(0);
+      expect(await sync({ bank: 'starling' })).toBe(0);
     } finally {
       vi.useRealTimers();
     }
     expect(ends).toEqual(['2026-02-21T23:59:59.999+00:00']);
-  });
-
-  it('refuses a bank it cannot sync', async ({ home: _home }) => {
-    const { fetchMock } = stubWealthFetch();
-    vi.resetModules();
-    const { sync } = await import('./wealth.js');
-    await expect(sync(['--bank', 'monzo'], 'finance')).rejects.toThrow('Unknown bank "monzo"');
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('sends seed identities and raw live balances to server tools without provider credentials', async ({
@@ -266,16 +258,16 @@ describe('wealth sync client', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('prints the legacy failure envelope and exits nonzero', ({ home }) => {
+  it('prints the JSON failure envelope for a bad flag and exits nonzero', ({ home }) => {
     const result = spawnSync('bun', ['run', 'src/index.ts', 'wealth', 'sync', '--invalid'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: { ...process.env, HOMINEM_HOME: home, HOMINEM_AGENT_ENV_FILE: join(home, 'env') },
     });
-    expect(result.status).toBe(1);
+    expect(result.status).toBe(2);
     expect(JSON.parse(result.stdout)).toMatchObject({
       ok: false,
-      error: expect.stringContaining('Usage: hominem wealth sync'),
+      error: expect.stringContaining('Nonexistent flag: --invalid'),
     });
   });
 });
