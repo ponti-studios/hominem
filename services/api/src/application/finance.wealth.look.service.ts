@@ -9,6 +9,7 @@ import {
   isoAddMonths,
   isoMinusDays,
   isoPlusDays,
+  isoStepDueDate,
   matchesMerchant,
   round2,
   searchAll,
@@ -62,10 +63,10 @@ function billOccurrences(bill: HominemBillRow, from: string, to: string): string
   }
   const months = CADENCE_STEP_MONTHS[cadence];
   if (months === undefined) return [];
-  while (date < from) date = isoAddMonths(date, months);
-  while (date <= to) {
-    result.push(date);
-    date = isoAddMonths(date, months);
+  // Always step from the first date, so a missing due day can't drift either.
+  for (let step = 1; date <= to; step += 1) {
+    if (date >= from) result.push(date);
+    date = isoStepDueDate(bill.nextDueDate, step * months, bill.dueDay);
   }
   return result;
 }

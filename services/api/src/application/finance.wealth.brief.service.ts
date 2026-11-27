@@ -103,10 +103,15 @@ async function tagComposition(
 ): Promise<NonNullable<PacingRow['components']>> {
   const buckets: Record<string, number> = {};
   for (const tag of tagBudgets) if (tag.tagName) buckets[tag.tagName] = 0;
+  // A row counts toward one tag: the usual three win, then any other budgeted tag by name.
+  const others = Object.keys(buckets)
+    .filter((name) => !TAG_PRIORITY.includes(name))
+    .sort();
+  const priority = [...TAG_PRIORITY, ...others];
   const rows = await searchAll(reads, { categoryName, from, to });
   for (const row of rows) {
     if (row.excluded || row.pending || row.currencyCode !== currency || row.amount >= 0) continue;
-    for (const name of TAG_PRIORITY) {
+    for (const name of priority) {
       if (name in buckets && row.tags.includes(name)) {
         buckets[name] = (buckets[name] ?? 0) + Math.abs(row.amount);
         break;

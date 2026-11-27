@@ -12,6 +12,7 @@ import {
 } from '@hominem/finance-services/test/factory';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { financeBudgetCreateOutputSchema } from '../../../../schemas/finance.schema';
 import {
   financeWealthBriefOutputSchema,
   financeWealthCloseOutputSchema,
@@ -439,6 +440,70 @@ describe('wealth report tools', () => {
     expect(unrelated.sections.diagnostics.notes).toEqual(
       expect.arrayContaining([expect.stringContaining('no payroll-sized inflow found')]),
     );
+  });
+
+  it('puts a month-end bill back on its due day after a short month', async () => {
+    const billIds = await seedBills([
+      {
+        userId,
+        name: 'Month End Rates',
+        providerName: 'Sample Council',
+        kind: 'other',
+        paymentMethod: 'direct_debit',
+        amountModel: 'fixed',
+        expectedAmountCents: 500,
+        currencyCode: 'GBP',
+        cadence: 'monthly',
+        dueDay: 30,
+      },
+    ]);
+    try {
+      // As of 28 February the next due date is clamped to that day.
+      const result = financeWealthLookOutputSchema.parse(
+        (await callTool(userId, 'finance_wealth_look', { as_of: '2027-02-28' })).structuredContent,
+      );
+      expect(
+        result.sections.timeline_gbp
+          .filter((entry) => entry.label.startsWith('Month End Rates'))
+          .map((entry) => entry.date),
+      ).toEqual(['2027-03-30']);
+    } finally {
+      await removeBills(...billIds);
+    }
+  });
+
+  it('counts spending against budgeted tags outside the usual three', async () => {
+    const { id } = await seedTransaction({
+      ...SPEND,
+      accountId: checkingId,
+      categoryId: foodId,
+      postedOn: '2026-11-19',
+      description: 'Corner Takeaway',
+      merchantName: 'Corner Takeaway',
+      amount: -45,
+      currencyCode: 'GBP',
+    });
+    const { id: tagId } = await seedTagOn({ ownerUserid: userId, name: 'Takeaway' }, [id]);
+    const budget = await callTool(userId, 'finance_budget_create', {
+      categoryId: foodId,
+      tagId,
+      amountCents: 3000,
+      cadence: 'monthly',
+    });
+    try {
+      const result = financeWealthBriefOutputSchema.parse(
+        (await callTool(userId, 'finance_wealth_brief', { date })).structuredContent,
+      );
+      expect(result.sections.diagnostics.pacing_all?.Food?.components).toMatchObject({
+        Coffee: { month_to_date: 120 },
+        Takeaway: { budget: 30, month_to_date: 45, over_tag_budget: true },
+      });
+    } finally {
+      await callTool(userId, 'finance_budget_delete', {
+        budgetId: financeBudgetCreateOutputSchema.parse(budget.structuredContent).budget?.id,
+      });
+      await removeTransactions(id);
+    }
   });
 
   it('uses the report date rather than later spending for budget breaches', async () => {

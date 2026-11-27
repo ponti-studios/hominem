@@ -43,6 +43,17 @@ export function isoAddMonths(iso: string, months: number): string {
   return `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
 }
 
+/**
+ * Steps a bill's date by whole months and lands on its due day again, so a short month's clamp
+ * (31st → 28 February) doesn't stick for the months after it.
+ */
+export function isoStepDueDate(iso: string, months: number, dueDay: number | null): string {
+  if (dueDay === null) return isoAddMonths(iso, months);
+  const monthEnd = isoAddMonths(`${iso.slice(0, 7)}-31`, months);
+  const day = Math.min(dueDay, Number(monthEnd.slice(8)));
+  return `${monthEnd.slice(0, 8)}${String(day).padStart(2, '0')}`;
+}
+
 export function monthBounds(month: string): { from: string; to: string } {
   const from = `${month}-01`;
   return { from, to: isoMinusDays(isoAddMonths(from, 1), 1) };
