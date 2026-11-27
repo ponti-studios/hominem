@@ -1,7 +1,14 @@
-import { db, pool, sql } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  removeUsers,
+  resetUsers,
+  seedTag,
+  seedTagAssignments,
+} from '@hominem/finance-services/test/factory';
+import { activeEntityIdsForTag, tagById } from '@hominem/finance-services/test/readers';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool, getToolDefinition } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000d0-0000-4000-8000-000000000001';
@@ -16,56 +23,19 @@ type TagResult = {
   reason?: string | null;
 };
 
-function content(res: McpToolResult<TagResult>): TagResult {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<TagResult>;
 
-async function createTag(ownerUserid: string, name: string): Promise<string> {
-  const row = await db
-    .insertInto('app.tags')
-    .values({ ownerUserid, name, slug: name.toLowerCase(), path: name.toLowerCase() })
-    .returning('id')
-    .executeTakeFirstOrThrow();
-  return row.id;
-}
+const onNotes = { entityTable: 'app.notes', assignmentSource: 'agent' };
 
-async function assign(tagId: string, entityId: string) {
-  await sql`
-    INSERT INTO app.tag_assignments (tag_id, entity_table, entity_id, assignment_source)
-    VALUES (${tagId}, 'app.notes'::regclass, ${entityId}, 'agent')
-  `.execute(db);
-}
+beforeAll(() => resetUsers(userId, otherUserId));
 
-async function activeAssignments(tagId: string): Promise<string[]> {
-  const rows = await db
-    .selectFrom('app.tagAssignments')
-    .select('entityId')
-    .where('tagId', '=', tagId)
-    .where('removedAt', 'is', null)
-    .execute();
-  return rows.map((row) => row.entityId).sort();
-}
-
-async function tagById(id: string) {
-  return db.selectFrom('app.tags').select(['id', 'name']).where('id', '=', id).executeTakeFirst();
-}
-
-beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Tag User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    // Cascades to this user's tag assignments.
-    await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
-  }
-});
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_tag_rename', () => {
   it('renames the display name, keeping the id and every assignment', async () => {
-    const tagId = await createTag(userId, 'art');
-    await assign(tagId, entityOne);
-    await assign(tagId, entityTwo);
+    const { id: tagId } = await seedTag({ ownerUserid: userId, name: 'art' });
+    await seedTagAssignments(tagId, [entityOne], onNotes);
+    await seedTagAssignments(tagId, [entityTwo], onNotes);
 
     const result = content(
       await callTool(userId, 'finance_tag_rename', { from: 'art', to: 'Art' }),
@@ -76,12 +46,12 @@ describe('finance_tag_rename', () => {
 
     const row = await tagById(tagId);
     expect(row?.name).toBe('Art');
-    expect(await activeAssignments(tagId)).toEqual([entityOne, entityTwo]);
+    expect(await activeEntityIdsForTag(tagId)).toEqual([entityOne, entityTwo]);
   });
 
   it('refuses with target_exists when another tag already holds the name', async () => {
-    const source = await createTag(userId, 'probe-source');
-    await createTag(userId, 'probe-target');
+    const { id: source } = await seedTag({ ownerUserid: userId, name: 'probe-source' });
+    await seedTag({ ownerUserid: userId, name: 'probe-target' });
 
     const result = content(
       await callTool(userId, 'finance_tag_rename', {
@@ -109,11 +79,11 @@ describe('finance_tag_merge', () => {
   });
 
   it('moves assignments, drops duplicates and removes the emptied tag', async () => {
-    const source = await createTag(userId, 'merge-a');
-    const target = await createTag(userId, 'merge-b');
-    await assign(source, entityOne);
-    await assign(source, entityTwo);
-    await assign(target, entityOne); // shared entity — must not be duplicated
+    const { id: source } = await seedTag({ ownerUserid: userId, name: 'merge-a' });
+    const { id: target } = await seedTag({ ownerUserid: userId, name: 'merge-b' });
+    await seedTagAssignments(source, [entityOne], onNotes);
+    await seedTagAssignments(source, [entityTwo], onNotes);
+    await seedTagAssignments(target, [entityOne], onNotes); // shared entity — must not be duplicated
 
     const result = content(
       await callTool(userId, 'finance_tag_merge', { from: 'merge-a', into: 'merge-b' }),
@@ -123,11 +93,11 @@ describe('finance_tag_merge', () => {
     expect(result.tag).toEqual({ id: target, name: 'merge-b' });
 
     expect(await tagById(source)).toBeUndefined();
-    expect(await activeAssignments(target)).toEqual([entityOne, entityTwo]);
+    expect(await activeEntityIdsForTag(target)).toEqual([entityOne, entityTwo]);
   });
 
   it('reports an unknown tag', async () => {
-    await createTag(userId, 'merge-c');
+    await seedTag({ ownerUserid: userId, name: 'merge-c' });
     const result = content(
       await callTool(userId, 'finance_tag_merge', { from: 'merge-c', into: 'missing' }),
     );

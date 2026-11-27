@@ -11,7 +11,7 @@ import {
   exportFinanceData,
   replaceTransactionTags,
 } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe

@@ -88,16 +88,13 @@ async function withBalances<T extends Selectable<AppFinanceAccounts>>(
 }
 
 export async function createAccount(input: CreateAccountInput): Promise<AccountWithBalance> {
-  const id = input.id ?? crypto.randomUUID();
-  const accountType = input.accountType ?? 'checking';
-
   const result = await db
     .insertInto('app.financeAccounts')
+    // Spread the whole input so nothing the type accepts (currency, provider, ...) gets dropped.
     .values({
-      id,
-      userId: input.userId,
-      name: input.name,
-      accountType,
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      accountType: input.accountType ?? 'checking',
       metadata: input.metadata ?? {},
     })
     .returningAll()

@@ -1,7 +1,9 @@
-import { db, pool, sql } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { db, sql } from '@hominem/db/core';
+import { removeUsers, resetUsers } from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000a0-0000-4000-8000-000000000001';
@@ -20,20 +22,13 @@ type Content = {
   deleted?: { id: string; name: string };
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Account Create User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    // Cascades to this user's transactions and tag assignments.
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  }
+  await resetUsers(userId, otherUserId);
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_account_create', () => {
   it('creates an account and reports created: true', async () => {

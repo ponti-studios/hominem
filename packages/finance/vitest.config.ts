@@ -10,7 +10,7 @@ export default defineConfig({
       DATABASE_URL: TEST_DATABASE_URL,
       NODE_ENV: 'test',
     },
-    include: ['src/finance*.test.ts', 'src/finance.*.test.ts', 'src/import/**/*.test.ts'],
+    include: ['src/**/*.test.ts'],
     // these tests import @hominem/db at load time, so run them one at a time or a
     // bad pool connection just hangs instead of failing clearly
     fileParallelism: false,

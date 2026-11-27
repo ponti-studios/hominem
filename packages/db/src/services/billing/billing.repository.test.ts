@@ -16,6 +16,11 @@ import {
   usageCount,
 } from './billing.repository';
 
+// Relative to now so seats don't quietly expire once a hardcoded date rolls past.
+const DAY_MS = 86_400_000;
+const PERIOD_END = new Date(Date.now() + 30 * DAY_MS);
+const AFTER_PERIOD_END = new Date(PERIOD_END.getTime() + DAY_MS);
+
 describe('billing repository', () => {
   const userIds: string[] = [];
 
@@ -44,7 +49,7 @@ describe('billing repository', () => {
       stripeSubscriptionId: `sub_${userId}`,
       pricePence: 999,
       founding: false,
-      currentPeriodEnd: new Date('2026-11-26T00:00:00.000Z'),
+      currentPeriodEnd: PERIOD_END,
       cancelAtPeriodEnd: false,
       ...overrides,
     };
@@ -62,7 +67,7 @@ describe('billing repository', () => {
       tier: 'core',
       pricePence: 799,
       founding: true,
-      currentPeriodEnd: '2026-11-26T00:00:00.000Z',
+      currentPeriodEnd: PERIOD_END.toISOString(),
     });
   });
 
@@ -117,7 +122,7 @@ describe('billing repository', () => {
 
   it('releases a founding seat when its subscription ends', async () => {
     const founders = await seedFounders('released');
-    expect(await countFoundingSeats(db, new Date('2026-11-27T00:00:00.000Z'))).toBe(0);
+    expect(await countFoundingSeats(db, AFTER_PERIOD_END)).toBe(0);
 
     const endedUserId = founders[0]!;
     await save(

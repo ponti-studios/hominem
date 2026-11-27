@@ -1,7 +1,9 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { db } from '@hominem/db/core';
+import { removeUsers, resetUsers, seedAccount } from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool, getToolDefinition } from '../tool-registry';
 import './finance';
 
 type Content = Record<string, unknown> & {
@@ -12,9 +14,7 @@ type Content = Record<string, unknown> & {
   rejected?: Array<{ index: number; reason: string }>;
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<Content>;
 
 const guardUser = 'f2000000-0000-4000-8000-000000000101';
 const allowUser = 'f2000000-0000-4000-8000-000000000102';
@@ -22,37 +22,6 @@ const multiUser = 'f2000000-0000-4000-8000-000000000103';
 const guardCheckingId = 'f2000003-0000-4000-8000-000000000101';
 const allowCheckingId = 'f2000003-0000-4000-8000-000000000102';
 const multiCheckingId = 'f2000003-0000-4000-8000-000000000103';
-
-async function seedUser(
-  userId: string,
-  accountId: string,
-  currency = 'USD',
-  allowedCurrencies: string[] = [],
-) {
-  await pool.query(
-    `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-    [userId, `Guard User ${userId}`, `${userId}@test.hominem.dev`, true],
-  );
-  await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
-  await db.deleteFrom('app.financeCategories').where('userId', '=', userId).execute();
-  await db.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
-  await db.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
-  await db
-    .insertInto('app.financeAccounts')
-    .values({
-      id: accountId,
-      userId,
-      name: 'Guard Checking',
-      accountType: 'checking',
-      currencyCode: currency,
-      allowedCurrencies,
-      lifecycleStatus: 'open',
-      includeInNetWorth: true,
-      metadata: {},
-    })
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-}
 
 const oneRow = (account: string) => ({
   postedOn: '2026-11-01',
@@ -63,10 +32,19 @@ const oneRow = (account: string) => ({
 });
 
 beforeAll(async () => {
-  await seedUser(guardUser, guardCheckingId);
-  await seedUser(allowUser, allowCheckingId);
-  await seedUser(multiUser, multiCheckingId, 'USD', ['GBP']);
+  await resetUsers(guardUser, allowUser, multiUser);
+  const guardAccount = { name: 'Guard Checking' };
+  await seedAccount({ ...guardAccount, id: guardCheckingId, userId: guardUser });
+  await seedAccount({ ...guardAccount, id: allowCheckingId, userId: allowUser });
+  await seedAccount({
+    ...guardAccount,
+    id: multiCheckingId,
+    userId: multiUser,
+    allowedCurrencies: ['GBP'],
+  });
 });
+
+afterAll(() => removeUsers(guardUser, allowUser, multiUser));
 
 describe('replace guards', () => {
   it('refuses replace without iUnderstand', async () => {

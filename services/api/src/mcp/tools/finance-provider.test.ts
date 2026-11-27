@@ -1,5 +1,6 @@
-import { db, pool } from '@hominem/db/core';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { db } from '@hominem/db/core';
+import { removeUsers, resetUsers, seedAccount } from '@hominem/finance-services/test/factory';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { getSyncDoctrine } from '../../application/finance.doctrine.service';
 import { createToolRegistry } from '../tool-registry';
@@ -23,28 +24,9 @@ const doctrine = {
   lenses: [],
 };
 
-async function clear() {
-  for (const id of [userId, otherUserId]) {
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-    await db.deleteFrom('app.financeSyncDoctrine').where('userId', '=', id).execute();
-  }
-}
+beforeEach(() => resetUsers(userId, otherUserId));
 
-beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, true) ON CONFLICT (id) DO NOTHING',
-      [id, 'Provider Fixture', `${id}@test.hominem.dev`],
-    );
-  }
-});
-
-beforeEach(clear);
-
-afterAll(async () => {
-  await clear();
-  await pool.query('DELETE FROM "user" WHERE id = ANY($1::text[])', [[userId, otherUserId]]);
-});
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance provider tools', () => {
   it('seeds each owner once by provider identity and imports their doctrine', async () => {
@@ -85,16 +67,7 @@ describe('finance provider tools', () => {
   });
 
   it('does not claim or attach an identity to a same-named existing account', async () => {
-    await db
-      .insertInto('app.financeAccounts')
-      .values({
-        userId,
-        name: accounts[0].name,
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        metadata: {},
-      })
-      .execute();
+    await seedAccount({ userId, name: accounts[0].name, currencyCode: 'GBP' });
     await expect(
       registry.callTool(userId, 'finance_seed', { accounts: [accounts[0]] }),
     ).rejects.toThrow('link it explicitly before seeding');

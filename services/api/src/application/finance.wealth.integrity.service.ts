@@ -410,5 +410,7 @@ export async function runCheck(
   } catch (error) {
     note(ctx, 'payment_verification', null, `check failed: ${message(error)}`);
   }
-  return { ok: true, date, flags: ctx.flags, info: ctx.info, run_id: input.run_id ?? null };
+  // `info` flags are notes; only `flag` severity means the ledger needs attention.
+  const ok = !ctx.flags.some((flag) => flag.severity === 'flag');
+  return { ok, date, flags: ctx.flags, info: ctx.info, run_id: input.run_id ?? null };
 }

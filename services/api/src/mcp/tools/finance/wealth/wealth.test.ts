@@ -1,18 +1,24 @@
-import { db, pool, sql } from '@hominem/db/core';
-import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
-import { Hono } from 'hono';
+import {
+  removeBills,
+  removeTransactions,
+  removeUsers,
+  seedAccounts,
+  seedBills,
+  seedCategory,
+  seedRunwayPreferences,
+  seedTagOn,
+  seedTransaction,
+  seedUser,
+} from '@hominem/finance-services/test/factory';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type { AuthContext } from '../../../../auth/types';
-import type { AppContext } from '../../../../rpc/middleware/auth';
-import { apiErrorHandler } from '../../../../rpc/middleware/error';
-import { financeRoutes } from '../../../../rpc/routes/finance';
 import {
   financeWealthBriefOutputSchema,
   financeWealthCloseOutputSchema,
   financeWealthIntegrityOutputSchema,
   financeWealthLookOutputSchema,
 } from '../../../../schemas/finance.wealth.schema';
+import { financeCallerApp } from '../../../../testkit/fixtures/finance-caller-app';
 import { callTool, listToolsForScopes } from '../../../tool-registry';
 import '../register';
 
@@ -26,242 +32,150 @@ const foodId = 'f2970002-0000-4000-8000-000000000001';
 const incomeId = 'f2970002-0000-4000-8000-000000000002';
 const otherFoodId = 'f2970002-0000-4000-8000-000000000003';
 
-let transactionCounter = 0;
-
-async function removeUser(id: string) {
-  await pool.query(
-    'DELETE FROM app.tag_assignments WHERE tag_id IN (SELECT id FROM app.tags WHERE owner_userid = $1)',
-    [id],
-  );
-  await db.deleteFrom('app.financeBudgets').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeBills').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeRunwayPreferences').where('userId', '=', id).execute();
-  await db.deleteFrom('app.userProfiles').where('userId', '=', id).execute();
-  await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
-  await db.deleteFrom('app.financeTransactions').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  await pool.query('DELETE FROM "user" WHERE id = $1', [id]);
-}
-
-async function transaction(input: {
-  owner?: string;
-  accountId: string;
-  categoryId?: string;
-  date: string;
-  merchant: string;
-  amount: number;
-  currency: string;
-  source?: string;
-  externalId?: string;
-  pending?: boolean;
-}) {
-  transactionCounter += 1;
-  const id = `f2970003-0000-4000-8000-${String(transactionCounter).padStart(12, '0')}`;
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id,
-      userId: input.owner ?? userId,
-      accountId: input.accountId,
-      categoryId: input.categoryId ?? null,
-      postedOn: input.date,
-      description: input.merchant,
-      merchantName: input.merchant,
-      amount: input.amount,
-      currencyCode: input.currency,
-      transactionType: input.amount < 0 ? 'debit' : 'credit',
-      source: input.source ?? 'manual',
-      pending: input.pending ?? false,
-      excluded: false,
-      providerPayload: {},
-      externalId: input.externalId ?? `wealth-fixture-${transactionCounter}`,
-    })
-    .execute();
-  return id;
-}
-
-async function tag(name: string, transactionIds: string[]) {
-  const slug = name.toLowerCase();
-  const row = await db
-    .insertInto('app.tags')
-    .values({ ownerUserid: userId, name, slug, path: slug })
-    .returning('id')
-    .executeTakeFirstOrThrow();
-  await db
-    .insertInto('app.tagAssignments')
-    .values(
-      transactionIds.map((entityId) => ({
-        tagId: row.id,
-        entityTable: sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
-        entityId,
-      })),
-    )
-    .execute();
-  return row.id;
-}
+const SPEND = { userId, source: 'manual' };
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await removeUser(id);
-    await pool.query(
-      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4)',
-      [id, 'Synthetic Wealth User', `${id}@test.hominem.dev`, true],
-    );
-  }
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: checkingId,
-        userId,
-        name: 'Synthetic Checking',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        provider: 'starling',
-        providerAccountId: 'synthetic-starling',
-        includeInNetWorth: true,
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-      {
-        id: cardId,
-        userId,
-        name: 'Synthetic Card',
-        accountType: 'credit_card',
-        currencyCode: 'USD',
-        provider: 'plaid',
-        mask: '4242',
-        includeInNetWorth: true,
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-      {
-        id: savingsId,
-        userId,
-        name: 'Synthetic Saver',
-        accountType: 'savings',
-        currencyCode: 'USD',
-        includeInNetWorth: true,
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-      {
-        id: otherCheckingId,
-        userId: otherUserId,
-        name: 'Other Checking',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        includeInNetWorth: true,
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-    ])
-    .execute();
-  await db
-    .insertInto('app.financeCategories')
-    .values([
-      { id: foodId, userId, name: 'Food' },
-      { id: incomeId, userId, name: 'Income' },
-      { id: otherFoodId, userId: otherUserId, name: 'Food' },
-    ])
-    .execute();
-  await db
-    .insertInto('app.financeRunwayPreferences')
-    .values({ userId, currencyCode: 'GBP' })
-    .execute();
+  await removeUsers(userId, otherUserId);
+  for (const id of [userId, otherUserId]) await seedUser({ id, name: 'Synthetic Wealth User' });
+  await seedAccounts(userId, [
+    {
+      id: checkingId,
+      name: 'Synthetic Checking',
+      currencyCode: 'GBP',
+      provider: 'starling',
+      providerAccountId: 'synthetic-starling',
+    },
+    {
+      id: cardId,
+      name: 'Synthetic Card',
+      accountType: 'credit_card',
+      provider: 'plaid',
+      mask: '4242',
+    },
+    { id: savingsId, name: 'Synthetic Saver', accountType: 'savings' },
+    { id: otherCheckingId, userId: otherUserId, name: 'Other Checking', currencyCode: 'GBP' },
+  ]);
+  await seedCategory({ id: foodId, userId, name: 'Food' });
+  await seedCategory({ id: incomeId, userId, name: 'Income' });
+  await seedCategory({ id: otherFoodId, userId: otherUserId, name: 'Food' });
+  await seedRunwayPreferences({ userId, currencyCode: 'GBP' });
 
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: checkingId,
-    date: '2026-11-01',
-    merchant: 'Opening balance',
+    postedOn: '2026-11-01',
+    description: 'Opening balance',
+    merchantName: 'Opening balance',
     amount: 1000,
-    currency: 'GBP',
+    currencyCode: 'GBP',
     source: 'starling',
   });
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: checkingId,
     categoryId: incomeId,
-    date: '2026-10-25',
-    merchant: 'Synthetic Payroll',
+    postedOn: '2026-10-25',
+    description: 'Synthetic Payroll',
+    merchantName: 'Synthetic Payroll',
     amount: 500,
-    currency: 'GBP',
+    currencyCode: 'GBP',
     source: 'starling',
   });
-  const groceries = await transaction({
+  const { id: groceries } = await seedTransaction({
+    ...SPEND,
     accountId: checkingId,
     categoryId: foodId,
-    date: '2026-10-20',
-    merchant: 'Sample Grocer',
+    postedOn: '2026-10-20',
+    description: 'Sample Grocer',
+    merchantName: 'Sample Grocer',
     amount: -80,
-    currency: 'GBP',
+    currencyCode: 'GBP',
     source: 'starling',
   });
-  const coffee = await Promise.all(
-    [1, 2].map(() =>
-      transaction({
-        accountId: checkingId,
-        categoryId: foodId,
-        date: '2026-11-21',
-        merchant: 'Cafe Nova',
-        amount: -60,
-        currency: 'GBP',
-        source: 'starling',
-      }),
-    ),
-  );
-  const pendingCoffee = await transaction({
+  const coffee = (
+    await Promise.all(
+      [1, 2].map(() =>
+        seedTransaction({
+          ...SPEND,
+          accountId: checkingId,
+          categoryId: foodId,
+          postedOn: '2026-11-21',
+          description: 'Cafe Nova',
+          merchantName: 'Cafe Nova',
+          amount: -60,
+          currencyCode: 'GBP',
+          source: 'starling',
+        }),
+      ),
+    )
+  ).map((row) => row.id);
+  const { id: pendingCoffee } = await seedTransaction({
+    ...SPEND,
     accountId: checkingId,
     categoryId: foodId,
-    date: '2026-11-20',
-    merchant: 'Cafe Nova',
+    postedOn: '2026-11-20',
+    description: 'Cafe Nova',
+    merchantName: 'Cafe Nova',
     amount: -90,
-    currency: 'GBP',
+    currencyCode: 'GBP',
     pending: true,
   });
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: checkingId,
     categoryId: incomeId,
-    date: '2026-11-22',
-    merchant: 'Synthetic Payroll',
+    postedOn: '2026-11-22',
+    description: 'Synthetic Payroll',
+    merchantName: 'Synthetic Payroll',
     amount: 1100,
-    currency: 'GBP',
+    currencyCode: 'GBP',
     pending: true,
   });
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: cardId,
     categoryId: foodId,
-    date: '2026-11-01',
-    merchant: 'Card Purchase',
+    postedOn: '2026-11-01',
+    description: 'Card Purchase',
+    merchantName: 'Card Purchase',
     amount: -180,
-    currency: 'USD',
+    currencyCode: 'USD',
   });
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: cardId,
     categoryId: foodId,
-    date: '2026-11-21',
-    merchant: 'US Coffee',
+    postedOn: '2026-11-21',
+    description: 'US Coffee',
+    merchantName: 'US Coffee',
     amount: -20,
-    currency: 'USD',
+    currencyCode: 'USD',
   });
-  await transaction({
+  await seedTransaction({
+    ...SPEND,
     accountId: savingsId,
-    date: '2026-10-01',
-    merchant: 'Opening savings',
+    postedOn: '2026-10-01',
+    description: 'Opening savings',
+    merchantName: 'Opening savings',
     amount: 500,
-    currency: 'USD',
+    currencyCode: 'USD',
   });
-  await transaction({
-    owner: otherUserId,
+  await seedTransaction({
+    ...SPEND,
+    userId: otherUserId,
     accountId: otherCheckingId,
     categoryId: otherFoodId,
-    date: '2026-11-21',
-    merchant: 'Other Private Merchant',
+    postedOn: '2026-11-21',
+    description: 'Other Private Merchant',
+    merchantName: 'Other Private Merchant',
     amount: -999,
-    currency: 'GBP',
+    currencyCode: 'GBP',
   });
-  const coffeeId = await tag('Coffee', [...coffee, pendingCoffee]);
-  await tag('Groceries', [groceries]);
+  const { id: coffeeId } = await seedTagOn({ ownerUserid: userId, name: 'Coffee' }, [
+    ...coffee,
+    pendingCoffee,
+  ]);
+  await seedTagOn({ ownerUserid: userId, name: 'Groceries' }, [groceries]);
   await callTool(userId, 'finance_primary_currency_set', { currencyCode: 'GBP' });
   await callTool(userId, 'finance_budget_create', {
     categoryId: foodId,
@@ -288,10 +202,7 @@ beforeAll(async () => {
   });
 });
 
-afterAll(async () => {
-  await removeUser(userId);
-  await removeUser(otherUserId);
-});
+afterAll(() => removeUsers(userId, otherUserId));
 
 const date = '2026-11-22';
 
@@ -379,43 +290,39 @@ describe('wealth report tools', () => {
   });
 
   it('reports variable, top-up and inactive bills without inventing their amounts', async () => {
-    const rows = await db
-      .insertInto('app.financeBills')
-      .values([
-        {
-          userId,
-          name: 'Variable Power',
-          kind: 'electricity',
-          paymentMethod: 'direct_debit',
-          amountModel: 'variable',
-          currencyCode: 'GBP',
-          cadence: 'monthly',
-          dueDay: 25,
-        },
-        {
-          userId,
-          name: 'Meter Topup',
-          kind: 'heating',
-          paymentMethod: 'pay_as_you_go',
-          amountModel: 'top_up',
-          expectedAmountCents: 1000,
-          currencyCode: 'GBP',
-        },
-        {
-          userId,
-          name: 'Paused Bill',
-          kind: 'other',
-          paymentMethod: 'manual',
-          amountModel: 'fixed',
-          expectedAmountCents: 100,
-          currencyCode: 'GBP',
-          cadence: 'monthly',
-          dueDay: 25,
-          status: 'paused',
-        },
-      ])
-      .returning('id')
-      .execute();
+    const billIds = await seedBills([
+      {
+        userId,
+        name: 'Variable Power',
+        kind: 'electricity',
+        paymentMethod: 'direct_debit',
+        amountModel: 'variable',
+        currencyCode: 'GBP',
+        cadence: 'monthly',
+        dueDay: 25,
+      },
+      {
+        userId,
+        name: 'Meter Topup',
+        kind: 'heating',
+        paymentMethod: 'pay_as_you_go',
+        amountModel: 'top_up',
+        expectedAmountCents: 1000,
+        currencyCode: 'GBP',
+      },
+      {
+        userId,
+        name: 'Paused Bill',
+        kind: 'other',
+        paymentMethod: 'manual',
+        amountModel: 'fixed',
+        expectedAmountCents: 100,
+        currencyCode: 'GBP',
+        cadence: 'monthly',
+        dueDay: 25,
+        status: 'paused',
+      },
+    ]);
     try {
       const result = financeWealthLookOutputSchema.parse(
         (await callTool(userId, 'finance_wealth_look', { as_of: date })).structuredContent,
@@ -429,14 +336,7 @@ describe('wealth report tools', () => {
         'Sample Rent — Sample Housing',
       ]);
     } finally {
-      await db
-        .deleteFrom('app.financeBills')
-        .where(
-          'id',
-          'in',
-          rows.map((row) => row.id),
-        )
-        .execute();
+      await removeBills(...billIds);
     }
   });
 
@@ -542,13 +442,15 @@ describe('wealth report tools', () => {
   });
 
   it('uses the report date rather than later spending for budget breaches', async () => {
-    const id = await transaction({
+    const { id } = await seedTransaction({
+      ...SPEND,
       accountId: checkingId,
       categoryId: foodId,
-      date: '2026-11-24',
-      merchant: 'Later purchase',
+      postedOn: '2026-11-24',
+      description: 'Later purchase',
+      merchantName: 'Later purchase',
       amount: -500,
-      currency: 'GBP',
+      currencyCode: 'GBP',
     });
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-25T12:00:00Z'));
@@ -565,7 +467,7 @@ describe('wealth report tools', () => {
       );
     } finally {
       vi.useRealTimers();
-      await db.deleteFrom('app.financeTransactions').where('id', '=', id).execute();
+      await removeTransactions(id);
     }
   });
 
@@ -631,6 +533,7 @@ describe('wealth report tools', () => {
     expect(result.flags).toContainEqual(
       expect.objectContaining({ check: 'feed_health', account: 'plaid_max', severity: 'info' }),
     );
+    expect(result.ok).toBe(true);
   });
 
   it('checks caller-supplied feed, statement, watch and anchor data', async () => {
@@ -699,7 +602,8 @@ describe('wealth report tools', () => {
         })
       ).structuredContent,
     );
-    expect(result).toMatchObject({ ok: true, date, run_id: 8 });
+    expect(result).toMatchObject({ ok: false, date, run_id: 8 });
+    expect(result.flags.some((flag) => flag.severity === 'flag')).toBe(true);
     expect(result.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ check: 'feed_health', account: 'plaid_max' }),
@@ -767,23 +671,19 @@ describe('wealth report tools', () => {
   });
 
   it('reads every registered bill rather than silently truncating the snapshot at 50', async () => {
-    const rows = await db
-      .insertInto('app.financeBills')
-      .values(
-        Array.from({ length: 51 }, (_, index) => ({
-          userId,
-          name: `Additional bill ${index}`,
-          kind: 'other',
-          paymentMethod: 'manual',
-          amountModel: 'fixed',
-          expectedAmountCents: 100,
-          currencyCode: 'GBP',
-          cadence: 'monthly',
-          dueDay: 25,
-        })),
-      )
-      .returning('id')
-      .execute();
+    const billIds = await seedBills(
+      Array.from({ length: 51 }, (_, index) => ({
+        userId,
+        name: `Additional bill ${index}`,
+        kind: 'other',
+        paymentMethod: 'manual',
+        amountModel: 'fixed',
+        expectedAmountCents: 100,
+        currencyCode: 'GBP',
+        cadence: 'monthly',
+        dueDay: 25,
+      })),
+    );
     try {
       const result = financeWealthBriefOutputSchema.parse(
         (await callTool(userId, 'finance_wealth_brief', { date, bills_only: true }))
@@ -793,31 +693,28 @@ describe('wealth report tools', () => {
       expect(result.snapshot?.bills).toHaveLength(52);
       expect(result.sections.bills?.due_soon).toHaveLength(52);
     } finally {
-      await db
-        .deleteFrom('app.financeBills')
-        .where(
-          'id',
-          'in',
-          rows.map((row) => row.id),
-        )
-        .execute();
+      await removeBills(...billIds);
     }
   });
 
   it('does not count late or pending payments as paid within the statement grace window', async () => {
-    const lateId = await transaction({
+    const { id: lateId } = await seedTransaction({
+      ...SPEND,
       accountId: cardId,
-      date: '2026-11-20',
-      merchant: 'Late card payment',
+      postedOn: '2026-11-20',
+      description: 'Late card payment',
+      merchantName: 'Late card payment',
       amount: 200,
-      currency: 'USD',
+      currencyCode: 'USD',
     });
-    const pendingId = await transaction({
+    const { id: pendingId } = await seedTransaction({
+      ...SPEND,
       accountId: cardId,
-      date: '2026-11-10',
-      merchant: 'Pending card payment',
+      postedOn: '2026-11-10',
+      description: 'Pending card payment',
+      merchantName: 'Pending card payment',
       amount: 200,
-      currency: 'USD',
+      currencyCode: 'USD',
       pending: true,
     });
     try {
@@ -853,10 +750,7 @@ describe('wealth report tools', () => {
         ]),
       );
     } finally {
-      await db
-        .deleteFrom('app.financeTransactions')
-        .where('id', 'in', [lateId, pendingId])
-        .execute();
+      await removeTransactions(lateId, pendingId);
     }
   });
 
@@ -893,19 +787,23 @@ describe('wealth report tools', () => {
   });
 
   it('reconciles all same-day Starling rows beyond a single search page', async () => {
-    const ids = await Promise.all(
-      Array.from({ length: 60 }, (_, index) =>
-        transaction({
-          accountId: checkingId,
-          date: '2026-11-21',
-          merchant: 'Pagination fixture',
-          amount: -1,
-          currency: 'GBP',
-          source: 'starling',
-          externalId: `wealth-page-${index}`,
-        }),
-      ),
-    );
+    const ids = (
+      await Promise.all(
+        Array.from({ length: 60 }, (_, index) =>
+          seedTransaction({
+            ...SPEND,
+            accountId: checkingId,
+            postedOn: '2026-11-21',
+            description: 'Pagination fixture',
+            merchantName: 'Pagination fixture',
+            amount: -1,
+            currencyCode: 'GBP',
+            source: 'starling',
+            externalId: `wealth-page-${index}`,
+          }),
+        ),
+      )
+    ).map((row) => row.id);
     try {
       const result = financeWealthIntegrityOutputSchema.parse(
         (
@@ -939,7 +837,7 @@ describe('wealth report tools', () => {
       });
       expect(result.flags.filter((flag) => flag.check === 'starling_reconciliation')).toEqual([]);
     } finally {
-      await db.deleteFrom('app.financeTransactions').where('id', 'in', ids).execute();
+      await removeTransactions(...ids);
     }
   });
 
@@ -963,43 +861,9 @@ describe('wealth report tools', () => {
   });
 });
 
-function auth(id: string): AuthContext {
-  return {
-    userId: id,
-    credential: 'session',
-    scopes: [],
-    user: {
-      id,
-      name: 'Synthetic Wealth User',
-      email: `${id}@test.hominem.dev`,
-      emailVerified: true,
-      image: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    },
-  };
-}
-
-const app = new Hono<AppContext>()
-  .onError(apiErrorHandler)
-  .use('*', async (context, next) => {
-    const fixture = context.req.header('x-wealth-fixture');
-    if (fixture === 'owner') context.set('auth', auth(userId));
-    if (fixture === 'other') context.set('auth', auth(otherUserId));
-    await next();
-  })
-  .route('/api/finance', financeRoutes);
-
-function request(path: string, body: unknown, fixture?: 'owner' | 'other') {
-  return app.request(`/api/finance/wealth/${path}`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(fixture ? { 'x-wealth-fixture': fixture } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-}
+const call = financeCallerApp({ owner: userId, other: otherUserId });
+const request = (path: string, body: unknown, caller?: 'owner' | 'other') =>
+  call(`wealth/${path}`, body, caller);
 
 describe('wealth report RPC', () => {
   it.each(['brief', 'look', 'close', 'integrity'])(

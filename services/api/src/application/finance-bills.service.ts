@@ -59,7 +59,7 @@ function toIso(y: number, m: number, d: number): string {
 }
 
 function daysInMonth(y: number, m: number): number {
-  return new Date(Date.UTC(y, m, 0)).getDate();
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
 /** A short month clamps the due day to its last day: due on the 31st lands 28 February. */

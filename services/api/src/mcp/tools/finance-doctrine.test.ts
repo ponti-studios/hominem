@@ -1,7 +1,9 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { removeUsers, resetUsers } from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { doctrineFixture } from '../../testkit/fixtures/finance-doctrine';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f2000120-0000-4000-8000-000000000001';
@@ -30,51 +32,13 @@ type Content = {
   } | null;
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
-
-function doctrineFixture() {
-  return {
-    version: 1,
-    merchantRules: [
-      {
-        matchMode: 'contains',
-        pattern: 'Test Coffee Co',
-        category: 'Food',
-        note: 'Dated ruling 2026-11-22: kept for the audit trail.',
-      },
-      { matchMode: 'exact', pattern: 'Example Rail Operator', category: 'Transport' },
-    ],
-    tagRules: [{ pattern: 'Test Coffee Co', tags: ['Coffee'] }],
-    amountRules: [
-      {
-        merchant: 'Example Subscriptions Ltd',
-        amountMinorUnits: [-899],
-        category: 'Subscriptions',
-      },
-    ],
-    transferMerchants: [{ matchMode: 'exact', pattern: 'Example Savings Sweep' }],
-    incomePatterns: [{ matchMode: 'exact', pattern: 'Example Payroll' }],
-    coffeePatterns: ['test coffee'],
-    lenses: [
-      {
-        category: 'Food',
-        matches: [{ matchMode: 'contains', pattern: 'Test Coffee', tag: 'Coffee' }],
-      },
-    ],
-  };
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Doctrine User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    await db.deleteFrom('app.financeSyncDoctrine').where('userId', '=', id).execute();
-  }
+  await resetUsers(userId, otherUserId);
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_doctrine_get', () => {
   it('returns empty nulls when no doctrine is stored', async () => {

@@ -224,20 +224,16 @@ export async function getTransactionTagIds(
 }
 
 export async function createTransaction(input: CreateTransactionInput): Promise<TransactionRow> {
-  const id = input.id ?? crypto.randomUUID();
   const amount = toNumber(input.amount);
-  const transactionType = amount < 0 ? 'debit' : 'credit';
 
   const result = await db
     .insertInto('app.financeTransactions')
+    // The input type is the table's columns, so spread it: nothing the caller passes gets dropped.
     .values({
-      id,
-      userId: input.userId,
-      accountId: input.accountId,
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
       amount,
-      transactionType,
-      description: input.description ?? null,
-      merchantName: input.merchantName ?? null,
+      transactionType: input.transactionType ?? (amount < 0 ? 'debit' : 'credit'),
       postedOn: input.postedOn ?? new Date().toISOString(),
     })
     .returningAll()

@@ -1,8 +1,19 @@
-import { db, pool, sql } from '@hominem/db/core';
+import { db, sql } from '@hominem/db/core';
 import { parseSheetTransactionsCsv } from '@hominem/finance-services';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  patchAccount,
+  patchTransactions,
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedCategory,
+  seedTag,
+} from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { updateFinanceTransactions } from '../../application/finance.transactions-management.service';
+import { openNoteEdit } from '../../testkit/fixtures/finance-row-lock';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
 import { callTool, type McpToolResult } from '../tool-registry';
 import './finance';
 
@@ -27,80 +38,20 @@ type Content = Record<string, unknown> & {
   transactions?: Array<Record<string, unknown>>;
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Sheet Import User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-  }
-  for (const id of [userId, otherUserId]) {
-    await db.deleteFrom('app.financeTransactions').where('userId', '=', id).execute();
-    await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
-    await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  }
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: checkingId,
-        userId,
-        name: 'Sheet Checking',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: gbpId,
-        userId,
-        name: 'Sheet GBP',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: secondCheckingId,
-        userId,
-        name: 'Sheet Checking Two',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: thirdCheckingId,
-        userId,
-        name: 'Sheet Checking Three',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: otherCheckingId,
-        userId: otherUserId,
-        name: 'Other Sheet Checking',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-    ])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccounts(userId, [
+    { id: checkingId, name: 'Sheet Checking' },
+    { id: gbpId, name: 'Sheet GBP', currencyCode: 'GBP' },
+    { id: secondCheckingId, name: 'Sheet Checking Two' },
+    { id: thirdCheckingId, name: 'Sheet Checking Three' },
+    { id: otherCheckingId, userId: otherUserId, name: 'Other Sheet Checking' },
+  ]);
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_categories', () => {
   it('starts empty and gains Uncategorized plus sheet categories on import', async () => {
@@ -191,11 +142,7 @@ describe('finance_transaction_upsert', () => {
       }),
     );
     expect(transferSearch.transactions?.some((transaction) => transaction.id === id)).toBe(true);
-    await db
-      .updateTable('app.financeTransactions')
-      .set({ excluded: false })
-      .where('id', '=', id)
-      .execute();
+    await patchTransactions([id], { excluded: false });
     const transferSpending = content(
       await callTool(userId, 'finance_spending_by_category', {
         from: '2026-09-01',
@@ -204,11 +151,7 @@ describe('finance_transaction_upsert', () => {
     );
     expect(transferSpending.categories).toHaveLength(0);
     await callTool(userId, 'finance_transaction_upsert', { ...row, transactionType: 'debit' });
-    await db
-      .updateTable('app.financeTransactions')
-      .set({ excluded: false })
-      .where('id', '=', id)
-      .execute();
+    await patchTransactions([id], { excluded: false });
     stored = await db
       .selectFrom('app.financeTransactions')
       .selectAll()
@@ -534,21 +477,8 @@ describe('finance_transactions_import', () => {
       }),
     ]);
 
-    const category = await db
-      .insertInto('app.financeCategories')
-      .values({ userId, name: 'User category' })
-      .returning('id')
-      .executeTakeFirstOrThrow();
-    const tag = await db
-      .insertInto('app.tags')
-      .values({
-        ownerUserid: userId,
-        name: 'user-tag',
-        slug: 'user-tag',
-        path: 'user-tag',
-      })
-      .returning('id')
-      .executeTakeFirstOrThrow();
+    const category = await seedCategory({ userId, name: 'User category' });
+    const tag = await seedTag({ ownerUserid: userId, name: 'user-tag', path: 'user-tag' });
     await updateFinanceTransactions(userId, [transaction.id], {
       action: 'category',
       categoryId: category.id,
@@ -729,41 +659,18 @@ describe('finance_transactions_import', () => {
       .where('userId', '=', userId)
       .where('externalId', '=', row.externalId)
       .executeTakeFirstOrThrow();
-    const client = await pool.connect();
-    let committed = false;
+    const edit = await openNoteEdit(userId, transaction.id, 'Concurrent user note');
     let sync: Promise<McpToolResult> | undefined;
     try {
-      await client.query('BEGIN');
-      await client.query(
-        'UPDATE app.finance_transactions SET notes = $1 WHERE id = $2 AND user_id = $3',
-        ['Concurrent user note', transaction.id, userId],
-      );
-      const { rows } = await client.query<{ pid: number }>('SELECT pg_backend_pid() AS pid');
-      const blockerPid = rows[0]!.pid;
       sync = callTool(userId, 'finance_transactions_import', {
         transactions: [{ ...row, amountCents: -200 }],
       });
-
-      let blocked = false;
-      const deadline = Date.now() + 5000;
-      while (!blocked && Date.now() < deadline) {
-        const status = await pool.query<{ blocked: boolean }>(
-          'SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE $1 = ANY(pg_blocking_pids(pid))) AS blocked',
-          [blockerPid],
-        );
-        blocked = status.rows[0]!.blocked;
-        if (!blocked) await new Promise((resolve) => setTimeout(resolve, 20));
-      }
-      expect(blocked).toBe(true);
-      await client.query('COMMIT');
-      committed = true;
+      expect(await edit.waitForBlockedWriter()).toBe(true);
+      await edit.commit();
       expect(content(await sync)).toMatchObject({ created: 0, updated: 1 });
     } finally {
-      if (!committed) {
-        await client.query('ROLLBACK');
-        if (sync) await sync;
-      }
-      client.release();
+      await edit.release();
+      await sync;
     }
 
     const stored = await db
@@ -969,11 +876,7 @@ describe('finance_transactions_import', () => {
   });
 
   it('dryRun counts corrections to external-id transaction fields', async () => {
-    await db
-      .updateTable('app.financeAccounts')
-      .set({ allowedCurrencies: ['USD'] })
-      .where('id', '=', gbpId)
-      .execute();
+    await patchAccount(gbpId, { allowedCurrencies: ['USD'] });
     const original = {
       postedOn: '2026-10-09',
       account: gbpId,
@@ -1010,11 +913,7 @@ describe('finance_transactions_import', () => {
       postedOn: corrected.postedOn,
       currencyCode: corrected.currencyCode,
     });
-    await db
-      .updateTable('app.financeAccounts')
-      .set({ allowedCurrencies: [] })
-      .where('id', '=', gbpId)
-      .execute();
+    await patchAccount(gbpId, { allowedCurrencies: [] });
   });
 
   it('dryRun counts settlement-only changes', async () => {
@@ -1301,11 +1200,7 @@ describe('finance_transaction_move', () => {
 // write with a unique-violation 500 when an "art" tag already existed.
 describe('tag name casing', () => {
   it('reuses an existing tag when the sheet uses different casing', async () => {
-    await db
-      .insertInto('app.tags')
-      .values({ ownerUserid: userId, name: 'art', slug: 'art', path: 'art' })
-      .onConflict((oc) => oc.doNothing())
-      .execute();
+    await seedTag({ ownerUserid: userId, name: 'art', slug: 'art', path: 'art' });
 
     const result = await callTool(userId, 'finance_transactions_import', {
       mode: 'append',

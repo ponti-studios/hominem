@@ -2,7 +2,7 @@ import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
 import { createAccount, createTransaction, getMonthlySummary } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe

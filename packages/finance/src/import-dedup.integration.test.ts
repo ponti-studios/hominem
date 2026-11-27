@@ -5,34 +5,13 @@ import { expect } from 'vitest';
 import { applyCopilotImportBatch } from './import/apply-import-plan';
 import { createCopilotImportPlan, updatePlanSelection } from './import/create-import-plan';
 import { resolveCopilotAccounts } from './import/resolve-copilot-accounts';
-import type { ParsedRow } from './import/types';
 import { createAccount, insertTransaction, listTransactionCompositeKeys } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { financeIntegrationTest } from './test/fixtures';
+import { parsedRow } from './test/rows';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
   : financeIntegrationTest.describe.skip;
-
-function row(line: number, overrides: Partial<ParsedRow> = {}): ParsedRow {
-  return {
-    line,
-    date: '2026-03-05',
-    name: 'Blue Bottle',
-    amount: '42.50',
-    status: 'posted',
-    category: null,
-    parentCategory: null,
-    excluded: false,
-    tags: [],
-    type: 'regular',
-    account: 'Checking',
-    accountMask: null,
-    note: null,
-    recurring: null,
-    raw: {},
-    ...overrides,
-  };
-}
 
 describeIntegration('finance import composite dedup integration', () => {
   let ownerId: string;
@@ -61,8 +40,13 @@ describeIntegration('finance import composite dedup integration', () => {
     'deselects ledger rows at plan time and refuses them at apply time',
     async () => {
       const rows = [
-        row(2),
-        row(3, { amount: '9.00', name: 'Croissant', category: 'Food', parentCategory: 'Cafes' }),
+        parsedRow(2),
+        parsedRow(3, {
+          amount: '9.00',
+          name: 'Croissant',
+          category: 'Food',
+          parentCategory: 'Cafes',
+        }),
       ];
       const snapshots = [{ id: checkingId, name: 'Checking', mask: null, csvImportKey: null }];
       const resolution = resolveCopilotAccounts(rows, snapshots);
@@ -92,8 +76,8 @@ describeIntegration('finance import composite dedup integration', () => {
     'imports duplicate occurrences split across sequential batches',
     async () => {
       const rows = [
-        row(2, { amount: '5.00', name: 'Gum' }),
-        row(3, { amount: '5.00', name: 'Gum' }),
+        parsedRow(2, { amount: '5.00', name: 'Gum' }),
+        parsedRow(3, { amount: '5.00', name: 'Gum' }),
       ];
       const snapshots = [{ id: checkingId, name: 'Checking', mask: null, csvImportKey: null }];
       const resolution = resolveCopilotAccounts(rows, snapshots);
@@ -116,7 +100,7 @@ describeIntegration('finance import composite dedup integration', () => {
   );
 
   financeIntegrationTest('honors an explicit user override of a ledger duplicate', async () => {
-    const rows = [row(2)];
+    const rows = [parsedRow(2)];
     const snapshots = [{ id: checkingId, name: 'Checking', mask: null, csvImportKey: null }];
     const resolution = resolveCopilotAccounts(rows, snapshots);
     const plan = createCopilotImportPlan(rows, resolution, new Set(), {
@@ -137,7 +121,7 @@ describeIntegration('finance import composite dedup integration', () => {
     'assigns categories and tags when the account is created by the same import',
     async () => {
       const rows = [
-        row(2, {
+        parsedRow(2, {
           account: 'New Account',
           category: 'Coffee',
           parentCategory: 'Food',

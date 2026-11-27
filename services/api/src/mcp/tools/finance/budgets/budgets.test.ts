@@ -1,12 +1,38 @@
-import { db, pool, sql } from '@hominem/db/core';
+import { db } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 import { FinanceBudgetRepository } from '@hominem/db/finance';
-import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  clearLedger,
+  removeBudgets,
+  removeCategoryTransactions,
+  removeProfiles,
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedBudget,
+  seedCategory,
+  seedTag,
+  seedTagAssignments,
+  seedTransaction,
+} from '@hominem/finance-services/test/factory';
+import { budgetRows, categoryById } from '@hominem/finance-services/test/readers';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { seedBudgetsOfRecord, getBudget } from '../../../../application/finance-budgets.service';
-import { callTool, type McpToolResult } from '../../../tool-registry';
+import {
+  currentMonthStart,
+  currentMonthEnd,
+  previousMonthDay,
+  nextMonthStart,
+  currentYearStart,
+  previousYearDay,
+  currentQuarterEnd,
+  currentQuarterStart,
+  currentYearEnd,
+} from '../../../../testkit/fixtures/finance-periods';
+import { structuredContent } from '../../../../testkit/fixtures/mcp-content';
+import { callTool } from '../../../tool-registry';
 import '../register';
 
 const userId = 'f2640000-0000-4000-8000-000000000001';
@@ -99,179 +125,38 @@ type Content = {
   };
 };
 
-function content(result: McpToolResult<Content>): Content {
-  return result.structuredContent ?? {};
-}
+const content = structuredContent<Content>;
 
-function iso(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-const now = new Date();
-const currentMonthStart = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)));
-const currentMonthEnd = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)));
-const previousMonthDay = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)));
-const nextMonthStart = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)));
-const currentYearStart = iso(new Date(Date.UTC(now.getUTCFullYear(), 0, 1)));
-const previousYearDay = iso(new Date(Date.UTC(now.getUTCFullYear() - 1, 11, 31)));
-
-let transactionCounter = 0;
-
-async function insertTransaction(input: {
-  accountId: string;
-  categoryId: string;
-  postedOn: string;
-  amount: number;
-  currencyCode?: string;
-  settledAmount?: number;
-  settledCurrencyCode?: string;
-  excluded?: boolean;
-  pending?: boolean;
-  transactionType?: string;
-}): Promise<string> {
-  transactionCounter += 1;
-  const id = `f2640003-0000-4000-8000-${String(transactionCounter).padStart(12, '0')}`;
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id,
-      userId,
-      accountId: input.accountId,
-      categoryId: input.categoryId,
-      postedOn: input.postedOn,
-      description: `budget-test-${transactionCounter}`,
-      merchantName: `Merchant ${transactionCounter}`,
-      amount: input.amount,
-      currencyCode: input.currencyCode ?? 'GBP',
-      settledAmount: input.settledAmount ?? null,
-      settledCurrencyCode: input.settledCurrencyCode ?? null,
-      transactionType: input.transactionType ?? (input.amount < 0 ? 'debit' : 'credit'),
-      pending: input.pending ?? false,
-      excluded: input.excluded ?? false,
-      providerPayload: {},
-      externalId: `budget-test-${transactionCounter}`,
-    })
-    .execute();
-  return id;
-}
-
-/** A tag in the fixture's owner's taxonomy; `beforeEach` removes them between cases. */
-async function insertTag(name: string): Promise<string> {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const row = await db
-    .insertInto('app.tags')
-    .values({ ownerUserid: userId, name, slug, path: slug.replace(/-/g, '_') })
-    .returning('id')
-    .executeTakeFirstOrThrow();
-  return row.id;
-}
-
-async function tagTransaction(transactionId: string, tagId: string): Promise<void> {
-  await db
-    .insertInto('app.tagAssignments')
-    .values({
-      tagId,
-      entityTable: sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
-      entityId: transactionId,
-    })
-    .execute();
-}
-
-async function insertBudgetAt(input: {
-  categoryId: string;
-  tagId?: string;
-  amountCents: number;
-  cadence: 'weekly' | 'monthly' | 'quarterly' | 'annual';
-  createdAt: string;
-}): Promise<string> {
-  const row = await db
-    .insertInto('app.financeBudgets')
-    .values({
-      userId,
-      categoryId: input.categoryId,
-      tagId: input.tagId ?? null,
-      amountCents: input.amountCents,
-      cadence: input.cadence,
-      createdAt: input.createdAt,
-    })
-    .returning('id')
-    .executeTakeFirstOrThrow();
-  return row.id;
-}
-
-async function clearUserData(id: string) {
-  await db.deleteFrom('app.financeBudgets').where('userId', '=', id).execute();
-  await db.deleteFrom('app.userProfiles').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeTransactions').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-}
-
-async function seedUser(id: string, name: string) {
-  await pool.query(
-    `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-    [id, name, `${id}@test.hominem.dev`, true],
-  );
-}
+const SPEND = { userId, currencyCode: 'GBP' };
 
 beforeAll(async () => {
-  await seedUser(userId, 'Budget Test User');
-  await seedUser(otherUserId, 'Budget Other User');
-
-  for (const id of [userId, otherUserId]) {
-    await clearUserData(id);
-  }
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: accountId,
-        userId,
-        name: 'Budget Test Account',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        allowedCurrencies: ['GBP', 'USD'],
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-      {
-        id: otherAccountId,
-        userId: otherUserId,
-        name: 'Budget Other Account',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-    ])
-    .execute();
-
-  await db
-    .insertInto('app.financeCategories')
-    .values([
-      { id: diningId, userId, name: 'Budget Cadence Dining' },
-      { id: travelId, userId, name: 'Budget Cadence Travel' },
-      { id: groceriesId, userId, name: 'Budget Cadence Groceries' },
-      { id: otherDiningId, userId: otherUserId, name: 'Budget Other Dining' },
-    ])
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccounts(userId, [
+    {
+      id: accountId,
+      name: 'Budget Test Account',
+      currencyCode: 'GBP',
+      allowedCurrencies: ['GBP', 'USD'],
+    },
+    { id: otherAccountId, userId: otherUserId, name: 'Budget Other Account', currencyCode: 'GBP' },
+  ]);
+  await seedCategory({ id: diningId, userId, name: 'Budget Cadence Dining' });
+  await seedCategory({ id: travelId, userId, name: 'Budget Cadence Travel' });
+  await seedCategory({ id: groceriesId, userId, name: 'Budget Cadence Groceries' });
+  await seedCategory({ id: otherDiningId, userId: otherUserId, name: 'Budget Other Dining' });
 });
 
 beforeEach(async () => {
-  await db.deleteFrom('app.financeBudgets').where('userId', 'in', [userId, otherUserId]).execute();
-  await db.deleteFrom('app.userProfiles').where('userId', 'in', [userId, otherUserId]).execute();
-  await db
-    .deleteFrom('app.financeTransactions')
-    .where('userId', 'in', [userId, otherUserId])
-    .execute();
-  await db.deleteFrom('app.tags').where('ownerUserid', 'in', [userId, otherUserId]).execute();
+  await clearLedger(userId, otherUserId);
+  await removeProfiles(userId, otherUserId);
   await callTool(userId, 'finance_primary_currency_set', { currencyCode: 'GBP' });
 });
 
+afterAll(() => removeUsers(userId, otherUserId));
+
 describe('finance_budget_create', () => {
   it('reports a missing category before the unset-currency gate', async () => {
-    await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
+    await removeProfiles(userId);
     await expect(
       callTool(userId, 'finance_budget_create', {
         categoryId: otherDiningId,
@@ -282,7 +167,7 @@ describe('finance_budget_create', () => {
   });
 
   it('previews creates without writing and projects cadence-aware nested validation', async () => {
-    const coffeeTagId = await insertTag('Preview Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Preview Coffee' });
     const result = content(
       await callTool(userId, 'finance_budget_set', {
         categoryId: diningId,
@@ -304,9 +189,7 @@ describe('finance_budget_create', () => {
         },
       },
     });
-    await expect(
-      db.selectFrom('app.financeBudgets').select('id').where('userId', '=', userId).execute(),
-    ).resolves.toEqual([]);
+    await expect(budgetRows(userId)).resolves.toEqual([]);
 
     const create = content(
       await callTool(userId, 'finance_budget_create', {
@@ -323,7 +206,7 @@ describe('finance_budget_create', () => {
   });
 
   it('requires the profile primary currency before a budget can exist', async () => {
-    await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
+    await removeProfiles(userId);
 
     await expect(
       callTool(userId, 'finance_budget_create', {
@@ -361,12 +244,7 @@ describe('finance_budget_create', () => {
     expect(second.budget?.id).toBe(first.budget?.id);
     expect(second.budget).toMatchObject({ amountCents: 35_000, cadence: 'quarterly' });
 
-    const rows = await db
-      .selectFrom('app.financeBudgets')
-      .selectAll()
-      .where('userId', '=', userId)
-      .where('categoryId', '=', diningId)
-      .execute();
+    const rows = await budgetRows(userId, { categoryId: diningId });
     expect(rows).toHaveLength(1);
     expect(rows[0]?.cadence).toBe('quarterly');
   });
@@ -403,13 +281,14 @@ describe('finance_budget_create', () => {
 
 describe('finance_budget status', () => {
   it('lists and gets stored budgets when primary currency is unset', async () => {
-    const budget = await insertBudgetAt({
+    const { id: budget } = await seedBudget({
+      userId,
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       createdAt: new Date().toISOString(),
     });
-    await db.deleteFrom('app.userProfiles').where('userId', '=', userId).execute();
+    await removeProfiles(userId);
 
     const listed = content(await callTool(userId, 'finance_budget_list', {}));
     expect(listed.primaryCurrency).toBeNull();
@@ -438,41 +317,47 @@ describe('finance_budget status', () => {
       cadence: 'annual',
     });
 
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -50,
     });
     // Last month's dining is outside the current monthly period.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: previousMonthDay,
       amount: -90,
     });
     // Next month's dining is outside it too.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: nextMonthStart,
       amount: -70,
     });
     // A January flight counts against the annual travel budget all year.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: travelId,
       postedOn: currentYearStart,
       amount: -600,
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: travelId,
       postedOn: currentYearStart,
       amount: -400,
     });
     // Last year's flight does not count against this year.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: travelId,
       postedOn: previousYearDay,
@@ -489,7 +374,7 @@ describe('finance_budget status', () => {
 
     expect(travel?.period).toEqual({
       startsOn: currentYearStart,
-      endsOn: `${now.getUTCFullYear()}-12-31`,
+      endsOn: currentYearEnd,
     });
     expect(travel?.spentCents).toBe(100_000);
     expect(travel?.remainingCents).toBe(300_000);
@@ -504,14 +389,16 @@ describe('finance_budget status', () => {
     });
 
     // £50.00 charged in GBP.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -50,
     });
     // $40.00 charged as £31.20 — the settled amount is what counts.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
@@ -521,7 +408,8 @@ describe('finance_budget status', () => {
       settledCurrencyCode: 'GBP',
     });
     // $20.00 with no settled GBP amount cannot be counted.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
@@ -529,21 +417,24 @@ describe('finance_budget status', () => {
       currencyCode: 'USD',
     });
     // Excluded, pending and transfer rows never count as spending.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -100,
       excluded: true,
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -100,
       pending: true,
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
@@ -563,11 +454,7 @@ describe('finance_budget status', () => {
   });
 
   it('counts a foreign transaction recorded through the write tools at its settled amount', async () => {
-    const category = await db
-      .selectFrom('app.financeCategories')
-      .select('name')
-      .where('id', '=', diningId)
-      .executeTakeFirstOrThrow();
+    const category = await categoryById(diningId);
     await callTool(userId, 'finance_budget_create', {
       categoryId: diningId,
       amountCents: 30_000,
@@ -602,13 +489,15 @@ describe('finance_budget status', () => {
       amountCents: 30_000,
       cadence: 'monthly',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -10,
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: groceriesId,
       postedOn: currentMonthStart,
@@ -627,7 +516,8 @@ describe('finance_budget status', () => {
       amountCents: 30_000,
       cadence: 'monthly',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
@@ -666,7 +556,7 @@ describe('finance_budget_update / get / delete', () => {
   });
 
   it('includes nested tag budgets in the complete bounded delete preview', async () => {
-    const tagId = await insertTag('Delete Preview Tag');
+    const { id: tagId } = await seedTag({ ownerUserid: userId, name: 'Delete Preview Tag' });
     const categoryBudget = content(
       await callTool(userId, 'finance_budget_create', {
         categoryId: diningId,
@@ -753,12 +643,8 @@ describe('finance_budget_update / get / delete', () => {
     ).budget;
     expect(updated).toMatchObject({ amountCents: 450_000, cadence: 'quarterly' });
     expect(updated?.period).toEqual({
-      startsOn: iso(
-        new Date(Date.UTC(now.getUTCFullYear(), Math.floor(now.getUTCMonth() / 3) * 3, 1)),
-      ),
-      endsOn: iso(
-        new Date(Date.UTC(now.getUTCFullYear(), Math.floor(now.getUTCMonth() / 3) * 3 + 3, 0)),
-      ),
+      startsOn: currentQuarterStart,
+      endsOn: currentQuarterEnd,
     });
 
     const read = content(await callTool(userId, 'finance_budget_get', { budgetId })).budget;
@@ -768,11 +654,7 @@ describe('finance_budget_update / get / delete', () => {
     expect(removed.removed).toBe(true);
     expect(content(await callTool(userId, 'finance_budget_get', { budgetId })).budget).toBeNull();
 
-    const rows = await db
-      .selectFrom('app.financeBudgets')
-      .selectAll()
-      .where('id', '=', budgetId)
-      .execute();
+    const rows = await budgetRows(userId, { budgetId });
     expect(rows).toHaveLength(0);
   });
 
@@ -805,13 +687,15 @@ describe('finance_budget_update / get / delete', () => {
 
 describe('rollover at read time', () => {
   it('carries a monthly overspend as a deficit into the next period', async () => {
-    const budgetId = await insertBudgetAt({
+    const { id: budgetId } = await seedBudget({
+      userId,
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       createdAt: '2026-01-15T00:00:00.000Z',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: '2026-03-10',
@@ -829,13 +713,15 @@ describe('rollover at read time', () => {
   });
 
   it('sweeps a monthly underspend to savings instead of carrying it', async () => {
-    const budgetId = await insertBudgetAt({
+    const { id: budgetId } = await seedBudget({
+      userId,
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       createdAt: '2026-01-15T00:00:00.000Z',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: '2026-03-10',
@@ -851,13 +737,15 @@ describe('rollover at read time', () => {
   });
 
   it('carries an annual underspend and then an annual deficit', async () => {
-    const budgetId = await insertBudgetAt({
+    const { id: budgetId } = await seedBudget({
+      userId,
       categoryId: travelId,
       amountCents: 400_000,
       cadence: 'annual',
       createdAt: '2026-01-01T00:00:00.000Z',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: travelId,
       postedOn: '2026-03-01',
@@ -873,7 +761,8 @@ describe('rollover at read time', () => {
       spentCents: 0,
     });
 
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: travelId,
       postedOn: '2027-03-01',
@@ -889,14 +778,16 @@ describe('rollover at read time', () => {
   });
 
   it('does not roll a tag budget amount into a later annual period', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    await insertBudgetAt({
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    await seedBudget({
+      userId,
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       createdAt: '2025-01-01T00:00:00.000Z',
     });
-    const tagBudgetId = await insertBudgetAt({
+    const { id: tagBudgetId } = await seedBudget({
+      userId,
       categoryId: diningId,
       tagId: coffeeTagId,
       amountCents: 5_000,
@@ -916,14 +807,16 @@ describe('rollover at read time', () => {
   });
 
   it('does not report underspend swept to savings for a tag budget', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    await insertBudgetAt({
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    await seedBudget({
+      userId,
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       createdAt: '2026-01-01T00:00:00.000Z',
     });
-    const tagBudgetId = await insertBudgetAt({
+    const { id: tagBudgetId } = await seedBudget({
+      userId,
       categoryId: diningId,
       tagId: coffeeTagId,
       amountCents: 5_000,
@@ -944,7 +837,10 @@ describe('rollover at read time', () => {
 
 describe('budgets of record', () => {
   it('previews currency changes with every category and tag budget and writes nothing', async () => {
-    const coffeeTagId = await insertTag('Currency Preview Coffee');
+    const { id: coffeeTagId } = await seedTag({
+      ownerUserid: userId,
+      name: 'Currency Preview Coffee',
+    });
     await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
       amountCents: 30_000,
@@ -964,7 +860,7 @@ describe('budgets of record', () => {
   });
 
   it('seeds Groceries 25000 monthly and Dining Out 30000 monthly', async () => {
-    await db.deleteFrom('app.financeBudgets').where('userId', '=', userId).execute();
+    await removeBudgets(userId);
     await seedBudgetsOfRecord(userId, 'GBP');
 
     const listed = content(await callTool(userId, 'finance_budget_list', {}));
@@ -978,39 +874,34 @@ describe('budgets of record', () => {
 
 describe('nested tag budgets', () => {
   it('lists only uncounted foreign transactions carrying that tag', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    const restaurantTagId = await insertTag('Restaurant');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    const { id: restaurantTagId } = await seedTag({ ownerUserid: userId, name: 'Restaurant' });
     await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
       amountCents: 30_000,
       cadence: 'monthly',
       tagBudgets: [{ tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' }],
     });
-    const tagBudgetId = (
-      await db
-        .selectFrom('app.financeBudgets')
-        .select('id')
-        .where('userId', '=', userId)
-        .where('categoryId', '=', diningId)
-        .where('tagId', '=', coffeeTagId)
-        .executeTakeFirstOrThrow()
-    ).id;
-    const coffeeSpendId = await insertTransaction({
+    const tagBudgetId = (await budgetRows(userId, { categoryId: diningId, tagId: coffeeTagId }))[0]!
+      .id;
+    const { id: coffeeSpendId } = await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -20,
       currencyCode: 'USD',
     });
-    const restaurantSpendId = await insertTransaction({
+    const { id: restaurantSpendId } = await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -30,
       currencyCode: 'USD',
     });
-    await tagTransaction(coffeeSpendId, coffeeTagId);
-    await tagTransaction(restaurantSpendId, restaurantTagId);
+    await seedTagAssignments(coffeeTagId, [coffeeSpendId]);
+    await seedTagAssignments(restaurantTagId, [restaurantSpendId]);
 
     const tagBudget = content(
       await callTool(userId, 'finance_budget_get', { budgetId: tagBudgetId }),
@@ -1022,7 +913,7 @@ describe('nested tag budgets', () => {
   });
 
   it('deletes nested tag budgets together with their category budget', async () => {
-    const coffeeTagId = await insertTag('Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
     const saved = content(
       await callTool(userId, 'finance_budget_set', {
         categoryId: diningId,
@@ -1036,19 +927,12 @@ describe('nested tag budgets', () => {
     expect(
       content(await callTool(userId, 'finance_budget_delete', { budgetId: saved!.id })).removed,
     ).toBe(true);
-    expect(
-      await db
-        .selectFrom('app.financeBudgets')
-        .select('id')
-        .where('userId', '=', userId)
-        .where('categoryId', '=', diningId)
-        .execute(),
-    ).toEqual([]);
+    expect(await budgetRows(userId, { categoryId: diningId })).toEqual([]);
   });
 
   it('saves a category budget with tag budgets beneath it and reads them back intact', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    const restaurantTagId = await insertTag('Restaurant');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    const { id: restaurantTagId } = await seedTag({ ownerUserid: userId, name: 'Restaurant' });
 
     const saved = content(
       await callTool(userId, 'finance_budget_set', {
@@ -1094,12 +978,7 @@ describe('nested tag budgets', () => {
     ]);
 
     // Each tag budget is also readable on its own, with its own cadence.
-    const tagBudgetRow = await db
-      .selectFrom('app.financeBudgets')
-      .select('id')
-      .where('userId', '=', userId)
-      .where('tagId', '=', restaurantTagId)
-      .executeTakeFirstOrThrow();
+    const tagBudgetRow = (await budgetRows(userId, { tagId: restaurantTagId }))[0]!;
     const tagBudget = content(
       await callTool(userId, 'finance_budget_get', { budgetId: tagBudgetRow.id }),
     ).budget;
@@ -1114,7 +993,7 @@ describe('nested tag budgets', () => {
   });
 
   it('accepts a tag sum equal to the category budget and one below it', async () => {
-    const coffeeTagId = await insertTag('Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
 
     const equal = content(
       await callTool(userId, 'finance_budget_set', {
@@ -1138,7 +1017,7 @@ describe('nested tag budgets', () => {
   });
 
   it('rejects a tag sum one cent over the category budget in full and leaves stored budgets unchanged', async () => {
-    const coffeeTagId = await insertTag('Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
 
     await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
@@ -1164,7 +1043,7 @@ describe('nested tag budgets', () => {
   });
 
   it('names the category, tag sum, category budget and overage when rejecting a save', async () => {
-    const coffeeTagId = await insertTag('Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
 
     const error = await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
@@ -1193,7 +1072,7 @@ describe('nested tag budgets', () => {
   });
 
   it('never lets a tag budget exist without the category budget it sits inside', async () => {
-    const coffeeTagId = await insertTag('Coffee');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
 
     await expect(
       callTool(userId, 'finance_budget_create', {
@@ -1204,18 +1083,13 @@ describe('nested tag budgets', () => {
       }),
     ).rejects.toThrow(/no category budget/i);
 
-    const rows = await db
-      .selectFrom('app.financeBudgets')
-      .selectAll()
-      .where('userId', '=', userId)
-      .where('categoryId', '=', diningId)
-      .execute();
+    const rows = await budgetRows(userId, { categoryId: diningId });
     expect(rows).toHaveLength(0);
   });
 
   it('reports a tag over its budget as composition only while the category is within budget', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    const restaurantTagId = await insertTag('Restaurant');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    const { id: restaurantTagId } = await seedTag({ ownerUserid: userId, name: 'Restaurant' });
     await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
       amountCents: 30_000,
@@ -1226,13 +1100,14 @@ describe('nested tag budgets', () => {
       ],
     });
 
-    const coffeeSpend = await insertTransaction({
+    const { id: coffeeSpend } = await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -25,
     });
-    await tagTransaction(coffeeSpend, coffeeTagId);
+    await seedTagAssignments(coffeeTagId, [coffeeSpend]);
 
     const listed = content(await callTool(userId, 'finance_budget_list', {}));
     const budget = listed.budgets?.find((item) => item.categoryId === diningId);
@@ -1257,8 +1132,8 @@ describe('nested tag budgets', () => {
   });
 
   it('reports a breach when the category is over budget, however spend distributes across tags', async () => {
-    const coffeeTagId = await insertTag('Coffee');
-    const restaurantTagId = await insertTag('Restaurant');
+    const { id: coffeeTagId } = await seedTag({ ownerUserid: userId, name: 'Coffee' });
+    const { id: restaurantTagId } = await seedTag({ ownerUserid: userId, name: 'Restaurant' });
     await callTool(userId, 'finance_budget_set', {
       categoryId: diningId,
       amountCents: 30_000,
@@ -1270,7 +1145,8 @@ describe('nested tag budgets', () => {
     });
 
     // The overspend is untagged, so no tag is over its own budget and the category still breaches.
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
@@ -1289,18 +1165,15 @@ describe('nested tag budgets', () => {
     expect(budget?.tagBudgets.every((tag) => !tag.overTagBudget)).toBe(true);
 
     // Redistribute the same spend onto the small tag: still exactly one breach, the category's.
-    await db
-      .deleteFrom('app.financeTransactions')
-      .where('userId', '=', userId)
-      .where('categoryId', '=', diningId)
-      .execute();
-    const coffeeSpend = await insertTransaction({
+    await removeCategoryTransactions(userId, diningId);
+    const { id: coffeeSpend } = await seedTransaction({
+      ...SPEND,
       accountId,
       categoryId: diningId,
       postedOn: currentMonthStart,
       amount: -350,
     });
-    await tagTransaction(coffeeSpend, coffeeTagId);
+    await seedTagAssignments(coffeeTagId, [coffeeSpend]);
 
     const redistributed = content(await callTool(userId, 'finance_budget_list', {}));
     const after = redistributed.budgets?.find((item) => item.categoryId === diningId);

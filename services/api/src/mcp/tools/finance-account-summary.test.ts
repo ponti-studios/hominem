@@ -1,7 +1,13 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedTransactions,
+} from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000b0-0000-4000-8000-000000000001';
@@ -27,81 +33,42 @@ type SummaryContent = {
   totalCount?: number;
 };
 
-function content(res: McpToolResult<SummaryContent>): SummaryContent {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<SummaryContent>;
 
-function account(id: string, name: string, lifecycleStatus: string) {
-  return {
-    id,
-    userId,
-    name,
-    accountType: 'checking',
-    currencyCode: 'USD',
-    lifecycleStatus,
-    includeInNetWorth: lifecycleStatus === 'open',
-    metadata: {},
-  };
-}
-
-function tx(
-  id: string,
+const tx = (
+  n: number,
   accountId: string,
   postedOn: string,
   amount: number,
-  options?: { currencyCode?: string; excluded?: boolean },
-) {
-  return {
-    id,
-    userId,
-    accountId,
-    postedOn,
-    description: 'Row',
-    amount,
-    currencyCode: options?.currencyCode ?? 'USD',
-    transactionType: 'debit',
-    pending: false,
-    externalId: `ext-${id}`,
-    categoryId: null,
-    excluded: options?.excluded ?? false,
-    providerPayload: {},
-  };
-}
+  options: { currencyCode?: string; excluded?: boolean } = {},
+) => ({
+  id: `f20000b2-0000-4000-8000-00000000000${n}`,
+  accountId,
+  postedOn,
+  amount,
+  description: 'Row',
+  transactionType: 'debit',
+  externalId: `summary-${n}`,
+  ...options,
+});
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Summary User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    // Cascades to accounts and transactions.
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  }
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      account(checkingId, 'Summary Checking', 'open'),
-      account(savingsId, 'Summary Savings', 'open'),
-      account(closedId, 'Summary Closed', 'closed'),
-    ])
-    .execute();
-
-  await db
-    .insertInto('app.financeTransactions')
-    .values([
-      tx('f20000b2-0000-4000-8000-000000000001', checkingId, '2026-01-05', -10),
-      tx('f20000b2-0000-4000-8000-000000000002', checkingId, '2026-02-10', -25),
-      tx('f20000b2-0000-4000-8000-000000000003', checkingId, '2026-03-01', -5, {
-        excluded: true,
-      }),
-      tx('f20000b2-0000-4000-8000-000000000004', checkingId, '2026-03-02', -7, {
-        currencyCode: 'GBP',
-      }),
-      tx('f20000b2-0000-4000-8000-000000000005', savingsId, '2026-04-01', 50),
-    ])
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccounts(userId, [
+    { id: checkingId, name: 'Summary Checking' },
+    { id: savingsId, name: 'Summary Savings' },
+    { id: closedId, name: 'Summary Closed', lifecycleStatus: 'closed', includeInNetWorth: false },
+  ]);
+  await seedTransactions(userId, [
+    tx(1, checkingId, '2026-01-05', -10),
+    tx(2, checkingId, '2026-02-10', -25),
+    tx(3, checkingId, '2026-03-01', -5, { excluded: true }),
+    tx(4, checkingId, '2026-03-02', -7, { currencyCode: 'GBP' }),
+    tx(5, savingsId, '2026-04-01', 50),
+  ]);
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_account_summary', () => {
   it('reports per-account counts, grouped totals and the posted-on span', async () => {

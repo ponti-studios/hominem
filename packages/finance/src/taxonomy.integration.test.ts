@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { db, sql } from '@hominem/db/core';
 import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
@@ -12,206 +10,25 @@ import {
   mergeFinanceCategories,
   queryTransactionsByContract,
 } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { seedBudget, seedMonthlyBudgets, seedTag } from './test/factory';
+import { financeIntegrationTest } from './test/fixtures';
+import {
+  categoryByName,
+  currencyTotals,
+  tagNamesOnTransaction,
+  transactionIdsInCategory,
+} from './test/readers';
+import { type Fixture, seedTaxonomyScenario } from './test/taxonomy-scenario';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
   : financeIntegrationTest.describe.skip;
 
-interface Fixture {
-  ownerId: string;
-  accountId: string;
-  categories: Record<'coffee' | 'food' | 'groceries' | 'restaurants', { id: string; name: string }>;
-  transactions: Record<'coffee' | 'food' | 'groceries' | 'restaurants', string[]>;
-}
-
-// Placeholder taxonomy only: a bucket and three components that are folded into it.
-async function seedFixture(ownerId: string): Promise<Fixture> {
-  const accountId = randomUUID();
-  await db
-    .insertInto('app.financeAccounts')
-    .values({
-      id: accountId,
-      userId: ownerId,
-      name: 'Taxonomy Checking',
-      accountType: 'checking',
-      currencyCode: 'USD',
-      lifecycleStatus: 'open',
-      includeInNetWorth: true,
-      metadata: {},
-    })
-    .execute();
-
-  const groceries = await createOrGetFinanceCategory(ownerId, 'Groceries');
-  const restaurants = await createOrGetFinanceCategory(ownerId, 'Restaurants');
-  const coffee = await createOrGetFinanceCategory(ownerId, 'Coffee');
-  const food = await createOrGetFinanceCategory(ownerId, 'Food');
-
-  const rows: Array<{
-    id: string;
-    categoryId: string;
-    amount: number;
-    currencyCode: string;
-    postedOn: string;
-    description: string;
-  }> = [
-    {
-      id: randomUUID(),
-      categoryId: groceries.id!,
-      amount: -25.5,
-      currencyCode: 'USD',
-      postedOn: '2026-05-01',
-      description: 'Grocery row one',
-    },
-    {
-      id: randomUUID(),
-      categoryId: groceries.id!,
-      amount: -10,
-      currencyCode: 'USD',
-      postedOn: '2026-05-02',
-      description: 'Grocery row two',
-    },
-    {
-      id: randomUUID(),
-      categoryId: restaurants.id!,
-      amount: -40,
-      currencyCode: 'EUR',
-      postedOn: '2026-05-03',
-      description: 'Restaurant row',
-    },
-    {
-      id: randomUUID(),
-      categoryId: coffee.id!,
-      amount: -3.5,
-      currencyCode: 'USD',
-      postedOn: '2026-05-04',
-      description: 'Coffee row',
-    },
-    {
-      id: randomUUID(),
-      categoryId: food.id!,
-      amount: -5,
-      currencyCode: 'USD',
-      postedOn: '2026-05-05',
-      description: 'Food row already in the target',
-    },
-  ];
-
-  await db
-    .insertInto('app.financeTransactions')
-    .values(
-      rows.map((row) => ({
-        id: row.id,
-        userId: ownerId,
-        accountId,
-        postedOn: row.postedOn,
-        description: row.description,
-        amount: row.amount,
-        currencyCode: row.currencyCode,
-        transactionType: 'debit',
-        pending: false,
-        categoryId: row.categoryId,
-        excluded: false,
-        externalId: row.id,
-        providerPayload: {},
-      })),
-    )
-    .execute();
-
-  return {
-    ownerId,
-    accountId,
-    categories: {
-      groceries: { id: groceries.id!, name: 'Groceries' },
-      restaurants: { id: restaurants.id!, name: 'Restaurants' },
-      coffee: { id: coffee.id!, name: 'Coffee' },
-      food: { id: food.id!, name: 'Food' },
-    },
-    transactions: {
-      groceries: [rows[0]!.id, rows[1]!.id],
-      restaurants: [rows[2]!.id],
-      coffee: [rows[3]!.id],
-      food: [rows[4]!.id],
-    },
-  };
-}
-
-/** Integer cents per currency — the comparison the totals invariant is stated in. */
-async function currencyTotals(userId: string, categoryIds: string[]) {
-  const rows = await db
-    .selectFrom('app.financeTransactions')
-    .select(['currencyCode'])
-    .select((eb) => eb.fn.sum<string>('amount').as('total'))
-    .where('userId', '=', userId)
-    .where('categoryId', 'in', categoryIds)
-    .groupBy('currencyCode')
-    .orderBy('currencyCode', 'asc')
-    .execute();
-  return rows.map((row) => ({
-    currencyCode: row.currencyCode,
-    cents: Math.round(Number(row.total) * 100),
-  }));
-}
-
-async function transactionIdsInCategory(userId: string, categoryId: string): Promise<string[]> {
-  const rows = await db
-    .selectFrom('app.financeTransactions')
-    .select('id')
-    .where('userId', '=', userId)
-    .where('categoryId', '=', categoryId)
-    .execute();
-  return rows.map((row) => row.id).sort();
-}
-
-async function categoryByName(userId: string, name: string) {
-  return db
-    .selectFrom('app.financeCategories')
-    .select(['id', 'name'])
-    .where('userId', '=', userId)
-    .where(sql<boolean>`lower(name) = lower(${name})`)
-    .executeTakeFirst();
-}
-
-async function seedBudget(
-  ownerId: string,
-  categoryId: string,
-  amountCents: number,
-  cadence: string,
-  tagId?: string,
-) {
-  await db
-    .insertInto('app.financeBudgets')
-    .values({ userId: ownerId, categoryId, amountCents, cadence, tagId: tagId ?? null })
-    .execute();
-}
-
-async function seedTag(ownerId: string, name: string): Promise<string> {
-  const id = randomUUID();
-  const slug = `nested-${id}`;
-  await db
-    .insertInto('app.tags')
-    .values({ id, ownerUserid: ownerId, name, slug, path: slug })
-    .execute();
-  return id;
-}
-
-async function tagsOnTransaction(userId: string, transactionId: string): Promise<string[]> {
-  const rows = await sql<{ name: string }>`
-    select tg.name
-    from app.tag_assignments ti
-    join app.tags tg on tg.id = ti.tag_id and tg.owner_userid = ${userId}
-    where ti.entity_table = 'app.finance_transactions'::regclass
-      and ti.entity_id = ${transactionId}
-      and ti.removed_at is null
-  `.execute(db);
-  return rows.rows.map((row) => row.name).sort();
-}
-
 describeIntegration('finance category taxonomy', () => {
   let fixture: Fixture;
 
   financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
-    fixture = await seedFixture(financeFixture.ownerId);
+    fixture = await seedTaxonomyScenario(financeFixture.ownerId);
   });
 
   financeIntegrationTest(
@@ -256,12 +73,12 @@ describeIntegration('finance category taxonomy', () => {
         expect(inMergedCategory).toEqual(expected);
 
         for (const transactionId of expected) {
-          expect(await tagsOnTransaction(ownerId, transactionId)).toContain(source.name);
+          expect(await tagNamesOnTransaction(ownerId, transactionId)).toContain(source.name);
         }
       }
 
       // The target's own rows are untouched and stay untagged.
-      expect(await tagsOnTransaction(ownerId, transactions.food[0]!)).toEqual([]);
+      expect(await tagNamesOnTransaction(ownerId, transactions.food[0]!)).toEqual([]);
     },
   );
 
@@ -270,10 +87,7 @@ describeIntegration('finance category taxonomy', () => {
     async () => {
       const { ownerId, categories } = fixture;
 
-      await sql`
-      insert into app.tags (id, owner_userid, name, slug, path)
-      values (${randomUUID()}, ${ownerId}, ${'groceries'}, ${'groceries'}, ${'groceries'})
-    `.execute(db);
+      await seedTag({ ownerUserid: ownerId, name: 'groceries' });
       const existing = await db
         .selectFrom('app.tags')
         .select(['id', 'name'])
@@ -329,39 +143,51 @@ describeIntegration('finance category taxonomy', () => {
     'adds source budgets in the target cadence and preserves monthly runway budgets',
     async () => {
       const { ownerId, categories } = fixture;
-      await seedBudget(ownerId, categories.food.id, 12_000, 'monthly');
-      await seedBudget(ownerId, categories.groceries.id, 1_200, 'weekly');
-      await seedBudget(ownerId, categories.restaurants.id, 3_000, 'quarterly');
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.food.id,
+        amountCents: 12_000,
+        cadence: 'monthly',
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.groceries.id,
+        amountCents: 1_200,
+        cadence: 'weekly',
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.restaurants.id,
+        amountCents: 3_000,
+        cadence: 'quarterly',
+      });
 
-      await db
-        .insertInto('app.financeMonthlyBudgets')
-        .values([
-          {
-            userId: ownerId,
-            categoryId: categories.food.id,
-            currencyCode: 'USD',
-            monthlyAmount: '50.00',
-          },
-          {
-            userId: ownerId,
-            categoryId: categories.groceries.id,
-            currencyCode: 'USD',
-            monthlyAmount: '10.25',
-          },
-          {
-            userId: ownerId,
-            categoryId: categories.restaurants.id,
-            currencyCode: 'USD',
-            monthlyAmount: '3.75',
-          },
-          {
-            userId: ownerId,
-            categoryId: categories.restaurants.id,
-            currencyCode: 'EUR',
-            monthlyAmount: '2.50',
-          },
-        ])
-        .execute();
+      await seedMonthlyBudgets([
+        {
+          userId: ownerId,
+          categoryId: categories.food.id,
+          currencyCode: 'USD',
+          monthlyAmount: '50.00',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.groceries.id,
+          currencyCode: 'USD',
+          monthlyAmount: '10.25',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.restaurants.id,
+          currencyCode: 'USD',
+          monthlyAmount: '3.75',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.restaurants.id,
+          currencyCode: 'EUR',
+          monthlyAmount: '2.50',
+        },
+      ]);
 
       const preview = await mergeFinanceCategories(
         ownerId,
@@ -427,8 +253,18 @@ describeIntegration('finance category taxonomy', () => {
     'uses the first budgeted source cadence when the target has no budget',
     async () => {
       const { ownerId, categories } = fixture;
-      await seedBudget(ownerId, categories.restaurants.id, 3_000, 'quarterly');
-      await seedBudget(ownerId, categories.groceries.id, 1_200, 'weekly');
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.restaurants.id,
+        amountCents: 3_000,
+        cadence: 'quarterly',
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.groceries.id,
+        amountCents: 1_200,
+        cadence: 'weekly',
+      });
 
       const result = await mergeFinanceCategories(ownerId, {
         from: ['Restaurants', 'Groceries'],
@@ -455,13 +291,43 @@ describeIntegration('finance category taxonomy', () => {
     'adds nested tag budgets by tag while preserving the target cadence',
     async () => {
       const { ownerId, categories } = fixture;
-      const sharedTagId = await seedTag(ownerId, 'Shared food tag');
-      const sourceOnlyTagId = await seedTag(ownerId, 'Source only food tag');
-      await seedBudget(ownerId, categories.food.id, 12_000, 'monthly');
-      await seedBudget(ownerId, categories.groceries.id, 30_000, 'quarterly');
-      await seedBudget(ownerId, categories.food.id, 1_200, 'monthly', sharedTagId);
-      await seedBudget(ownerId, categories.groceries.id, 600, 'weekly', sharedTagId);
-      await seedBudget(ownerId, categories.groceries.id, 6_000, 'quarterly', sourceOnlyTagId);
+      const sharedTagId = (await seedTag({ ownerUserid: ownerId, name: 'Shared food tag' })).id;
+      const sourceOnlyTagId = (
+        await seedTag({ ownerUserid: ownerId, name: 'Source only food tag' })
+      ).id;
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.food.id,
+        amountCents: 12_000,
+        cadence: 'monthly',
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.groceries.id,
+        amountCents: 30_000,
+        cadence: 'quarterly',
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.food.id,
+        amountCents: 1_200,
+        cadence: 'monthly',
+        tagId: sharedTagId,
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.groceries.id,
+        amountCents: 600,
+        cadence: 'weekly',
+        tagId: sharedTagId,
+      });
+      await seedBudget({
+        userId: ownerId,
+        categoryId: categories.groceries.id,
+        amountCents: 6_000,
+        cadence: 'quarterly',
+        tagId: sourceOnlyTagId,
+      });
 
       const preview = await mergeFinanceCategories(
         ownerId,

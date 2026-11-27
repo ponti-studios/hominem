@@ -1,12 +1,22 @@
-import { db, pool, sql } from '@hominem/db/core';
+import { createOrGetFinanceCategory, saveRunwayBudget } from '@hominem/finance-services';
 import {
-  createOrGetFinanceCategory,
-  FINANCE_TRANSACTION_ENTITY_TYPE,
-  saveRunwayBudget,
-} from '@hominem/finance-services';
+  keepBaseline,
+  patchTransactions,
+  removeTagAssignments,
+  removeUsers,
+  seedAccount,
+  seedAccounts,
+  seedCategory,
+  seedRunwayPreferences,
+  seedTagAssignments,
+  seedTagOn,
+  seedTransaction,
+  seedUser,
+} from '@hominem/finance-services/test/factory';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f2000000-0000-4000-8000-000000000001';
@@ -32,162 +42,57 @@ type Content = {
   [key: string]: unknown;
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<Content>;
 
-async function removeUser(id: string) {
-  await pool.query(
-    `DELETE FROM app.tag_assignments WHERE tag_id IN (SELECT id FROM app.tags WHERE owner_userid = $1)`,
-    [id],
-  );
-  await pool.query(`DELETE FROM app.tags WHERE owner_userid = $1`, [id]);
-  await pool.query(`DELETE FROM app.finance_transactions WHERE user_id = $1`, [id]);
-  await pool.query(`DELETE FROM app.finance_categories WHERE user_id = $1`, [id]);
-  await pool.query(`DELETE FROM app.finance_accounts WHERE user_id = $1`, [id]);
-  await pool.query(`DELETE FROM "user" WHERE id = $1`, [id]);
-}
-
-async function seedUser(id: string, name: string) {
-  await pool.query(
-    `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4)`,
-    [id, name, `${id}@test.hominem.dev`, true],
-  );
-}
-
-async function insertAccount(
-  id: string,
-  owner: string,
-  name: string,
-  accountType: string,
-  includeInNetWorth = true,
-  currencyCode = 'USD',
-) {
-  await db
-    .insertInto('app.financeAccounts')
-    .values({
-      id,
-      userId: owner,
-      name,
-      accountType,
-      currencyCode,
-      lifecycleStatus: 'open',
-      includeInNetWorth,
-      metadata: {},
-    })
-    .execute();
-}
-
-let txCounter = 0;
-const testTransactionIds: string[] = [];
-const testTagIds: string[] = [];
-async function insertTransaction(input: {
-  owner: string;
-  accountId: string;
-  postedOn: string;
-  description: string;
-  merchantName: string | null;
-  amount: number;
-  currencyCode?: string;
-  transactionType?: string;
-  excluded?: boolean;
-  recurring?: boolean;
-  pending?: boolean;
-}): Promise<string> {
-  txCounter += 1;
-  const id = `f2000004-0000-4000-8000-${String(txCounter).padStart(12, '0')}`;
-  testTransactionIds.push(id);
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id,
-      userId: input.owner,
-      accountId: input.accountId,
-      postedOn: input.postedOn,
-      description: input.description,
-      merchantName: input.merchantName,
-      amount: input.amount,
-      currencyCode: input.currencyCode ?? 'USD',
-      transactionType: input.transactionType ?? (input.amount < 0 ? 'debit' : 'credit'),
-      pending: input.pending ?? false,
-      externalId: `report-${txCounter}`,
-      excluded: input.excluded ?? false,
-      recurring: input.recurring ?? false,
-      providerPayload: {},
-    })
-    .execute();
-  return id;
-}
-
-async function tag(owner: string, tagId: string, name: string, transactionIds: string[]) {
-  testTagIds.push(tagId);
-  await db
-    .insertInto('app.tags')
-    .values({ id: tagId, ownerUserid: owner, name, path: name, slug: name.toLowerCase() })
-    .execute();
-  for (const transactionId of transactionIds) {
-    await db
-      .insertInto('app.tagAssignments')
-      .values({
-        tagId,
-        entityTable: sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
-        entityId: transactionId,
-      })
-      .execute();
-  }
-}
+let restoreBaseline: () => Promise<void>;
 
 beforeAll(async () => {
-  await removeUser(userId);
-  await removeUser(otherUserId);
-  await seedUser(userId, 'Report User');
-  await seedUser(otherUserId, 'Other Report User');
+  await removeUsers(userId, otherUserId);
+  await seedUser({ id: userId, name: 'Report User' });
+  await seedUser({ id: otherUserId, name: 'Other Report User' });
 
-  await insertAccount(checkingId, userId, 'Checking', 'checking');
-  await insertAccount(cardId, userId, 'Card', 'credit_card', false);
-  await insertAccount(otherCheckingId, otherUserId, 'Other Checking', 'checking');
-  await db
-    .insertInto('app.financeRunwayPreferences')
-    .values([
-      { userId, currencyCode: 'USD' },
-      { userId: otherUserId, currencyCode: 'USD' },
-    ])
-    .execute();
+  await seedAccounts(userId, [
+    { id: checkingId, name: 'Checking' },
+    { id: cardId, name: 'Card', accountType: 'credit_card', includeInNetWorth: false },
+    { id: otherCheckingId, userId: otherUserId, name: 'Other Checking' },
+  ]);
+  await seedRunwayPreferences({ userId, currencyCode: 'USD' });
+  await seedRunwayPreferences({ userId: otherUserId, currencyCode: 'USD' });
 
-  const groceries = await insertTransaction({
-    owner: userId,
+  const { id: groceries } = await seedTransaction({
+    userId: userId,
     accountId: checkingId,
     postedOn: '2026-07-01',
     description: 'Grocery Store',
     merchantName: 'Whole Foods',
     amount: -50,
   });
-  await insertTransaction({
-    owner: userId,
+  await seedTransaction({
+    userId: userId,
     accountId: checkingId,
     postedOn: '2026-07-05',
     description: 'Gas',
     merchantName: 'Shell',
     amount: -25,
   });
-  await insertTransaction({
-    owner: userId,
+  await seedTransaction({
+    userId: userId,
     accountId: checkingId,
     postedOn: '2026-07-10',
     description: 'Paycheck',
     merchantName: 'Acme',
     amount: 2000,
   });
-  const cardGroceries = await insertTransaction({
-    owner: userId,
+  const { id: cardGroceries } = await seedTransaction({
+    userId: userId,
     accountId: cardId,
     postedOn: '2026-07-12',
     description: 'Groceries again',
     merchantName: 'Whole Foods',
     amount: -30,
   });
-  await insertTransaction({
-    owner: userId,
+  await seedTransaction({
+    userId: userId,
     accountId: checkingId,
     postedOn: '2026-07-15',
     description: 'Rent',
@@ -195,8 +100,8 @@ beforeAll(async () => {
     amount: -1000,
     recurring: true,
   });
-  await insertTransaction({
-    owner: userId,
+  await seedTransaction({
+    userId: userId,
     accountId: checkingId,
     postedOn: '2026-07-16',
     description: 'Shell refund adjustment',
@@ -205,44 +110,28 @@ beforeAll(async () => {
     transactionType: 'adjustment',
     excluded: true,
   });
-  await tag(userId, foodTagId, 'Food', [groceries, cardGroceries]);
+  await seedTagOn({ id: foodTagId, ownerUserid: userId, name: 'Food', path: 'Food' }, [
+    groceries,
+    cardGroceries,
+  ]);
 
-  const otherGroceries = await insertTransaction({
-    owner: otherUserId,
+  const { id: otherGroceries } = await seedTransaction({
+    userId: otherUserId,
     accountId: otherCheckingId,
     postedOn: '2026-07-02',
     description: 'Other Grocery Store',
     merchantName: 'Whole Foods',
     amount: -999,
   });
-  await tag(otherUserId, otherFoodTagId, 'Food', [otherGroceries]);
-  testTransactionIds.length = 0;
-  testTagIds.length = 0;
+  await seedTagOn({ id: otherFoodTagId, ownerUserid: otherUserId, name: 'Food', path: 'Food' }, [
+    otherGroceries,
+  ]);
+  restoreBaseline = await keepBaseline(userId, otherUserId);
 });
 
-afterEach(async () => {
-  if (testTransactionIds.length) {
-    await pool.query('DELETE FROM app.tag_assignments WHERE entity_id = ANY($1::uuid[])', [
-      testTransactionIds,
-    ]);
-    await pool.query('DELETE FROM app.finance_transactions WHERE id = ANY($1::uuid[])', [
-      testTransactionIds,
-    ]);
-    testTransactionIds.length = 0;
-  }
-  if (testTagIds.length) {
-    await pool.query('DELETE FROM app.tag_assignments WHERE tag_id = ANY($1::uuid[])', [
-      testTagIds,
-    ]);
-    await pool.query('DELETE FROM app.tags WHERE id = ANY($1::uuid[])', [testTagIds]);
-    testTagIds.length = 0;
-  }
-});
+afterEach(() => restoreBaseline());
 
-afterAll(async () => {
-  await removeUser(userId);
-  await removeUser(otherUserId);
-});
+afterAll(() => removeUsers(userId, otherUserId));
 
 const JULY = { from: '2026-07-01', to: '2026-07-31' };
 
@@ -284,8 +173,8 @@ describe('finance_top_merchants', () => {
 
   it('aggregates all matching transactions beyond the analytics page size', async () => {
     for (let index = 0; index < 201; index += 1) {
-      await insertTransaction({
-        owner: userId,
+      await seedTransaction({
+        userId: userId,
         accountId: checkingId,
         postedOn: '2026-11-01',
         description: `Merchant page row ${index}`,
@@ -350,17 +239,22 @@ describe('finance_top_merchants', () => {
 
 describe('finance_spending_by_category', () => {
   it('detects mixed currencies even when the category limit omits one', async () => {
-    await insertAccount(categoryGbpAccountId, userId, 'Category GBP', 'checking', true, 'GBP');
-    const usd = await insertTransaction({
-      owner: userId,
+    await seedAccount({
+      id: categoryGbpAccountId,
+      userId,
+      name: 'Category GBP',
+      currencyCode: 'GBP',
+    });
+    const { id: usd } = await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-12-03',
       description: 'USD category limit row',
       merchantName: 'Category USD',
       amount: -10,
     });
-    const gbp = await insertTransaction({
-      owner: userId,
+    const { id: gbp } = await seedTransaction({
+      userId: userId,
       accountId: categoryGbpAccountId,
       postedOn: '2026-12-03',
       description: 'GBP category limit row',
@@ -372,23 +266,10 @@ describe('finance_spending_by_category', () => {
       'f2000006-0000-4000-8000-000000000001',
       'f2000006-0000-4000-8000-000000000002',
     ];
-    await db
-      .insertInto('app.financeCategories')
-      .values([
-        { id: categoryIds[0]!, userId, name: 'Category Limit USD' },
-        { id: categoryIds[1]!, userId, name: 'Category Limit GBP' },
-      ])
-      .execute();
-    await db
-      .updateTable('app.financeTransactions')
-      .set({ categoryId: categoryIds[0]! })
-      .where('id', '=', usd)
-      .execute();
-    await db
-      .updateTable('app.financeTransactions')
-      .set({ categoryId: categoryIds[1]! })
-      .where('id', '=', gbp)
-      .execute();
+    await seedCategory({ id: categoryIds[0]!, userId, name: 'Category Limit USD' });
+    await seedCategory({ id: categoryIds[1]!, userId, name: 'Category Limit GBP' });
+    await patchTransactions([usd], { categoryId: categoryIds[0]! });
+    await patchTransactions([gbp], { categoryId: categoryIds[1]! });
     const data = content(
       await callTool(userId, 'finance_spending_by_category', {
         from: '2026-12-03',
@@ -407,25 +288,20 @@ describe('finance_spending_by_category', () => {
       { length: 21 },
       (_, index) => `f2000008-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
     );
-    await db
-      .insertInto('app.financeCategories')
-      .values(categoryIds.map((id, index) => ({ id, userId, name: `Limit Category ${index + 1}` })))
-      .execute();
+    for (const [index, id] of categoryIds.entries()) {
+      await seedCategory({ id, userId, name: `Limit Category ${index + 1}` });
+    }
 
     for (const [index, categoryId] of categoryIds.entries()) {
-      const transactionId = await insertTransaction({
-        owner: userId,
+      const { id: transactionId } = await seedTransaction({
+        userId: userId,
         accountId: checkingId,
         postedOn: '2025-12-15',
         description: `Category truncation ${index + 1}`,
         merchantName: null,
         amount: -(index + 1),
       });
-      await db
-        .updateTable('app.financeTransactions')
-        .set({ categoryId })
-        .where('id', '=', transactionId)
-        .execute();
+      await patchTransactions([transactionId], { categoryId });
     }
 
     const limited = content(
@@ -496,8 +372,8 @@ describe('finance_tag_breakdown', () => {
 
   it('returns currency totals beyond the former result cap', async () => {
     for (let index = 0; index < 501; index += 1) {
-      await insertTransaction({
-        owner: userId,
+      await seedTransaction({
+        userId: userId,
         accountId: checkingId,
         postedOn: '2026-12-02',
         description: `Currency ${index}`,
@@ -517,8 +393,8 @@ describe('finance_tag_breakdown', () => {
   });
 
   it('counts a co-tagged transaction under every assigned tag and distinguishes untagged spend', async () => {
-    const transactionId = await insertTransaction({
-      owner: userId,
+    const { id: transactionId } = await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-08-18',
       description: 'Co-tagged report test',
@@ -526,19 +402,14 @@ describe('finance_tag_breakdown', () => {
       amount: -14.95,
     });
     const artTagId = 'f2000005-0000-4000-8000-000000000003';
-    await tag(userId, artTagId, 'Art', [transactionId]);
+    await seedTagOn({ id: artTagId, ownerUserid: userId, name: 'Art', path: 'Art' }, [
+      transactionId,
+    ]);
     const karenTagId = 'f2000005-0000-4000-8000-000000000004';
-    await tag(userId, karenTagId, 'Karen', []);
-    await db
-      .insertInto('app.tagAssignments')
-      .values({
-        tagId: karenTagId,
-        entityTable: sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
-        entityId: transactionId,
-      })
-      .execute();
-    await insertTransaction({
-      owner: userId,
+    await seedTagOn({ id: karenTagId, ownerUserid: userId, name: 'Karen', path: 'Karen' }, []);
+    await seedTagAssignments(karenTagId, [transactionId]);
+    await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-08-19',
       description: 'Untagged report test',
@@ -567,8 +438,8 @@ describe('finance_tag_breakdown', () => {
   });
 
   it('ignores removed tag assignments but retains the transaction in untagged totals', async () => {
-    const transactionId = await insertTransaction({
-      owner: userId,
+    const { id: transactionId } = await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-12-01',
       description: 'Removed tag report test',
@@ -576,12 +447,10 @@ describe('finance_tag_breakdown', () => {
       amount: -12,
     });
     const removedTagId = 'f2000005-0000-4000-8000-000000000006';
-    await tag(userId, removedTagId, 'Removed', [transactionId]);
-    await db
-      .updateTable('app.tagAssignments')
-      .set({ removedAt: new Date(Date.now() + 60_000).toISOString() })
-      .where('tagId', '=', removedTagId)
-      .execute();
+    await seedTagOn({ id: removedTagId, ownerUserid: userId, name: 'Removed', path: 'Removed' }, [
+      transactionId,
+    ]);
+    await removeTagAssignments(removedTagId, new Date(Date.now() + 60_000).toISOString());
     const data = content(
       await callTool(userId, 'finance_tag_breakdown', {
         from: '2026-12-01',
@@ -611,16 +480,16 @@ describe('finance_tag_breakdown', () => {
   });
 
   it('keeps tag totals and daily averages separate by currency', async () => {
-    const usdId = await insertTransaction({
-      owner: userId,
+    const { id: usdId } = await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-08-20',
       description: 'USD tag sample',
       merchantName: 'Tag Sample',
       amount: -1,
     });
-    const gbpId = await insertTransaction({
-      owner: userId,
+    const { id: gbpId } = await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-08-21',
       description: 'GBP tag sample',
@@ -629,7 +498,10 @@ describe('finance_tag_breakdown', () => {
       currencyCode: 'GBP',
     });
     const tagId = 'f2000005-0000-4000-8000-000000000005';
-    await tag(userId, tagId, 'currency_sample', [usdId, gbpId]);
+    await seedTagOn(
+      { id: tagId, ownerUserid: userId, name: 'currency_sample', path: 'currency_sample' },
+      [usdId, gbpId],
+    );
 
     const data = content(
       await callTool(userId, 'finance_tag_breakdown', {
@@ -672,8 +544,8 @@ describe('finance_monthly_stats', () => {
   });
 
   it('reports mixed-currency totals independently instead of adding unlike currencies', async () => {
-    await insertTransaction({
-      owner: userId,
+    await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-09-21',
       description: 'GBP report test',
@@ -681,8 +553,8 @@ describe('finance_monthly_stats', () => {
       amount: -250,
       currencyCode: 'GBP',
     });
-    await insertTransaction({
-      owner: userId,
+    await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-09-22',
       description: 'USD report test',
@@ -701,8 +573,8 @@ describe('finance_monthly_stats', () => {
 
   it('includes all rows when a month exceeds the analytics page size', async () => {
     for (let index = 0; index < 205; index += 1) {
-      await insertTransaction({
-        owner: userId,
+      await seedTransaction({
+        userId: userId,
         accountId: checkingId,
         postedOn: '2026-10-02',
         description: `Page-boundary transaction ${index}`,
@@ -717,8 +589,8 @@ describe('finance_monthly_stats', () => {
 
   it('returns currency breakdowns beyond the former result cap', async () => {
     for (let index = 0; index < 501; index += 1) {
-      await insertTransaction({
-        owner: userId,
+      await seedTransaction({
+        userId: userId,
         accountId: checkingId,
         postedOn: '2026-11-03',
         description: `Monthly currency ${index}`,
@@ -733,8 +605,8 @@ describe('finance_monthly_stats', () => {
   });
 
   it('omits pending transactions from posted monthly activity', async () => {
-    await insertTransaction({
-      owner: userId,
+    await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: '2026-11-02',
       description: 'Pending report row',
@@ -758,8 +630,8 @@ describe('finance_monthly_stats', () => {
 
   it('filters to the current month when the month argument is omitted', async () => {
     const currentMonth = new Date().toISOString().slice(0, 7);
-    await insertTransaction({
-      owner: userId,
+    await seedTransaction({
+      userId: userId,
       accountId: checkingId,
       postedOn: `${currentMonth}-01`,
       description: 'Default month report row',

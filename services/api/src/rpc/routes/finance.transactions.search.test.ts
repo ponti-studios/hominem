@@ -1,44 +1,13 @@
-import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AppContext, RpcUser } from '../middleware/auth';
-import { requestIdMiddleware } from '../middleware/auth';
-import { apiErrorHandler } from '../middleware/error';
-import { validationErrorMiddleware } from '../middleware/validation';
+import { FINANCE_ROUTE_USER_ID, financeTestApp } from '../../testkit/fixtures/finance-rpc';
 
 const financeService = vi.hoisted(() => ({ searchTransactions: vi.fn() }));
 vi.mock('../../application/finance.service', () => financeService);
 
 import { transactionsRoutes } from './finance.transactions';
 
-const testUser: RpcUser = {
-  id: '11111111-1111-4111-8111-111111111111',
-  email: 'finance-search@example.com',
-  name: 'Finance Search Test User',
-  emailVerified: true,
-  image: null,
-  isAdmin: false,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-};
-
-function createApp() {
-  const app = new Hono<AppContext>()
-    .onError(apiErrorHandler)
-    .use(requestIdMiddleware)
-    .use(validationErrorMiddleware)
-    .use('*', async (c, next) => {
-      c.set('auth', {
-        user: testUser,
-        userId: testUser.id,
-        credential: 'session',
-        scopes: [],
-      });
-      await next();
-    });
-
-  return app.route('/api/finance/transactions', transactionsRoutes);
-}
+const createApp = () => financeTestApp('transactions', transactionsRoutes);
 
 describe('finance transaction search route', () => {
   beforeEach(() => financeService.searchTransactions.mockReset());
@@ -48,7 +17,7 @@ describe('finance transaction search route', () => {
       data: [
         {
           id: '22222222-2222-4222-8222-222222222222',
-          userId: testUser.id,
+          userId: FINANCE_ROUTE_USER_ID,
           accountId: '33333333-3333-4333-8333-333333333333',
           amount: -4.5,
           description: 'Parking Garage',
@@ -65,7 +34,7 @@ describe('finance transaction search route', () => {
     const response = await createApp().request('/api/finance/transactions/list?description=parkin');
 
     expect(response.status).toBe(200);
-    expect(financeService.searchTransactions).toHaveBeenCalledWith(testUser.id, {
+    expect(financeService.searchTransactions).toHaveBeenCalledWith(FINANCE_ROUTE_USER_ID, {
       accountIds: [],
       dateFrom: undefined,
       dateTo: undefined,
@@ -96,7 +65,7 @@ describe('finance transaction search route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(financeService.searchTransactions).toHaveBeenCalledWith(testUser.id, {
+    expect(financeService.searchTransactions).toHaveBeenCalledWith(FINANCE_ROUTE_USER_ID, {
       accountIds: [],
       dateFrom: undefined,
       dateTo: undefined,
@@ -122,7 +91,7 @@ describe('finance transaction search route', () => {
 
     expect(response.status).toBe(200);
     expect(financeService.searchTransactions).toHaveBeenCalledWith(
-      testUser.id,
+      FINANCE_ROUTE_USER_ID,
       expect.objectContaining({ limit: 2, cursor: 'abc' }),
     );
     await expect(response.json()).resolves.toMatchObject({ nextCursor: 'next-page-cursor' });
@@ -141,7 +110,7 @@ describe('finance transaction search route', () => {
     const response = await createApp().request('/api/finance/transactions/list?offset=100');
     expect(response.status).toBe(200);
     expect(financeService.searchTransactions).toHaveBeenCalledWith(
-      testUser.id,
+      FINANCE_ROUTE_USER_ID,
       expect.not.objectContaining({ offset: expect.anything() }),
     );
   });
