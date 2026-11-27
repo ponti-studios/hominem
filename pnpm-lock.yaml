@@ -44,8 +44,8 @@ catalogs:
       specifier: 17.4.2
       version: 17.4.2
     hono:
-      specifier: 4.13.13
-      version: 4.13.13
+      specifier: 4.13.16
+      version: 4.13.16
     ioredis:
       specifier: 6.0.0
       version: 6.0.0
@@ -737,7 +737,7 @@ importers:
         version: 5.104.5(@types/react@19.2.18)(react@19.2.8)
       hono:
         specifier: 'catalog:'
-        version: 4.13.13
+        version: 4.13.16
       undici:
         specifier: ^8.12.3
         version: 8.12.3
@@ -916,10 +916,10 @@ importers:
         version: link:../../packages/utils
       '@hono/node-server':
         specifier: ^2.1.5
-        version: 2.1.5(hono@4.13.13)
+        version: 2.1.5(hono@4.13.16)
       '@hono/zod-validator':
         specifier: 0.9.1
-        version: 0.9.1(hono@4.13.13)(zod@4.6.7)
+        version: 0.9.1(hono@4.13.16)(zod@4.6.7)
       '@modelcontextprotocol/server':
         specifier: 2.4.0
         version: 2.4.0
@@ -931,7 +931,7 @@ importers:
         version: link:../../packages/auth
       '@scalar/hono-api-reference':
         specifier: ^0.12.13
-        version: 0.12.13(hono@4.13.13)
+        version: 0.12.13(hono@4.13.16)
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.104.5(@types/react@19.2.18)(react@19.2.8)
@@ -949,7 +949,7 @@ importers:
         version: 17.4.2
       hono:
         specifier: 'catalog:'
-        version: 4.13.13
+        version: 4.13.16
       pg:
         specifier: 'catalog:'
         version: 8.23.1
@@ -4695,12 +4695,17 @@ packages:
         optional: true
 
   '@ponti-studios/ui@3.0.1':
-    resolution: {integrity: sha512-L9wMQ3/MmAnUWoshUrgStXXs5qlKeKzRdoumLEY8zXu/I43CVgH+nAt6G7Wifx2px1UTdFOICfRASombwQzNLg==, tarball: https://npm.pkg.github.com/download/@ponti-studios/ui/3.0.1/72a29583a64e235f7b7c42bc346c95cbc0be8eaf}
+    resolution: {integrity: sha512-L9wMQ3/MmAnUWoshUrgStXXs5qlKeKzRdoumLEY8zXu/I43CVgH+nAt6G7Wifx2px1UTdFOICfRASombwQzNLg==}
     hasBin: true
     peerDependencies:
       react: 19.2.8
       react-dom: 19.2.8
       react-native: '>=0.80'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
 
   '@posthog/browser-common@0.9.5':
     resolution: {integrity: sha512-oXnBgZvM8UQ84IcBLfGP0WSGd9rA0PCGR37H8Pw0NszJRwxwbJnFXIUih0pvI/ze2eGmzkIEC9i3SwC+bMAgjQ==}
@@ -8789,6 +8794,10 @@ packages:
 
   hono@4.13.13:
     resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.13.16:
+    resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
     engines: {node: '>=16.9.0'}
 
   hookified@1.15.1:
@@ -14766,18 +14775,18 @@ snapshots:
       '@hominem/storage': file:packages/storage(react@19.2.8)(supports-color@8.1.1)
       '@hominem/telemetry': file:packages/telemetry(react@19.2.8)
       '@hominem/utils': file:packages/utils(react@19.2.8)
-      '@hono/node-server': 2.1.5(hono@4.13.13)
-      '@hono/zod-validator': 0.9.1(hono@4.13.13)(zod@4.6.7)
+      '@hono/node-server': 2.1.5(hono@4.13.16)
+      '@hono/zod-validator': 0.9.1(hono@4.13.16)(zod@4.6.7)
       '@modelcontextprotocol/server': 2.4.0
       '@opentelemetry/api': 1.10.0
       '@ponti-studios/auth': file:packages/auth(@playwright/test@1.64.1)
-      '@scalar/hono-api-reference': 0.12.13(hono@4.13.13)
+      '@scalar/hono-api-reference': 0.12.13(hono@4.13.16)
       '@tanstack/react-query': 5.104.5(@types/react@19.2.18)(react@19.2.8)
       better-auth: 1.7.12(@opentelemetry/api@1.10.0)(pg@8.23.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.5)
       bullmq: 6.3.19(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.1)(redis@5.12.1(@opentelemetry/api@1.10.0))
       csv-parse: 7.0.3
       dotenv: 17.4.2
-      hono: 4.13.13
+      hono: 4.13.16
       pg: 8.23.1
       posthog-node: 5.56.2(@opentelemetry/api@1.10.0)
       qrcode: 1.5.4
@@ -14990,10 +14999,15 @@ snapshots:
   '@hono/node-server@2.1.5(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
+    optional: true
 
-  '@hono/zod-validator@0.9.1(hono@4.13.13)(zod@4.6.7)':
+  '@hono/node-server@2.1.5(hono@4.13.16)':
     dependencies:
-      hono: 4.13.13
+      hono: 4.13.16
+
+  '@hono/zod-validator@0.9.1(hono@4.13.16)(zod@4.6.7)':
+    dependencies:
+      hono: 4.13.16
       zod: 4.6.7
 
   '@humanfs/core@0.19.2':
@@ -16300,9 +16314,10 @@ snapshots:
       clsx: 2.1.1
       lucide-react: 1.62.0(@types/react@19.2.18)(react@19.2.8)
       react: 19.2.8
+      tailwind-merge: 3.7.0
+    optionalDependencies:
       react-dom: 19.2.8(react@19.2.8)
       react-native: 0.88.0(patch_hash=878953bbdfd95ae36c2290dc8a6621d255280891f6d56e57ca80d2bdd40203d4)(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1)
-      tailwind-merge: 3.7.0
     transitivePeerDependencies:
       - '@date-fns/tz'
       - '@types/react'
@@ -17541,10 +17556,10 @@ snapshots:
 
   '@scalar/helpers@0.16.4': {}
 
-  '@scalar/hono-api-reference@0.12.13(hono@4.13.13)':
+  '@scalar/hono-api-reference@0.12.13(hono@4.13.16)':
     dependencies:
       '@scalar/client-side-rendering': 0.4.12
-      hono: 4.13.13
+      hono: 4.13.16
 
   '@scalar/schemas@0.14.0':
     dependencies:
@@ -20547,6 +20562,8 @@ snapshots:
       hermes-estree: 0.36.1
 
   hono@4.13.13: {}
+
+  hono@4.13.16: {}
 
   hookified@1.15.1: {}
 
