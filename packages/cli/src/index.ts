@@ -191,7 +191,7 @@ try {
     console.log(JSON.stringify({ ok: false, error: message }));
   } else {
     // Server and user text can end up in a message, so keep it to one line.
-    console.error(message.replace(/[\r\n]+/g, ' '));
+    console.error(message.replace(/\p{Cc}+/gu, ' '));
   }
   process.exitCode = 1;
 }
