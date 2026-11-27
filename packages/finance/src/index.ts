@@ -16,6 +16,7 @@ export * from './reconcile';
 export * from './runway';
 export * from './sheet-backfill';
 export * from './sheet-csv';
+export * from './provider-append';
 export * from './sheet-import';
 export * from './sheet-push';
 export * from './sheet-verify';

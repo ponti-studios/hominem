@@ -79,6 +79,8 @@ export interface SheetBatchOptions extends SheetImportOptions {
   iUnderstand?: boolean;
   /** Allow provider rows to update category, tags, and notes on existing transactions. */
   overwriteAnnotations?: boolean;
+  /** `keep` makes the import insert-only: rows that already exist are never written. */
+  existingRows?: 'update' | 'keep';
 }
 
 export type SheetRejectionReason =
@@ -818,12 +820,48 @@ export async function linkTransferPair(
   });
 }
 
+/**
+ * A bank sync stamps the provider's own ID on rows, so an older natural-key
+ * writer can no longer find them by ID. Find them by content instead, or it'd
+ * insert the same transaction twice.
+ */
+async function findProviderTwin(
+  userId: string,
+  row: {
+    accountId: string;
+    source: SheetSource;
+    postedOn: string;
+    amountCents: number;
+    currencyCode: string;
+    description: string;
+  },
+): Promise<string | null> {
+  if (row.source === 'manual') return null;
+  const candidates = await db
+    .selectFrom('app.financeTransactions')
+    .select(['id', 'description'])
+    .where('userId', '=', userId)
+    .where('accountId', '=', row.accountId)
+    .where('source', '=', row.source)
+    .where('postedOn', '=', row.postedOn)
+    .where('amount', '=', (row.amountCents / 100).toFixed(2))
+    .where('currencyCode', '=', row.currencyCode)
+    .where('externalId', 'not like', 'sheet:%')
+    .execute();
+  const description = normalizeDescription(row.description);
+  const twin = candidates.find(
+    (candidate) => normalizeDescription(candidate.description ?? '') === description,
+  );
+  return twin?.id ?? null;
+}
+
 export async function upsertSheetTransaction(
   userId: string,
   input: SheetTransactionInput,
   accountMap?: Record<string, string>,
   conflictRetry = 0,
   overwriteAnnotations = true,
+  existingRows: 'update' | 'keep' = 'update',
 ): Promise<{ id: string; created: boolean; updated: boolean; accountId: string }> {
   const invalid = validateRow(input);
   if (invalid) throw new Error(invalid);
@@ -900,6 +938,21 @@ export async function upsertSheetTransaction(
       .where('accountId', '=', resolved.accountId)
       .where('source', '=', source)
       .executeTakeFirst();
+  }
+
+  if (existing && existingRows === 'keep') {
+    return { id: existing.id, created: false, updated: false, accountId: resolved.accountId };
+  }
+  if (!existing && externalId.startsWith('sheet:')) {
+    const twin = await findProviderTwin(userId, {
+      accountId: resolved.accountId,
+      source,
+      postedOn: input.postedOn,
+      amountCents: toNumber(input.amountCents),
+      currencyCode,
+      description,
+    });
+    if (twin) return { id: twin, created: false, updated: false, accountId: resolved.accountId };
   }
 
   let categoryId = existing?.categoryId ?? null;
@@ -1052,6 +1105,7 @@ export async function upsertSheetTransaction(
           accountMap,
           conflictRetry + 1,
           overwriteAnnotations,
+          existingRows,
         );
       throw new ValidationError('external_id_conflict');
     }
@@ -1112,6 +1166,7 @@ async function projectImportSplit(
   valid: ValidatedSheetRow[],
   mode: 'append' | 'replace',
   overwriteAnnotations: boolean,
+  existingRows: 'update' | 'keep',
 ): Promise<{ created: number; updated: number }> {
   if (mode === 'replace') return { created: valid.length, updated: 0 };
 
@@ -1223,9 +1278,20 @@ async function projectImportSplit(
         ? existing.get(`${key.row.accountId}|${key.source}|${key.naturalId}`)
         : undefined);
     if (!found) {
-      created += 1;
+      const twin =
+        key.externalId.startsWith('sheet:') &&
+        (await findProviderTwin(userId, {
+          accountId: key.row.accountId,
+          source: key.source,
+          postedOn: key.row.input.postedOn,
+          amountCents: toNumber(key.row.input.amountCents),
+          currencyCode: key.row.input.currencyCode.trim().toUpperCase(),
+          description: key.row.input.description,
+        }));
+      if (!twin) created += 1;
       continue;
     }
+    if (existingRows === 'keep') continue;
     const input = key.row.input;
     const settledAmount =
       input.settledAmountCents === undefined
@@ -1291,6 +1357,7 @@ export async function importSheetTransactions(
     accountMap,
     iUnderstand = false,
     overwriteAnnotations = false,
+    existingRows = 'update',
   } = options;
   const summary: SheetImportSummary = {
     received: transactions.length,
@@ -1308,7 +1375,7 @@ export async function importSheetTransactions(
 
   if (dryRun) {
     summary.upserted += valid.length;
-    const split = await projectImportSplit(userId, valid, mode, overwriteAnnotations);
+    const split = await projectImportSplit(userId, valid, mode, overwriteAnnotations, existingRows);
     summary.created = split.created;
     summary.updated = split.updated;
     return summary;
@@ -1340,6 +1407,7 @@ export async function importSheetTransactions(
         accountMap,
         0,
         canOverwriteAnnotations(row.input, overwriteAnnotations),
+        existingRows,
       );
       summary.upserted += 1;
       if (result.created) summary.created += 1;

@@ -1,4 +1,5 @@
 import {
+  appendProviderTransactions,
   EMPTY_DOCTRINE,
   getFinanceAccountList,
   linkTransferPair,
@@ -16,7 +17,7 @@ import type { z } from 'zod';
 
 import type { financeSyncInputSchema } from '../schemas/finance.sync.schema';
 import { getSyncDoctrine } from './finance.doctrine.service';
-import { importFinanceTransactions, searchTransactions } from './finance.service';
+import { searchTransactions } from './finance.service';
 
 async function linkTransfers(
   userId: string,
@@ -144,20 +145,11 @@ export async function financeSync(userId: string, input: z.output<typeof finance
     tags: row.tags,
     externalId: row.externalId,
   }));
-  const result = transactions.length
-    ? await importFinanceTransactions(userId, {
-        transactions,
-        mode: 'append',
-        dryRun: input.dryRun,
-      })
-    : {
-        received: 0,
-        upserted: 0,
-        created: 0,
-        updated: 0,
-        rejected: [],
-        accountsAutoProvisioned: [],
-      };
+  const { warnings: importWarnings, ...result } = await appendProviderTransactions(userId, {
+    transactions,
+    dryRun: input.dryRun,
+  });
+  warnings.push(...importWarnings);
   const by_source: Record<string, number> = {};
   for (const row of send) by_source[row.source] = (by_source[row.source] ?? 0) + 1;
   const fresh = new Date(`${input.windows.until}T00:00:00Z`);

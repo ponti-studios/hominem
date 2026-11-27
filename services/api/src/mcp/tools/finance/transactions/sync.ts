@@ -10,7 +10,7 @@ export const financeSyncTool = defineMcpTool(
     name: 'finance_sync',
     title: 'Sync finance transactions',
     description:
-      'Route and classify settled Starling and Plaid transactions using the authenticated owner’s accounts and doctrine, then append them without overwriting existing annotations. Unmatched accounts are held and rejected rows are reported.',
+      'Route and classify settled Starling and Plaid transactions using the authenticated owner’s accounts and doctrine, then add only the ones the ledger is missing. Stored transactions are never rewritten; an older copy without a provider ID is matched and stamped with one. Unmatched accounts are held and rejected rows are reported.',
     inputSchema: financeSyncInputSchema,
     outputSchema: financeSyncOutputSchema,
     readOnly: false,
