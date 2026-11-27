@@ -6,7 +6,7 @@
  * and access tokens resolve from the machine environment and are never
  * written to audit events or command output.
  */
-import { readFileSync, writeFileSync, chmodSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, chmodSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { z } from 'zod';
@@ -235,7 +235,12 @@ export async function plaidExchangePublicToken(
   const parsed = exchangeResponseSchema.parse(payload);
   const path = envFilePath();
   mkdirSync(dirname(path), { recursive: true });
-  let text = existsSync(path) ? readFileSync(path, 'utf8') : '';
+  let text = '';
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
+  }
   text = replaceEnvValue(text, 'PLAID_ACCESS_TOKEN', parsed.access_token);
   text = replaceEnvValue(text, 'PLAID_ITEM_ID', parsed.item_id);
   writeFileSync(path, text, { mode: 0o600 });

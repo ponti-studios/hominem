@@ -1,102 +1,34 @@
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, vi } from 'vitest';
 
-let home = '';
-
-afterEach(async () => {
-  vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-  if (home) await rm(home, { recursive: true, force: true });
-  home = '';
-});
+import {
+  emptySyncResponse,
+  fakePlaid,
+  fakeStarling,
+  readSyncState,
+  stubPlaidCredentials,
+  stubStarlingCredentials,
+  stubWealthFetch,
+  wealthTest as it,
+  writeSyncState,
+} from './test/wealth-fixtures';
 
 describe('wealth sync client', () => {
-  it('sends raw provider transactions to the owner-scoped service and keeps held rows retryable', async () => {
-    home = await mkdtemp(join(tmpdir(), 'hominem-wealth-test-'));
-    vi.stubEnv('HOMINEM_HOME', home);
-    vi.stubEnv('HOMINEM_API_URL', 'https://api.test');
+  it('sends raw provider transactions to the owner-scoped service and keeps held rows retryable', async ({
+    home,
+  }) => {
     vi.stubEnv('WEALTH_SYNC_TODAY', '2026-01-05');
-    vi.stubEnv('STARLING_API_TOKEN', 'fixture-starling-secret');
-    vi.stubEnv('PLAID_CLIENT_ID', 'fixture-client');
-    vi.stubEnv('PLAID_SECRET', 'fixture-plaid-secret');
-    vi.stubEnv('PLAID_ACCESS_TOKEN', 'fixture-plaid-access');
-    vi.stubEnv('PLAID_ENV', 'sandbox');
-    await mkdir(home, { recursive: true });
-    await writeFile(
-      join(home, 'hominem_oauth.json'),
-      JSON.stringify({
-        api_url: 'https://api.test',
-        token_endpoint: 'https://api.test/token',
-        client_id: 'synthetic-oauth-client',
-        access_token: 'fixture-oauth-access',
-        refresh_token: 'fixture-oauth-refresh',
-        expires_at: Date.now() + 3_600_000,
-      }),
-      { mode: 0o600 },
-    );
-
-    const calls: Array<Record<string, unknown>> = [];
-    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      const response = (body: unknown, status = 200) =>
-        new Response(JSON.stringify(body), {
-          status,
-          headers: { 'content-type': 'application/json' },
-        });
-      if (url.hostname === 'api.starlingbank.com') {
-        if (url.pathname === '/api/v2/accounts') {
-          return response({
-            accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'USD' }],
-          });
-        }
-        if (url.pathname.endsWith('/savings-goals')) return response({ savingsGoalList: [] });
-        return response({
-          feedItems: [
-            {
-              feedItemUid: 'feed-1',
-              transactionTime: '2026-01-03T10:00:00Z',
-              counterPartyName: 'Synthetic',
-              amount: { minorUnits: 500, currency: 'USD' },
-              direction: 'OUT',
-              status: 'SETTLED',
-            },
-          ],
-        });
-      }
-      if (url.hostname === 'sandbox.plaid.com') {
-        if (url.pathname === '/accounts/get') {
-          return response({ accounts: [{ account_id: 'account-p', name: 'Card', mask: '4242' }] });
-        }
-        const request = JSON.parse(String(init?.body));
-        if (request.options.offset === 0) {
-          return response({
-            transactions: [{ transaction_id: 'p-1', account_id: 'account-p' }],
-            total_transactions: 2,
-          });
-        }
-        return response({
-          transactions: [{ transaction_id: 'p-2', account_id: 'account-p' }],
-          total_transactions: 2,
-        });
-      }
-      if (url.origin !== 'https://api.test') throw new Error('Unexpected test request');
-      const request = JSON.parse(String(init?.body));
-      if (request.method === 'initialize')
-        return response({ result: { protocolVersion: '2025-06-18' } });
-      if (request.method === 'notifications/initialized')
-        return new Response(null, { status: 202 });
-      expect(request.params.name).toBe('finance_sync');
-      calls.push(request.params.arguments);
-      const hasStarling = 'starling' in request.params.arguments;
-      const hasPlaid = 'plaid' in request.params.arguments;
-      return response({
-        result: {
-          structuredContent: {
+    stubStarlingCredentials();
+    stubPlaidCredentials();
+    const { calls } = stubWealthFetch(
+      {
+        finance_sync: (args) => {
+          const hasStarling = 'starling' in args;
+          const hasPlaid = 'plaid' in args;
+          return {
             ok: true,
             added: hasPlaid ? 2 : 0,
             updated: 0,
@@ -113,26 +45,48 @@ describe('wealth sync client', () => {
               plaid_max: hasPlaid ? '2026-01-04' : null,
             },
             warnings: [],
-          },
+          };
         },
-      });
-    });
-    vi.stubGlobal('fetch', fetchMock);
+      },
+      fakeStarling({
+        accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'USD' }],
+        feedItems: [
+          {
+            feedItemUid: 'feed-1',
+            transactionTime: '2026-01-03T10:00:00Z',
+            counterPartyName: 'Synthetic',
+            amount: { minorUnits: 500, currency: 'USD' },
+            direction: 'OUT',
+            status: 'SETTLED',
+          },
+        ],
+      }),
+      fakePlaid({
+        accounts: [{ account_id: 'account-p', name: 'Card', mask: '4242' }],
+        pages: [
+          [{ transaction_id: 'p-1', account_id: 'account-p' }],
+          [{ transaction_id: 'p-2', account_id: 'account-p' }],
+        ],
+      }),
+    );
     const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.resetModules();
     const { sync } = await import('./wealth.js');
     expect(await sync()).toBe(0);
     expect(calls).toHaveLength(3);
-    expect(calls[0]).toMatchObject({
+    expect(calls[0].arguments).toMatchObject({
       starling: [{ accountUid: 'bank-a', feedItems: [{ feedItemUid: 'feed-1' }] }],
       windows: { starling_since: '2025-12-29', until: '2026-01-05' },
       linkTransfers: false,
     });
-    expect(calls[1]).toMatchObject({
+    expect(calls[1].arguments).toMatchObject({
       plaid: { transactions: [{ transaction_id: 'p-1' }, { transaction_id: 'p-2' }] },
       linkTransfers: false,
     });
-    expect(calls[2]).toMatchObject({ windows: { until: '2026-01-05' }, linkTransfers: true });
+    expect(calls[2].arguments).toMatchObject({
+      windows: { until: '2026-01-05' },
+      linkTransfers: true,
+    });
     expect(JSON.stringify(calls)).not.toContain('fixture-starling-secret');
     expect(JSON.stringify(calls)).not.toContain('fixture-plaid-secret');
     expect(JSON.stringify(calls)).not.toContain('fixture-plaid-access');
@@ -157,83 +111,124 @@ describe('wealth sync client', () => {
     expect(JSON.parse(await readFile(pendingPath, 'utf8'))).toEqual([
       expect.objectContaining({ source: 'Starling API', externalId: 'feed-1' }),
     ]);
-    expect((await stat(pendingPath)).mode & 0o777).toBe(0o600);
     expect(await sync()).toBe(0);
     expect(JSON.parse(await readFile(pendingPath, 'utf8'))).toHaveLength(1);
+    expect((await stat(pendingPath)).mode & 0o777).toBe(0o600);
+    // Rows stuck on hold don't drag the checkpoint further back each run.
+    expect(JSON.parse(await readFile(join(home, 'wealth', stateFile), 'utf8'))).toMatchObject({
+      starling_max: '2025-12-29',
+    });
   });
 
-  it('sends seed identities and raw live balances to server tools without provider credentials', async () => {
-    home = await mkdtemp(join(tmpdir(), 'hominem-wealth-provider-test-'));
-    vi.stubEnv('HOMINEM_HOME', home);
-    vi.stubEnv('HOMINEM_API_URL', 'https://api.test');
-    vi.stubEnv('STARLING_API_TOKEN', 'fixture-starling-secret');
-    vi.stubEnv('WEALTH_SEED_DOCTRINE', join(home, 'doctrine.json'));
-    await writeFile(
-      join(home, 'hominem_oauth.json'),
-      JSON.stringify({
-        api_url: 'https://api.test',
-        token_endpoint: 'https://api.test/token',
-        client_id: 'synthetic-oauth-client',
-        access_token: 'fixture-oauth-access',
-        refresh_token: 'fixture-oauth-refresh',
-        expires_at: Date.now() + 3_600_000,
+  it('syncs only Starling with --bank, through today, with an account’s feeds batched together', async ({
+    home,
+  }) => {
+    vi.stubEnv('WEALTH_SYNC_TODAY', '2026-02-20');
+    stubStarlingCredentials();
+    stubPlaidCredentials();
+    const windows: string[] = [];
+    const { calls } = stubWealthFetch(
+      { finance_sync: () => emptySyncResponse },
+      fakeStarling({
+        accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'GBP' }],
+        feedItems: [{ feedItemUid: 'feed-1' }],
+        savingsGoals: [{ savingsGoalUid: 'goal-1', name: 'Space' }],
+        onRequest: (url) => {
+          const from = url.searchParams.get('minTransactionTimestamp');
+          if (from) windows.push(`${from} ${url.searchParams.get('maxTransactionTimestamp')}`);
+        },
       }),
-      { mode: 0o600 },
     );
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    await writeSyncState(home, { starling_max: '2026-02-18', plaid_max: '2026-01-01' });
+    vi.resetModules();
+    const { sync } = await import('./wealth.js');
+    expect(await sync(['--bank', 'starling'], 'finance')).toBe(0);
+    expect(windows).toEqual([
+      '2026-02-04T00:00:00+00:00 2026-02-20T23:59:59.999+00:00',
+      '2026-02-04T00:00:00+00:00 2026-02-20T23:59:59.999+00:00',
+    ]);
+    expect(calls).toHaveLength(2);
+    expect(calls[0].arguments).toMatchObject({
+      starling: [{ space: null }, { space: 'Space' }],
+    });
+    expect(calls.map((call) => Object.keys(call.arguments))).not.toContainEqual(
+      expect.arrayContaining(['plaid']),
+    );
+    expect(await readSyncState(home)).toEqual({
+      starling_max: '2026-02-18',
+      plaid_max: '2026-01-01',
+    });
+  });
+
+  it('ends the window on the UTC day, even when the local date is behind', async ({
+    home: _home,
+  }) => {
+    vi.stubEnv('TZ', 'America/New_York');
+    vi.useFakeTimers({ now: new Date('2026-02-21T00:30:00Z'), toFake: ['Date'] });
+    stubStarlingCredentials();
+    const ends: Array<string | null> = [];
+    stubWealthFetch(
+      { finance_sync: () => emptySyncResponse },
+      fakeStarling({
+        accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'GBP' }],
+        onRequest: (url) => {
+          const end = url.searchParams.get('maxTransactionTimestamp');
+          if (end) ends.push(end);
+        },
+      }),
+    );
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.resetModules();
+    const { sync } = await import('./wealth.js');
+    try {
+      expect(await sync(['--bank', 'starling'], 'finance')).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(ends).toEqual(['2026-02-21T23:59:59.999+00:00']);
+  });
+
+  it('refuses a bank it cannot sync', async ({ home: _home }) => {
+    const { fetchMock } = stubWealthFetch();
+    vi.resetModules();
+    const { sync } = await import('./wealth.js');
+    await expect(sync(['--bank', 'monzo'], 'finance')).rejects.toThrow('Unknown bank "monzo"');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends seed identities and raw live balances to server tools without provider credentials', async ({
+    home,
+  }) => {
+    stubStarlingCredentials();
+    vi.stubEnv('WEALTH_SEED_DOCTRINE', join(home, 'doctrine.json'));
     await writeFile(join(home, 'doctrine.json'), JSON.stringify({ version: 1 }));
-    const calls: Array<{ name: string; arguments: unknown }> = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn<typeof fetch>(async (input, init) => {
-        const url = new URL(input instanceof Request ? input.url : input.toString());
-        const response = (body: unknown, status = 200) =>
-          new Response(JSON.stringify(body), {
-            status,
-            headers: { 'content-type': 'application/json' },
-          });
-        if (url.hostname === 'api.starlingbank.com') {
+    const { calls } = stubWealthFetch(
+      {
+        finance_seed: () => ({
+          ok: true,
+          doctrine: { status: 'created', fingerprint: 'fixture', ruleCounts: {} },
+          accounts: [{ name: 'Current', provider_account_id: 'bank-a', created: true, id: 'id-1' }],
+        }),
+        finance_balances: () => ({ text: 'Starling balances — fixture' }),
+      },
+      fakeStarling({
+        accounts: [
+          {
+            accountUid: 'bank-a',
+            defaultCategory: 'main',
+            currency: 'GBP',
+            accountType: 'PRIMARY',
+            name: 'Current',
+          },
+        ],
+        balance: { clearedBalance: { minorUnits: 12000 } },
+        savingsGoals: [{ name: 'Space', totalSaved: { minorUnits: 3000 } }],
+        onRequest: (_url, init) => {
           expect(new Headers(init?.headers).get('authorization')).toBe(
             'Bearer fixture-starling-secret',
           );
-          if (url.pathname === '/api/v2/accounts') {
-            return response({
-              accounts: [
-                {
-                  accountUid: 'bank-a',
-                  defaultCategory: 'main',
-                  currency: 'GBP',
-                  accountType: 'PRIMARY',
-                  name: 'Current',
-                },
-              ],
-            });
-          }
-          if (url.pathname.endsWith('/balance')) {
-            return response({ clearedBalance: { minorUnits: 12000 } });
-          }
-          if (url.pathname.endsWith('/savings-goals')) {
-            return response({
-              savingsGoalList: [{ name: 'Space', totalSaved: { minorUnits: 3000 } }],
-            });
-          }
-        }
-        if (url.origin !== 'https://api.test') throw new Error('Unexpected test request');
-        const request = JSON.parse(String(init?.body));
-        if (request.method === 'initialize') return response({ result: {} });
-        if (request.method === 'notifications/initialized')
-          return new Response(null, { status: 202 });
-        calls.push(request.params);
-        const structuredContent =
-          request.params.name === 'finance_seed'
-            ? {
-                ok: true,
-                doctrine: { status: 'created', fingerprint: 'fixture', ruleCounts: {} },
-                accounts: [
-                  { name: 'Current', provider_account_id: 'bank-a', created: true, id: 'id-1' },
-                ],
-              }
-            : { text: 'Starling balances — fixture' };
-        return response({ result: { structuredContent } });
+        },
       }),
     );
     const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -262,20 +257,16 @@ describe('wealth sync client', () => {
     expect(output.mock.calls[1][0]).toBe('Starling balances — fixture');
   });
 
-  it('rejects an unreadable doctrine before contacting providers', async () => {
-    home = await mkdtemp(join(tmpdir(), 'hominem-wealth-seed-test-'));
-    vi.stubEnv('HOMINEM_HOME', home);
+  it('rejects an unreadable doctrine before contacting providers', async ({ home }) => {
     vi.stubEnv('WEALTH_SEED_DOCTRINE', join(home, 'missing.json'));
-    const fetchMock = vi.fn<typeof fetch>();
-    vi.stubGlobal('fetch', fetchMock);
+    const { fetchMock } = stubWealthFetch();
     vi.resetModules();
     const { seed } = await import('./wealth.js');
     await expect(seed()).rejects.toThrow('WEALTH_SEED_DOCTRINE could not be read');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('prints the legacy failure envelope and exits nonzero', async () => {
-    home = await mkdtemp(join(tmpdir(), 'hominem-wealth-failure-test-'));
+  it('prints the legacy failure envelope and exits nonzero', ({ home }) => {
     const result = spawnSync('bun', ['run', 'src/index.ts', 'wealth', 'sync', '--invalid'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -289,56 +280,13 @@ describe('wealth sync client', () => {
   });
 });
 
-async function reportHome(prefix: string) {
-  home = await mkdtemp(join(tmpdir(), prefix));
-  vi.stubEnv('HOMINEM_HOME', home);
-  vi.stubEnv('HOMINEM_API_URL', 'https://api.test');
-  vi.stubEnv('HOMINEM_AGENT_ENV_FILE', join(home, 'env'));
-  vi.stubEnv('WEALTH_SYNC_TODAY', '2026-03-10');
-  await mkdir(join(home, 'wealth'), { recursive: true });
-  await writeFile(
-    join(home, 'hominem_oauth.json'),
-    JSON.stringify({
-      api_url: 'https://api.test',
-      token_endpoint: 'https://api.test/token',
-      client_id: 'synthetic-oauth-client',
-      access_token: 'fixture-oauth-access',
-      refresh_token: 'fixture-oauth-refresh',
-      expires_at: Date.now() + 3_600_000,
-    }),
-    { mode: 0o600 },
-  );
-}
-
-function stubReports(
-  tools: Record<string, (args: Record<string, unknown>) => unknown>,
-  external: (url: URL, init?: RequestInit) => Response | undefined = () => undefined,
-) {
-  const calls: Array<{ name: string; arguments: Record<string, unknown> }> = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn<typeof fetch>(async (input, init) => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      const handled = external(url, init);
-      if (handled) return handled;
-      if (url.origin !== 'https://api.test') throw new TypeError('offline');
-      const request = JSON.parse(String(init?.body));
-      if (request.method === 'notifications/initialized')
-        return new Response(null, { status: 202 });
-      if (request.method === 'initialize') return Response.json({ result: {} });
-      calls.push(request.params);
-      return Response.json({
-        result: { structuredContent: tools[request.params.name](request.params.arguments) },
-      });
-    }),
-  );
-  return calls;
-}
-
 describe('wealth report clients', () => {
-  it('sends the local bill snapshot to the brief and keeps the returned one', async () => {
-    await reportHome('hominem-wealth-brief-test-');
-    const calls = stubReports({
+  beforeEach(() => {
+    vi.stubEnv('WEALTH_SYNC_TODAY', '2026-03-10');
+  });
+
+  it('sends the local bill snapshot to the brief and keeps the returned one', async ({ home }) => {
+    const { calls } = stubWealthFetch({
       finance_wealth_brief: (args) => ({
         ok: true,
         date: args.date,
@@ -371,14 +319,13 @@ describe('wealth report clients', () => {
     });
   });
 
-  it('passes local look inputs and a live FX rate, and notes a failed rate', async () => {
-    await reportHome('hominem-wealth-look-test-');
+  it('passes local look inputs and a live FX rate, and notes a failed rate', async ({ home }) => {
     await writeFile(
       join(home, 'wealth', 'forward_look_inputs.json'),
       JSON.stringify({ balance_floors: { GBP: 100 } }),
     );
     let fxStatus = 200;
-    const calls = stubReports(
+    const { calls } = stubWealthFetch(
       { finance_wealth_look: () => ({ ok: true, sections: { diagnostics: { notes: [] } } }) },
       (url) =>
         url.hostname === 'api.frankfurter.dev'
@@ -406,8 +353,9 @@ describe('wealth report clients', () => {
     ]);
   });
 
-  it('closes the previous month from local anchors and cache, and writes WEALTH_CLOSE_OUT', async () => {
-    await reportHome('hominem-wealth-close-test-');
+  it('closes the previous month from local anchors and cache, and writes WEALTH_CLOSE_OUT', async ({
+    home,
+  }) => {
     await writeFile(
       join(home, 'wealth', 'monthly_close_anchors.json'),
       JSON.stringify({ anchors: [] }),
@@ -418,7 +366,7 @@ describe('wealth report clients', () => {
     );
     const out = join(home, 'close.md');
     vi.stubEnv('WEALTH_CLOSE_OUT', out);
-    const calls = stubReports({
+    const { calls } = stubWealthFetch({
       finance_wealth_close: () => ({ md: '# Close\n', calls: 4, message: 'ok' }),
     });
     const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -438,14 +386,29 @@ describe('wealth report clients', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('sends local integrity inputs and raw provider reads without provider credentials', async () => {
-    await reportHome('hominem-wealth-integrity-test-');
-    vi.stubEnv('STARLING_API_TOKEN', 'fixture-starling-secret');
-    vi.stubEnv('PLAID_CLIENT_ID', 'fixture-client');
-    vi.stubEnv('PLAID_SECRET', 'fixture-plaid-secret');
-    vi.stubEnv('PLAID_ACCESS_TOKEN', 'fixture-plaid-access');
+  it('exits non-zero when integrity reports a flag', async ({ home: _home }) => {
+    stubWealthFetch({
+      finance_wealth_integrity: (args) => ({
+        ok: false,
+        date: args.date,
+        flags: [{ check: 'balance_drift', account: 'Card', detail: 'drift', severity: 'flag' }],
+        info: {},
+        run_id: args.run_id,
+      }),
+    });
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.resetModules();
+    const { integrity } = await import('./wealth.js');
+    expect(await integrity()).toBe(1);
+  });
+
+  it('sends local integrity inputs and raw provider reads without provider credentials', async ({
+    home,
+  }) => {
+    stubStarlingCredentials();
+    stubPlaidCredentials();
     await writeFile(join(home, 'wealth', 'manual_anchors.json'), JSON.stringify({ Saver: 30 }));
-    const calls = stubReports(
+    const { calls } = stubWealthFetch(
       {
         finance_wealth_integrity: (args) => ({
           ok: true,
@@ -455,38 +418,29 @@ describe('wealth report clients', () => {
           run_id: args.run_id,
         }),
       },
-      (url, init) => {
-        if (url.hostname === 'api.starlingbank.com') {
-          if (url.pathname === '/api/v2/accounts') {
-            return Response.json({
-              accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'GBP' }],
-            });
+      fakeStarling({
+        accounts: [{ accountUid: 'bank-a', defaultCategory: 'main', currency: 'GBP' }],
+        feedItems: [{ feedItemUid: 'feed-1' }],
+        onRequest: (url) => {
+          if (url.pathname.includes('/feed/')) {
+            expect(url.searchParams.get('minTransactionTimestamp')).toBe(
+              '2026-03-02T00:00:00+00:00',
+            );
           }
-          if (url.pathname.endsWith('/savings-goals'))
-            return Response.json({ savingsGoalList: [] });
-          expect(url.searchParams.get('minTransactionTimestamp')).toBe('2026-03-02T00:00:00+00:00');
-          return Response.json({ feedItems: [{ feedItemUid: 'feed-1' }] });
-        }
-        if (url.hostname !== 'sandbox.plaid.com') return undefined;
-        if (url.pathname === '/accounts/get') {
-          return Response.json({
-            accounts: [
-              {
-                account_id: 'card',
-                mask: '4242',
-                type: 'credit',
-                balances: { current: 10, iso_currency_code: 'USD' },
-              },
-            ],
-          });
-        }
-        if (url.pathname === '/liabilities/get') return new Response('{}', { status: 400 });
-        expect(JSON.parse(String(init?.body)).start_date).toBe('2026-02-08');
-        return Response.json({
-          transactions: [{ account_id: 'card', date: '2026-03-01', amount: 5 }],
-          total_transactions: 1,
-        });
-      },
+        },
+      }),
+      fakePlaid({
+        accounts: [
+          {
+            account_id: 'card',
+            mask: '4242',
+            type: 'credit',
+            balances: { current: 10, iso_currency_code: 'USD' },
+          },
+        ],
+        pages: [[{ account_id: 'card', date: '2026-03-01', amount: 5 }]],
+        onTransactions: (body) => expect(body.start_date).toBe('2026-02-08'),
+      }),
     );
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.resetModules();

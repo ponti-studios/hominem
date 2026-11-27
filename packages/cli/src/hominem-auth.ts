@@ -11,6 +11,7 @@ import { HOMINEM_HOME } from './paths.js';
 import { openUrl } from './system.js';
 
 const TOKEN_PATH = join(HOMINEM_HOME, 'hominem_oauth.json');
+export const DEFAULT_API_URL = 'https://api.ponti.io';
 const SCOPES = 'openid profile email offline_access finance:read finance:write';
 
 const metadataSchema = z.object({
@@ -34,6 +35,8 @@ const tokenFileSchema = z.object({
   expires_at: z.number(),
 });
 
+const claimsSchema = z.object({ sub: z.string().min(1) });
+
 export type HominemToken = z.infer<typeof tokenFileSchema>;
 
 export class HominemAuthError extends Error {
@@ -43,8 +46,21 @@ export class HominemAuthError extends Error {
   }
 }
 
+/** Who an access token belongs to. Only for naming local files: the API does the verifying. */
+export function hominemSubject(accessToken: string): string {
+  try {
+    const payload = Buffer.from(accessToken.split('.')[1] ?? '', 'base64url').toString();
+    return claimsSchema.parse(JSON.parse(payload)).sub;
+  } catch (error) {
+    if (!(error instanceof SyntaxError || error instanceof z.ZodError)) throw error;
+    throw new HominemAuthError('The saved Hominem login can’t be read; run `hominem auth` again.');
+  }
+}
+
 export function hominemApiUrl(): string {
-  const url = new URL(process.env.HOMINEM_API_URL ?? 'https://api.ponti.io');
+  const value = process.env.HOMINEM_API_URL ?? DEFAULT_API_URL;
+  if (!URL.canParse(value)) throw new HominemAuthError('HOMINEM_API_URL is not a valid URL.');
+  const url = new URL(value);
   if (
     url.protocol !== 'https:' &&
     !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
@@ -75,13 +91,13 @@ async function saveToken(token: HominemToken, path = TOKEN_PATH): Promise<void> 
   await writeFileAtomic(path, `${JSON.stringify(token, null, 2)}\n`);
 }
 
-export async function loadHominemToken(path = TOKEN_PATH): Promise<HominemToken> {
+async function loadHominemToken(path = TOKEN_PATH): Promise<HominemToken> {
   let raw: string;
   try {
     raw = await readFile(path, 'utf8');
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      throw new HominemAuthError('Sign in first with `hominem auth hominem`.');
+      throw new HominemAuthError('Sign in first with `hominem auth`.');
     }
     throw error;
   }
@@ -123,17 +139,22 @@ export async function getHominemAccessToken(): Promise<HominemToken> {
   return refreshHominemToken(token);
 }
 
-export async function hominemAuth(
-  options: { fetchImpl?: typeof fetch; path?: string; openUrlImpl?: typeof openUrl } = {},
-): Promise<void> {
-  const apiUrl = hominemApiUrl();
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const metadata = metadataSchema.parse(
+/** Reads the API's OAuth discovery document; throws when the address isn't a working Hominem API. */
+export async function discoverHominem(apiUrl: string, fetchImpl: typeof fetch = fetch) {
+  return metadataSchema.parse(
     await json(
       await fetchImpl(`${apiUrl}/.well-known/oauth-authorization-server`),
       'Hominem OAuth discovery',
     ),
   );
+}
+
+export async function hominemAuth(
+  options: { fetchImpl?: typeof fetch; path?: string; openUrlImpl?: typeof openUrl } = {},
+): Promise<void> {
+  const apiUrl = hominemApiUrl();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const metadata = await discoverHominem(apiUrl, fetchImpl);
   const authorizationEndpoint = sameOrigin(metadata.authorization_endpoint, apiUrl);
   const tokenEndpoint = sameOrigin(metadata.token_endpoint, apiUrl);
   const registrationEndpoint = sameOrigin(metadata.registration_endpoint, apiUrl);

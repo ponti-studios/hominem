@@ -1,4 +1,4 @@
-import { createHash, randomInt } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -6,8 +6,8 @@ import { z } from 'zod';
 
 import { applyEnvDefaults } from './env.js';
 import { writeFileAtomic } from './files.js';
-import { getHominemAccessToken, HominemAuthError } from './hominem-auth.js';
-import { HominemMcp, HominemMcpError } from './hominem.js';
+import { getHominemAccessToken } from './hominem-auth.js';
+import { HominemMcp } from './hominem.js';
 import { HOMINEM_HOME } from './paths.js';
 import {
   pullPlaidLiabilities,
@@ -17,6 +17,12 @@ import {
   starlingBalances,
   WealthProviderError,
 } from './wealth-providers.js';
+import { accountKey } from './wealth-state.js';
+
+/** How far behind the checkpoint to re-read, for items that settle late. Re-reads are free. */
+const OVERLAP_DAYS = 14;
+const FIRST_RUN_DAYS = 7;
+const BATCH_SIZE = 1000;
 
 const stateSchema = z
   .object({
@@ -104,10 +110,6 @@ async function bankHeld(
   await writeFileAtomic(path, `${JSON.stringify(banked, null, 2)}\n`);
 }
 
-function getUserKey(token: { api_url: string; client_id: string }): string {
-  return createHash('sha256').update(`${token.api_url}\0${token.client_id}`).digest('hex');
-}
-
 function wealthDir(): string {
   return process.env.HOMINEM_AGENT_WEALTH_DIR ?? join(HOMINEM_HOME, 'wealth');
 }
@@ -177,7 +179,7 @@ export async function seed(args: string[] = []): Promise<number> {
     await hominem.call('finance_seed', { accounts, ...(doctrine ? { doctrine } : {}) }),
   );
   const result = { ...response, run_id: randomInt(1, 2 ** 48 - 1) };
-  await logRun(getUserKey(token), {
+  await logRun(await accountKey(wealthDir(), token), {
     run_id: result.run_id,
     ok: result.ok,
     accounts: accounts.length,
@@ -195,7 +197,7 @@ export async function balances(args: string[] = []): Promise<number> {
   const response = z
     .object({ text: z.string() })
     .parse(await hominem.call('finance_balances', { ...snapshot, at: new Date().toISOString() }));
-  await logRun(getUserKey(token), {
+  await logRun(await accountKey(wealthDir(), token), {
     run_id: randomInt(1, 2 ** 48 - 1),
     ok: true,
     accounts: snapshot.accounts.length,
@@ -205,9 +207,16 @@ export async function balances(args: string[] = []): Promise<number> {
   return 0;
 }
 
-function parseArgs(args: string[]) {
+type SyncGroup = 'wealth' | 'finance';
+
+function parseArgs(args: string[], group: SyncGroup) {
+  const bankFlag = group === 'finance' ? '[--bank starling] ' : '';
+  const usage = `Usage: hominem ${group} sync ${bankFlag}[--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run].`;
+  let bank: 'starling' | undefined;
   let from: string | undefined;
-  let until = process.env.WEALTH_SYNC_TODAY ?? new Date().toLocaleDateString('en-CA');
+  // Bank timestamps are UTC, so "today" has to be too. A local date would cut off evening
+  // spending west of Greenwich and leave the checkpoint ahead of the next run's end date.
+  let until = process.env.WEALTH_SYNC_TODAY ?? new Date().toISOString().slice(0, 10);
   let dryRun = false;
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--dry-run') {
@@ -216,10 +225,14 @@ function parseArgs(args: string[]) {
       from = args[++index];
     } else if (args[index] === '--until' && args[index + 1]) {
       until = args[++index];
+    } else if (group === 'finance' && args[index] === '--bank' && args[index + 1]) {
+      const value = args[++index];
+      if (value !== 'starling') {
+        throw new WealthError(`Unknown bank "${value}". The only one for now is starling.`);
+      }
+      bank = value;
     } else {
-      throw new WealthError(
-        'Usage: hominem wealth sync [--from YYYY-MM-DD] [--until YYYY-MM-DD] [--dry-run].',
-      );
+      throw new WealthError(usage);
     }
   }
   const parsedUntil = z.iso.date().safeParse(until);
@@ -228,23 +241,28 @@ function parseArgs(args: string[]) {
     throw new WealthError('Sync dates must be valid YYYY-MM-DD calendar dates.');
   }
   if (from && from > until) throw new WealthError('The sync start must not be after its end.');
-  return { from, until, dryRun };
+  return { bank, from, until, dryRun };
 }
 
-export async function sync(args: string[] = []): Promise<number> {
+export async function sync(args: string[] = [], group: SyncGroup = 'wealth'): Promise<number> {
   applyEnvDefaults();
-  const { from, until, dryRun } = parseArgs(args);
+  const { bank, from, until, dryRun } = parseArgs(args, group);
   const token = await getHominemAccessToken();
-  const userKey = getUserKey(token);
   const dir = wealthDir();
+  const userKey = await accountKey(dir, token);
   const statePath = join(dir, `sync-${userKey}.json`);
   const state = await loadState(statePath);
+  const since = (checkpoint: string | undefined) =>
+    from ?? minusDays(checkpoint ?? until, checkpoint ? OVERLAP_DAYS : FIRST_RUN_DAYS);
   const windows = {
-    starling_since: from ?? minusDays(state.starling_max ?? until, state.starling_max ? 1 : 7),
-    plaid_since: from ?? minusDays(state.plaid_max ?? until, state.plaid_max ? 1 : 7),
+    starling_since: since(state.starling_max),
+    plaid_since: since(state.plaid_max),
     until,
   };
-  if (windows.starling_since > until || windows.plaid_since > until) {
+  const wantsPlaid = bank !== 'starling';
+  // The overlap would hide a checkpoint that's past `until`, so check the checkpoints themselves.
+  const checkpoints = [state.starling_max, wantsPlaid ? state.plaid_max : undefined];
+  if (!from && checkpoints.some((checkpoint) => checkpoint && checkpoint > until)) {
     throw new WealthError(
       'The sync checkpoint is after the requested end date; pass --from explicitly.',
     );
@@ -255,12 +273,15 @@ export async function sync(args: string[] = []): Promise<number> {
   const plaidClientId = process.env.PLAID_CLIENT_ID;
   const plaidSecret = process.env.PLAID_SECRET;
   const plaidConfigured = Boolean(plaidAccessToken && plaidClientId && plaidSecret);
+  if (bank === 'starling' && !starlingToken) {
+    throw new WealthError('Set STARLING_API_TOKEN to sync Starling.');
+  }
   if (!starlingToken && !plaidConfigured)
     throw new WealthError(
       'Configure STARLING_API_TOKEN or all Plaid credentials to sync a provider.',
     );
   const warnings: string[] = [];
-  if (!plaidConfigured) {
+  if (wantsPlaid && !plaidConfigured) {
     const missing = [
       !plaidClientId && 'PLAID_CLIENT_ID',
       !plaidSecret && 'PLAID_SECRET',
@@ -276,18 +297,31 @@ export async function sync(args: string[] = []): Promise<number> {
       })
     : { feeds: [], notes: [] };
   warnings.push(...starling.notes);
-  const plaidOptions = plaidConfig();
+  const plaidOptions = wantsPlaid ? plaidConfig() : undefined;
   const plaid = plaidOptions
     ? await pullPlaidTransactions(windows.plaid_since, until, plaidOptions)
     : undefined;
 
   const batches: Array<Record<string, unknown>> = [];
-  for (const feed of starling.feeds) {
-    for (let offset = 0; offset < feed.feedItems.length; offset += 1000) {
-      batches.push({
-        starling: [{ ...feed, feedItems: feed.feedItems.slice(offset, offset + 1000) }],
-      });
+  // One account's feeds (main plus spaces) travel together, so the server matches them
+  // against the ledger in one go.
+  for (const accountUid of new Set(starling.feeds.map((feed) => feed.accountUid))) {
+    let batch: typeof starling.feeds = [];
+    let size = 0;
+    for (const feed of starling.feeds.filter((entry) => entry.accountUid === accountUid)) {
+      for (let offset = 0; offset < feed.feedItems.length;) {
+        const feedItems = feed.feedItems.slice(offset, offset + BATCH_SIZE - size);
+        batch.push({ ...feed, feedItems });
+        offset += feedItems.length;
+        size += feedItems.length;
+        if (size === BATCH_SIZE) {
+          batches.push({ starling: batch });
+          batch = [];
+          size = 0;
+        }
+      }
     }
+    if (batch.length) batches.push({ starling: batch });
   }
   if (plaid) {
     for (let offset = 0; offset < plaid.transactions.length; offset += 1000) {
@@ -362,6 +396,7 @@ export async function sync(args: string[] = []): Promise<number> {
       ['starling_max', 'Starling API'],
       ['plaid_max', 'Plaid'],
     ] as const) {
+      if (key === 'plaid_max' && !wantsPlaid) continue;
       const heldDates = result.held.filter((row) => row.source === source).map((row) => row.date);
       if (heldDates.length || (key === 'starling_max' && starling.notes.length) || !result.ok) {
         const fromDate = key === 'starling_max' ? windows.starling_since : windows.plaid_since;
@@ -369,7 +404,9 @@ export async function sync(args: string[] = []): Promise<number> {
           (earliest, date) => (date < earliest ? date : earliest),
           fromDate,
         );
-        if (!state[key] || retryFrom < state[key]!) state[key] = retryFrom;
+        // The overlap already re-reads anything this close to the checkpoint. Only move it
+        // back for older rows, or it'd creep further into the past on every run.
+        if (!state[key] || retryFrom < minusDays(state[key], OVERLAP_DAYS)) state[key] = retryFrom;
         result.warnings.push(
           `${source} checkpoint was retained or rewound because some transactions need attention.`,
         );
@@ -409,7 +446,7 @@ async function connect() {
   applyEnvDefaults();
   const token = await getHominemAccessToken();
   return {
-    userKey: getUserKey(token),
+    userKey: await accountKey(wealthDir(), token),
     hominem: new HominemMcp({ token: token.access_token, url: `${token.api_url}/api/mcp` }),
   };
 }
@@ -634,16 +671,4 @@ export async function integrity(args: string[] = []): Promise<number> {
   await logRun(userKey, { run_id: Number(input.run_id), ok: result.ok, routine: 'integrity' });
   console.log(JSON.stringify(result, null, 1));
   return result.ok ? 0 : 1;
-}
-
-export function wealthErrorMessage(error: unknown): string | null {
-  if (
-    error instanceof WealthError ||
-    error instanceof WealthProviderError ||
-    error instanceof HominemMcpError ||
-    error instanceof HominemAuthError
-  ) {
-    return error.message;
-  }
-  return null;
 }

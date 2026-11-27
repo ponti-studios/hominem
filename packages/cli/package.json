@@ -11,6 +11,7 @@
     "build": "tsc --noEmit && bun build --compile --loader .py:text src/index.ts --outfile build/hominem",
     "dev": "bun run src/index.ts",
     "install:local": "bun run build && mkdir -p ~/.local/bin && cp build/hominem ~/.local/bin/hominem",
+    "install:profiles": "scripts/install-profiles.sh",
     "test": "vitest run src && node --test tests/agent/*.test.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit",
     "format": "oxfmt src tests/agent --write",

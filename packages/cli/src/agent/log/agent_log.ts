@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-export const DEFAULT_DB = join(homedir(), '.hominem', 'agent.db');
+const DEFAULT_DB = join(homedir(), '.hominem', 'agent.db');
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS events (
@@ -205,18 +205,6 @@ export function finishRun(id: number, opts: FinishRunOptions): void {
       opts.message ?? null,
       id,
     );
-  } finally {
-    db.close();
-  }
-}
-
-export function recentEvents(limit = 20, path?: string): Record<string, unknown>[] {
-  const db = connect(path);
-  try {
-    return db.prepare(`SELECT * FROM events ORDER BY id DESC LIMIT ?`).all(limit) as Record<
-      string,
-      unknown
-    >[];
   } finally {
     db.close();
   }

@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 
+import { callbackPage, type SignInProvider } from './callback-page.js';
 import { handleCallback } from './callback.js';
 import { buildAuthUrl, checkLive, exchangeCode, loadClient, makePkce } from './google.js';
 import {
@@ -14,15 +15,13 @@ import { notify, openUrl, syncRclone } from './system.js';
 
 const CALLBACK_TIMEOUT_MS = 10 * 60 * 1000;
 
-// Fixed text only: the redirect's query string never gets echoed back into the page.
-const PAGES = {
-  ok: '<!doctype html><meta charset="utf-8"><title>hominem</title><p>Signed in to hominem. You can close this tab.</p>',
-  fail: '<!doctype html><meta charset="utf-8"><title>hominem</title><p>Sign-in failed. Check the terminal, then close this tab.</p>',
-} as const;
-
-// Resolves with the auth code Google redirects back with. The server only moves bytes: what each
+// Resolves with the auth code the provider redirects back with. The server only moves bytes: what each
 // request means is decided by handleCallback.
-export function waitForCode(server: Server, state: string, provider = 'Google'): Promise<string> {
+export function waitForCode(
+  server: Server,
+  state: string,
+  provider: SignInProvider = 'Google',
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error(`Timed out waiting for the ${provider} redirect.`)),
@@ -35,13 +34,13 @@ export function waitForCode(server: Server, state: string, provider = 'Google'):
         return;
       }
       clearTimeout(timer);
-      if (action.kind === 'fail') {
-        res.end(PAGES.fail);
-        reject(new Error(action.reason));
-      } else {
-        res.end(PAGES.ok);
-        resolve(action.code);
-      }
+      res.writeHead(200, {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      res.end(callbackPage(action.kind === 'fail' ? 'fail' : 'ok', provider));
+      if (action.kind === 'fail') reject(new Error(action.reason));
+      else resolve(action.code);
     });
   });
 }

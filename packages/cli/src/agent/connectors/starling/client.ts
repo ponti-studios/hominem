@@ -32,7 +32,7 @@ function round2(x: number): number {
 const DEFAULT_BASE = 'https://api.starlingbank.com';
 
 /** pull.py's normalized feed item — the connector's output contract. */
-export interface StarlingItem {
+interface StarlingItem {
   feedItemUid: string | null;
   date: string;
   merchant: string;
@@ -242,14 +242,14 @@ export async function starlingPull(
 }
 
 /** One Space (savings goal) balance under its account. */
-export interface StarlingSpaceBalance {
+interface StarlingSpaceBalance {
   name: string;
   saved: number;
   target: number | null;
 }
 
 /** One account's live balance as the bank reports it (v2 /balance). */
-export interface StarlingBalance {
+interface StarlingBalance {
   accountUid: string;
   name: string;
   accountType: string;

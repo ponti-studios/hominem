@@ -14,6 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+import { writeFileAtomic } from './files.ts';
 import { HOMINEM_HOME } from './paths.ts';
 
 /** The env file to read: `HOMINEM_AGENT_ENV_FILE` if set, else the Hominem machine env. */
@@ -60,8 +61,17 @@ export function applyEnvDefaults(file = envFilePath()): void {
   }
 }
 
+/** Sets one key in the env file, replacing its old lines and leaving everything else alone. */
+export async function saveEnvValue(key: string, value: string, file = envFilePath()) {
+  const existing = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const assignment = new RegExp(`^\\s*(export\\s+)?${key}\\s*=`);
+  const kept = existing.split('\n').filter((line) => !assignment.test(line));
+  while (kept.at(-1) === '') kept.pop();
+  await writeFileAtomic(file, `${[...kept, `${key}=${value}`].join('\n')}\n`);
+}
+
 /** A required env/config value is missing — the error names it (law 4). */
-export class MissingEnvError extends Error {
+class MissingEnvError extends Error {
   constructor(name: string) {
     super(
       `${name} is not set (checked process env and ${envFilePath()}) — ` +

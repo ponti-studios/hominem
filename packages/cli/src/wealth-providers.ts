@@ -105,7 +105,8 @@ export async function pullStarlingFeeds(since: string, until: string, options: S
   const notes: string[] = [];
   const window = {
     minTransactionTimestamp: `${since}T00:00:00+00:00`,
-    maxTransactionTimestamp: `${until}T00:00:00+00:00`,
+    // `until` is inclusive, or today's spending never shows up.
+    maxTransactionTimestamp: `${until}T23:59:59.999+00:00`,
   };
   for (const account of accounts) {
     if (!account.defaultCategory)
