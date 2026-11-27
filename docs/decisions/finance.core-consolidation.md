@@ -61,7 +61,7 @@ through the same contracts? If so, where should that core's boundary sit, and
 what must be settled first?
 
 This goes beyond the narrower plan in
-[finance-cli-migration](../tasks/finance-cli-migration.md), which is to move the
+[finance-cli-migration (PON-348)](https://linear.app/ponti-studios/issue/PON-348/finance-cli-migration-and-core-consolidation), which is to move the
 CLI wealth-manager modules into `@hominem/finance-services`.
 
 ### Directly stated user decisions this document preserves
@@ -134,7 +134,7 @@ Consequences:
   `finance.transactions.md` lists the redesign's acceptance criteria as
   unchecked. The `Implemented` record and its evidence would be lost unless the
   move keeps them.
-- This worktree's revision of `docs/tasks/finance-cli-migration.md` sits at the
+- This worktree's revision of the task (now Linear PON-348, formerly `docs/tasks/finance-cli-migration.md`) sits at the
   same path as the owner's untracked draft. It is a **proposed alternative for
   review**, not a replacement. Bringing the two lines together will collide on
   that path: an untracked file blocks checkout, and two committed versions give
@@ -522,7 +522,7 @@ Each item is **OPEN — USER DECISION REQUIRED**.
 
 - [finance.pfin-merge](finance.pfin-merge.md): historical decision (accepted
   2026-09-08)
-- [finance-cli-migration task](../tasks/finance-cli-migration.md)
+- [finance-cli-migration task (PON-348)](https://linear.app/ponti-studios/issue/PON-348/finance-cli-migration-and-core-consolidation)
 - [finance-sync-doctrine task](../tasks/finance-sync-doctrine.md)
 - [Finance multi-currency redesign plan](../finance-multi-currency-redesign-plan.md)
 - [Hominem finance tools spec](../hominem-finance-tools-spec.md)
