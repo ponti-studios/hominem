@@ -5443,7 +5443,7 @@
     "type": "function",
     "function": {
       "name": "finance_sync",
-      "description": "Route and classify settled Starling and Plaid transactions using the authenticated owner’s accounts and doctrine, then append them without overwriting existing annotations. Unmatched accounts are held and rejected rows are reported. Mode: write. Use when: Import settled provider feed data using the owner’s configured accounts and doctrine. Do not use when: Do not send provider credentials; the tool accepts transaction data only.",
+      "description": "Route and classify settled Starling and Plaid transactions using the authenticated owner’s accounts and doctrine, then add only the ones the ledger is missing. Stored transactions are never rewritten; an older copy without a provider ID is matched and stamped with one. Unmatched accounts are held and rejected rows are reported. Mode: write. Use when: Import settled provider feed data using the owner’s configured accounts and doctrine. Do not use when: Do not send provider credentials; the tool accepts transaction data only.",
       "parameters": {
         "type": "object",
         "properties": {
