@@ -75,7 +75,7 @@ export const links: Route.LinksFunction = () => [...NOTES_ICON_LINKS];
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     // Single dark mode: locked, no light variant. Overrides any OS preference.
-    <html lang="en">
+    <html className="light" lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

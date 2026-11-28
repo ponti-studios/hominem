@@ -2,6 +2,10 @@
 @import 'tw-animate-css';
 @import '@ponti-studios/ui';
 
+/* Hominem is light-only. Without this, `dark:` utilities (ui ships plenty) kick
+   in whenever the OS is in dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @font-face {
   font-family: 'Geist Mono';
   src: url('/fonts/GeistMono-Regular.woff2') format('woff2');
@@ -126,7 +130,10 @@
   }
 }
 
-:root {
+/* `.light` on <html> opts out of ui's dark tokens; it's listed here so our theme
+   still beats ui's own `:root.light` values. */
+:root,
+:root.light {
   color-scheme: light;
 
   --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
