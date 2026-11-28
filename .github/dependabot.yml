@@ -7,6 +7,11 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: 'chore(deps)'
+    # init and analyze must run the same version, so bump them in one PR.
+    groups:
+      codeql-action:
+        patterns:
+          - 'github/codeql-action*'
 
   - package-ecosystem: npm
     directory: /
