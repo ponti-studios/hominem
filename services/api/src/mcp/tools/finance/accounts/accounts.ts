@@ -14,7 +14,8 @@ export const financeAccountsTool = defineMcpTool(
     title: 'Finance Accounts',
     description:
       'List finance accounts with type, currency, lifecycle status and current balance (posted transactions only). ' +
-      'Unlike finance_net_worth this includes accounts left out of net-worth totals, such as credit cards.',
+      'Unlike finance_net_worth this includes accounts left out of net-worth totals, such as credit cards. ' +
+      'Each account also carries its routing identity: provider, providerAccountId and accountNumber (mask).',
     inputSchema: financeAccountsInputSchema,
     outputSchema: financeMcpAccountsOutputSchema,
     readOnly: true,
@@ -23,7 +24,7 @@ export const financeAccountsTool = defineMcpTool(
     guidance: {
       whenToUse: 'The user asks which accounts they have, or an account id is needed as a filter.',
       whenNotToUse: 'Do not use for net worth totals; use finance_net_worth.',
-      produces: ['account ids', 'account names', 'account balances'],
+      produces: ['account ids', 'account names', 'account balances', 'provider identities'],
     },
   },
   async (ownerUserId, input) => {

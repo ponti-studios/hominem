@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { db, sql } from '@hominem/db/core';
-import { isIntegrationDatabaseAvailable, tableExists } from '@hominem/db/test/utils';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
 import {
@@ -11,13 +10,8 @@ import {
   queryTransactionsByContract,
   replaceTransactionTags,
 } from './index';
-import { financeIntegrationTest } from './test-utils';
-
-async function _hasTaggingTables(): Promise<boolean> {
-  const hasTagsTable = await tableExists('app.tags');
-  const hasTaggedItemsTable = await tableExists('app.tag_assignments');
-  return hasTagsTable && hasTaggedItemsTable;
-}
+import { seedTag } from './test/factory';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
@@ -40,13 +34,9 @@ describeIntegration('finance tags integration', () => {
     ownerTravelTagId = randomUUID();
     otherTagId = randomUUID();
 
-    await sql`
-      insert into app.tags (id, owner_userid, name, slug, path)
-      values
-        (${ownerFoodTagId}, ${ownerId}, ${'food'}, ${'food'}, ${'food'}),
-        (${ownerTravelTagId}, ${ownerId}, ${'travel'}, ${'travel'}, ${'travel'}),
-        (${otherTagId}, ${otherUserId}, ${'foreign-tag'}, ${'foreign-tag'}, ${'foreign-tag'})
-    `.execute(db);
+    await seedTag({ id: ownerFoodTagId, ownerUserid: ownerId, name: 'food' });
+    await seedTag({ id: ownerTravelTagId, ownerUserid: ownerId, name: 'travel' });
+    await seedTag({ id: otherTagId, ownerUserid: otherUserId, name: 'foreign-tag' });
 
     const account = await createAccount({
       userId: ownerId,

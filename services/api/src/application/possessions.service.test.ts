@@ -1,16 +1,24 @@
+import { randomUUID } from 'node:crypto';
+
 import { db, pool } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { FileRepository } from '@hominem/db/files';
 import { ContainerRepository, VesselConfigRepository } from '@hominem/db/possessions';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  attachPossessionImage,
   bulkUpsertPossessions,
   createContainer,
   createPossession,
   getPossessionHistory,
+  imagesByPossession,
+  listPossessionImages,
   listContainers,
   listPossessions,
   movePossessions,
+  removePossessionImage,
+  reorderPossessionImages,
   removeContainer,
   removePossession,
   updateContainer,
@@ -573,5 +581,111 @@ describe('containers', () => {
       ),
     ).rejects.toThrow(/foreign key/i);
     await removeContainer(bob, theirs.id);
+  });
+});
+
+async function seedFile(userId: string, mimetype = 'image/jpeg') {
+  const id = randomUUID();
+  await FileRepository.createPending(db, {
+    id,
+    userId,
+    storageKey: `quarantine/users/${userId}/${id}`,
+    originalName: 'photo.jpg',
+    mimetype,
+    size: 1234,
+  });
+  await FileRepository.markReady(db, id, userId, {
+    storageKey: `users/${userId}/${id}`,
+    url: `https://files.test/users/${userId}/${id}`,
+  });
+  return id;
+}
+
+describe('possession photos', () => {
+  it('attaches, lists, reorders and removes photos, logging each change', async () => {
+    const lamp = await createPossession(alice, { name: 'Photo lamp', status: 'owned' });
+    const f1 = await seedFile(alice);
+    const f2 = await seedFile(alice);
+
+    const a = await attachPossessionImage(alice, lamp.id, { fileId: f1, altText: 'front' });
+    const b = await attachPossessionImage(alice, lamp.id, { fileId: f2 });
+    expect(a).toMatchObject({ fileId: f1, displayOrder: 0, altText: 'front' });
+    expect(b).toMatchObject({ fileId: f2, displayOrder: 1 });
+    expect(a.url).toBeTruthy();
+
+    const listed = await listPossessionImages(alice, lamp.id);
+    expect(listed.map((i) => i.id)).toEqual([a.id, b.id]);
+    const byId = await imagesByPossession(alice, [lamp.id]);
+    expect(byId[lamp.id]?.length).toBe(2);
+
+    await reorderPossessionImages(alice, lamp.id, [b.id, a.id]);
+    const reordered = await listPossessionImages(alice, lamp.id);
+    expect(reordered.map((i) => i.id)).toEqual([b.id, a.id]);
+
+    await removePossessionImage(alice, lamp.id, a.id);
+    expect((await listPossessionImages(alice, lamp.id)).map((i) => i.id)).toEqual([b.id]);
+
+    const history = await getPossessionHistory(alice, lamp.id, 50);
+    expect(history.filter((e) => e.kind === 'updated').length).toBeGreaterThanOrEqual(4);
+    await removePossession(alice, lamp.id);
+  });
+
+  it('touches the possession so a since-based sync re-sends it', async () => {
+    const p = await createPossession(alice, { name: 'Touched', status: 'owned' });
+    const f = await seedFile(alice);
+    const before = (await listPossessions(alice, noQuery)).find((x) => x.id === p.id);
+    await new Promise((r) => setTimeout(r, 15));
+    await attachPossessionImage(alice, p.id, { fileId: f });
+    const after = (await listPossessions(alice, noQuery)).find((x) => x.id === p.id);
+    expect(new Date(after!.updatedAt).getTime()).toBeGreaterThan(
+      new Date(before!.updatedAt).getTime(),
+    );
+    await removePossession(alice, p.id);
+  });
+
+  it('is idempotent: attaching the same file twice returns one photo', async () => {
+    const p = await createPossession(alice, { name: 'Idem', status: 'owned' });
+    const f = await seedFile(alice);
+    const first = await attachPossessionImage(alice, p.id, { fileId: f });
+    const second = await attachPossessionImage(alice, p.id, { fileId: f });
+    expect(second.id).toBe(first.id);
+    expect(await listPossessionImages(alice, p.id)).toHaveLength(1);
+    await removePossession(alice, p.id);
+  });
+
+  it('rejects non-image files', async () => {
+    const p = await createPossession(alice, { name: 'Doc', status: 'owned' });
+    const f = await seedFile(alice, 'application/pdf');
+    await expect(attachPossessionImage(alice, p.id, { fileId: f })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await removePossession(alice, p.id);
+  });
+
+  it('keeps photos private to their owner', async () => {
+    const p = await createPossession(alice, { name: 'Private', status: 'owned' });
+    const mine = await seedFile(alice);
+    const theirs = await seedFile(bob);
+    const img = await attachPossessionImage(alice, p.id, { fileId: mine });
+
+    await expect(attachPossessionImage(alice, p.id, { fileId: theirs })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    await expect(attachPossessionImage(bob, p.id, { fileId: theirs })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    await expect(listPossessionImages(bob, p.id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(removePossessionImage(bob, p.id, img.id)).rejects.toBeInstanceOf(NotFoundError);
+    expect(await imagesByPossession(bob, [p.id])).toEqual({});
+    await removePossession(alice, p.id);
+  });
+
+  it('drops the photo link when the file is deleted', async () => {
+    const p = await createPossession(alice, { name: 'Cascade', status: 'owned' });
+    const f = await seedFile(alice);
+    await attachPossessionImage(alice, p.id, { fileId: f });
+    await FileRepository.delete(db, { fileId: f, userId: alice });
+    expect(await listPossessionImages(alice, p.id)).toEqual([]);
+    await removePossession(alice, p.id);
   });
 });

@@ -14,9 +14,11 @@ runs:
       env:
         GH_PACKAGES_TOKEN: ${{ github.token }}
       run: |
-        # rnkit's lockfile entry carries its npm.pkg.github.com tarball URL
-        # directly; ui and the rest of the scope resolve from the public npm
-        # registry, so no scope mapping here — only host auth.
+        # The whole @ponti-studios scope (ui + rnkit) resolves from GitHub
+        # Packages: rnkit's lockfile entry carries its tarball URL directly,
+        # and the ui scope mapping points the rest of the scope at the same
+        # host. ui moved off npmjs when the package registry migrated.
+        echo "@ponti-studios:registry=https://npm.pkg.github.com" >> ~/.npmrc
         echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" >> ~/.npmrc
 
     - name: setup-pnpm

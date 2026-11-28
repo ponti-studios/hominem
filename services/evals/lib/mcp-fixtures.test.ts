@@ -52,5 +52,7 @@ test('finance MCP schemas expose UUID, date, and currency constraints to agents'
     accountMap: {
       additionalProperties: { type: 'string', format: 'uuid', pattern: expect.any(String) },
     },
+    overwriteAnnotations: { type: 'boolean' },
   });
+  expect(parameters('finance_transactions_import')?.required).not.toContain('overwriteAnnotations');
 });

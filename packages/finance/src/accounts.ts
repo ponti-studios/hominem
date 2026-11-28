@@ -19,6 +19,9 @@ export type FinanceAccountsResult = {
     lifecycleStatus: string;
     includeInNetWorth: boolean;
     balanceCents: number;
+    provider: string | null;
+    providerAccountId: string | null;
+    accountNumber: string | null;
   }>;
   count: number;
   totalCount: number;
@@ -85,16 +88,13 @@ async function withBalances<T extends Selectable<AppFinanceAccounts>>(
 }
 
 export async function createAccount(input: CreateAccountInput): Promise<AccountWithBalance> {
-  const id = input.id ?? crypto.randomUUID();
-  const accountType = input.accountType ?? 'checking';
-
   const result = await db
     .insertInto('app.financeAccounts')
+    // Spread the whole input so nothing the type accepts (currency, provider, ...) gets dropped.
     .values({
-      id,
-      userId: input.userId,
-      name: input.name,
-      accountType,
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      accountType: input.accountType ?? 'checking',
       metadata: input.metadata ?? {},
     })
     .returningAll()
@@ -114,6 +114,10 @@ export interface CreateOrGetAccountInput {
   allowedCurrencies?: string[];
   institution?: string | null;
   mask?: string | null;
+  /** Sync provider slug, e.g. starling or plaid; the routing half of provider identity. */
+  provider?: string | null;
+  /** Bank-side account id (Starling account/saver UIDs); null means no identity routing. */
+  providerAccountId?: string | null;
   status?: 'open' | 'closed';
   accountType?: string;
   includeInNetWorth?: boolean;
@@ -127,19 +131,66 @@ export interface CreateOrGetAccountResult {
   allowedCurrencies: string[];
   status: string;
   includeInNetWorth: boolean;
+  provider: string | null;
+  providerAccountId: string | null;
   created: boolean;
 }
 
 /**
- * Create an account, or return the existing one when the name matches
- * case-insensitively. Open and closed accounts both match, so re-creating a
- * closed account returns it instead of duplicating it. `dryRun` reports the
- * outcome without writing; a would-be create has no id yet.
+ * Create an account, or return the existing one. Matching order: when both
+ * halves of a provider identity are given, an account with that
+ * (provider, providerAccountId) pair wins — external syncs route by bank-side
+ * ids because names change. Otherwise the name matches case-insensitively,
+ * open and closed alike, so re-creating a closed account returns it instead of
+ * duplicating it. A name match never stamps the requested identity onto the
+ * existing account — use finance_account_update for that, so gets stay
+ * side-effect free. `dryRun` reports the outcome without writing; a would-be
+ * create has no id yet.
  */
 export async function createOrGetAccount(
   input: CreateOrGetAccountInput,
 ): Promise<CreateOrGetAccountResult> {
   const name = input.name.trim();
+  const provider = input.provider?.trim().toLowerCase() || null;
+  const providerAccountId = input.providerAccountId?.trim() || null;
+
+  if (provider && providerAccountId) {
+    const byIdentity = await db
+      .selectFrom('app.financeAccounts')
+      .select([
+        'id',
+        'name',
+        'allowedCurrencies',
+        'currencyCode',
+        'lifecycleStatus',
+        'includeInNetWorth',
+        'provider',
+        'providerAccountId',
+      ])
+      .where('userId', '=', input.userId)
+      .where('provider', '=', provider)
+      .where('providerAccountId', '=', providerAccountId)
+      .orderBy('id', 'asc')
+      .limit(1)
+      .executeTakeFirst();
+    if (byIdentity) {
+      return {
+        id: byIdentity.id,
+        name: byIdentity.name,
+        currencyCode: byIdentity.currencyCode,
+        allowedCurrencies: normalizeAllowedCurrencies(
+          byIdentity.currencyCode,
+          byIdentity.allowedCurrencies ?? [],
+        ),
+        status: byIdentity.lifecycleStatus,
+        includeInNetWorth: byIdentity.includeInNetWorth,
+        provider: byIdentity.provider,
+        providerAccountId: byIdentity.providerAccountId,
+        created: false,
+      };
+    }
+  }
+
   const existing = await db
     .selectFrom('app.financeAccounts')
     .select([
@@ -149,6 +200,8 @@ export async function createOrGetAccount(
       'currencyCode',
       'lifecycleStatus',
       'includeInNetWorth',
+      'provider',
+      'providerAccountId',
     ])
     .where('userId', '=', input.userId)
     .where(sql<boolean>`lower(name) = lower(${name})`)
@@ -167,6 +220,8 @@ export async function createOrGetAccount(
       ),
       status: existing.lifecycleStatus,
       includeInNetWorth: existing.includeInNetWorth,
+      provider: existing.provider,
+      providerAccountId: existing.providerAccountId,
       created: false,
     };
   }
@@ -181,6 +236,8 @@ export async function createOrGetAccount(
       allowedCurrencies: normalizeAllowedCurrencies(input.currencyCode, input.allowedCurrencies),
       status,
       includeInNetWorth,
+      provider,
+      providerAccountId,
       created: true,
     };
   }
@@ -205,10 +262,22 @@ export async function createOrGetAccount(
       metadata: {},
       ...(institutionId ? { institutionId } : {}),
       ...(input.mask ? { mask: input.mask } : {}),
+      ...(provider ? { provider } : {}),
+      ...(providerAccountId ? { providerAccountId } : {}),
     })
     .execute();
 
-  return { id, name, currencyCode, allowedCurrencies, status, includeInNetWorth, created: true };
+  return {
+    id,
+    name,
+    currencyCode,
+    allowedCurrencies,
+    status,
+    includeInNetWorth,
+    provider,
+    providerAccountId,
+    created: true,
+  };
 }
 
 function accountsForUser(userId: string) {
@@ -271,6 +340,9 @@ export async function getFinanceAccountList(
       lifecycleStatus: account.lifecycleStatus,
       includeInNetWorth: account.includeInNetWorth,
       balanceCents: Math.round(account.currentBalance * 100),
+      provider: account.provider,
+      providerAccountId: account.providerAccountId,
+      accountNumber: account.mask,
     })),
     count: accounts.length,
     totalCount,
@@ -553,6 +625,8 @@ export async function getAccountSummaries(
 
 export type AccountUpdateReason =
   | 'currency_immutable'
+  | 'identity_conflict'
+  | 'identity_requires_provider'
   | 'invalid_name'
   | 'invalid_status_transition'
   | 'name_conflict'
@@ -562,6 +636,8 @@ export interface AccountUpdateInput {
   name?: string;
   institution?: string | null;
   mask?: string | null;
+  provider?: string | null;
+  providerAccountId?: string | null;
   accountType?: string;
   status?: string;
   currencyCode?: string;
@@ -599,7 +675,10 @@ function accountRefusal(reason: AccountUpdateReason): AccountUpdateResult {
  * Partial update of an account's mutable fields, addressed by id (names are mutable, so a
  * name is never the handle). An omitted field is unchanged; an explicit null clears
  * `institution`/`accountNumber`. Identity — id, transactions, balances-by-history, links — is
- * untouched. `currencyCode` is immutable here: changing it would reinterpret every stored
+ * untouched. The provider routing identity (provider, providerAccountId) is the
+ * one mutable identity: it is unique per user and clashes are refused with
+ * `identity_conflict`; a provider id without a provider is refused with
+ * `identity_requires_provider`. `currencyCode` is immutable here: changing it would reinterpret every stored
  * amount, which is a migration rather than an update. Status transitions are unrestricted
  * among the states the registry uses (open/closed/historical, plus the schema's `unknown`), so
  * there is no restricted transition graph to violate and `invalid_status_transition` is never
@@ -622,6 +701,8 @@ export async function applyAccountUpdate(
       'a.lifecycleStatus',
       'a.accountType',
       'a.mask',
+      'a.provider',
+      'a.providerAccountId',
       'a.includeInNetWorth',
       'a.institutionId',
       'i.name as institutionName',
@@ -650,6 +731,19 @@ export async function applyAccountUpdate(
   const nextAccountType = input.accountType ?? existing.accountType;
   const nextIncludeInNetWorth = input.includeInNetWorth ?? existing.includeInNetWorth;
   const nextMask = input.mask === undefined ? existing.mask : input.mask;
+  let nextProvider = existing.provider;
+  let nextProviderAccountId = existing.providerAccountId;
+  if (input.provider !== undefined) {
+    nextProvider = input.provider?.trim().toLowerCase() || null;
+  }
+  if (input.providerAccountId !== undefined) {
+    nextProviderAccountId = input.providerAccountId?.trim() || null;
+  }
+  // A provider id without a provider is not addressable, so it is refused rather
+  // than stored as a dangling half-identity.
+  if (nextProviderAccountId !== null && nextProvider === null) {
+    return accountRefusal('identity_requires_provider');
+  }
   const existingAllowedCurrencies = normalizeAllowedCurrencies(
     existing.currencyCode,
     existing.allowedCurrencies ?? [],
@@ -687,6 +781,24 @@ export async function applyAccountUpdate(
     if (clash) return accountRefusal('name_conflict');
   }
 
+  if (
+    nextProviderAccountId !== null &&
+    (nextProvider !== existing.provider || nextProviderAccountId !== existing.providerAccountId)
+  ) {
+    // Provider identity routes external syncs, so it is unique per user — checked
+    // against every other account, like the name clash above.
+    const clash = await db
+      .selectFrom('app.financeAccounts')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('id', '!=', accountId)
+      .where('provider', '=', nextProvider)
+      .where('providerAccountId', '=', nextProviderAccountId)
+      .limit(1)
+      .executeTakeFirst();
+    if (clash) return accountRefusal('identity_conflict');
+  }
+
   const changes: Record<string, [string | null, string | null]> = {};
   if (nextName !== existing.name) changes.name = [existing.name, nextName];
   if (JSON.stringify(nextAllowedCurrencies) !== JSON.stringify(existingAllowedCurrencies)) {
@@ -709,6 +821,12 @@ export async function applyAccountUpdate(
   }
   if (nextInstitutionId !== existing.institutionId) {
     changes.institution = [existing.institutionName, nextInstitutionName];
+  }
+  if (nextProvider !== existing.provider) {
+    changes.provider = [existing.provider, nextProvider];
+  }
+  if (nextProviderAccountId !== existing.providerAccountId) {
+    changes.providerAccountId = [existing.providerAccountId, nextProviderAccountId];
   }
 
   const result: AccountUpdateResult = {
@@ -733,6 +851,8 @@ export async function applyAccountUpdate(
       lifecycleStatus: nextStatus,
       includeInNetWorth: nextIncludeInNetWorth,
       mask: nextMask,
+      provider: nextProvider,
+      providerAccountId: nextProviderAccountId,
       institutionId: nextInstitutionId,
     })
     .where('id', '=', accountId)

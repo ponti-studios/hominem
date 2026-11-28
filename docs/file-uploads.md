@@ -55,3 +55,28 @@ pnpm --filter @hominem/api backfill:file-security -- --execute
 It re-sniffs every ready file and rewrites headers in place (keys don't change, so stored URLs
 keep working). Failures are parked under `rejected/` and the row is removed. Nothing is deleted
 outright. Run it against prod through `fly proxy` with the prod `DATABASE_URL` and R2 env set.
+
+## Possession photos
+
+Photos of a possession ride the same pipeline, no second upload path. The link lives in
+`app.possession_images`, which now has a nullable `file_id` pointing at `app.files` (cascade
+delete, partial unique index so one file can't be attached twice).
+
+Flow, from a client like Still:
+
+1. `POST /api/files/uploads` → `PUT` the bytes to the presigned URL → `POST /api/files/uploads/:fileId/complete`.
+2. `POST /api/possessions/:id/images` with `{ fileId, altText? }`. The file must be a ready
+   image, else `ValidationError`. Attaching the same file twice is a no-op that returns the
+   existing photo, so a retrying outbox is safe.
+3. `GET /api/possessions/:id/images` lists photos in order, each with a freshly signed `url`
+   (300 s). `GET /api/possessions` also returns an `images` map keyed by possession id.
+4. `PUT /api/possessions/:id/images/order` with `{ imageIds }` reorders;
+   `DELETE /api/possessions/:id/images/:imageId` removes the link only. The file stays in `app.files`.
+
+Photo changes show up in possession history as `updated` events with an `images` diff
+(`added` / `removed` / `reordered`), so the events table needed no migration.
+
+HEIC isn't allowed by the upload policy, so clients convert to JPEG or PNG on device first.
+
+OPEN — USER DECISION REQUIRED: should MCP expose photos (read-only list, or upload too)? Not
+built yet; MCP has no file tools today.

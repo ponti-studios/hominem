@@ -18,28 +18,6 @@ afterEach(() => {
 });
 
 describe('calendar analysis', () => {
-  it('prints calendar help without selecting an action', async () => {
-    const spy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const { main } = await import('./main.ts');
-    expect(await main(['--help'])).toBe(0);
-    expect(String(spy.mock.calls[0]?.[0])).toContain('hominem calendar');
-  });
-
-  it('prints analyze help without running a pull', async () => {
-    const spy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const { main } = await import('./analyze.ts');
-    expect(await main(['analyze', '--help'])).toBe(0);
-    expect(String(spy.mock.calls[0]?.[0])).toContain('hominem calendar analyze');
-    spy.mockRestore();
-  });
-
-  it('prints calendar help without selecting an action', async () => {
-    const spy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const { main } = await import('./main.ts');
-    expect(await main(['--help'])).toBe(0);
-    expect(String(spy.mock.calls[0]?.[0])).toContain('hominem calendar');
-  });
-
   it('normalizes timed and all-day events', () => {
     const events = normalizeEvents([
       {

@@ -156,6 +156,16 @@ async function accessToken(): Promise<string> {
   return token.token;
 }
 
+/** The access token only ever goes to Google, or to a loopback stand-in for tests. */
+function apiBase(): string {
+  const url = new URL(process.env.GOOGLE_TASKS_API_URL ?? DEFAULT_API);
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (url.origin !== new URL(DEFAULT_API).origin && !loopback) {
+    throw new NamedError('GOOGLE_TASKS_API_URL must be Google’s Tasks API or a loopback address.');
+  }
+  return url.href.replace(/\/$/, '');
+}
+
 async function apiCall(
   token: string,
   method: 'GET' | 'POST',
@@ -163,8 +173,7 @@ async function apiCall(
   params: Record<string, string> = {},
   body?: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const api = (process.env.GOOGLE_TASKS_API_URL ?? DEFAULT_API).replace(/\/$/, '');
-  const url = new URL(`${api}${pathname}`);
+  const url = new URL(`${apiBase()}${pathname}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const started = performance.now();
   const request = now();

@@ -77,6 +77,21 @@ test('google-tasks: missing Tasks scope fails before any external call or event'
   assert.deepEqual(rows(dbFile, 'events'), []);
 });
 
+test('google-tasks: the access token is never sent to an unknown host', async () => {
+  const result = await runWrapper(
+    CLIENT,
+    {
+      HOMINEM_AGENT_DB: dbFile,
+      GOOGLE_TOKEN_FILE: tokenFile(),
+      GOOGLE_TASKS_API_URL: 'https://tasks.example.invalid/tasks/v1',
+    },
+    ['tasklists'],
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /must be Google’s Tasks API or a loopback address/);
+  assert.deepEqual(rows(dbFile, 'events'), []);
+});
+
 test('google-tasks: task-list pagination is returned and audited per page', async () => {
   const mock = await server((request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost');

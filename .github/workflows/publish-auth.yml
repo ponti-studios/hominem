@@ -5,8 +5,7 @@ on:
 
 permissions:
   contents: read
-  packages: read
-  id-token: write
+  packages: write
 
 jobs:
   publish-auth:
@@ -34,11 +33,19 @@ jobs:
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24.18.0'
-          registry-url: 'https://registry.npmjs.org'
 
-      - name: use-npm-with-trusted-publishing-support
-        run: npm install -g npm@11
-
-      - name: publish-to-npm
+      # auth's home is GitHub Packages like the rest of the org scope —
+      # consumers resolve @ponti-studios/* from npm.pkg.github.com.
+      - name: publish-to-github-packages
         working-directory: packages/auth
-        run: npm publish --provenance --access public
+        env:
+          GH_PACKAGES_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" >> ~/.npmrc
+          version=$(node -p "require('./package.json').version")
+          if npm view "@ponti-studios/auth@$version" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "@ponti-studios/auth@$version is already on GitHub Packages, skipping."
+          else
+            npm publish --registry https://npm.pkg.github.com
+          fi

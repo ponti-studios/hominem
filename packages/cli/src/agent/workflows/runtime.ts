@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 
 import { connect, finishRun, logRun } from '../log/agent_log.ts';
 
-export type WorkflowWorker<T, R> = (item: T) => R | Promise<R>;
+type WorkflowWorker<T, R> = (item: T) => R | Promise<R>;
 
-export interface WorkflowItem<T> {
+interface WorkflowItem<T> {
   key: string;
   value: T;
 }

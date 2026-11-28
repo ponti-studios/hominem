@@ -1,7 +1,6 @@
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
 import type { MergeFinanceCategoriesResult } from '@hominem/finance-services';
 import {
-  computeLedgerRunway,
   createFinanceRule,
   createOrGetFinanceCategory,
   deleteFinanceRule,
@@ -9,12 +8,12 @@ import {
   getCategoryTagBreakdown,
   getFinanceNetWorth,
   getFinanceSpendingByCategory,
-  getRunwaySettings,
   listFinanceRules,
   mergeFinanceCategories,
   updateFinanceRule,
 } from '@hominem/finance-services';
 
+import { getFinanceLedgerRunway } from '../../application/finance.runway.service';
 import {
   getMonthlyStatsReport,
   getTagBreakdownReport,
@@ -361,33 +360,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const settings = await getRunwaySettings(ownerUserId);
-    const monthlyBudgets = new Map<
-      string,
-      { category: string; amount: number; currencyCode?: string; note?: string }
-    >(
-      settings.budgets
-        .filter((budget) => budget.currencyCode === settings.currencyCode)
-        .map(({ category, amount, currencyCode }) => [
-          category.toLowerCase(),
-          { category, amount, currencyCode },
-        ]),
-    );
-    for (const budget of input.monthlyBudgets) {
-      monthlyBudgets.set(budget.category.toLowerCase(), {
-        category: budget.category,
-        amount: budget.amountCents / 100,
-        ...(settings.currencyCode ? { currencyCode: settings.currencyCode } : {}),
-        ...(budget.note ? { note: budget.note } : {}),
-      });
-    }
-    const runway = await computeLedgerRunway({
-      userId: ownerUserId,
-      currencyCode: settings.currencyCode,
-      monthlyBudgets: [...monthlyBudgets.values()],
-      projectionWeeks: input.projectionWeeks,
-      ...(input.asOf ? { asOf: input.asOf } : {}),
-    });
+    const { runway } = await getFinanceLedgerRunway(ownerUserId, input);
     return {
       asOfDate: runway.asOfDate,
       liquidAccounts: runway.liquidAccounts.slice(0, MAX_RUNWAY_ACCOUNTS_RESULT).map((a) => ({

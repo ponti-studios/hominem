@@ -13,8 +13,9 @@ export const financeAccountCreateTool = defineMcpTool(
     name: 'finance_account_create',
     title: 'Finance Account Create',
     description:
-      'Create a finance account, or return the existing one when the name matches case-insensitively (created: false). ' +
+      'Create a finance account, or return the existing one (created: false) — matching by (provider, providerAccountId) when both are given, else by case-insensitive name. ' +
       'Accounts created here are what sheet imports resolve against; the import never auto-creates an unknown account. ' +
+      'A name match never stamps a requested provider identity onto the existing account — use finance_account_update for that. ' +
       'includeInNetWorth defaults to true; an existing account keeps its stored value. ' +
       'dryRun reports the outcome without writing.',
     inputSchema: financeAccountCreateInputSchema,
@@ -28,7 +29,7 @@ export const financeAccountCreateTool = defineMcpTool(
     guidance: {
       whenToUse: 'A sheet label or sync source needs an account that does not exist yet.',
       whenNotToUse: 'Do not use to rename, close, or merge an existing account.',
-      produces: ['account ids', 'account names'],
+      produces: ['account ids', 'account names', 'provider identities'],
     },
   },
   async (ownerUserId, input) => ({
@@ -39,6 +40,10 @@ export const financeAccountCreateTool = defineMcpTool(
       allowedCurrencies: input.allowedCurrencies,
       ...(input.institution ? { institution: input.institution } : {}),
       ...(input.accountNumber ? { mask: input.accountNumber } : {}),
+      ...(input.provider !== undefined ? { provider: input.provider } : {}),
+      ...(input.providerAccountId !== undefined
+        ? { providerAccountId: input.providerAccountId }
+        : {}),
       status: input.status,
       accountType: input.accountType,
       includeInNetWorth: input.includeInNetWorth,

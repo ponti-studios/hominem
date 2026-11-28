@@ -1,9 +1,18 @@
-import { db, pool } from '@hominem/db/core';
+import { db } from '@hominem/db/core';
 import { FinanceBillRepository } from '@hominem/db/finance';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  clearLedger,
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedTransaction,
+} from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { computeNextDueDate, getBill } from '../../../../application/finance-bills.service';
-import { callTool, type McpToolResult } from '../../../tool-registry';
+import { createEnergyBill } from '../../../../testkit/fixtures/finance-bills';
+import { structuredContent } from '../../../../testkit/fixtures/mcp-content';
+import { callTool } from '../../../tool-registry';
 import '../register';
 
 const userId = 'f2650000-0000-4000-8000-000000000001';
@@ -52,106 +61,31 @@ type BillContent = {
   entry?: { id: string; balanceCents: number } | null;
 };
 
-function content(result: McpToolResult<BillContent>): BillContent {
-  return result.structuredContent ?? {};
-}
+const content = structuredContent<BillContent>;
 
-let transactionCounter = 0;
+const SPEND = {
+  userId,
+  accountId,
+  amount: -52.3,
+  currencyCode: 'GBP',
+  transactionType: 'debit',
+  description: 'bill test',
+};
 
-async function insertTransaction(input: {
-  merchantName: string | null;
-  description?: string | null;
-  postedOn: string;
-  amount?: number;
-  excluded?: boolean;
-  pending?: boolean;
-}): Promise<string> {
-  transactionCounter += 1;
-  const id = `f2650003-0000-4000-8000-${String(transactionCounter).padStart(12, '0')}`;
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id,
-      userId,
-      accountId,
-      postedOn: input.postedOn,
-      description: input.description ?? `bill test ${transactionCounter}`,
-      merchantName: input.merchantName,
-      amount: input.amount ?? -52.3,
-      currencyCode: 'GBP',
-      transactionType: 'debit',
-      pending: input.pending ?? false,
-      excluded: input.excluded ?? false,
-      providerPayload: {},
-      externalId: `bill-test-${transactionCounter}`,
-    })
-    .execute();
-  return id;
-}
-
-async function createBill(input: Record<string, unknown> = {}, asUserId = userId) {
-  return content(
-    await callTool(asUserId, 'finance_bill_create', {
-      name: 'Octopus Energy',
-      kind: 'electricity',
-      paymentMethod: 'direct_debit',
-      amountModel: 'variable',
-      currencyCode: 'GBP',
-      cadence: 'monthly',
-      dueDay: 15,
-      merchantMatch: ['octopus energy'],
-      ...input,
-    }),
-  );
-}
-
-async function clearUserData(id: string) {
-  await db.deleteFrom('app.financeBillBalanceEntries').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeBills').where('userId', '=', id).execute();
-  await db.deleteFrom('app.financeTransactions').where('userId', '=', id).execute();
-}
+const createBill = async (overrides: Record<string, unknown> = {}, asUserId = userId) =>
+  content(await createEnergyBill(asUserId, overrides));
 
 beforeAll(async () => {
-  for (const [id, name] of [
-    [userId, 'Bill Test User'],
-    [otherUserId, 'Bill Other User'],
-  ] as const) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, name, `${id}@test.hominem.dev`, true],
-    );
-  }
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: accountId,
-        userId,
-        name: 'Bill Test Account',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-      {
-        id: otherAccountId,
-        userId: otherUserId,
-        name: 'Bill Other Account',
-        accountType: 'checking',
-        currencyCode: 'GBP',
-        lifecycleStatus: 'open',
-        metadata: {},
-      },
-    ])
-    .onConflict((conflict) => conflict.column('id').doNothing())
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccounts(userId, [
+    { id: accountId, name: 'Bill Test Account', currencyCode: 'GBP' },
+    { id: otherAccountId, userId: otherUserId, name: 'Bill Other Account', currencyCode: 'GBP' },
+  ]);
 });
 
-beforeEach(async () => {
-  await clearUserData(userId);
-  await clearUserData(otherUserId);
-  transactionCounter = 0;
-});
+beforeEach(() => clearLedger(userId, otherUserId));
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('computeNextDueDate', () => {
   it('computes monthly dates with month-end clamping and never stores them', () => {
@@ -430,21 +364,24 @@ describe('lastPaid claims', () => {
   it('matches case-insensitively and awards each transaction to the earliest bill', async () => {
     const first = await createBill({ merchantMatch: ['octopus energy'] });
     await createBill({ name: 'Later duplicate', merchantMatch: ['OCTOPUS'] });
-    const matchId = await insertTransaction({
+    const { id: matchId } = await seedTransaction({
+      ...SPEND,
       merchantName: 'OCTOPUS ENERGY LTD',
       postedOn: '2026-10-20',
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       merchantName: 'Octopus Energy',
       postedOn: '2026-10-21',
       excluded: true,
     });
-    await insertTransaction({
+    await seedTransaction({
+      ...SPEND,
       merchantName: 'Octopus Energy',
       postedOn: '2026-10-22',
       pending: true,
     });
-    await insertTransaction({ merchantName: 'Unrelated Grocer', postedOn: '2026-10-23' });
+    await seedTransaction({ ...SPEND, merchantName: 'Unrelated Grocer', postedOn: '2026-10-23' });
 
     const fetched = content(await callTool(userId, 'finance_bill_get', { billId: first.bill?.id }));
     expect(fetched.bill?.lastPaid).toMatchObject({
@@ -460,7 +397,8 @@ describe('lastPaid claims', () => {
 
   it('matches on the description when the merchant name is empty', async () => {
     const created = await createBill({ merchantMatch: ['bulb'] });
-    const matchId = await insertTransaction({
+    const { id: matchId } = await seedTransaction({
+      ...SPEND,
       merchantName: null,
       description: 'BULB ENERGY monthly',
       postedOn: '2026-10-20',
@@ -473,16 +411,18 @@ describe('lastPaid claims', () => {
   it('returns the latest claim per bill even when the row bound is small', async () => {
     const alpha = await createBill({ name: 'Alpha Energy', merchantMatch: ['alpha'] });
     const beta = await createBill({ name: 'Beta Water', merchantMatch: ['beta'] });
-    const alphaLatest = await insertTransaction({
+    const { id: alphaLatest } = await seedTransaction({
+      ...SPEND,
       merchantName: 'Alpha Energy',
       postedOn: '2026-10-03',
     });
-    const betaLatest = await insertTransaction({
+    const { id: betaLatest } = await seedTransaction({
+      ...SPEND,
       merchantName: 'Beta Water',
       postedOn: '2026-10-04',
     });
-    await insertTransaction({ merchantName: 'Alpha Energy', postedOn: '2026-10-01' });
-    await insertTransaction({ merchantName: 'Beta Water', postedOn: '2026-10-02' });
+    await seedTransaction({ ...SPEND, merchantName: 'Alpha Energy', postedOn: '2026-10-01' });
+    await seedTransaction({ ...SPEND, merchantName: 'Beta Water', postedOn: '2026-10-02' });
 
     const claims = await FinanceBillRepository.findClaimedTransactions(db, userId, 2);
     const byBill = new Map(claims.map((claim) => [claim.billId, claim.transactionId]));

@@ -7,11 +7,7 @@
  * implementation and one audit path.
  */
 import { finishRun, logRun } from '../../log/agent_log.ts';
-import {
-  starlingAccounts,
-  starlingBalances,
-  starlingPull,
-} from '../../systems/wealth-manager/starling.ts';
+import { starlingAccounts, starlingBalances, starlingPull } from './client.ts';
 
 function usage(): void {
   process.stderr.write(

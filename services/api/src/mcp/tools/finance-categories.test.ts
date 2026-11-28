@@ -1,6 +1,18 @@
-import { db, pool, sql } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { db, sql } from '@hominem/db/core';
+import {
+  removeUsers,
+  resetUsers,
+  seedAccount,
+  seedBudget,
+  seedCategorizedRows,
+  seedMonthlyBudgets,
+  seedTransaction,
+  seedTransactions,
+} from '@hominem/finance-services/test/factory';
+import { categoryByName } from '@hominem/finance-services/test/readers';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
 import { callTool, type McpToolResult } from '../tool-registry';
 import './finance';
 
@@ -73,60 +85,20 @@ type RuleResult = {
   reason?: string | null;
 };
 
-function content(res: McpToolResult<CategoryResult>): CategoryResult {
-  return res.structuredContent ?? {};
-}
+const content = structuredContent<CategoryResult>;
 
-function searchContent(res: McpToolResult<SearchResult>): SearchResult {
-  return res.structuredContent ?? {};
-}
+const searchContent = structuredContent<SearchResult>;
 
-function breakdownContent(res: McpToolResult<BreakdownResult>): BreakdownResult {
-  return res.structuredContent ?? {};
-}
+const breakdownContent = structuredContent<BreakdownResult>;
 
-function ruleContent(res: McpToolResult<RuleResult>): RuleResult {
-  return res.structuredContent ?? {};
-}
-
-async function categoryByName(owner: string, name: string) {
-  return db
-    .selectFrom('app.financeCategories')
-    .select(['id', 'name'])
-    .where('userId', '=', owner)
-    .where(sql<boolean>`lower(name) = lower(${name})`)
-    .executeTakeFirst();
-}
+const ruleContent = structuredContent<RuleResult>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Category User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    // Tags first: deleting them cascades their assignments, including any left orphaned by a
-    // previous run (tag assignments are polymorphic, so they outlive the rows they tagged).
-    await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-    // Rules hold a RESTRICT reference to categories, so they are cleared first.
-    await db.deleteFrom('app.financeRules').where('userId', '=', id).execute();
-    await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
-  }
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values({
-      id: checkingId,
-      userId,
-      name: 'Category Checking',
-      accountType: 'checking',
-      currencyCode: 'USD',
-      lifecycleStatus: 'open',
-      includeInNetWorth: true,
-      metadata: {},
-    })
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccount({ id: checkingId, userId, name: 'Category Checking' });
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_category_create', () => {
   it('returns repeatable results for sequential and concurrent category reads', async () => {
@@ -244,20 +216,15 @@ describe('finance_category_merge', () => {
     const target = content(
       await callTool(userId, 'finance_category_create', { name: 'Budget Merge Target' }),
     );
-    await db
-      .insertInto('app.financeBudgets')
-      .values([
-        { userId, categoryId: source.id!, amountCents: 1_200, cadence: 'weekly' },
-        { userId, categoryId: target.id!, amountCents: 12_000, cadence: 'monthly' },
-      ])
-      .execute();
-    await db
-      .insertInto('app.financeMonthlyBudgets')
-      .values([
-        { userId, categoryId: source.id!, currencyCode: 'USD', monthlyAmount: '10.00' },
-        { userId, categoryId: target.id!, currencyCode: 'USD', monthlyAmount: '50.00' },
-      ])
-      .execute();
+    for (const budget of [
+      { userId, categoryId: source.id!, amountCents: 1_200, cadence: 'weekly' },
+      { userId, categoryId: target.id!, amountCents: 12_000, cadence: 'monthly' },
+    ])
+      await seedBudget(budget);
+    await seedMonthlyBudgets([
+      { userId, categoryId: source.id!, currencyCode: 'USD', monthlyAmount: '10.00' },
+      { userId, categoryId: target.id!, currencyCode: 'USD', monthlyAmount: '50.00' },
+    ]);
 
     const preview = content(
       await callTool(userId, 'finance_category_merge', {
@@ -294,41 +261,28 @@ describe('finance_category_merge', () => {
       await callTool(userId, 'finance_category_create', { name: 'Merge Target' }),
     );
 
-    await db
-      .insertInto('app.financeTransactions')
-      .values([
-        {
-          id: 'f20000e2-0000-4000-8000-000000000001',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-01',
-          description: 'Row one',
-          amount: -1000,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: source.id ?? '',
-          excluded: false,
-          externalId: 'cat-ext-1',
-          providerPayload: {},
-        },
-        {
-          id: 'f20000e2-0000-4000-8000-000000000002',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-02',
-          description: 'Row two',
-          amount: -2000,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: source.id ?? '',
-          excluded: false,
-          externalId: 'cat-ext-2',
-          providerPayload: {},
-        },
-      ])
-      .execute();
+    await seedTransactions(userId, [
+      {
+        id: 'f20000e2-0000-4000-8000-000000000001',
+        accountId: checkingId,
+        postedOn: '2026-06-01',
+        description: 'Row one',
+        amount: -1000,
+        transactionType: 'debit',
+        categoryId: source.id ?? '',
+        externalId: 'cat-ext-1',
+      },
+      {
+        id: 'f20000e2-0000-4000-8000-000000000002',
+        accountId: checkingId,
+        postedOn: '2026-06-02',
+        description: 'Row two',
+        amount: -2000,
+        transactionType: 'debit',
+        categoryId: source.id ?? '',
+        externalId: 'cat-ext-2',
+      },
+    ]);
 
     const result = content(
       await callTool(userId, 'finance_category_merge', {
@@ -360,24 +314,17 @@ describe('finance_category_merge', () => {
       await callTool(userId, 'finance_category_create', { name: 'Dry Source' }),
     );
     await callTool(userId, 'finance_category_create', { name: 'Dry Target' });
-    await db
-      .insertInto('app.financeTransactions')
-      .values({
-        id: 'f20000e2-0000-4000-8000-000000000003',
-        userId,
-        accountId: checkingId,
-        postedOn: '2026-06-03',
-        description: 'Row three',
-        amount: -300,
-        currencyCode: 'USD',
-        transactionType: 'debit',
-        pending: false,
-        categoryId: source.id ?? '',
-        excluded: false,
-        externalId: 'cat-ext-3',
-        providerPayload: {},
-      })
-      .execute();
+    await seedTransaction({
+      userId,
+      id: 'f20000e2-0000-4000-8000-000000000003',
+      accountId: checkingId,
+      postedOn: '2026-06-03',
+      description: 'Row three',
+      amount: -300,
+      transactionType: 'debit',
+      categoryId: source.id ?? '',
+      externalId: 'cat-ext-3',
+    });
 
     const result = content(
       await callTool(userId, 'finance_category_merge', {
@@ -410,41 +357,28 @@ describe('finance_category_merge', () => {
       .select('id')
       .where('userId', '=', userId)
       .execute();
-    await db
-      .insertInto('app.financeTransactions')
-      .values([
-        {
-          id: 'f20000e2-0000-4000-8000-000000000013',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-13',
-          description: 'Uncategorized move one',
-          amount: -100,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: source.id!,
-          excluded: false,
-          externalId: 'cat-uncategorized-ext-1',
-          providerPayload: {},
-        },
-        {
-          id: 'f20000e2-0000-4000-8000-000000000014',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-14',
-          description: 'Uncategorized move two',
-          amount: -200,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: source.id!,
-          excluded: false,
-          externalId: 'cat-uncategorized-ext-2',
-          providerPayload: {},
-        },
-      ])
-      .execute();
+    await seedTransactions(userId, [
+      {
+        id: 'f20000e2-0000-4000-8000-000000000013',
+        accountId: checkingId,
+        postedOn: '2026-06-13',
+        description: 'Uncategorized move one',
+        amount: -100,
+        transactionType: 'debit',
+        categoryId: source.id!,
+        externalId: 'cat-uncategorized-ext-1',
+      },
+      {
+        id: 'f20000e2-0000-4000-8000-000000000014',
+        accountId: checkingId,
+        postedOn: '2026-06-14',
+        description: 'Uncategorized move two',
+        amount: -200,
+        transactionType: 'debit',
+        categoryId: source.id!,
+        externalId: 'cat-uncategorized-ext-2',
+      },
+    ]);
 
     const merged = content(
       await callTool(userId, 'finance_category_merge', {
@@ -550,31 +484,7 @@ describe('finance_category_merge', () => {
 });
 
 describe('finance_category_merge — taxonomy guarantees', () => {
-  async function insertRows(
-    categoryId: string,
-    rows: Array<{ id: string; description: string; amount: number }>,
-  ) {
-    await db
-      .insertInto('app.financeTransactions')
-      .values(
-        rows.map((row) => ({
-          id: row.id,
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-07-01',
-          description: row.description,
-          amount: row.amount,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId,
-          excluded: false,
-          externalId: `taxonomy-${row.id}`,
-          providerPayload: {},
-        })),
-      )
-      .execute();
-  }
+  const shared = { userId, accountId: checkingId, postedOn: '2026-07-01' };
 
   it('merges a 3,500 transaction category and preserves currency totals', async () => {
     const source = content(
@@ -588,9 +498,7 @@ describe('finance_category_merge — taxonomy guarantees', () => {
       description: `Long merge row ${index + 1}`,
       amount: -1,
     }));
-    for (let offset = 0; offset < rows.length; offset += 500) {
-      await insertRows(source.id!, rows.slice(offset, offset + 500));
-    }
+    await seedCategorizedRows({ ...shared, categoryId: source.id! }, rows);
 
     const startedAt = performance.now();
     const result = content(
@@ -622,11 +530,13 @@ describe('finance_category_merge — taxonomy guarantees', () => {
       'f20000e3-0000-4000-8000-000000000002',
     ];
     const betaIds = ['f20000e3-0000-4000-8000-000000000003'];
-    await insertRows(alpha.id!, [
+    await seedCategorizedRows({ ...shared, categoryId: alpha.id! }, [
       { id: alphaIds[0]!, description: 'Alpha one', amount: -12.5 },
       { id: alphaIds[1]!, description: 'Alpha two', amount: -5 },
     ]);
-    await insertRows(beta.id!, [{ id: betaIds[0]!, description: 'Beta one', amount: -8 }]);
+    await seedCategorizedRows({ ...shared, categoryId: beta.id! }, [
+      { id: betaIds[0]!, description: 'Beta one', amount: -8 },
+    ]);
 
     const result = content(
       await callTool(userId, 'finance_category_merge', {
@@ -688,7 +598,7 @@ describe('finance_category_merge — taxonomy guarantees', () => {
     const target = content(
       await callTool(userId, 'finance_category_create', { name: 'Rule Target' }),
     );
-    await insertRows(source.id!, [
+    await seedCategorizedRows({ ...shared, categoryId: source.id! }, [
       { id: 'f20000e3-0000-4000-8000-000000000011', description: 'Rule row', amount: -4 },
     ]);
 
@@ -833,41 +743,28 @@ describe('finance_category_delete', () => {
     const created = content(
       await callTool(userId, 'finance_category_create', { name: 'Category In Use' }),
     );
-    await db
-      .insertInto('app.financeTransactions')
-      .values([
-        {
-          id: 'f20000e2-0000-4000-8000-000000000011',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-10',
-          description: 'Referenced one',
-          amount: -100,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: created.id!,
-          excluded: false,
-          externalId: 'cat-delete-ext-1',
-          providerPayload: {},
-        },
-        {
-          id: 'f20000e2-0000-4000-8000-000000000012',
-          userId,
-          accountId: checkingId,
-          postedOn: '2026-06-11',
-          description: 'Referenced two',
-          amount: -200,
-          currencyCode: 'USD',
-          transactionType: 'debit',
-          pending: false,
-          categoryId: created.id!,
-          excluded: false,
-          externalId: 'cat-delete-ext-2',
-          providerPayload: {},
-        },
-      ])
-      .execute();
+    await seedTransactions(userId, [
+      {
+        id: 'f20000e2-0000-4000-8000-000000000011',
+        accountId: checkingId,
+        postedOn: '2026-06-10',
+        description: 'Referenced one',
+        amount: -100,
+        transactionType: 'debit',
+        categoryId: created.id!,
+        externalId: 'cat-delete-ext-1',
+      },
+      {
+        id: 'f20000e2-0000-4000-8000-000000000012',
+        accountId: checkingId,
+        postedOn: '2026-06-11',
+        description: 'Referenced two',
+        amount: -200,
+        transactionType: 'debit',
+        categoryId: created.id!,
+        externalId: 'cat-delete-ext-2',
+      },
+    ]);
 
     await expect(
       callTool(userId, 'finance_category_delete', {

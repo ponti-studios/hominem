@@ -111,7 +111,7 @@ function openTitles(response: unknown): Set<string> {
   return titles;
 }
 
-export function cadenceArg(args: string[]): Cadence | null {
+function cadenceArg(args: string[]): Cadence | null {
   if (args.length !== 1) return null;
   const arg = args[0];
   if (arg === 'weekly' || arg === 'monthly') return arg;

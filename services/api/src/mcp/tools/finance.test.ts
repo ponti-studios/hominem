@@ -1,7 +1,16 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  removeTransactions,
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedCategory,
+  seedRepeatedTransactions,
+  seedTransactions,
+} from '@hominem/finance-services/test/factory';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f1000000-0000-4000-8000-000000000001';
@@ -19,53 +28,7 @@ type TestResultContent = {
   categories?: TestResultRow[];
 };
 
-type FinanceAccountInsert = {
-  id: string;
-  userId: string;
-  name: string;
-  accountType: string;
-  currencyCode: string;
-  lifecycleStatus: string;
-  includeInNetWorth: boolean;
-  metadata: Record<string, never>;
-};
-
-type FinanceCategoryInsert = {
-  id: string;
-  userId: string;
-  name: string;
-};
-
-type FinanceTransactionInsert = {
-  id: string;
-  userId: string;
-  accountId: string;
-  postedOn: string;
-  description: string;
-  amount: number;
-  currencyCode: string;
-  transactionType: string;
-  pending: boolean;
-  externalId: string;
-  categoryId: string | null;
-  excluded: boolean;
-  providerPayload: Record<string, never>;
-};
-
-type FinanceTransactionEntry = [
-  accountId: string,
-  postedOn: string,
-  description: string,
-  amount: number,
-  transactionType: string,
-  externalId: string,
-  categoryId: string | null,
-  excluded: boolean,
-];
-
-function resultContent(res: McpToolResult<TestResultContent>): TestResultContent {
-  return res.structuredContent ?? {};
-}
+const resultContent = structuredContent<TestResultContent>;
 
 const savingsId = 'f1000003-0000-4000-8000-000000000002';
 const excludedCardId = 'f1000003-0000-4000-8000-000000000003';
@@ -73,92 +36,84 @@ const foodId = 'f1000002-0000-4000-8000-000000000101';
 const transportId = 'f1000002-0000-4000-8000-000000000102';
 
 beforeAll(async () => {
-  await pool.query(`DELETE FROM app.finance_transactions WHERE user_id = $1`, [userId]);
-  await pool.query(`DELETE FROM app.finance_accounts WHERE user_id = $1`, [userId]);
-  await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
-  await pool.query(
-    `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4)`,
-    [userId, 'Test User', `${userId}@test.hominem.dev`, true],
-  );
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      {
-        id: checkingId,
-        userId,
-        name: 'Checking',
-        accountType: 'checking',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: savingsId,
-        userId,
-        name: 'Old Savings',
-        accountType: 'savings',
-        currencyCode: 'USD',
-        lifecycleStatus: 'closed',
-        includeInNetWorth: true,
-        metadata: {},
-      },
-      {
-        id: excludedCardId,
-        userId,
-        name: 'Excluded Card',
-        accountType: 'credit_card',
-        currencyCode: 'USD',
-        lifecycleStatus: 'open',
-        includeInNetWorth: false,
-        metadata: {},
-      },
-    ] satisfies FinanceAccountInsert[])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-
-  await db
-    .insertInto('app.financeCategories')
-    .values([
-      { id: foodId, userId, name: 'Food & Drink' },
-      { id: transportId, userId, name: 'Transport' },
-    ] satisfies FinanceCategoryInsert[])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-
-  const entries: FinanceTransactionEntry[] = [
-    [checkingId, '2026-07-01', 'Grocery Store', -50.0, 'debit', 'fp-1', foodId, false],
-    [checkingId, '2026-07-05', 'Gas Station', -25.0, 'debit', 'fp-2', transportId, false],
-    [checkingId, '2026-07-10', 'Paycheck', 2000.0, 'credit', 'fp-3', null, false],
-    [checkingId, '2026-07-11', 'Transfer to Savings', -100.0, 'transfer', 'fp-4', null, false],
-    [checkingId, '2026-07-12', 'Pending Coffee', -4.5, 'debit', 'fp-5', foodId, false],
-    [checkingId, '2026-07-13', 'Excluded Reimbursement', -10.0, 'adjustment', 'fp-6', foodId, true],
-  ];
-
-  for (let i = 0; i < entries.length; i++) {
-    const [acctId, postedOn, desc, amount, txType, extId, catId, excl] = entries[i];
-    await db
-      .insertInto('app.financeTransactions')
-      .values({
-        id: `f1000004-0000-4000-8000-${String(i + 1).padStart(12, '0')}`,
-        userId,
-        accountId: acctId,
-        postedOn,
-        description: desc,
-        amount,
-        currencyCode: 'USD',
-        transactionType: txType,
-        pending: desc === 'Pending Coffee',
-        externalId: extId,
-        categoryId: catId,
-        excluded: excl,
-        providerPayload: {},
-      } satisfies FinanceTransactionInsert)
-      .onConflict((oc) => oc.column('id').doNothing())
-      .execute();
-  }
+  await resetUsers(userId);
+  await seedAccounts(userId, [
+    { id: checkingId, name: 'Checking' },
+    { id: savingsId, name: 'Old Savings', accountType: 'savings', lifecycleStatus: 'closed' },
+    {
+      id: excludedCardId,
+      name: 'Excluded Card',
+      accountType: 'credit_card',
+      includeInNetWorth: false,
+    },
+  ]);
+  await seedCategory({ id: foodId, userId, name: 'Food & Drink' });
+  await seedCategory({ id: transportId, userId, name: 'Transport' });
+  await seedTransactions(userId, [
+    {
+      id: 'f1000004-0000-4000-8000-000000000001',
+      accountId: checkingId,
+      postedOn: '2026-07-01',
+      description: 'Grocery Store',
+      amount: -50,
+      transactionType: 'debit',
+      externalId: 'fp-1',
+      categoryId: foodId,
+    },
+    {
+      id: 'f1000004-0000-4000-8000-000000000002',
+      accountId: checkingId,
+      postedOn: '2026-07-05',
+      description: 'Gas Station',
+      amount: -25,
+      transactionType: 'debit',
+      externalId: 'fp-2',
+      categoryId: transportId,
+    },
+    {
+      id: 'f1000004-0000-4000-8000-000000000003',
+      accountId: checkingId,
+      postedOn: '2026-07-10',
+      description: 'Paycheck',
+      amount: 2000,
+      transactionType: 'credit',
+      externalId: 'fp-3',
+    },
+    {
+      id: 'f1000004-0000-4000-8000-000000000004',
+      accountId: checkingId,
+      postedOn: '2026-07-11',
+      description: 'Transfer to Savings',
+      amount: -100,
+      transactionType: 'transfer',
+      externalId: 'fp-4',
+    },
+    {
+      id: 'f1000004-0000-4000-8000-000000000005',
+      accountId: checkingId,
+      postedOn: '2026-07-12',
+      description: 'Pending Coffee',
+      amount: -4.5,
+      transactionType: 'debit',
+      externalId: 'fp-5',
+      categoryId: foodId,
+      pending: true,
+    },
+    {
+      id: 'f1000004-0000-4000-8000-000000000006',
+      accountId: checkingId,
+      postedOn: '2026-07-13',
+      description: 'Excluded Reimbursement',
+      amount: -10,
+      transactionType: 'adjustment',
+      externalId: 'fp-6',
+      categoryId: foodId,
+      excluded: true,
+    },
+  ]);
 });
+
+afterAll(() => removeUsers(userId));
 
 describe('finance_net_worth', () => {
   it('sums posted, non-pending transaction activity to compute balances', async () => {
@@ -261,41 +216,25 @@ describe('finance_spending_by_category', () => {
   it('keeps category sums separate when the range contains multiple currencies', async () => {
     const ids = ['f1000004-0000-4000-8000-000000000007', 'f1000004-0000-4000-8000-000000000008'];
     try {
-      await db
-        .insertInto('app.financeTransactions')
-        .values([
-          {
-            id: ids[0]!,
-            userId,
-            accountId: checkingId,
-            postedOn: '2026-08-01',
-            description: 'USD category sample',
-            amount: -10,
-            currencyCode: 'USD',
-            transactionType: 'debit',
-            pending: false,
-            externalId: 'finance-category-currency-usd',
-            categoryId: foodId,
-            excluded: false,
-            providerPayload: {},
-          },
-          {
-            id: ids[1]!,
-            userId,
-            accountId: checkingId,
-            postedOn: '2026-08-02',
-            description: 'GBP category sample',
-            amount: -20,
-            currencyCode: 'GBP',
-            transactionType: 'debit',
-            pending: false,
-            externalId: 'finance-category-currency-gbp',
-            categoryId: foodId,
-            excluded: false,
-            providerPayload: {},
-          },
-        ])
-        .execute();
+      await seedTransactions(userId, [
+        {
+          id: ids[0]!,
+          accountId: checkingId,
+          postedOn: '2026-08-01',
+          description: 'USD category sample',
+          amount: -10,
+          categoryId: foodId,
+        },
+        {
+          id: ids[1]!,
+          accountId: checkingId,
+          postedOn: '2026-08-02',
+          description: 'GBP category sample',
+          amount: -20,
+          currencyCode: 'GBP',
+          categoryId: foodId,
+        },
+      ]);
 
       const data = resultContent(
         await callTool(userId, 'finance_spending_by_category', {
@@ -319,23 +258,21 @@ describe('finance_spending_by_category', () => {
         ]),
       );
     } finally {
-      await db.deleteFrom('app.financeTransactions').where('id', 'in', ids).execute();
+      await removeTransactions(...ids);
     }
   });
 
   it('aggregates all matching rows at store scale without a transaction scan cap', async () => {
-    const marker = 'spending-cap-regression';
+    const ids = await seedRepeatedTransactions(10_001, {
+      userId,
+      accountId: checkingId,
+      postedOn: '2026-08-15',
+      description: 'spending-cap-regression',
+      amount: -0.01,
+      transactionType: 'debit',
+      categoryId: foodId,
+    });
     try {
-      await pool.query(
-        `INSERT INTO app.finance_transactions
-          (id, user_id, account_id, posted_on, description, amount, currency_code,
-           transaction_type, pending, external_id, category_id, excluded, provider_payload)
-         SELECT gen_random_uuid(), $1, $2, DATE '2026-08-15', $3, -0.01, 'USD',
-                'debit', false, $4 || '-' || n, $5, false, '{}'::jsonb
-         FROM generate_series(1, 10001) AS n`,
-        [userId, checkingId, marker, marker, foodId],
-      );
-
       const data = resultContent(
         await callTool(userId, 'finance_spending_by_category', {
           from: '2026-08-01',
@@ -351,10 +288,7 @@ describe('finance_spending_by_category', () => {
         }),
       );
     } finally {
-      await pool.query(
-        'DELETE FROM app.finance_transactions WHERE description = $1 AND user_id = $2',
-        [marker, userId],
-      );
+      await removeTransactions(...ids);
     }
   });
 });

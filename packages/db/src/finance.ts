@@ -14,6 +14,8 @@ export type {
   UncountedForeignTransaction,
 } from './services/finance/budget.repository';
 export { FinanceBillRepository } from './services/finance/bill.repository';
+export { FinanceDoctrineRepository } from './services/finance/doctrine.repository';
+export type { SyncDoctrineRecord } from './services/finance/doctrine.repository';
 export type {
   FinanceBillAmountModel,
   FinanceBillBalanceEntryRecord,

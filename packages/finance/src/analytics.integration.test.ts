@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { db, sql } from '@hominem/db/core';
-import { isIntegrationDatabaseAvailable, tableExists } from '@hominem/db/test/utils';
+import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
 import {
@@ -13,13 +12,8 @@ import {
   getTopMerchantsByContract,
   replaceTransactionTags,
 } from './index';
-import { financeIntegrationTest } from './test-utils';
-
-async function _hasTaggingTables(): Promise<boolean> {
-  const hasTagsTable = await tableExists('app.tags');
-  const hasTaggedItemsTable = await tableExists('app.tag_assignments');
-  return hasTagsTable && hasTaggedItemsTable;
-}
+import { seedTag, seedTransactions } from './test/factory';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
@@ -37,12 +31,8 @@ describeIntegration('finance analytics integration', () => {
     foodTagId = randomUUID();
     travelTagId = randomUUID();
 
-    await sql`
-      insert into app.tags (id, owner_userid, name, slug, path)
-      values
-        (${foodTagId}, ${ownerId}, ${'food'}, ${'food'}, ${'food'}),
-        (${travelTagId}, ${ownerId}, ${'travel'}, ${'travel'}, ${'travel'})
-    `.execute(db);
+    await seedTag({ id: foodTagId, ownerUserid: ownerId, name: 'food' });
+    await seedTag({ id: travelTagId, ownerUserid: ownerId, name: 'travel' });
 
     const account = await createAccount({
       userId: ownerId,
@@ -104,19 +94,15 @@ describeIntegration('finance analytics integration', () => {
   financeIntegrationTest(
     'keeps merchant totals separate when transactions use different currencies',
     async () => {
-      const euroTransaction = await createTransaction({
+      await createTransaction({
         userId: ownerId,
         accountId,
         amount: -140.25,
         description: 'Euro purchase',
         postedOn: '2026-02-12',
         merchantName: 'Cafe One',
+        currencyCode: 'EUR',
       });
-      await db
-        .updateTable('app.financeTransactions')
-        .set({ currencyCode: 'EUR' })
-        .where('id', '=', euroTransaction.id)
-        .execute();
       await createTransaction({
         userId: ownerId,
         accountId,
@@ -192,21 +178,16 @@ describeIntegration('finance analytics integration', () => {
   financeIntegrationTest(
     'aggregates every matching transaction before limiting chart buckets',
     async () => {
-      await db
-        .insertInto('app.financeTransactions')
-        .values(
-          Array.from({ length: 201 }, (_, index) => ({
-            id: randomUUID(),
-            userId: ownerId,
-            accountId,
-            amount: -1,
-            transactionType: 'debit',
-            description: `Daily purchase ${index}`,
-            merchantName: 'Daily Merchant',
-            postedOn: '2026-03-15',
-          })),
-        )
-        .execute();
+      await seedTransactions(
+        ownerId,
+        Array.from({ length: 201 }, (_, index) => ({
+          accountId,
+          amount: -1,
+          description: `Daily purchase ${index}`,
+          merchantName: 'Daily Merchant',
+          postedOn: '2026-03-15',
+        })),
+      );
 
       const result = await getSpendingTimeSeriesByContract({
         userId: ownerId,

@@ -2,7 +2,7 @@
   "name": "@hominem/cli",
   "version": "0.0.0",
   "private": true,
-  "description": "The hominem command: Google sign-in, token health, and the daily auth check",
+  "description": "The Hominem command line: sign-in, finance, the personal agent, and connectors",
   "bin": {
     "hominem": "./build/hominem"
   },
@@ -11,6 +11,7 @@
     "build": "tsc --noEmit && bun build --compile --loader .py:text src/index.ts --outfile build/hominem",
     "dev": "bun run src/index.ts",
     "install:local": "bun run build && mkdir -p ~/.local/bin && cp build/hominem ~/.local/bin/hominem",
+    "install:profiles": "scripts/install-profiles.sh",
     "test": "vitest run src && node --test tests/agent/*.test.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit",
     "format": "oxfmt src tests/agent --write",
@@ -28,9 +29,29 @@
     "vitest": "catalog:"
   },
   "oclif": {
+    "additionalHelpFlags": [
+      "-h"
+    ],
     "bin": "hominem",
-    "commands": "./src/commands",
-    "devPlugins": [],
-    "dirname": "hominem"
+    "commands": {
+      "identifier": "COMMANDS",
+      "strategy": "explicit",
+      "target": "./src/commands/index.ts"
+    },
+    "dirname": "hominem",
+    "topics": {
+      "agent": {
+        "description": "The daily auth check launch agent"
+      },
+      "calendar": {
+        "description": "Read-only Google Calendar analysis"
+      },
+      "finance": {
+        "description": "Bank transactions. Sign in first with `hominem auth`"
+      },
+      "wealth": {
+        "description": "Personal finance routines. Sign in first with `hominem auth`. Output is JSON, except balances (text)"
+      }
+    }
   }
 }

@@ -2,6 +2,7 @@ import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
 import {
+  applyAccountUpdate,
   countOwnedAccounts,
   createAccount,
   createOrGetAccount,
@@ -13,7 +14,7 @@ import {
   listImportAccountSnapshots,
   updateAccount,
 } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
@@ -121,6 +122,9 @@ describeIntegration('finance accounts integration', () => {
             lifecycleStatus: 'open',
             includeInNetWorth: true,
             balanceCents: 1234,
+            provider: null,
+            providerAccountId: null,
+            accountNumber: null,
           },
         ],
         count: 1,
@@ -170,4 +174,98 @@ describeIntegration('finance accounts integration', () => {
     const stillExists = await getAccountById(created.id, ownerId);
     expect(stillExists?.name).toBe('Protected');
   });
+
+  financeIntegrationTest(
+    'routes provider identity on create-or-get and audits identity updates',
+    async () => {
+      const primary = await createOrGetAccount({
+        userId: ownerId,
+        name: 'Primary Checking',
+        currencyCode: 'GBP',
+        provider: 'Starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      expect(primary).toMatchObject({
+        created: true,
+        provider: 'starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      if (!primary.id) throw new Error('Expected account creation to return an id');
+
+      // Identity wins over a renamed request — the stored name is what comes back.
+      const renamed = await createOrGetAccount({
+        userId: ownerId,
+        name: 'Renamed Request',
+        currencyCode: 'GBP',
+        provider: 'starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      expect(renamed).toMatchObject({ created: false, id: primary.id, name: 'Primary Checking' });
+
+      // A name match never stamps the requested identity onto the existing account.
+      const card = await createOrGetAccount({
+        userId: ownerId,
+        name: 'Card Account',
+        currencyCode: 'GBP',
+      });
+      const stamped = await createOrGetAccount({
+        userId: ownerId,
+        name: 'Card Account',
+        currencyCode: 'GBP',
+        provider: 'plaid',
+        providerAccountId: 'it-card-uid',
+      });
+      expect(stamped).toMatchObject({
+        created: false,
+        id: card.id,
+        provider: null,
+        providerAccountId: null,
+      });
+
+      // Re-applying the identity it already holds is a no-op, not a change.
+      const update = await applyAccountUpdate(ownerId, primary.id, {
+        provider: 'starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      expect(update.updated).toBe(false);
+      expect(update.changes).toEqual({});
+
+      const cardId = card.id;
+      if (!cardId) throw new Error('Expected account creation to return an id');
+      const stamp = await applyAccountUpdate(ownerId, cardId, {
+        provider: 'plaid',
+        providerAccountId: 'it-card-uid',
+      });
+      expect(stamp).toMatchObject({
+        updated: true,
+        reason: null,
+        changes: {
+          provider: [null, 'plaid'],
+          providerAccountId: [null, 'it-card-uid'],
+        },
+      });
+
+      const clash = await applyAccountUpdate(ownerId, cardId, {
+        provider: 'starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      expect(clash).toMatchObject({ updated: false, reason: 'identity_conflict' });
+
+      const dangling = await applyAccountUpdate(ownerId, cardId, {
+        provider: null,
+        providerAccountId: 'it-card-uid',
+      });
+      expect(dangling).toMatchObject({ updated: false, reason: 'identity_requires_provider' });
+
+      // Uniqueness is per owner: the same identity may exist under another user.
+      const theirs = await createOrGetAccount({
+        userId: otherUserId,
+        name: 'Their Checking',
+        currencyCode: 'GBP',
+        provider: 'starling',
+        providerAccountId: 'it-primary-uid',
+      });
+      expect(theirs.created).toBe(true);
+    },
+  );
 });

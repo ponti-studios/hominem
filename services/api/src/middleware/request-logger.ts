@@ -1,6 +1,7 @@
 import {
   getTelemetryMeter,
   getTelemetryTracer,
+  logger,
   recordTelemetryException,
 } from '@hominem/telemetry';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
@@ -49,6 +50,15 @@ export function requestLogger(): MiddlewareHandler {
             'http.response.status_code': status,
           };
           requestDuration.record(durationMs / 1000, attributes);
+          // Opt-in while chasing a bug: the route template, never the raw path, query or ids.
+          if (process.env.LOG_REQUESTS === 'true') {
+            logger.info('http_request', {
+              method: c.req.method,
+              route,
+              statusCode: status,
+              durationMs,
+            });
+          }
         }
       },
     );

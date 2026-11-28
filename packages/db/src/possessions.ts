@@ -5,6 +5,11 @@ export {
   PossessionRepository,
   VesselConfigRepository,
 } from './services/possessions/possession.repository';
+export { PossessionImageRepository } from './services/possessions/possession-image.repository';
+export type {
+  AttachPossessionImageInput,
+  PossessionImageRecord,
+} from './services/possessions/possession-image.repository';
 export type {
   ContainerImpact,
   ContainerInput,

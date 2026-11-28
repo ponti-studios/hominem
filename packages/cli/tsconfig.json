@@ -1,11 +1,12 @@
 {
   "extends": "../../tsconfig.profiles/package.json",
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "./build",
     "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.json"],
+  "include": ["src/**/*.ts", "src/**/*.json", "package.json"],
   "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
 }

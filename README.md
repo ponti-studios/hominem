@@ -124,13 +124,13 @@ The default direction is from apps into shared packages, and from shared package
 
 ## Ponti UI package
 
-`@ponti-studios/ui` is the published Ponti Studios UI package. Install it from npm; do not copy its source into this repository.
+`@ponti-studios/ui` is the published Ponti Studios UI package. It comes from GitHub Packages; do not copy its source into this repository.
+
+The committed `.npmrc` maps the scope. GitHub Packages needs a token even for reads, so put yours in your user `~/.npmrc`, never in the repo:
 
 ```bash
-@ponti-studios:registry=https://registry.npmjs.org
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
 ```
-
-Consumers that need authentication should configure an npm token outside the committed project `.npmrc`.
 
 ## Commands
 

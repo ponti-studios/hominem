@@ -1,6 +1,5 @@
 import crypto from 'node:crypto';
 
-import { db, sql } from '@hominem/db/core';
 import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
@@ -12,7 +11,8 @@ import {
   saveRunwayBudget,
   saveRunwayCurrency,
 } from './runway';
-import { financeIntegrationTest } from './test-utils';
+import { patchAccount, seedCategory, seedTransaction } from './test/factory';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
@@ -22,38 +22,6 @@ describeIntegration('finance runway integration', () => {
   let ownerId: string;
   let otherUserId: string;
   let checkingId: string;
-
-  async function seedTransaction(input: {
-    accountId: string;
-    userId?: string;
-    amount: number;
-    transactionType: string;
-    description: string;
-    postedOn: string;
-    recurring?: boolean;
-    pending?: boolean;
-    excluded?: boolean;
-    currencyCode?: string;
-  }): Promise<void> {
-    await sql`
-      insert into app.finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, posted_on, recurring, pending, excluded, currency_code
-      )
-      values (
-        ${crypto.randomUUID()},
-        ${input.userId ?? ownerId},
-        ${input.accountId},
-        ${input.amount},
-        ${input.transactionType},
-        ${input.description},
-        ${input.postedOn},
-        ${input.recurring ?? false},
-        ${input.pending ?? false},
-        ${input.excluded ?? false},
-        ${input.currencyCode ?? 'USD'}
-      )
-    `.execute(db);
-  }
 
   financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
     ownerId = financeFixture.ownerId;
@@ -82,6 +50,7 @@ describeIntegration('finance runway integration', () => {
     });
 
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: 2000,
       transactionType: 'credit',
@@ -89,6 +58,7 @@ describeIntegration('finance runway integration', () => {
       postedOn: '2026-03-15',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: savings.id,
       amount: 500,
       transactionType: 'credit',
@@ -96,6 +66,7 @@ describeIntegration('finance runway integration', () => {
       postedOn: '2026-02-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: card.id,
       amount: -300,
       transactionType: 'debit',
@@ -104,6 +75,7 @@ describeIntegration('finance runway integration', () => {
     });
 
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -100,
       transactionType: 'debit',
@@ -112,6 +84,7 @@ describeIntegration('finance runway integration', () => {
       recurring: true,
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -70,
       transactionType: 'debit',
@@ -120,6 +93,7 @@ describeIntegration('finance runway integration', () => {
       recurring: true,
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -70,
       transactionType: 'debit',
@@ -178,6 +152,7 @@ describeIntegration('finance runway integration', () => {
     'ignores adjustments, credits, out-of-window, and excluded rows in the recurring average',
     async () => {
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -50,
         transactionType: 'adjustment',
@@ -186,6 +161,7 @@ describeIntegration('finance runway integration', () => {
         recurring: true,
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: 30,
         transactionType: 'credit',
@@ -194,6 +170,7 @@ describeIntegration('finance runway integration', () => {
         recurring: true,
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -60,
         transactionType: 'debit',
@@ -202,6 +179,7 @@ describeIntegration('finance runway integration', () => {
         recurring: true,
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -60,
         transactionType: 'debit',
@@ -264,10 +242,8 @@ describeIntegration('finance runway integration', () => {
         accountType: 'checking',
         currencyCode: 'EUR',
       });
-      await sql`update app.finance_accounts set currency_code = 'EUR' where id = ${euro.id}`.execute(
-        db,
-      );
       await seedTransaction({
+        userId: ownerId,
         accountId: euro.id,
         amount: 500,
         transactionType: 'credit',
@@ -276,6 +252,7 @@ describeIntegration('finance runway integration', () => {
         currencyCode: 'EUR',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: euro.id,
         amount: -90,
         transactionType: 'debit',
@@ -285,6 +262,7 @@ describeIntegration('finance runway integration', () => {
         currencyCode: 'EUR',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: euro.id,
         amount: -90,
         transactionType: 'debit',
@@ -295,12 +273,8 @@ describeIntegration('finance runway integration', () => {
       });
       const categoryId = crypto.randomUUID();
       const otherCategoryId = crypto.randomUUID();
-      await sql`insert into app.finance_categories (id, user_id, name) values (${categoryId}, ${ownerId}, 'Rent')`.execute(
-        db,
-      );
-      await sql`insert into app.finance_categories (id, user_id, name) values (${otherCategoryId}, ${otherUserId}, 'Other rent')`.execute(
-        db,
-      );
+      await seedCategory({ id: categoryId, userId: ownerId, name: 'Rent' });
+      await seedCategory({ id: otherCategoryId, userId: otherUserId, name: 'Other rent' });
       await saveRunwayBudget({ userId: ownerId, categoryId, currencyCode: 'EUR', amount: 300 });
       await saveRunwayCurrency(ownerId, 'EUR');
 
@@ -337,10 +311,9 @@ describeIntegration('finance runway integration', () => {
   financeIntegrationTest(
     'includes currencies allowed on a liquid account even when they are not its primary currency',
     async () => {
-      await sql`update app.finance_accounts set allowed_currencies = array['USD', 'GBP'] where id = ${checkingId}`.execute(
-        db,
-      );
+      await patchAccount(checkingId, { allowedCurrencies: ['USD', 'GBP'] });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: 300,
         transactionType: 'credit',
@@ -349,6 +322,7 @@ describeIntegration('finance runway integration', () => {
         currencyCode: 'GBP',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -60,
         transactionType: 'debit',
@@ -390,11 +364,9 @@ describeIntegration('finance runway integration', () => {
         accountType: 'checking',
         currencyCode: 'EUR',
       });
-      await sql`update app.finance_accounts set currency_code = 'EUR' where id = ${euroChecking.id}`.execute(
-        db,
-      );
       await saveRunwayCurrency(ownerId, 'USD');
       await seedTransaction({
+        userId: ownerId,
         accountId: euroChecking.id,
         amount: 1000,
         transactionType: 'credit',
@@ -403,6 +375,7 @@ describeIntegration('finance runway integration', () => {
         currencyCode: 'EUR',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -60,
         transactionType: 'debit',
@@ -411,6 +384,7 @@ describeIntegration('finance runway integration', () => {
         excluded: true,
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -30,
         transactionType: 'debit',
@@ -419,6 +393,7 @@ describeIntegration('finance runway integration', () => {
         pending: true,
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -40,
         transactionType: 'debit',

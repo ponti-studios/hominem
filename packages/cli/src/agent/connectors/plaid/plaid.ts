@@ -15,7 +15,7 @@ import {
   plaidLiabilities,
   plaidSetupStatus,
   plaidTransactionsWindow,
-} from '../../systems/wealth-manager/plaid.ts';
+} from './client.ts';
 
 const AUTH_TIMEOUT_MS = 10 * 60_000;
 

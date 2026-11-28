@@ -44,7 +44,7 @@ describe('billing repository', () => {
       stripeSubscriptionId: `sub_${userId}`,
       pricePence: 999,
       founding: false,
-      currentPeriodEnd: new Date('2026-11-26T00:00:00.000Z'),
+      currentPeriodEnd: new Date('2099-01-01T00:00:00.000Z'),
       cancelAtPeriodEnd: false,
       ...overrides,
     };
@@ -62,7 +62,7 @@ describe('billing repository', () => {
       tier: 'core',
       pricePence: 799,
       founding: true,
-      currentPeriodEnd: '2026-11-26T00:00:00.000Z',
+      currentPeriodEnd: '2099-01-01T00:00:00.000Z',
     });
   });
 
@@ -117,7 +117,7 @@ describe('billing repository', () => {
 
   it('releases a founding seat when its subscription ends', async () => {
     const founders = await seedFounders('released');
-    expect(await countFoundingSeats(db, new Date('2026-11-27T00:00:00.000Z'))).toBe(0);
+    expect(await countFoundingSeats(db, new Date('2099-01-02T00:00:00.000Z'))).toBe(0);
 
     const endedUserId = founders[0]!;
     await save(

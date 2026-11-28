@@ -1,12 +1,10 @@
-import crypto from 'node:crypto';
-
-import { db, sql } from '@hominem/db/core';
 import { isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { expect } from 'vitest';
 
 import { findTransferPairs, getValidationGates } from './diagnostics';
 import { createAccount } from './index';
-import { financeIntegrationTest } from './test-utils';
+import { seedTransaction } from './test/factory';
+import { financeIntegrationTest } from './test/fixtures';
 
 const describeIntegration = (await isIntegrationDatabaseAvailable())
   ? financeIntegrationTest.describe
@@ -17,32 +15,6 @@ describeIntegration('finance diagnostics integration', () => {
   let otherUserId: string;
   let checkingId: string;
   let savingsId: string;
-
-  async function seedTransaction(input: {
-    accountId: string;
-    userId?: string;
-    amount: number;
-    transactionType: string;
-    description: string | null;
-    postedOn: string;
-    categoryId?: string | null;
-  }): Promise<void> {
-    await sql`
-      insert into app.finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, posted_on, category_id
-      )
-      values (
-        ${crypto.randomUUID()},
-        ${input.userId ?? ownerId},
-        ${input.accountId},
-        ${input.amount},
-        ${input.transactionType},
-        ${input.description},
-        ${input.postedOn},
-        ${input.categoryId ?? null}
-      )
-    `.execute(db);
-  }
 
   financeIntegrationTest.beforeEach(async ({ financeFixture }) => {
     ownerId = financeFixture.ownerId;
@@ -65,6 +37,7 @@ describeIntegration('finance diagnostics integration', () => {
 
   financeIntegrationTest('finds cross-account transfer pairs and excludes lookalikes', async () => {
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -500,
       transactionType: 'transfer',
@@ -72,6 +45,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: savingsId,
       amount: 500,
       transactionType: 'transfer',
@@ -79,6 +53,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-02',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -500,
       transactionType: 'debit',
@@ -86,6 +61,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -20,
       transactionType: 'transfer',
@@ -93,6 +69,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: savingsId,
       amount: 20,
       transactionType: 'transfer',
@@ -100,6 +77,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: -700,
       transactionType: 'transfer',
@@ -107,6 +85,7 @@ describeIntegration('finance diagnostics integration', () => {
       postedOn: '2026-03-01',
     });
     await seedTransaction({
+      userId: ownerId,
       accountId: savingsId,
       amount: 700,
       transactionType: 'transfer',
@@ -140,6 +119,7 @@ describeIntegration('finance diagnostics integration', () => {
     'reports duplicates, sign violations, empty accounts, and coverage',
     async () => {
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -4.5,
         transactionType: 'debit',
@@ -147,6 +127,7 @@ describeIntegration('finance diagnostics integration', () => {
         postedOn: '2026-03-01',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: -4.5,
         transactionType: 'debit',
@@ -154,6 +135,7 @@ describeIntegration('finance diagnostics integration', () => {
         postedOn: '2026-03-01',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: checkingId,
         amount: 50,
         transactionType: 'debit',
@@ -161,6 +143,7 @@ describeIntegration('finance diagnostics integration', () => {
         postedOn: '2026-03-02',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: savingsId,
         amount: -25,
         transactionType: 'credit',
@@ -168,6 +151,7 @@ describeIntegration('finance diagnostics integration', () => {
         postedOn: '2026-03-02',
       });
       await seedTransaction({
+        userId: ownerId,
         accountId: savingsId,
         amount: -10,
         transactionType: 'debit',
@@ -200,6 +184,7 @@ describeIntegration('finance diagnostics integration', () => {
 
   financeIntegrationTest('scopes gates and pairs to the current user', async () => {
     await seedTransaction({
+      userId: ownerId,
       accountId: checkingId,
       amount: 50,
       transactionType: 'debit',

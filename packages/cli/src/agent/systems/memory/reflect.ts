@@ -692,6 +692,7 @@ export async function runReflect(raw: string, argv: string[] = []): Promise<numb
   return exit;
 }
 
+/** Loaded by path from tests/agent/run_module.ts, which knip can't see. @public */
 export async function main(): Promise<number> {
   return runReflect(await readStdin(), process.argv.slice(2));
 }

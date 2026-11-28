@@ -280,7 +280,7 @@ async function assertNestedBudgets(
   });
 }
 
-export async function listBudgets(ownerUserId: string) {
+export async function listBudgets(ownerUserId: string, now: Date = new Date()) {
   const primaryCurrency = await FinanceBudgetRepository.getPrimaryCurrency(db, ownerUserId);
   const categoryBudgets = await FinanceBudgetRepository.list(db, ownerUserId, 500);
   const budgets = primaryCurrency
@@ -322,7 +322,6 @@ export async function listBudgets(ownerUserId: string) {
       ),
     };
   }
-  const now = new Date();
   const statuses = await Promise.all(
     budgets.map((budget) => toStatus(budget, primaryCurrency, now)),
   );

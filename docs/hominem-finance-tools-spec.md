@@ -1,7 +1,7 @@
 # Hominem Finance Tools — Extension Spec
 
 **Author:** the operator, for the coding agent · **Date:** 2026-10-13
-**Status:** Ready to build · **Scope:** MCP finance domain at api.ponti.io
+**Status:** §1–§8 built · §8a/§8b (provider identity + sync doctrine) implemented on `feature/finance-sync-doctrine` (2026-11-22) · **Scope:** MCP finance domain at api.ponti.io
 **Evidence base:** the 2026-10-13 finance port (16,426 sheet rows → 14,486
 reconciled transactions) and bug log B1–B6 (`finance-import/bug-log.md`).
 
@@ -44,6 +44,10 @@ ground-truth numbers from the completed reconciliation.
   American Express Platinum permits USD and GBP.
 - `finance_transaction_upsert` accepts all persisted transaction types,
   including `adjustment`.
+- 2026-11-22: everything in the §10 order is built — the finance surface
+  is 26 tools, with §8's `counterpartId` in the write/read models. §8a
+  (provider account identity) and §8b (the sync doctrine store) extend
+  the surface to 28 tools on `feature/finance-sync-doctrine`.
 
 ## 1. Cross-cutting conventions (apply to every tool in this spec)
 
@@ -80,14 +84,14 @@ accounts; the daily provider sync will keep surfacing new accounts
 
 **Input**
 
-| field               | type                  | req | notes                                                                           |
-| ------------------- | --------------------- | --- | ------------------------------------------------------------------------------- |
-| `name`              | string                | ✓   | display name, non-empty                                                         |
-| `currencyCode`      | string                | ✓   | ISO 4217                                                                        |
-| `allowedCurrencies` | string[]              |     | additional accepted transaction currencies; primary currency is always included |
-| `institution`       | string                |     | e.g. "Acme Bank"                                                                |
-| `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                         |
-| `status`            | enum `open`\|`closed` |     | default `open`                                                                  |
+| field               | type                  | req | notes                                                                               |
+| ------------------- | --------------------- | --- | ----------------------------------------------------------------------------------- |
+| `name`              | string                | ✓   | display name, non-empty                                                             |
+| `currencyCode`      | string                | ✓   | ISO 4217                                                                            |
+| `allowedCurrencies` | string[]              |     | additional accepted transaction currencies; primary currency is always included     |
+| `institution`       | string                |     | e.g. "Acme Bank"                                                                    |
+| `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                             |
+| `status`            | enum `open`\|`closed` |     | default `open`                                                                      |
 | `includeInNetWorth` | boolean               |     | counts toward net worth; default `true`; an existing account keeps its stored value |
 
 **Behavior.** §1.2 applies (open and closed accounts both match). Returns
@@ -298,14 +302,137 @@ double-counts internal movement (cf. `finance_net_worth`).
 - Deleting a row (§4) clears the link on its counterpart.
 - The target must exist and belong to a different account; violations →
   `invalid_counterpart`.
-- **No auto-detection in v1.** Pairing heuristics are a client concern
-  (the operator proved the manual workflow tonight); the model's job is
-  to hold the link once known.
+- Provider sync may link mutually unique, opposite-amount, same-currency
+  transfers across accounts within three days. It locks and verifies both
+  owner-scoped rows before linking them without rewriting annotations. Other
+  write paths do not auto-detect transfers.
 
 **Acceptance (live).** Link a real pair — the two legs of a dated internal
 transfer (one on each account) — read both back, link
 present on both sides; delete-probe on a synthetic pair clears the
 survivor's link.
+
+## 8a. Provider account identity — sync routing (2026-11-22, implemented)
+
+**Problem.** The daily provider sync (Siera's wealth-manager) routed rows
+to accounts via a label table inside sync code. Labels drift, ids differ
+per environment, and the system of record had no notion of a provider
+at all.
+
+**Change.** `app.finance_accounts` gains `provider_account_id`;
+`(user_id, provider, provider_account_id)` is unique. The account tools
+all speak it:
+
+- `provider` — sync slug (`starling`, `plaid`), lowercased on write.
+- `providerAccountId` — the bank-side id. Starling routes by
+  `(provider, providerAccountId)` (account and saver UIDs); Plaid-fed
+  accounts carry no provider identity and route by their mask
+  (`accountNumber`, the last digits).
+- `finance_account_create` routes identity-first: a create whose
+  `(provider, providerAccountId)` matches an existing account returns it
+  (`created: false`); a name match with no identity given resolves by
+  name and **never stamps identity** — get stays side-effect free.
+  Stamping goes through `finance_account_update`.
+- `finance_account_update` owns identity changes: unique per user
+  (`identity_conflict`); a `providerAccountId` without a `provider` is
+  refused (`identity_requires_provider`); every change audited in
+  `changes`.
+- `finance_accounts` returns `provider`, `providerAccountId` and
+  `accountNumber`, so a sync resolves routing without a second store.
+
+**Acceptance.** 18 tests (12 MCP identity + 6 integration): identity
+create/normalize, identity-before-name, no stamp on name match, routing
+fields on read, per-owner uniqueness, stamping audit, both refusal
+reasons, clean clear, dryRun projection. Live: the dev DB carries eleven
+verified routing identities for the operator, seeded through the service
+layer and read back.
+
+## 8b. `finance_doctrine_get` + `finance_doctrine_import` — the sync doctrine store (2026-11-22, implemented)
+
+**Problem.** The deterministic ingest doctrine — ordered merchant, tag
+and amount rules, row-class transfer and income detection, coffee
+patterns, category tag lenses — lived as code inside the sync, i.e. the
+owner's financial rulings in a connector repo: unversioned, unaudited,
+and duplicated per machine.
+
+**Change.** One fingerprinted jsonb doctrine row per user
+(`app.finance_sync_doctrine`, RLS, literal `version: 1`), served by two
+tools:
+
+- `finance_doctrine_get` (finance:read) → `{ fingerprint, updatedAt,
+  doctrine }`.
+- `finance_doctrine_import` (finance:write) → full replace, idempotent
+  by the server-computed SHA-256 fingerprint (an identical re-import
+  reports `unchanged` and writes nothing; the fingerprint is never
+  client-supplied), `dryRun` projects without writing, `ruleCounts` in
+  every result.
+
+**Doctrine shape (v1).** `merchantRules` (matchMode/pattern/category),
+`tagRules` (matchMode/pattern/tags), `amountRules` (merchant +
+amountMinorUnits[] → category — only known prices auto-map),
+`transferMerchants` (matchMode/pattern/unlessAccountContains?),
+`incomePatterns`, `coffeePatterns[]`, `lenses` (category → matches,
+each matchMode/pattern/tag). matchMode: `exact` | `contains` |
+`startsWith`; defaults `contains` for rules, `exact` for
+transferMerchants.
+
+**Ordering is law.** All rule lists are first-match-wins by list order
+(train operators before the generic 'railway' hosting rule). The engine
+order is the server sync's contract: row-class detection
+(transfers/income) runs before categorization, and amount rules fire
+before merchant rules.
+
+**Non-goals, carried verbatim.** This is not `finance_rules` (§7b,
+category-only automation) and not the rulings rulebooks
+(suggestions-only); the doctrine is the deterministic ingest layer. The
+archived sync's exact-merchant layer (425 rules in
+`merchant_category_rules.json`) was never salvaged — the doctrine
+carries only the ordered substring rulings that survived inline, so
+rows the exact layer used to catch now queue for a ruling instead of
+being guessed.
+
+### Provider sync and local adapter
+
+`finance_sync` accepts provider feed data, not provider credentials. It resolves
+the authenticated owner's accounts and doctrine, routes and classifies rows,
+and imports settled transactions. Starling feed UIDs and Plaid transaction IDs
+are retained as provider identities; an exact natural-key match can adopt a
+stable ID when it first appears. Existing provider annotations are preserved
+unless an import explicitly requests `overwriteAnnotations`. Unroutable rows
+are held rather than guessed. When the CLI sends multiple batches, linking runs
+after all successful batches have landed.
+
+`finance_seed` provisions Starling identities and optionally imports doctrine.
+A same-named account without the requested identity must be linked explicitly;
+seeding does not claim or stamp it. `finance_balances` normalizes a caller's
+live Starling snapshot and reports cleared balances plus Spaces per currency.
+The CLI obtains provider data locally and authenticates to Hominem with OAuth;
+provider credentials are never sent to these tools. The current two-decimal
+money assumptions are unchanged pending the separate multi-currency rollout.
+
+### Owner report routines
+
+`finance_wealth_brief`, `finance_wealth_look`, `finance_wealth_close`, and
+`finance_wealth_integrity` are read-only `finance:read` tools that compute the
+morning brief, forward look, monthly close markdown, and integrity flags from
+the authenticated owner's ledger. Callers supply machine-local inputs: the
+previous bill snapshot (returned, never stored), look inputs and an optional
+USD-to-GBP rate, close anchors and cache, and integrity's sync checkpoint,
+anchors, watches, raw Plaid accounts, transactions, and liabilities, and raw
+Starling feeds. Starling feeds are normalized with the shared ingest code.
+When Plaid transactions start after an account's latest ledger date
+(`transactions_since`), its drift check is skipped and named rather than
+miscomputed. These routines keep their current GBP/USD assumptions; whether
+they become product features is open decision D11.
+
+**Acceptance.** 7 DB-backed MCP tests (empty read, created with
+canonicalized defaults, unchanged fingerprint, replaced, dryRun
+projection, shape rejection, per-user isolation). Live: the operator's
+real doctrine is seeded in the dev DB and read-back verified —
+re-import reports `unchanged` (fingerprint idempotency), counts
+merchantRules 54 / tagRules 33 / amountRules 2 / transferMerchants 7 /
+incomePatterns 5 / coffeePatterns 8 / lenses 7, every dated ruling
+carried verbatim into its rule's `note`.
 
 ## 9. Appendix — reconciliation ground truth
 
@@ -325,7 +452,12 @@ that total is the invariant §3 must reproduce.
 later acceptance cheap) → §4 → §5 → §6 → §7 → §8.
 
 **Non-goals:** account delete/merge (destructive, no current need);
-automatic transfer detection (v1 stores links, clients propose them);
+general automatic transfer detection outside provider sync;
 raising the search `limit` cap (superseded by §3 for reconciliation;
 fine to raise independently if trivial); any change to natural-key or
 import semantics.
+
+**2026-11-22 status:** the order above is complete. §8a + §8b (provider
+identity, sync doctrine) are the newest surface, implemented on
+`feature/finance-sync-doctrine` — doctrine data and seed inputs stay
+machine-local, never committed.

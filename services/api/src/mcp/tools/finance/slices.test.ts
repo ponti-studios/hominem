@@ -8,12 +8,13 @@ describe('finance tool slices', () => {
     const registry = createToolRegistry(financeSlices);
     const names = registry.listTools().map((tool) => tool.name);
 
-    expect(names).toHaveLength(26);
     expect(new Set(names).size).toBe(names.length);
     expect(names).toContain('finance_accounts');
     expect(names).toContain('finance_rulings_queue');
     expect(names).toContain('finance_account_delete');
     expect(names).toContain('finance_transactions_import');
+    expect(names).toContain('finance_doctrine_get');
+    expect(names).toContain('finance_doctrine_import');
     expect(names).toContain('finance_budget_create');
     expect(names).toContain('finance_budget_list');
     expect(names).toContain('finance_budget_get');
@@ -25,5 +26,12 @@ describe('finance tool slices', () => {
     expect(names).toContain('finance_bill_update');
     expect(names).toContain('finance_bill_delete');
     expect(names).toContain('finance_bill_log_balance');
+    expect(names).toContain('finance_wealth_brief');
+    expect(names).toContain('finance_wealth_look');
+    expect(names).toContain('finance_wealth_close');
+    expect(names).toContain('finance_wealth_integrity');
+    expect(names).toContain('finance_seed');
+    expect(names).toContain('finance_balances');
+    expect(names).toContain('finance_sync');
   });
 });

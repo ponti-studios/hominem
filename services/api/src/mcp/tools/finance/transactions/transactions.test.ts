@@ -9,6 +9,7 @@ describe('finance transactions slice', () => {
 
     expect(registry.listTools().map((tool) => tool.name)).toEqual([
       'finance_recent_transactions',
+      'finance_sync',
       'finance_transaction_delete',
       'finance_transaction_move',
       'finance_transaction_search',

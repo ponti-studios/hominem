@@ -125,6 +125,7 @@ export async function auditStream(
   return out;
 }
 
+/** Loaded by path from tests/agent/run_module.ts, which knip can't see. @public */
 export async function main(): Promise<void> {
   const runId = Number(process.argv[2]);
   const rl = createInterface({ input: process.stdin, crlfDelay: Infinity });

@@ -1,7 +1,14 @@
-import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import {
+  removeUsers,
+  resetUsers,
+  seedAccounts,
+  seedTransaction,
+} from '@hominem/finance-services/test/factory';
+import { accountById } from '@hominem/finance-services/test/readers';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { structuredContent } from '../../testkit/fixtures/mcp-content';
+import { callTool } from '../tool-registry';
 import './finance';
 
 const userId = 'f2000100-0000-4000-8000-000000000001';
@@ -31,75 +38,33 @@ type Content = {
   allowedCurrencies?: string[];
 };
 
-function content(res: McpToolResult<Content>): Content {
-  return res.structuredContent ?? {};
-}
-
-function account(
-  id: string,
-  owner: string,
-  name: string,
-  lifecycleStatus: string,
-  type = 'checking',
-) {
-  return {
-    id,
-    userId: owner,
-    name,
-    accountType: type,
-    currencyCode: 'USD',
-    lifecycleStatus,
-    includeInNetWorth: lifecycleStatus === 'open',
-    metadata: {},
-  };
-}
-
-async function nameOf(id: string): Promise<string | undefined> {
-  const row = await db
-    .selectFrom('app.financeAccounts')
-    .select('name')
-    .where('id', '=', id)
-    .executeTakeFirst();
-  return row?.name;
-}
+const content = structuredContent<Content>;
 
 beforeAll(async () => {
-  for (const id of [userId, otherUserId]) {
-    await pool.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-      [id, `Account Update User ${id}`, `${id}@test.hominem.dev`, true],
-    );
-    await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
-  }
-
-  await db
-    .insertInto('app.financeAccounts')
-    .values([
-      account(typoId, userId, 'Exmaple Broker', 'open'),
-      account(appleId, userId, 'Example Savings', 'open', 'savings'),
-      account(probeId, userId, 'ZZZ Probe Account', 'closed'),
-      account(otherAccountId, otherUserId, 'Other Account', 'open'),
-    ])
-    .execute();
-
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id: 'f2000102-0000-4000-8000-000000000001',
-      userId,
-      accountId: typoId,
-      postedOn: '2026-07-01',
-      description: 'Kept row',
-      amount: -1234,
-      currencyCode: 'USD',
-      transactionType: 'debit',
-      pending: false,
-      excluded: false,
-      externalId: 'acct-update-ext-1',
-      providerPayload: {},
-    })
-    .execute();
+  await resetUsers(userId, otherUserId);
+  await seedAccounts(userId, [
+    { id: typoId, name: 'Exmaple Broker' },
+    { id: appleId, name: 'Example Savings', accountType: 'savings' },
+    {
+      id: probeId,
+      name: 'ZZZ Probe Account',
+      lifecycleStatus: 'closed',
+      includeInNetWorth: false,
+    },
+    { id: otherAccountId, userId: otherUserId, name: 'Other Account' },
+  ]);
+  await seedTransaction({
+    id: 'f2000102-0000-4000-8000-000000000001',
+    userId,
+    accountId: typoId,
+    postedOn: '2026-07-01',
+    description: 'Kept row',
+    amount: -1234,
+    externalId: 'acct-update-ext-1',
+  });
 });
+
+afterAll(() => removeUsers(userId, otherUserId));
 
 describe('finance_account_update', () => {
   it('fixes a name typo and keeps the account identity and its history', async () => {
@@ -117,7 +82,7 @@ describe('finance_account_update', () => {
     expect(result).toMatchObject({ updated: true, dryRun: false });
     expect(result.id).toBe(typoId);
     expect(result.changes).toEqual({ name: ['Exmaple Broker', 'Example Broker'] });
-    expect(await nameOf(typoId)).toBe('Example Broker');
+    expect((await accountById(typoId))?.name).toBe('Example Broker');
 
     const after = content(await callTool(userId, 'finance_account_summary', { accountId: typoId }));
     expect(after.accounts?.[0]).toMatchObject({ accountId: typoId, accountName: 'Example Broker' });
@@ -132,8 +97,8 @@ describe('finance_account_update', () => {
       }),
     );
     expect(result.reason).toBe('name_conflict');
-    expect(await nameOf(appleId)).toBe('Example Savings');
-    expect(await nameOf(typoId)).toBe('Example Broker');
+    expect((await accountById(appleId))?.name).toBe('Example Savings');
+    expect((await accountById(typoId))?.name).toBe('Example Broker');
   });
 
   it('allows re-casing the account’s own name', async () => {
@@ -190,7 +155,7 @@ describe('finance_account_update', () => {
     );
     expect(result).toMatchObject({ updated: true, dryRun: true });
     expect(result.changes).toEqual({ name: ['example savings', 'Example Savings'] });
-    expect(await nameOf(appleId)).toBe('example savings');
+    expect((await accountById(appleId))?.name).toBe('example savings');
   });
 
   it('refuses a currency change and a blank name', async () => {
@@ -254,11 +219,7 @@ describe('finance_account_update', () => {
       updated: true,
     });
 
-    const row = await db
-      .selectFrom('app.financeAccounts')
-      .select(['currencyCode', 'allowedCurrencies'])
-      .where('id', '=', appleId)
-      .executeTakeFirstOrThrow();
+    const row = await accountById(appleId);
     expect(row).toMatchObject({ currencyCode: 'USD', allowedCurrencies: ['USD', 'GBP'] });
 
     const reordered = content(
@@ -281,7 +242,7 @@ describe('finance_account_update', () => {
       }),
     );
     expect(result.reason).toBe('unknown_account');
-    expect(await nameOf(otherAccountId)).toBe('Other Account');
+    expect((await accountById(otherAccountId))?.name).toBe('Other Account');
   });
 
   it('reports an unknown account id', async () => {

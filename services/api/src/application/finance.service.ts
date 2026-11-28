@@ -9,6 +9,7 @@ import {
   listFinanceCategories,
   toSheetRejectionReason,
   upsertSheetTransaction,
+  type SheetBatchOptions,
   type SheetTransactionInput,
 } from '@hominem/finance-services';
 
@@ -535,13 +536,7 @@ export async function upsertFinanceTransaction(
 
 export async function importFinanceTransactions(
   ownerUserId: string,
-  options: {
-    transactions: SheetTransactionInput[];
-    mode?: 'append' | 'replace';
-    dryRun?: boolean;
-    accountMap?: Record<string, string>;
-    iUnderstand?: boolean;
-  },
+  options: SheetBatchOptions & { transactions: SheetTransactionInput[] },
 ) {
   return importSheetTransactions(ownerUserId, options);
 }
