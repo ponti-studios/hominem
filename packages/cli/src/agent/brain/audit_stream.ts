@@ -16,6 +16,7 @@
  */
 import { createInterface } from 'node:readline';
 
+import { asRecord, isRecord, records } from '../guards.ts';
 import { finishRun, logEvent } from '../log/agent_log.ts';
 
 const MCP_TOOL = /^mcp__(.+?)__(.+)$/;
@@ -38,14 +39,14 @@ type Json = Record<string, unknown>;
 function textOf(content: unknown): string {
   if (!Array.isArray(content)) return '';
   return content
-    .filter((c): c is Json => !!c && typeof c === 'object' && (c as Json)['type'] === 'text')
+    .filter((c): c is Json => isRecord(c) && c['type'] === 'text')
     .map((c) => String(c['text'] ?? ''))
     .join('');
 }
 
 /** Parse an MCP text payload as JSON when it is JSON; keep it raw otherwise. */
 function responseOf(result: unknown): unknown {
-  const content = (result as Json | undefined)?.['content'];
+  const content = asRecord(result)?.['content'];
   const text = textOf(content);
   try {
     return JSON.parse(text);
@@ -66,7 +67,9 @@ export async function auditStream(
     if (!line.trim()) continue;
     let e: Json;
     try {
-      e = JSON.parse(line) as Json;
+      const parsed: unknown = JSON.parse(line);
+      if (!isRecord(parsed)) continue;
+      e = parsed;
     } catch {
       continue; // non-JSON noise is not an event
     }
@@ -110,7 +113,7 @@ export async function auditStream(
           error: isError
             ? {
                 error: 'mcp_tool_error',
-                message: textOf((e['result'] as Json)?.['content']).slice(0, 500),
+                message: textOf(asRecord(e['result'])?.['content']).slice(0, 500),
                 requestId: null,
               }
             : null,
@@ -118,7 +121,7 @@ export async function auditStream(
         }),
       );
     } else if (e['type'] === 'agent_end' && Array.isArray(e['messages'])) {
-      const assistant = (e['messages'] as Json[]).filter((m) => m['role'] === 'assistant');
+      const assistant = records(e['messages']).filter((m) => m['role'] === 'assistant');
       out.reply = textOf(assistant.at(-1)?.['content']);
     }
   }

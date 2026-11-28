@@ -48,6 +48,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
+import { asRecord, errorText, optionalString, records } from '../../guards.ts';
 import { finishRun, logEvent, logRun } from '../../log/agent_log.ts';
 
 /** seme's own memory kinds (from the seme MCP tool schema — never guessed). */
@@ -149,12 +150,8 @@ function slice(s: string, n = 60): string {
 
 // ------------------------------------------------------------- MCP client
 
-interface JsonRpcResponse {
-  jsonrpc: string;
-  id?: number | null;
-  result?: unknown;
-  error?: { code: number; message: string };
-}
+/** A parsed JSON-RPC reply; fields are checked where they're read. */
+type JsonRpcResponse = Record<string, unknown>;
 
 interface PendingCall {
   resolve: (r: JsonRpcResponse) => void;
@@ -198,17 +195,19 @@ class SemeMcp {
     const rl = createInterface({ input: this.proc.stdout, crlfDelay: Infinity });
     rl.on('line', (line) => {
       if (!line.trim()) return;
-      let msg: JsonRpcResponse;
+      let parsed: unknown;
       try {
-        msg = JSON.parse(line) as JsonRpcResponse;
+        parsed = JSON.parse(line);
       } catch {
         process.stderr.write(`reflect: non-JSON line from seme server: ${slice(line, 120)}\n`);
         return;
       }
-      if (typeof msg.id === 'number') {
-        const p = this.pending.get(msg.id);
+      const msg = asRecord(parsed);
+      const id = msg?.['id'];
+      if (msg && typeof id === 'number') {
+        const p = this.pending.get(id);
         if (p) {
-          this.pending.delete(msg.id);
+          this.pending.delete(id);
           clearTimeout(p.timer);
           p.resolve(msg);
         }
@@ -250,27 +249,26 @@ class SemeMcp {
       return {
         ok: false,
         result: null,
-        error: { error: 'mcp_call_failed', message: (e as Error).message },
+        error: { error: 'mcp_call_failed', message: errorText(e) },
       };
     }
-    if (msg.error) {
+    if (msg['error']) {
+      const failure = asRecord(msg['error']);
       return {
         ok: false,
         result: null,
-        error: { error: msg.error.code, message: msg.error.message },
+        error: { error: failure?.['code'], message: String(failure?.['message']) },
       };
     }
-    const result = msg.result as
-      | { content?: Array<{ type: string; text?: string }>; isError?: boolean }
-      | undefined;
-    const text = (result?.content ?? [])
-      .filter((c) => c.type === 'text')
-      .map((c) => c.text ?? '')
+    const result = asRecord(msg['result']);
+    const text = records(result?.['content'])
+      .filter((c) => c['type'] === 'text')
+      .map((c) => optionalString(c['text']) ?? '')
       .join('');
-    if (result?.isError === true) {
+    if (result?.['isError'] === true) {
       return {
         ok: false,
-        result: result.content ?? null,
+        result: result['content'] ?? null,
         error: { error: 'mcp_tool_error', message: slice(text, 500) },
       };
     }
@@ -320,9 +318,9 @@ async function auditedCall(
 
 function parseMemories(call: McpCallResult): SemeMemory[] {
   if (!call.ok) return [];
-  const r = call.result as { memories?: unknown } | null;
-  if (!r || typeof r !== 'object' || !Array.isArray(r.memories)) return [];
-  return (r.memories as Array<Record<string, unknown>>).flatMap((m) => {
+  const memories = asRecord(call.result)?.['memories'];
+  if (!Array.isArray(memories)) return [];
+  return records(memories).flatMap((m) => {
     const id = typeof m['id'] === 'string' ? m['id'] : null;
     const value = typeof m['value_text'] === 'string' ? m['value_text'] : null;
     if (id === null || value === null) return [];
@@ -417,7 +415,7 @@ async function processFact(
       eventIds,
     };
   }
-  const turn = (save.call.result as { turn_id?: string } | null)?.turn_id ?? '';
+  const turn = optionalString(asRecord(save.call.result)?.['turn_id']) ?? '';
   // What this run saves becomes a candidate for the facts after it.
   prior.push(thisRun(fact, turn));
 
@@ -518,7 +516,7 @@ function parseFacts(raw: string): { facts: Fact[]; error: string | null } {
     if (!text) continue;
     let obj: Record<string, unknown>;
     try {
-      obj = JSON.parse(text) as Record<string, unknown>;
+      obj = asRecord(JSON.parse(text)) ?? {};
     } catch {
       return { facts, error: `stdin line ${i + 1}: not JSON — ${slice(text)}` };
     }
@@ -590,7 +588,7 @@ export async function runReflect(raw: string, argv: string[] = []): Promise<numb
     mcp = new SemeMcp(command);
     await mcp.initialize();
   } catch (e) {
-    const message = (e as Error).message;
+    const message = errorText(e);
     process.stderr.write(`reflect: ${message}\n`);
     finishRun(runId, { status: 'failed', exitCode: 1, message });
     return 1;

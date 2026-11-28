@@ -8,6 +8,7 @@
 import { execFile } from 'node:child_process';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
+import { asRecord } from '../../guards.ts';
 import {
   plaidAccounts,
   plaidExchangePublicToken,
@@ -50,7 +51,7 @@ function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
     req.on('data', (chunk) => (raw += chunk));
     req.on('end', () => {
       try {
-        resolve(JSON.parse(raw || '{}') as Record<string, unknown>);
+        resolve(asRecord(JSON.parse(raw || '{}')) ?? {});
       } catch (error) {
         reject(error);
       }

@@ -14,6 +14,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'gws';
@@ -89,10 +90,8 @@ export function main(argv = process.argv.slice(2)): number {
   let isError = false;
   let error: unknown = null;
   let httpStatus: number | null = null;
-  const bodyRecord =
-    body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : null;
-  if (bodyRecord && typeof bodyRecord['error'] === 'object' && bodyRecord['error'] !== null) {
-    const gerr = bodyRecord['error'] as Record<string, unknown>;
+  const gerr = asRecord(asRecord(body)?.['error']);
+  if (gerr) {
     isError = true;
     const code = gerr['code'];
     if (typeof code === 'number') httpStatus = code;

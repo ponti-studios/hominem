@@ -13,6 +13,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'ponti';
@@ -28,10 +29,6 @@ function parseJson(raw: string): unknown {
   } catch {
     return raw;
   }
-}
-
-function asRecord(v: unknown): Record<string, unknown> | null {
-  return v !== null && typeof v === 'object' ? (v as Record<string, unknown>) : null;
 }
 
 export function main(args = process.argv.slice(2)): number {
@@ -64,13 +61,13 @@ export function main(args = process.argv.slice(2)): number {
   // Request side: `call <tool> --args '{...}'` / `--params`
   let tool: string | null = null;
   let arguments_: unknown = null;
+  const named = argv[1];
   if (
-    argv.length > 0 &&
     (argv[0] === 'call' || argv[0] === 'confirm') &&
-    argv.length > 1 &&
-    !argv[1]!.startsWith('-')
+    named !== undefined &&
+    !named.startsWith('-')
   ) {
-    tool = argv[1]!;
+    tool = named;
   }
   for (const flag of ['--args', '--params']) {
     const idx = argv.indexOf(flag);
@@ -103,10 +100,7 @@ export function main(args = process.argv.slice(2)): number {
       const content = container['content'];
       if (!Array.isArray(content)) continue;
       for (const item of content) {
-        const text =
-          item !== null && typeof item === 'object'
-            ? (item as Record<string, unknown>)['text']
-            : null;
+        const text = asRecord(item)?.['text'];
         if (typeof text !== 'string' || !text) continue;
         const inner = parseJson(text);
         const innerRecord = asRecord(inner);
