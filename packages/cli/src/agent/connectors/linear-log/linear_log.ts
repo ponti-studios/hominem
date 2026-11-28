@@ -13,6 +13,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'linear';
@@ -59,12 +60,8 @@ export function main(argv = process.argv.slice(2)): number {
 
   // Response side
   const body = parseJson(stdout);
-  const bodyRecord =
-    body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : null;
-  const result =
-    bodyRecord && typeof bodyRecord['result'] === 'object' && bodyRecord['result'] !== null
-      ? (bodyRecord['result'] as Record<string, unknown>)
-      : null;
+  const bodyRecord = asRecord(body);
+  const result = asRecord(bodyRecord?.['result']);
 
   const ok = bodyRecord ? bodyRecord['ok'] : null;
   const isError = result ? result['isError'] : null;
@@ -76,17 +73,11 @@ export function main(argv = process.argv.slice(2)): number {
   let httpStatus: number | null = null;
   if (result && Array.isArray(result['content'])) {
     for (const item of result['content']) {
-      if (item === null || typeof item !== 'object') continue;
-      const text = (item as Record<string, unknown>)['text'];
+      const text = asRecord(item)?.['text'];
       if (typeof text !== 'string' || !text) continue;
-      const inner = parseJson(text);
-      if (
-        inner !== null &&
-        typeof inner === 'object' &&
-        'error' in (inner as Record<string, unknown>)
-      ) {
-        const rec = inner as Record<string, unknown>;
-        if ('status' in rec) httpStatus = rec['status'] as number;
+      const rec = asRecord(parseJson(text));
+      if (rec && 'error' in rec) {
+        if (typeof rec['status'] === 'number') httpStatus = rec['status'];
         error = {
           error: rec['error'],
           message: rec['message'],

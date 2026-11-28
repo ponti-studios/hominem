@@ -359,7 +359,7 @@ function pullPrimary(start: string, end: string): unknown[] {
   const stderr = proc.stderr ?? '';
   let parsed: unknown;
   try {
-    parsed = JSON.parse(stdout) as unknown;
+    parsed = JSON.parse(stdout);
   } catch {
     parsed = stdout;
   }
@@ -561,7 +561,7 @@ export async function main(args: string[]): Promise<number> {
     let raw: unknown[];
     if (noPull) {
       if (!existsSync(cache)) throw new Error(`calendar cache not found: ${cache}`);
-      const parsed = JSON.parse(readFileSync(cache, 'utf8')) as unknown;
+      const parsed: unknown = JSON.parse(readFileSync(cache, 'utf8'));
       if (!Array.isArray(parsed)) throw new Error(`calendar cache is not an array: ${cache}`);
       raw = parsed;
     } else {

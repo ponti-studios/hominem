@@ -27,6 +27,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'instagram';
@@ -76,16 +77,11 @@ export function main(argv = process.argv.slice(2)): number {
       message: (stderr || (typeof body === 'string' ? body : '')).slice(0, 500),
       requestId: null,
     };
-  } else if (
-    body !== null &&
-    typeof body === 'object' &&
-    !Array.isArray(body) &&
-    (body as Record<string, unknown>)['ok'] === false
-  ) {
+  } else if (asRecord(body)?.['ok'] === false) {
     isError = true;
     error = {
       error: 'cli_error_payload',
-      message: (body as Record<string, unknown>)['error'],
+      message: asRecord(body)?.['error'],
       requestId: null,
     };
   }

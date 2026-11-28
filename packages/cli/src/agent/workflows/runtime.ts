@@ -68,7 +68,7 @@ function writeWorkers<T>(
 }
 
 function parse<T>(raw: string): T {
-  return JSON.parse(raw) as T;
+  return JSON.parse(raw);
 }
 
 function serialize(value: unknown): string {
@@ -83,12 +83,11 @@ function assertRunIdentity(
   name: string,
   items: WorkflowItem<unknown>[],
 ): void {
-  const existing = db.prepare(`SELECT name FROM workflow_runs WHERE id = ?`).get(runId) as
-    | { name: string }
-    | undefined;
+  const existing = db.prepare(`SELECT name FROM workflow_runs WHERE id = ?`).get(runId);
   if (!existing) return;
-  if (existing.name !== name) {
-    throw new Error(`workflow ${runId} belongs to ${existing.name}, not ${name}`);
+  const owner = String(existing['name']);
+  if (owner !== name) {
+    throw new Error(`workflow ${runId} belongs to ${owner}, not ${name}`);
   }
   const stored = db
     .prepare(`SELECT worker_key FROM workflow_workers WHERE run_id = ?`)
@@ -119,12 +118,15 @@ function workerRows(db: ReturnType<typeof connect>, runId: string): WorkerRow[] 
     }));
 }
 
+function runStatus(value: unknown): WorkflowStatus['status'] {
+  if (value === 'running' || value === 'completed' || value === 'failed') return value;
+  throw new Error(`workflow has an unknown status: ${String(value)}`);
+}
+
 function statusFor<R>(runId: string, path?: string): WorkflowStatus<R> {
   const db = connect(path);
   try {
-    const run = db.prepare(`SELECT id, name, status FROM workflow_runs WHERE id = ?`).get(runId) as
-      | { id: string; name: string; status: string }
-      | undefined;
+    const run = db.prepare(`SELECT id, name, status FROM workflow_runs WHERE id = ?`).get(runId);
     if (!run) throw new Error(`workflow ${runId} not found`);
     const workers = workerRows(db, runId);
     const results = workers
@@ -137,9 +139,9 @@ function statusFor<R>(runId: string, path?: string): WorkflowStatus<R> {
         message: worker.error ?? 'unknown worker error',
       }));
     return {
-      id: run.id,
-      name: run.name,
-      status: run.status as WorkflowStatus<R>['status'],
+      id: String(run['id']),
+      name: String(run['name']),
+      status: runStatus(run['status']),
       done: results.length,
       failed: errors.length,
       total: workers.length,

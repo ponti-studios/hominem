@@ -31,7 +31,7 @@ const clientSecretSchema = z.object({
   }),
 });
 
-const tokenFileSchema = z.object({
+export const tokenFileSchema = z.object({
   token: z.string(),
   refresh_token: z.string(),
   token_uri: z.string(),

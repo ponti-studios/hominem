@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import { executeTasks } from '../connectors/google-tasks/google_tasks.ts';
 import { taskListId } from '../connectors/google-tasks/google_tasks.ts';
+import { errorText, isRecord } from '../guards.ts';
 import { finishRun, logRun } from '../log/agent_log.ts';
 import templatesFile from './cadence_templates.json' with { type: 'json' };
 
@@ -24,21 +25,17 @@ interface Result {
   run_id: number;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
 function readJson(path: string, label: string): unknown {
   let raw: string;
   try {
     raw = readFileSync(path, 'utf8');
   } catch (err) {
-    throw new Error(`${label} could not be read at ${path}: ${(err as Error).message}`);
+    throw new Error(`${label} could not be read at ${path}: ${errorText(err)}`);
   }
   try {
     return JSON.parse(raw);
   } catch (err) {
-    throw new Error(`${label} is not valid JSON at ${path}: ${(err as Error).message}`);
+    throw new Error(`${label} is not valid JSON at ${path}: ${errorText(err)}`);
   }
 }
 
@@ -46,11 +43,13 @@ function taskTitles(value: unknown, path: string, list: CadenceList): string[] {
   if (!isRecord(value) || !Array.isArray(value[list])) {
     throw new Error(`cadence templates at ${path} must contain an array for "${list}"`);
   }
-  const titles = value[list];
-  if (titles.some((title) => typeof title !== 'string' || title === '')) {
+  const titles: unknown[] = value[list];
+  const strings = titles.filter(
+    (title): title is string => typeof title === 'string' && title !== '',
+  );
+  if (strings.length !== titles.length) {
     throw new Error(`cadence templates at ${path} contains an invalid title for "${list}"`);
   }
-  const strings = titles as string[];
   if (new Set(strings).size !== strings.length) {
     throw new Error(`cadence templates at ${path} contains duplicate titles for "${list}"`);
   }
@@ -79,7 +78,7 @@ async function runTasks(args: string[]): Promise<unknown> {
   try {
     value = JSON.parse(proc.stdout);
   } catch (err) {
-    throw new Error(`google-tasks returned invalid JSON: ${(err as Error).message}`);
+    throw new Error(`google-tasks returned invalid JSON: ${errorText(err)}`);
   }
   return value;
 }
@@ -171,7 +170,8 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     process.stdout.write(`${list}: created ${created}, already open ${result.already_open}\n`);
     return 0;
   } catch (err) {
-    const message = `${(err as Error).name ?? 'Error'}: ${(err as Error).message ?? String(err)}`;
+    const name = err instanceof Error ? err.name : 'Error';
+    const message = `${name}: ${errorText(err)}`;
     finishRun(runId, {
       status: 'failed',
       exitCode: 1,

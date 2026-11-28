@@ -8,7 +8,9 @@ import {
   loadToken,
   refreshToken,
   type TokenFile as HominemToken,
+  tokenFileSchema,
 } from '../../../google.ts';
+import { asRecord, errorText, isRecord, optionalString } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'google-tasks';
@@ -16,6 +18,9 @@ const TASKS_SCOPE = 'https://www.googleapis.com/auth/tasks';
 const DEFAULT_API = 'https://tasks.googleapis.com/tasks/v1';
 
 type TokenFile = HominemToken & { scope?: unknown };
+
+// Passthrough keeps the older space-separated `scope` field.
+const savedTokenSchema = tokenFileSchema.passthrough();
 
 class NamedError extends Error {
   constructor(message: string) {
@@ -29,11 +34,7 @@ class HttpError extends Error {
   body: Record<string, unknown>;
 
   constructor(status: number, body: Record<string, unknown>) {
-    const nested = body['error'];
-    const error =
-      nested !== null && typeof nested === 'object' && !Array.isArray(nested)
-        ? (nested as Record<string, unknown>)
-        : body;
+    const error = asRecord(body['error']) ?? body;
     super(typeof error['message'] === 'string' ? error['message'] : `HTTP ${status}`);
     this.status = status;
     this.body = body;
@@ -67,18 +68,20 @@ function readToken(path: string): TokenFile {
   try {
     raw = readFileSync(path, 'utf8');
   } catch (err) {
-    throw new NamedError(`Google token could not be read at ${path}: ${(err as Error).message}`);
+    throw new NamedError(`Google token could not be read at ${path}: ${errorText(err)}`);
   }
   let value: unknown;
   try {
     value = JSON.parse(raw);
   } catch (err) {
-    throw new NamedError(`Google token is not valid JSON at ${path}: ${(err as Error).message}`);
+    throw new NamedError(`Google token is not valid JSON at ${path}: ${errorText(err)}`);
   }
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new NamedError(`Google token at ${path} is not an object`);
+  if (!isRecord(value)) throw new NamedError(`Google token at ${path} is not an object`);
+  const token = savedTokenSchema.safeParse(value);
+  if (!token.success) {
+    throw new NamedError(`Google token at ${path} is missing fields needed to refresh it`);
   }
-  return value as TokenFile;
+  return token.data;
 }
 
 function scopes(token: TokenFile): Set<string> {
@@ -189,7 +192,7 @@ async function apiCall(
       signal: AbortSignal.timeout(30_000),
     });
     status = response.status;
-    const parsed = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const parsed = asRecord(await response.json().catch(() => ({}))) ?? {};
     if (!response.ok) throw new HttpError(status, parsed);
     logEvent(CONNECTOR, [method, pathname], {
       ...auditTimes(started, request),
@@ -241,9 +244,7 @@ async function listAll(
     if (!Array.isArray(pageItems))
       throw new NamedError(`${pathname} returned a non-array items field`);
     for (const item of pageItems) {
-      if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
-        items.push(item as Record<string, unknown>);
-      }
+      if (isRecord(item)) items.push(item);
     }
     pageToken = typeof page['nextPageToken'] === 'string' ? page['nextPageToken'] : null;
   } while (pageToken);
@@ -277,23 +278,12 @@ export async function executeTasks(args: string[]): Promise<Record<string, unkno
     try {
       body = JSON.parse(raw);
     } catch (err) {
-      throw new NamedError(`google-tasks insert: invalid JSON: ${(err as Error).message}`);
+      throw new NamedError(`google-tasks insert: invalid JSON: ${errorText(err)}`);
     }
-    if (
-      body === null ||
-      typeof body !== 'object' ||
-      Array.isArray(body) ||
-      typeof (body as Record<string, unknown>)['title'] !== 'string'
-    ) {
+    if (!isRecord(body) || typeof body['title'] !== 'string') {
       throw new NamedError('google-tasks insert: --json must contain a string title');
     }
-    return apiCall(
-      token,
-      'POST',
-      `/lists/${encodeURIComponent(tasklist)}/tasks`,
-      {},
-      body as Record<string, unknown>,
-    );
+    return apiCall(token, 'POST', `/lists/${encodeURIComponent(tasklist)}/tasks`, {}, body);
   }
   throw new NamedError('google-tasks: expected tasklists, list, or insert');
 }
@@ -312,5 +302,5 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
 export function taskListId(items: Record<string, unknown>[], title: string): string | null {
   const matches = items.filter((item) => item['title'] === title && typeof item['id'] === 'string');
   if (matches.length !== 1) return null;
-  return matches[0]!['id'] as string;
+  return optionalString(matches[0]?.['id']) ?? null;
 }

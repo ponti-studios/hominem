@@ -128,14 +128,9 @@ describe('studio nameplate', () => {
     const db = new DatabaseSync(dbPath, { readOnly: true });
     const run = db
       .prepare('SELECT status, exit_code, message FROM runs ORDER BY id DESC LIMIT 1')
-      .get() as {
-      status: string;
-      exit_code: number;
-      message: string;
-    };
+      .get();
     db.close();
-    expect(run.status).toBe('failed');
-    expect(run.exit_code).toBe(1);
-    expect(run.message).toContain('could not start');
+    expect(run).toMatchObject({ status: 'failed', exit_code: 1 });
+    expect(String(run?.['message'])).toContain('could not start');
   });
 });

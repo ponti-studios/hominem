@@ -15,6 +15,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'notion';
@@ -40,8 +41,8 @@ function parseJson(raw: string): unknown {
  * "status" field alone (e.g. an issue's workflow state) is not an error.
  */
 function extractError(inner: unknown): [number | null, unknown] {
-  if (inner === null || typeof inner !== 'object') return [null, null];
-  const rec = inner as Record<string, unknown>;
+  const rec = asRecord(inner);
+  if (!rec) return [null, null];
   if ('error' in rec) {
     // Linear-style
     return [
@@ -54,9 +55,8 @@ function extractError(inner: unknown): [number | null, unknown] {
     let requestId = rec['request_id'];
     const body = rec['body'];
     if (typeof body === 'string') {
-      const parsedBody = parseJson(body);
-      if (parsedBody !== null && typeof parsedBody === 'object') {
-        const b = parsedBody as Record<string, unknown>;
+      const b = asRecord(parseJson(body));
+      if (b) {
         message = message ?? b['message'];
         requestId = requestId ?? b['request_id'];
       }
@@ -97,12 +97,8 @@ export function main(argv = process.argv.slice(2)): number {
   }
 
   const body = parseJson(stdout);
-  const bodyRecord =
-    body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : null;
-  const result =
-    bodyRecord && typeof bodyRecord['result'] === 'object' && bodyRecord['result'] !== null
-      ? (bodyRecord['result'] as Record<string, unknown>)
-      : null;
+  const bodyRecord = asRecord(body);
+  const result = asRecord(bodyRecord?.['result']);
 
   const ok = bodyRecord ? bodyRecord['ok'] : null;
   const isError = result ? result['isError'] : null;
@@ -118,8 +114,7 @@ export function main(argv = process.argv.slice(2)): number {
     const content = container['content'];
     if (!Array.isArray(content)) continue;
     for (const item of content) {
-      if (item === null || typeof item !== 'object') continue;
-      const text = (item as Record<string, unknown>)['text'];
+      const text = asRecord(item)?.['text'];
       if (typeof text !== 'string' || !text) continue;
       const inner = parseJson(text);
       const [statusFound, errorFound] = extractError(inner);
