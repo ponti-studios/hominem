@@ -47,7 +47,7 @@
     "oxfmt": "0.74.0",
     "oxlint": "^1.89.0",
     "portless": "0.15.8",
-    "react-doctor": "^0.9.18",
+    "react-doctor": "^0.9.23",
     "turbo": "^2.11.9",
     "typescript": "catalog:",
     "vitest": "catalog:"
