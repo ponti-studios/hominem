@@ -15,7 +15,7 @@ catalog:
   better-auth: 1.7.12
   bullmq: 6.3.19
   clsx: 2.1.1
-  hono: 4.13.13
+  hono: 4.13.16
   ioredis: 6.0.0
   kysely: 0.29.7
   lucide-react: 1.62.0
@@ -44,7 +44,12 @@ overrides:
   markdown-it: '>=12.3.2'
   serialize-javascript: '>=7.0.3'
   '@xmldom/xmldom': '>=0.9.12'
-  '@expo/plist>@xmldom/xmldom': 0.8.13
+  '@expo/plist>@xmldom/xmldom': 0.8.15
+  # Security floors for copies pulled in by other packages.
+  'hono@<4.13.16': 4.13.16
+  '@hono/node-server@<2.1.6': 2.1.6
+  'source-map-js@<1.2.2': 1.2.4
+  'zod@>=4.0.0 <4.6.6': 4.6.7
   fast-xml-parser: '>=5.7.0'
   postcss: '>=8.5.10'
   uuid: '>=11.1.1'
