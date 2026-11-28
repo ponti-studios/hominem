@@ -84,7 +84,7 @@ describe('extraction validator', () => {
       validateExtraction(dir);
     } catch (error) {
       expect(error).toBeInstanceOf(KnowledgeValidationError);
-      expect((error as KnowledgeValidationError).issues).toEqual([
+      expect(error).toHaveProperty('issues', [
         'note.md: files.jsonl claims=2, found=1',
         'note.md: best_sentence is not verbatim in the body',
       ]);
@@ -99,12 +99,12 @@ describe('extraction validator', () => {
     try {
       validateExtraction(dir);
     } catch (error) {
-      expect((error as KnowledgeValidationError).issues).toContain(
-        'claims.jsonl: duplicate claim id',
-      );
-      expect((error as KnowledgeValidationError).issues).toContain(
-        'claims.jsonl line 3: invalid JSON',
-      );
+      expect(error).toMatchObject({
+        issues: expect.arrayContaining([
+          'claims.jsonl: duplicate claim id',
+          'claims.jsonl line 3: invalid JSON',
+        ]),
+      });
     }
   });
 
@@ -113,12 +113,12 @@ describe('extraction validator', () => {
     try {
       validateExtraction(dir);
     } catch (error) {
-      expect((error as KnowledgeValidationError).issues).toContain(
-        'claims.jsonl: claim ids are not sequential from 2-001',
-      );
-      expect((error as KnowledgeValidationError).issues).toContain(
-        'claims.jsonl: batch prefix f2 does not match batch.json (1)',
-      );
+      expect(error).toMatchObject({
+        issues: expect.arrayContaining([
+          'claims.jsonl: claim ids are not sequential from 2-001',
+          'claims.jsonl: batch prefix f2 does not match batch.json (1)',
+        ]),
+      });
     }
   });
 });

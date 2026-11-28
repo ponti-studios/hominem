@@ -12,6 +12,7 @@ import { dirname } from 'node:path';
 import { z } from 'zod';
 
 import { applyEnvDefaults, envFilePath, requireEnv } from '../../../env.ts';
+import { asRecord } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -81,8 +82,7 @@ function resolveConfig(cfg: PlaidConfig): Required<
   fetchImpl: typeof fetch;
 } {
   applyEnvDefaults();
-  const environment =
-    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'sandbox';
+  const environment = cfg.environment ?? process.env.PLAID_ENV ?? 'sandbox';
   if (environment !== 'sandbox' && environment !== 'production') {
     throw new Error('PLAID_ENV must be sandbox or production');
   }
@@ -123,7 +123,7 @@ async function plaidPost(
       signal: AbortSignal.timeout(resolved.timeoutMs),
     });
     status = response.status;
-    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const payload = asRecord(await response.json().catch(() => ({}))) ?? {};
     if (!response.ok) {
       throw new Error(
         typeof payload.error_message === 'string'
@@ -182,14 +182,14 @@ export interface PlaidSetupStatus {
 
 export function plaidSetupStatus(cfg: PlaidConfig = {}): PlaidSetupStatus {
   applyEnvDefaults();
-  const environment =
-    cfg.environment ?? (process.env.PLAID_ENV as PlaidConfig['environment']) ?? 'sandbox';
+  const environment = cfg.environment ?? process.env.PLAID_ENV ?? 'sandbox';
   const valid = environment === 'sandbox' || environment === 'production';
   return {
     clientIdConfigured: Boolean(cfg.clientId ?? process.env.PLAID_CLIENT_ID),
     secretConfigured: Boolean(cfg.secret ?? process.env.PLAID_SECRET),
     accessTokenConfigured: Boolean(cfg.accessToken ?? process.env.PLAID_ACCESS_TOKEN),
-    environment: valid ? environment : 'invalid',
+    environment:
+      environment === 'sandbox' || environment === 'production' ? environment : 'invalid',
     environmentConfigured: valid,
   };
 }

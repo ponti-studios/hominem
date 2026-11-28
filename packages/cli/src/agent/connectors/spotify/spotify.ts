@@ -46,6 +46,7 @@ import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+import { asRecord, errorText, optionalString, records } from '../../guards.ts';
 import { logEvent } from '../../log/agent_log.ts';
 
 const CONNECTOR = 'spotify';
@@ -78,13 +79,11 @@ class NamedError extends Error {}
 function errorMessage(err: unknown): string {
   if (err instanceof HttpError) {
     if (typeof err.body === 'string') return err.body;
-    if (err.body && typeof err.body === 'object') {
-      const msg = (err.body as Record<string, unknown>)['message'];
-      if (typeof msg === 'string') return msg;
-    }
+    const msg = asRecord(err.body)?.['message'];
+    if (typeof msg === 'string') return msg;
     return `HTTP ${err.status}`;
   }
-  return (err as Error).message;
+  return errorText(err);
 }
 
 function out(obj: unknown): void {
@@ -153,7 +152,7 @@ async function tokenPost(
       signal: AbortSignal.timeout(30_000),
     });
     httpStatus = resp.status;
-    parsed = (await resp.json().catch(() => ({}))) as Record<string, unknown>;
+    parsed = asRecord(await resp.json().catch(() => ({}))) ?? {};
     if (!resp.ok) {
       throw new HttpError(
         resp.status,
@@ -259,7 +258,7 @@ async function exchangeCode(
       'auth: the token response had no refresh_token (re-run hominem spotify auth)',
     );
   }
-  return { refresh_token: refresh, scope: (body['scope'] as string) ?? null };
+  return { refresh_token: refresh, scope: optionalString(body['scope']) ?? null };
 }
 
 /**
@@ -318,7 +317,7 @@ async function apiCall(
     httpStatus = resp.status;
     parsed = resp.status === 204 ? {} : await resp.json().catch(() => ({}));
     if (!resp.ok) {
-      throw new HttpError(resp.status, (parsed as Record<string, unknown>)['error'] ?? parsed);
+      throw new HttpError(resp.status, asRecord(parsed)?.['error'] ?? parsed);
     }
   } catch (err) {
     logEvent(CONNECTOR, [method, path], {
@@ -346,13 +345,13 @@ async function apiCall(
     ok: true,
     isError: false,
   });
-  return parsed as Record<string, unknown>;
+  return asRecord(parsed) ?? {};
 }
 
 function trackLine(t: Record<string, unknown> | null | undefined): Record<string, unknown> {
   return {
     title: t?.['name'] ?? null,
-    artists: ((t?.['artists'] as Record<string, unknown>[] | undefined) ?? [])
+    artists: records(t?.['artists'])
       .map((artist) => artist['name'])
       .join(', '),
     uri: t?.['uri'] ?? null,
@@ -447,7 +446,7 @@ async function cmdAuth(flags: string[]): Promise<number> {
         res.writeHead(200, { 'content-type': 'text/plain' });
         res.end('Spotify auth failed at the token exchange. Close this tab.');
         server.close();
-        out({ ok: false, error: String((err as Error).message).slice(0, 300) });
+        out({ ok: false, error: errorText(err).slice(0, 300) });
         resolve(2);
       }
     });
@@ -478,10 +477,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       return await cmdAuth(argv.slice(1));
     } catch (err) {
       if (err instanceof NamedError) {
-        process.stderr.write(`${(err as Error).message}\n`);
+        process.stderr.write(`${errorText(err)}\n`);
         return 2;
       }
-      out({ ok: false, error: String((err as Error).message).slice(0, 300) });
+      out({ ok: false, error: errorText(err).slice(0, 300) });
       return 2;
     }
   }
@@ -524,11 +523,11 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         params: { limit: '50' },
       });
       out(
-        ((body['items'] ?? []) as Record<string, unknown>[]).map((p) => ({
-          name: p?.name ?? null,
-          id: p?.id ?? null,
-          public: p?.public ?? null,
-          tracks_total: (p?.tracks as Record<string, unknown> | undefined)?.['total'] ?? null,
+        records(body['items']).map((p) => ({
+          name: p['name'] ?? null,
+          id: p['id'] ?? null,
+          public: p['public'] ?? null,
+          tracks_total: asRecord(p['tracks'])?.['total'] ?? null,
         })),
       );
       return 0;
@@ -544,11 +543,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         'GET',
         `/playlists/${encodeURIComponent(pid)}/tracks`,
       );
-      out(
-        ((body['items'] ?? []) as Record<string, unknown>[]).map((item) =>
-          trackLine(item['track'] as Record<string, unknown> | null),
-        ),
-      );
+      out(records(body['items']).map((item) => trackLine(asRecord(item['track']))));
       return 0;
     }
 
@@ -558,12 +553,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       const body = await apiCall(token, apiBase, 'search', 'GET', '/search', {
         params: { q: query, type: 'track', limit: '10' },
       });
-      out(
-        (
-          ((body['tracks'] as Record<string, unknown>)?.['items'] as Record<string, unknown>[]) ??
-          []
-        ).map(trackLine),
-      );
+      out(records(asRecord(body['tracks'])?.['items']).map(trackLine));
       return 0;
     }
 
@@ -615,10 +605,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     return 2;
   } catch (err) {
     if (err instanceof NamedError) {
-      process.stderr.write(`${(err as Error).message}\n`);
+      process.stderr.write(`${errorText(err)}\n`);
       return 2;
     }
-    out({ ok: false, error: String((err as Error).message).slice(0, 300) });
+    out({ ok: false, error: errorText(err).slice(0, 300) });
     return 2;
   }
 }

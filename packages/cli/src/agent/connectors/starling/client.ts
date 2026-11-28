@@ -1,4 +1,5 @@
 import { envOr, requireEnv } from '../../../env.ts';
+import { asRecord, errorText, optionalString, records } from '../../guards.ts';
 /**
  * Starling Bank native client — ported from the archived
  * custom.legacy-starling/bin/pull.py (`transactions` command), which the
@@ -62,33 +63,6 @@ export interface StarlingConfig {
   fetchImpl?: typeof fetch;
 }
 
-interface ApiAccount {
-  accountUid: string;
-  defaultCategory: string;
-  currency: string;
-  accountType: string;
-  name: string;
-}
-
-interface ApiFeedItem {
-  amount?: { minorUnits?: number | string; currency?: string };
-  direction?: string;
-  feedItemUid?: string;
-  transactionTime?: string;
-  transactedAt?: string;
-  counterPartyName?: string;
-  reference?: string;
-  source?: string;
-  status?: string;
-}
-
-interface ApiGoal {
-  savingsGoalUid: string;
-  name?: string;
-  totalSaved?: unknown;
-  target?: unknown;
-}
-
 /** Resolved client context — one per routine, shared by every apiGet. */
 interface ApiCtx {
   token: string;
@@ -124,7 +98,7 @@ async function apiGet(
       signal: AbortSignal.timeout(ctx.timeoutMs),
     });
     httpStatus = resp.status;
-    parsed = (await resp.json()) as Record<string, unknown>;
+    parsed = await resp.json();
     if (!resp.ok) {
       throw new Error(`starling ${path} returned HTTP ${resp.status}`);
     }
@@ -137,7 +111,7 @@ async function apiGet(
       httpStatus,
       ok: false,
       isError: true,
-      error: (err as Error).message,
+      error: errorText(err),
       path: ctx.cfg.dbPath,
     });
     throw err;
@@ -153,7 +127,7 @@ async function apiGet(
     response: parsed,
     path: ctx.cfg.dbPath,
   });
-  return parsed as Record<string, unknown>;
+  return asRecord(parsed) ?? {};
 }
 
 export async function starlingPull(
@@ -185,23 +159,31 @@ export async function starlingPull(
       win,
     );
     const out: StarlingItem[] = [];
-    for (const f of (data['feedItems'] ?? []) as ApiFeedItem[]) {
-      const amt = f.amount ?? {};
+    for (const f of records(data['feedItems'])) {
+      const amt = asRecord(f['amount']) ?? {};
       // minorUnits may arrive as a string — coerce, never parse-fail.
-      const minor = Number(amt.minorUnits ?? 0);
-      const direction = f.direction ?? '';
+      const minor = Number(amt['minorUnits'] ?? 0);
+      const direction = optionalString(f['direction']) ?? '';
       const signed = direction === 'OUT' ? -(minor / 100) : minor / 100;
       out.push({
-        feedItemUid: f.feedItemUid ?? null,
-        date: (f.transactionTime ?? f.transactedAt ?? '').slice(0, 10),
-        merchant: f.counterPartyName ?? f.reference ?? f.source ?? '',
+        feedItemUid: optionalString(f['feedItemUid']) ?? null,
+        date: (
+          optionalString(f['transactionTime']) ??
+          optionalString(f['transactedAt']) ??
+          ''
+        ).slice(0, 10),
+        merchant:
+          optionalString(f['counterPartyName']) ??
+          optionalString(f['reference']) ??
+          optionalString(f['source']) ??
+          '',
         amount: round2(signed),
-        currency: amt.currency ?? acctCurrency,
+        currency: optionalString(amt['currency']) ?? acctCurrency,
         direction,
-        status: f.status ?? null,
-        reference: f.reference ?? null,
+        status: optionalString(f['status']) ?? null,
+        reference: optionalString(f['reference']) ?? null,
         accountUid: uid,
-        src: f.source ?? null,
+        src: optionalString(f['source']) ?? null,
         space,
       });
     }
@@ -209,12 +191,10 @@ export async function starlingPull(
   }
 
   const accountsBody = await apiGet(ctx, '/api/v2/accounts');
-  const accounts: ApiAccount[] = ((accountsBody.accounts ?? []) as ApiAccount[]).map((a) => ({
-    accountUid: a.accountUid,
-    defaultCategory: a.defaultCategory,
-    currency: a.currency,
-    accountType: a.accountType,
-    name: a.name,
+  const accounts = records(accountsBody['accounts']).map((a) => ({
+    accountUid: String(a['accountUid']),
+    defaultCategory: String(a['defaultCategory']),
+    currency: String(a['currency']),
   }));
 
   const items: StarlingItem[] = [];
@@ -225,14 +205,14 @@ export async function starlingPull(
     // failure is noted, never silent (see file header).
     try {
       const goals = await apiGet(ctx, `/api/v2/account/${uid}/savings-goals`);
-      for (const g of (goals['savingsGoalList'] ?? []) as ApiGoal[]) {
-        items.push(
-          ...(await collectFeedItems(uid, g.savingsGoalUid, g.name ?? null, acct.currency)),
-        );
+      for (const g of records(goals['savingsGoalList'])) {
+        const goalUid = String(g['savingsGoalUid']);
+        const name = optionalString(g['name']) ?? null;
+        items.push(...(await collectFeedItems(uid, goalUid, name, acct.currency)));
       }
     } catch (err) {
       notes.push(
-        `savings goals unavailable for ${uid.slice(0, 8)}: ${(err as Error).message} — ` +
+        `savings goals unavailable for ${uid.slice(0, 8)}: ${errorText(err)} — ` +
           `Space feed rows for this account were not pulled`,
       );
     }
@@ -273,7 +253,7 @@ export interface StarlingBalancesResult {
 
 /** Starling money objects are {currency, minorUnits} — coerce, never fail. */
 function minorToMajor(m: unknown): number {
-  const minor = Number((m as { minorUnits?: number | string } | undefined)?.minorUnits ?? 0);
+  const minor = Number(asRecord(m)?.['minorUnits'] ?? 0);
   return round2(minor / 100);
 }
 
@@ -289,28 +269,28 @@ export async function starlingBalances(cfg: StarlingConfig = {}): Promise<Starli
   const notes: string[] = [];
   const accountsBody = await apiGet(ctx, '/api/v2/accounts');
   const accounts: StarlingBalance[] = [];
-  for (const a of (accountsBody.accounts ?? []) as Record<string, unknown>[]) {
+  for (const a of records(accountsBody['accounts'])) {
     const uid = String(a['accountUid']);
     const name = String(a['name'] ?? uid.slice(0, 8));
     let bal: Record<string, unknown>;
     try {
       bal = await apiGet(ctx, `/api/v2/accounts/${uid}/balance`);
     } catch (err) {
-      notes.push(`balance unavailable for ${name}: ${(err as Error).message}`);
+      notes.push(`balance unavailable for ${name}: ${errorText(err)}`);
       continue;
     }
     const spaces: StarlingSpaceBalance[] = [];
     try {
       const goals = await apiGet(ctx, `/api/v2/account/${uid}/savings-goals`);
-      for (const g of (goals['savingsGoalList'] ?? []) as ApiGoal[]) {
+      for (const g of records(goals['savingsGoalList'])) {
         spaces.push({
-          name: g.name ?? g.savingsGoalUid ?? 'Space',
-          saved: minorToMajor(g.totalSaved),
-          target: g.target ? minorToMajor(g.target) : null,
+          name: optionalString(g['name']) ?? optionalString(g['savingsGoalUid']) ?? 'Space',
+          saved: minorToMajor(g['totalSaved']),
+          target: g['target'] ? minorToMajor(g['target']) : null,
         });
       }
     } catch (err) {
-      notes.push(`savings goals unavailable for ${name}: ${(err as Error).message}`);
+      notes.push(`savings goals unavailable for ${name}: ${errorText(err)}`);
     }
     accounts.push({
       accountUid: uid,
@@ -346,7 +326,7 @@ export async function starlingAccounts(
   const ctx = apiCtx(cfg);
   const body = await apiGet(ctx, '/api/v2/accounts');
   const accounts: StarlingAccountIdentity[] = [];
-  for (const a of (body['accounts'] ?? []) as Record<string, unknown>[]) {
+  for (const a of records(body['accounts'])) {
     const uid = String(a['accountUid']);
     accounts.push({
       accountUid: uid,
