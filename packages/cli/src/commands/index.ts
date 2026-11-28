@@ -7,6 +7,7 @@ import AuthSyncRclone from './auth/sync-rclone.js';
 import Cadence from './cadence.js';
 import CalendarAnalyze from './calendar/analyze.js';
 import Chat from './chat.js';
+import FinanceLink from './finance/link.js';
 import FinanceSync from './finance/sync.js';
 import Gws from './gws.js';
 import Instagram from './instagram.js';
@@ -43,6 +44,7 @@ export const COMMANDS = {
   cadence: Cadence,
   'calendar:analyze': CalendarAnalyze,
   chat: Chat,
+  'finance:link': FinanceLink,
   'finance:sync': FinanceSync,
   gws: Gws,
   instagram: Instagram,

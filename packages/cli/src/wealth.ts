@@ -123,7 +123,7 @@ async function logRun(
   await appendFile(join(dir, `runs-${key}.jsonl`), `${JSON.stringify(entry)}\n`, { mode: 0o600 });
 }
 
-function starlingConfig() {
+export function starlingConfig() {
   const token = process.env.STARLING_API_TOKEN;
   if (!token) throw new WealthError('Set STARLING_API_TOKEN to access Starling.');
   return { token, baseUrl: process.env.STARLING_API_BASE };
